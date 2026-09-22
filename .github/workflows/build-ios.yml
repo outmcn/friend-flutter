@@ -1,0 +1,42 @@
+name: Build Flutter iOS IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.35.2'
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: dart analyze
+      - name: Test
+        run: flutter test
+      - name: Build unsigned iOS app
+        run: flutter build ios --release --no-codesign
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/Friend.app
+          /usr/bin/zip -qry Friend-ios-unsigned-${GITHUB_SHA}.ipa Payload
+      - name: Verify bundle
+        run: |
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' Payload/Friend.app/Info.plist
+          test -f Payload/Friend.app/Runner
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: friend-ios-ipa-${{ github.sha }}
+          path: Friend-ios-unsigned-${{ github.sha }}.ipa
+          if-no-files-found: error
