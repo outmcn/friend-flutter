@@ -200,6 +200,7 @@ class _FriendShellState extends State<FriendShell> {
   final posts = <UiPost>[];
   String selectedFilter = '推荐';
   int filterRequestId = 0;
+  bool postsRequestActive = false;
   String? discoveryError;
   Position? currentPosition;
   int currentUserId = 0;
@@ -244,6 +245,8 @@ class _FriendShellState extends State<FriendShell> {
   }
 
   Future<void> _loadPosts() async {
+    if (postsRequestActive) return;
+    postsRequestActive = true;
     final requestId = ++filterRequestId;
     if (mounted) {
       setState(() {
@@ -280,6 +283,7 @@ class _FriendShellState extends State<FriendShell> {
             discoveryError = null;
           });
         }
+        postsRequestActive = false;
         return;
       }
     } catch (e) {
@@ -290,6 +294,7 @@ class _FriendShellState extends State<FriendShell> {
         });
       }
     }
+    postsRequestActive = false;
   }
 
   Future<void> _refreshAll() async {
@@ -298,6 +303,8 @@ class _FriendShellState extends State<FriendShell> {
   }
 
   Future<void> _changeFilter(String filter) async {
+    if (postsRequestActive) return;
+    postsRequestActive = true;
     final requestId = ++filterRequestId;
     if (mounted) {
       setState(() {
@@ -339,6 +346,7 @@ class _FriendShellState extends State<FriendShell> {
         });
       }
     }
+    postsRequestActive = false;
   }
 
   @override
