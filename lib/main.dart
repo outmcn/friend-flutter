@@ -308,16 +308,18 @@ class _FriendShellState extends State<FriendShell> {
       final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode < 200 ||
           response.statusCode >= 300 ||
-          decoded['ok'] != true)
+          decoded['ok'] != true) {
         throw Exception(decoded['message'] ?? '发布失败');
+      }
       await _loadPosts();
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error.toString().replaceFirst('Exception: ', '')),
           ),
         );
+      }
     }
   }
 }
