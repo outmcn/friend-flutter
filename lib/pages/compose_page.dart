@@ -14,10 +14,12 @@ class _ComposePageState extends State<ComposePage> {
   final controller = TextEditingController();
   XFile? selectedImage;
   bool publishing = false;
+  final focusNode = FocusNode();
 
   @override
   void dispose() {
     controller.dispose();
+    focusNode.dispose();
     super.dispose();
   }
 
@@ -57,40 +59,46 @@ class _ComposePageState extends State<ComposePage> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          TextField(
-            controller: controller,
-            maxLines: 8,
-            maxLength: 300,
-            autofocus: true,
-            decoration: const InputDecoration(hintText: '分享你的想法…'),
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: _pickImage,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 38),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.all(20),
+          children: [
+            TextField(
+              controller: controller,
+              focusNode: focusNode,
+              maxLines: 8,
+              maxLength: 300,
+              autofocus: true,
+              decoration: const InputDecoration(hintText: '分享你的想法…'),
             ),
-            icon: const Icon(Icons.add_photo_alternate_outlined),
-            label: Text(selectedImage == null ? '添加图片' : '更换图片'),
-          ),
-          if (selectedImage != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 14),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.file(
-                  File(selectedImage!.path),
-                  height: 240,
-                  fit: BoxFit.contain,
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _pickImage,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 38),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+              ),
+              icon: const Icon(Icons.add_photo_alternate_outlined),
+              label: Text(selectedImage == null ? '添加图片' : '更换图片'),
+            ),
+            if (selectedImage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.file(
+                    File(selectedImage!.path),
+                    height: 240,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
-            ),
-          const SizedBox(height: 18),
-        ],
+            const SizedBox(height: 18),
+          ],
+        ),
       ),
     );
   }

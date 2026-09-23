@@ -456,221 +456,230 @@ class _DetailPageState extends State<DetailPage> {
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
-              children: [
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _openAuthorProfile,
-                      child: CircleAvatar(
-                        backgroundColor:
-                            avatarColors[post.authorAvatarId.clamp(0, 9)],
-                        child: Icon(
-                          avatarIcons[post.authorAvatarId.clamp(0, 9)],
-                          color: Colors.white,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+                children: [
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _openAuthorProfile,
+                        child: CircleAvatar(
+                          backgroundColor:
+                              avatarColors[post.authorAvatarId.clamp(0, 9)],
+                          child: Icon(
+                            avatarIcons[post.authorAvatarId.clamp(0, 9)],
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(
-                          () => showExactPostTime = !showExactPostTime,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    post.author,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: c.onSurface,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(
+                            () => showExactPostTime = !showExactPostTime,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      post.author,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: c.onSurface,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'IP：${post.city}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: c.onSurfaceVariant,
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'IP：${post.city}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: c.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              showExactPostTime
-                                  ? _exactTime(post.time)
-                                  : _relativeTime(post.time),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: c.onSurfaceVariant,
+                                ],
                               ),
-                            ),
-                          ],
+                              Text(
+                                showExactPostTime
+                                    ? _exactTime(post.time)
+                                    : _relativeTime(post.time),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: c.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      ),
+                      if (!isOwnPost)
+                        OutlinedButton(
+                          onPressed: followAuthorLoading
+                              ? null
+                              : _toggleAuthorFollow,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          child: Text(followingAuthor ? '已关注' : '关注'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  if (post.text.isNotEmpty)
+                    Text(
+                      post.text,
+                      style: TextStyle(
+                        fontSize: 20,
+                        height: 1.45,
+                        color: c.onSurface,
                       ),
                     ),
-                    if (!isOwnPost)
-                      OutlinedButton(
-                        onPressed: followAuthorLoading
-                            ? null
-                            : _toggleAuthorFollow,
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 32),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                        ),
-                        child: Text(followingAuthor ? '已关注' : '关注'),
+                  const SizedBox(height: 18),
+                  if (post.imageUrl != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.network(
+                        post.imageUrl!,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
                       ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                if (post.text.isNotEmpty)
+                    ),
+                  const SizedBox(height: 22),
+                  Divider(color: c.outlineVariant),
+                  const SizedBox(height: 8),
                   Text(
-                    post.text,
+                    '评论',
                     style: TextStyle(
-                      fontSize: 20,
-                      height: 1.45,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                       color: c.onSurface,
                     ),
                   ),
-                const SizedBox(height: 18),
-                if (post.imageUrl != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Image.network(
-                      post.imageUrl!,
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                    ),
-                  ),
-                const SizedBox(height: 22),
-                Divider(color: c.outlineVariant),
-                const SizedBox(height: 8),
-                Text(
-                  '评论',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: c.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (comments.isEmpty)
-                  EmptyState(text: '还没有评论')
-                else
-                  ..._orderedComments().map((comment) {
-                    final avatarId =
-                        ((comment['avatarId'] as num?)?.toInt() ?? 0).clamp(
-                          0,
-                          9,
-                        );
-                    final parentId = (comment['parentId'] as num?)?.toInt();
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          replyingTo = comment;
-                        });
-                        FocusScope.of(context).requestFocus(commentFocusNode);
-                      },
-                      onLongPress: () => _showCommentActions(comment),
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: parentId == null ? 0 : 28,
-                          bottom: 12,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                              onTap: () => _openCommentProfile(comment),
-                              child: CircleAvatar(
-                                backgroundColor: avatarColors[avatarId],
-                                child: Icon(
-                                  avatarIcons[avatarId],
-                                  color: Colors.white,
+                  const SizedBox(height: 12),
+                  if (comments.isEmpty)
+                    EmptyState(text: '还没有评论')
+                  else
+                    ..._orderedComments().map((comment) {
+                      final avatarId =
+                          ((comment['avatarId'] as num?)?.toInt() ?? 0).clamp(
+                            0,
+                            9,
+                          );
+                      final parentId = (comment['parentId'] as num?)?.toInt();
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            replyingTo = comment;
+                          });
+                          FocusScope.of(context).requestFocus(commentFocusNode);
+                        },
+                        onLongPress: () => _showCommentActions(comment),
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            left: parentId == null ? 0 : 28,
+                            bottom: 12,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: () => _openCommentProfile(comment),
+                                child: CircleAvatar(
+                                  backgroundColor: avatarColors[avatarId],
+                                  child: Icon(
+                                    avatarIcons[avatarId],
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          comment['nickname']?.toString() ??
-                                              '评论',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            comment['nickname']?.toString() ??
+                                                '评论',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      if ((comment['city']?.toString() ?? '')
-                                          .isNotEmpty)
+                                        if ((comment['city']?.toString() ?? '')
+                                            .isNotEmpty)
+                                          Text(
+                                            '  ${comment['city']}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: c.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        const Spacer(),
                                         Text(
-                                          '  ${comment['city']}',
+                                          _commentRelativeTime(
+                                            comment['createdAt']?.toString() ??
+                                                '',
+                                          ),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: c.onSurfaceVariant,
                                           ),
                                         ),
-                                      const Spacer(),
-                                      Text(
-                                        _commentRelativeTime(
-                                          comment['createdAt']?.toString() ??
-                                              '',
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: c.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          comment['content']?.toString() ?? '',
-                                          softWrap: true,
-                                        ),
-                                      ),
-                                      if (_canDeleteComment(comment))
-                                        SizedBox(
-                                          height: 28,
-                                          width: 32,
-                                          child: IconButton(
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(),
-                                            onPressed: () =>
-                                                _deleteComment(comment),
-                                            icon: const Icon(
-                                              Icons.delete_outline,
-                                              size: 18,
-                                            ),
-                                            tooltip: '删除评论',
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            comment['content']?.toString() ??
+                                                '',
+                                            softWrap: true,
                                           ),
                                         ),
-                                    ],
-                                  ),
-                                ],
+                                        if (_canDeleteComment(comment))
+                                          SizedBox(
+                                            height: 28,
+                                            width: 32,
+                                            child: IconButton(
+                                              padding: EdgeInsets.zero,
+                                              constraints:
+                                                  const BoxConstraints(),
+                                              onPressed: () =>
+                                                  _deleteComment(comment),
+                                              icon: const Icon(
+                                                Icons.delete_outline,
+                                                size: 18,
+                                              ),
+                                              tooltip: '删除评论',
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  }),
-              ],
+                      );
+                    }),
+                ],
+              ),
             ),
           ),
           SafeArea(
