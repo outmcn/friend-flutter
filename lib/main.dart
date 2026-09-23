@@ -2,13 +2,30 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const blue = Color(0xff4d8dff);
 
 void main() => runApp(const FriendApp());
 
-class FriendApp extends StatelessWidget {
+class FriendApp extends StatefulWidget {
   const FriendApp({super.key});
+  @override
+  State<FriendApp> createState() => _FriendAppState();
+}
+
+class _FriendAppState extends State<FriendApp> {
+  String? token;
+  @override
+  void initState() {
+    super.initState();
+    _loadToken();
+  }
+
+  Future<void> _loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => token = prefs.getString('friend.auth.token'));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +43,9 @@ class FriendApp extends StatelessWidget {
       theme: appTheme(light),
       darkTheme: appTheme(dark),
       themeMode: ThemeMode.system,
-      home: const FriendShell(),
+      home: token == null
+          ? LoginPage(onLogin: (value) => setState(() => token = value))
+          : FriendShell(token: token!),
     );
   }
 
@@ -63,8 +82,103 @@ class FriendApp extends StatelessWidget {
   );
 }
 
+class LoginPage extends StatefulWidget {
+  final ValueChanged<String> onLogin;
+  const LoginPage({super.key, required this.onLogin});
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final user = TextEditingController();
+  final password = TextEditingController();
+  bool busy = false;
+  String? error;
+  Future<void> login() async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      final response = await http.post(
+        Uri.parse('https://friend.outmcn.net/api/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': user.text.trim(),
+          'password': password.text,
+        }),
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode < 200 ||
+          response.statusCode >= 300 ||
+          body['ok'] != true) {
+        throw Exception(body['message'] ?? '登录失败');
+      }
+      final token = (body['data'] as Map<String, dynamic>)['token'] as String;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('friend.auth.token', token);
+      widget.onLogin(token);
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    }
+    if (mounted) {
+      setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.public, size: 70, color: blue),
+              const SizedBox(height: 18),
+              const Text(
+                'Friend',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 42),
+              TextField(
+                controller: user,
+                decoration: const InputDecoration(labelText: '账号'),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: password,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: '密码'),
+              ),
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: Text(
+                    error!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: busy ? null : login,
+                child: Text(busy ? '登录中…' : '登录'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class FriendShell extends StatefulWidget {
-  const FriendShell({super.key});
+  final String token;
+  const FriendShell({super.key, required this.token});
   @override
   State<FriendShell> createState() => _FriendShellState();
 }
@@ -72,25 +186,7 @@ class FriendShell extends StatefulWidget {
 class _FriendShellState extends State<FriendShell> {
   int tab = 0;
   bool loadingPosts = true;
-  final posts = <UiPost>[
-    UiPost('动态图片测试', '15305113400', '22:34', Icons.image_outlined, 0, 0),
-    UiPost(
-      '图片接口冒烟测试',
-      '15305113400',
-      '22:25',
-      Icons.photo_library_outlined,
-      0,
-      0,
-    ),
-    UiPost(
-      '项目测试 动态1',
-      '15305113400',
-      '22:21',
-      Icons.auto_awesome_outlined,
-      0,
-      0,
-    ),
-  ];
+  final posts = <UiPost>[];
 
   @override
   void initState() {
@@ -102,6 +198,7 @@ class _FriendShellState extends State<FriendShell> {
     try {
       final response = await http.get(
         Uri.parse('https://friend.outmcn.net/api/posts'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final data = body['data'];
@@ -124,7 +221,9 @@ class _FriendShellState extends State<FriendShell> {
         return;
       }
     } catch (_) {}
-    if (mounted) setState(() => loadingPosts = false);
+    if (mounted) {
+      setState(() => loadingPosts = false);
+    }
   }
 
   @override
@@ -168,12 +267,9 @@ class _FriendShellState extends State<FriendShell> {
     );
   }
 
-  void _createPost(String text) => setState(
-    () => posts.insert(
-      0,
-      UiPost(text, '15305113400', '刚刚', Icons.auto_awesome_outlined, 0, 0),
-    ),
-  );
+  void _createPost(String text) => setState(() {
+    posts.insert(0, UiPost(text, '', '刚刚', Icons.auto_awesome_outlined, 0, 0));
+  });
 }
 
 class UiPost {
