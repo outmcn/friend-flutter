@@ -42,8 +42,10 @@ class _DetailPageState extends State<DetailPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              OtherProfilePage(data: b['data'] as Map<String, dynamic>),
+          builder: (_) => OtherProfilePage(
+            data: b['data'] as Map<String, dynamic>,
+            dataToken: authToken,
+          ),
         ),
       );
     }

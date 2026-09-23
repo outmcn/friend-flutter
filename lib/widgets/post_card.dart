@@ -7,12 +7,14 @@ class PostCard extends StatelessWidget {
   final Future<void> Function()? onActionChanged;
   final bool canDelete;
   final Future<void> Function()? onDeleted;
+  final String token;
   const PostCard({
     super.key,
     required this.post,
     this.onActionChanged,
     this.canDelete = false,
     this.onDeleted,
+    this.token = '',
   });
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,7 @@ class PostCard extends StatelessWidget {
         MaterialPageRoute(
           builder: (_) => DetailPage(
             post: post,
-            token: '',
+            token: token,
             onActionChanged: onActionChanged,
           ),
         ),

@@ -5,7 +5,8 @@ import '../widgets/empty_state.dart';
 
 class OtherProfilePage extends StatelessWidget {
   final Map<String, dynamic> data;
-  const OtherProfilePage({super.key, required this.data});
+  final String dataToken;
+  const OtherProfilePage({super.key, required this.data, this.dataToken = ''});
   @override
   Widget build(BuildContext context) {
     final p = data['profile'] as Map<String, dynamic>? ?? {};
@@ -52,7 +53,7 @@ class OtherProfilePage extends StatelessWidget {
           ...posts.map(
             (post) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: PostCard(post: post),
+              child: PostCard(post: post, token: dataToken),
             ),
           ),
         ],

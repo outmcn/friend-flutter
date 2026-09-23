@@ -237,7 +237,12 @@ class _FriendShellState extends State<FriendShell> {
   Widget build(BuildContext context) {
     final pages = [
       const HomePage(),
-      DiscoveryPage(posts: posts, onCreate: _createPost, onRefresh: _loadPosts),
+      DiscoveryPage(
+        posts: posts,
+        token: widget.token,
+        onCreate: _createPost,
+        onRefresh: _loadPosts,
+      ),
       const MessagePage(),
       ProfilePage(key: profileKey, token: widget.token),
     ];
@@ -403,11 +408,13 @@ class HomePage extends StatelessWidget {
 
 class DiscoveryPage extends StatelessWidget {
   final List<UiPost> posts;
+  final String token;
   final Future<void> Function(String, XFile?) onCreate;
   final Future<void> Function() onRefresh;
   const DiscoveryPage({
     super.key,
     required this.posts,
+    required this.token,
     required this.onCreate,
     required this.onRefresh,
   });
@@ -446,7 +453,11 @@ class DiscoveryPage extends StatelessWidget {
           ...posts.map(
             (post) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: PostCard(post: post, onActionChanged: onRefresh),
+              child: PostCard(
+                post: post,
+                token: token,
+                onActionChanged: onRefresh,
+              ),
             ),
           ),
         ],
