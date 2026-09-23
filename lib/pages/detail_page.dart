@@ -637,9 +637,11 @@ class _DetailPageState extends State<DetailPage> {
                                           IconButton(
                                             padding: EdgeInsets.zero,
                                             constraints: const BoxConstraints(
-                                              minWidth: 28,
-                                              minHeight: 28,
+                                              minWidth: 24,
+                                              minHeight: 24,
                                             ),
+                                            visualDensity:
+                                                VisualDensity.compact,
                                             onPressed: () =>
                                                 _deleteComment(comment),
                                             icon: const Icon(
