@@ -348,6 +348,26 @@ class ProfilePageState extends State<ProfilePage> {
                                     ),
                                   ),
                                 ),
+                              if (activeDays >= 0)
+                                Container(
+                                  margin: const EdgeInsets.only(left: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colors.secondaryContainer,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '$activeDays天',
+                                    style: TextStyle(
+                                      color: colors.onSecondaryContainer,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 8),

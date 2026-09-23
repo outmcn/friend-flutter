@@ -116,18 +116,35 @@ class _PostCardState extends State<PostCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.hideAuthor)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        [
-                          _relativeTime(),
-                          if (distance != null) distance,
-                        ].join(' · '),
-                        style: TextStyle(
-                          color: c.onSurfaceVariant,
-                          fontSize: 12,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            [
+                              _relativeTime(),
+                              if (distance != null) distance,
+                            ].join(' · '),
+                            style: TextStyle(
+                              color: c.onSurfaceVariant,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (widget.canDelete)
+                          IconButton(
+                            onPressed: widget.onDeleted,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: c.onSurfaceVariant,
+                              size: 19,
+                            ),
+                          ),
+                      ],
                     ),
                   Visibility(
                     visible: !widget.hideAuthor,

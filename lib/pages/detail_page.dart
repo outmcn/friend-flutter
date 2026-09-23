@@ -520,7 +520,7 @@ class _DetailPageState extends State<DetailPage> {
                           ),
                         ),
                       ),
-                      if (!isOwnPost)
+                      if (sessionLoaded && !isOwnPost)
                         OutlinedButton(
                           onPressed: followAuthorLoading
                               ? null
