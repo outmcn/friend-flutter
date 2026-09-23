@@ -476,14 +476,26 @@ class _DetailPageState extends State<DetailPage> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'IP：${post.city}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: c.onSurfaceVariant,
+                                  if (post.city.isNotEmpty)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: c.primaryContainer,
+                                        borderRadius: BorderRadius.circular(7),
+                                      ),
+                                      child: Text(
+                                        post.city,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: c.onPrimaryContainer,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                               Text(

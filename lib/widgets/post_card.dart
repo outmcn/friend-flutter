@@ -172,6 +172,26 @@ class _PostCardState extends State<PostCard> {
                                   color: c.onSurface,
                                 ),
                               ),
+                              if (p.city.isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.only(left: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: c.primaryContainer,
+                                    borderRadius: BorderRadius.circular(7),
+                                  ),
+                                  child: Text(
+                                    p.city,
+                                    style: TextStyle(
+                                      color: c.onPrimaryContainer,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                               Text(
                                 [
                                   _relativeTime(),
