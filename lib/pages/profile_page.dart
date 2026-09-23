@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../models/ui_post.dart';
 import '../widgets/post_card.dart';
 import '../widgets/empty_state.dart';
@@ -14,6 +15,7 @@ class ProfilePage extends StatefulWidget {
 
 class ProfilePageState extends State<ProfilePage> {
   String nickname = '';
+  String? avatarUrl;
   bool loading = true;
   int section = 0;
   List<UiPost> ownPosts = [];
@@ -42,6 +44,7 @@ class ProfilePageState extends State<ProfilePage> {
                       ? profile['nickname']
                       : profile['username'])
                   .toString();
+          avatarUrl = _normalizeAvatar(profile['avatar']);
           ownPosts = _posts(data['posts']);
           favoritePosts = _posts(data['favorited']);
           likedPosts = _posts(data['liked']);
@@ -56,6 +59,33 @@ class ProfilePageState extends State<ProfilePage> {
   List<UiPost> _posts(dynamic value) => value is List
       ? value.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
       : <UiPost>[];
+  String? _normalizeAvatar(dynamic value) {
+    final raw = value?.toString() ?? '';
+    if (raw.isEmpty) return null;
+    return raw.startsWith('http') ? raw : 'https://friend.outmcn.net$raw';
+  }
+
+  Future<void> _pickAvatar() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    final data = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    final response = await http.put(
+      Uri.parse('https://friend.outmcn.net/api/me'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'avatar': data}),
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (body['ok'] == true && mounted)
+      setState(
+        () => avatarUrl = _normalizeAvatar(
+          (body['data'] as Map<String, dynamic>)['avatar'],
+        ),
+      );
+  }
 
   Future<void> _editNickname() async {
     final controller = TextEditingController(text: nickname);
@@ -151,10 +181,18 @@ class ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
               ),
-              CircleAvatar(
-                radius: 42,
-                backgroundColor: colors.primary,
-                child: Icon(Icons.public, size: 48, color: colors.onPrimary),
+              GestureDetector(
+                onTap: _pickAvatar,
+                child: CircleAvatar(
+                  radius: 42,
+                  backgroundColor: colors.primary,
+                  backgroundImage: avatarUrl == null
+                      ? null
+                      : NetworkImage(avatarUrl!),
+                  child: avatarUrl == null
+                      ? Icon(Icons.public, size: 48, color: colors.onPrimary)
+                      : null,
+                ),
               ),
             ],
           ),
