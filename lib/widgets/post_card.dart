@@ -60,8 +60,9 @@ class _PostCardState extends State<PostCard> {
         p.latitude == null ||
         p.longitude == null ||
         widget.currentLatitude == null ||
-        widget.currentLongitude == null)
+        widget.currentLongitude == null) {
       return null;
+    }
     final latScale = 111.2;
     final lonScale = 111.2 * math.cos(widget.currentLatitude! * math.pi / 180);
     final d = math.sqrt(
