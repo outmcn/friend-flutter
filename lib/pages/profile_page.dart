@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../models/ui_post.dart';
 import '../widgets/post_card.dart';
 import '../widgets/empty_state.dart';
@@ -21,6 +23,7 @@ class ProfilePageState extends State<ProfilePage> {
   int likes = 0;
   int postCount = 0;
   int selectedAvatar = 0;
+  String city = '';
   static const avatarIcons = [
     Icons.public,
     Icons.auto_awesome,
@@ -44,6 +47,38 @@ class ProfilePageState extends State<ProfilePage> {
     super.initState();
     _loadAvatar();
     refreshFromServer();
+    _updateCity();
+  }
+
+  Future<void> _updateCity() async {
+    if (!await Geolocator.isLocationServiceEnabled()) return;
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return;
+    }
+    final position = await Geolocator.getCurrentPosition();
+    final places = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+    if (places.isEmpty) return;
+    final value =
+        (places.first.locality ?? places.first.administrativeArea ?? '')
+            .replaceAll('市', '');
+    if (value.isEmpty || !mounted) return;
+    setState(() => city = value);
+    await http.put(
+      Uri.parse('https://friend.outmcn.net/api/me'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'city': value}),
+    );
   }
 
   Future<void> _loadAvatar() async {
@@ -261,6 +296,11 @@ class ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    if (city.isNotEmpty)
+                      Text(
+                        'IP：$city',
+                        style: TextStyle(color: colors.onSurfaceVariant),
+                      ),
                     Row(
                       children: [
                         GestureDetector(

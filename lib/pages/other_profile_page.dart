@@ -138,6 +138,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                     Text(
                       '关注 ${profile['following'] ?? 0}   粉丝 ${profile['followers'] ?? 0}   获赞 ${profile['likes'] ?? 0}',
                     ),
+                    if ((profile['city']?.toString() ?? '').isNotEmpty)
+                      Text(
+                        'IP：${profile['city']}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     if (!widget.isSelf) const SizedBox(height: 14),
                     if (!widget.isSelf)
                       Row(
