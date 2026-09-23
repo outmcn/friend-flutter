@@ -498,32 +498,42 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+    return Column(
       children: [
-        Text(
-          'Friend',
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w800,
-            color: c.onSurface,
+        HomeTopBar(
+          onQrCode: () => _showHomeQrCode(context),
+          onSettings: () => _showHomeSettings(context),
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+            children: [
+              Text(
+                'Friend',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  color: c.onSurface,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '找到真实的交流',
+                style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
+              ),
+              const SizedBox(height: 28),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GamePage()),
+                ),
+                child: _hero(context),
+              ),
+              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+            ],
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          '找到真实的交流',
-          style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
-        ),
-        const SizedBox(height: 28),
-        GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const GamePage()),
-          ),
-          child: _hero(context),
-        ),
-        const SizedBox(height: 20),
-        const SizedBox(height: 12),
       ],
     );
   }
@@ -568,6 +578,89 @@ class HomePage extends StatelessWidget {
           ),
           Icon(Icons.arrow_forward_ios, size: 16, color: c.onSurfaceVariant),
         ],
+      ),
+    );
+  }
+
+  void _showHomeQrCode(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('二维码'),
+        content: SizedBox(
+          width: 220,
+          height: 220,
+          child: Center(
+            child: Icon(
+              Icons.qr_code_2,
+              size: 190,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showHomeSettings(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: ListTile(
+          leading: const Icon(Icons.settings_outlined),
+          title: const Text('设置'),
+          subtitle: const Text('设置功能正在完善'),
+          onTap: () => Navigator.pop(context),
+        ),
+      ),
+    );
+  }
+}
+
+class HomeTopBar extends StatelessWidget {
+  final VoidCallback onQrCode;
+  final VoidCallback onSettings;
+  const HomeTopBar({
+    super.key,
+    required this.onQrCode,
+    required this.onSettings,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Theme.of(context).colorScheme;
+    return Material(
+      color: c.surface,
+      elevation: 2,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 0, 12, 5),
+          child: Row(
+            children: [
+              Text(
+                '主页',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: c.onSurface,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: onQrCode,
+                tooltip: '二维码',
+                icon: const Icon(Icons.qr_code_2_outlined),
+              ),
+              IconButton(
+                onPressed: onSettings,
+                tooltip: '设置',
+                icon: const Icon(Icons.settings_outlined),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
