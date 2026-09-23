@@ -588,23 +588,122 @@ class MessagePage extends StatelessWidget {
 class DetailPage extends StatelessWidget {
   final UiPost post;
   const DetailPage({super.key, required this.post});
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('动态详情')),
-    body: ListView(
-      padding: const EdgeInsets.all(18),
-      children: [
-        PostCard(post: post),
-        const SizedBox(height: 18),
-        const Text(
-          '评论',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        const EmptyState(text: '还没有评论'),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final c = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('动态详情')),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: c.primary,
+                      child: Icon(Icons.public, color: c.onPrimary),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          post.author,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: c.onSurface,
+                          ),
+                        ),
+                        Text(
+                          post.time,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: c.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+                if (post.text.isNotEmpty)
+                  Text(
+                    post.text,
+                    style: TextStyle(
+                      fontSize: 20,
+                      height: 1.45,
+                      color: c.onSurface,
+                    ),
+                  ),
+                const SizedBox(height: 18),
+                AspectRatio(
+                  aspectRatio: 1.18,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [c.primaryContainer, c.surfaceContainerHighest],
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(post.icon, size: 66, color: c.primary),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Divider(color: c.outlineVariant),
+                const SizedBox(height: 8),
+                Text(
+                  '评论',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: c.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                EmptyState(text: '还没有评论'),
+              ],
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 10),
+              decoration: BoxDecoration(
+                color: c.surface,
+                border: Border(top: BorderSide(color: c.outlineVariant)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: '写评论…',
+                        fillColor: c.surfaceContainerHighest,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(Icons.favorite_border, color: c.primary),
+                  ),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(Icons.star_border, color: c.primary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class SectionTitle extends StatelessWidget {
