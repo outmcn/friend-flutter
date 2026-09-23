@@ -197,6 +197,8 @@ class _FriendShellState extends State<FriendShell> {
   bool loadingPosts = true;
   final posts = <UiPost>[];
   String selectedFilter = '推荐';
+  int filterRequestId = 0;
+  String? discoveryError;
   final profileKey = GlobalKey<ProfilePageState>();
 
   @override
@@ -206,9 +208,21 @@ class _FriendShellState extends State<FriendShell> {
   }
 
   Future<void> _loadPosts() async {
+    final requestId = ++filterRequestId;
+    if (mounted) {
+      setState(() {
+        loadingPosts = true;
+        discoveryError = null;
+      });
+    }
     try {
+      final path = selectedFilter == '关注'
+          ? '/api/posts/following'
+          : selectedFilter == '附近'
+          ? '/api/posts/nearby'
+          : '/api/posts';
       final response = await http.get(
-        Uri.parse('https://friend.outmcn.net/api/posts'),
+        Uri.parse('https://friend.outmcn.net$path'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -221,19 +235,24 @@ class _FriendShellState extends State<FriendShell> {
             .whereType<Map<String, dynamic>>()
             .map(UiPost.fromJson)
             .toList();
-        if (mounted) {
+        if (mounted && requestId == filterRequestId) {
           setState(() {
             posts
               ..clear()
               ..addAll(loaded);
             loadingPosts = false;
+            discoveryError = null;
           });
         }
         return;
       }
-    } catch (_) {}
-    if (mounted) {
-      setState(() => loadingPosts = false);
+    } catch (e) {
+      if (mounted && requestId == filterRequestId) {
+        setState(() {
+          loadingPosts = false;
+          discoveryError = '加载失败，请重试';
+        });
+      }
     }
   }
 
@@ -243,24 +262,46 @@ class _FriendShellState extends State<FriendShell> {
   }
 
   Future<void> _changeFilter(String filter) async {
+    final requestId = ++filterRequestId;
+    if (mounted) {
+      setState(() {
+        selectedFilter = filter;
+        loadingPosts = true;
+        discoveryError = null;
+      });
+    }
     final path = filter == '关注'
         ? '/api/posts/following'
         : filter == '附近'
         ? '/api/posts/nearby'
         : '/api/posts';
-    final response = await http.get(
-      Uri.parse('https://friend.outmcn.net$path'),
-      headers: {'Authorization': 'Bearer ${widget.token}'},
-    );
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final data = body['data'];
-    if (body['ok'] == true && data is List && mounted) {
-      setState(() {
-        selectedFilter = filter;
-        posts
-          ..clear()
-          ..addAll(data.whereType<Map<String, dynamic>>().map(UiPost.fromJson));
-      });
+    try {
+      final response = await http.get(
+        Uri.parse('https://friend.outmcn.net$path'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'];
+      if (body['ok'] == true &&
+          data is List &&
+          mounted &&
+          requestId == filterRequestId) {
+        setState(() {
+          posts
+            ..clear()
+            ..addAll(
+              data.whereType<Map<String, dynamic>>().map(UiPost.fromJson),
+            );
+          loadingPosts = false;
+        });
+      }
+    } catch (_) {
+      if (mounted && requestId == filterRequestId) {
+        setState(() {
+          loadingPosts = false;
+          discoveryError = '加载失败，请重试';
+        });
+      }
     }
   }
 
@@ -276,6 +317,8 @@ class _FriendShellState extends State<FriendShell> {
         onActionChanged: _refreshAll,
         onFilterChanged: _changeFilter,
         selectedFilter: selectedFilter,
+        loading: loadingPosts,
+        error: discoveryError,
       ),
       MessagePage(token: widget.token),
       ProfilePage(key: profileKey, token: widget.token),
@@ -452,6 +495,8 @@ class DiscoveryPage extends StatelessWidget {
   final Future<void> Function() onActionChanged;
   final Future<void> Function(String) onFilterChanged;
   final String selectedFilter;
+  final bool loading;
+  final String? error;
   const DiscoveryPage({
     super.key,
     required this.posts,
@@ -461,6 +506,8 @@ class DiscoveryPage extends StatelessWidget {
     required this.onActionChanged,
     required this.onFilterChanged,
     required this.selectedFilter,
+    required this.loading,
+    required this.error,
   });
   @override
   Widget build(BuildContext context) {
@@ -491,16 +538,33 @@ class DiscoveryPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          ...posts.map(
-            (post) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: PostCard(
-                post: post,
-                token: token,
-                onActionChanged: onActionChanged,
+          if (loading)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          if (!loading && error != null) Center(child: Text(error!)),
+          if (!loading && error == null && posts.isEmpty)
+            Center(
+              child: Text(
+                selectedFilter == '关注'
+                    ? '还没有关注的人发布动态'
+                    : selectedFilter == '附近'
+                    ? '附近暂无动态'
+                    : '暂无动态',
               ),
             ),
-          ),
+          if (!loading && error == null)
+            ...posts.map(
+              (post) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: PostCard(
+                  post: post,
+                  token: token,
+                  onActionChanged: onActionChanged,
+                ),
+              ),
+            ),
         ],
       ),
     );
