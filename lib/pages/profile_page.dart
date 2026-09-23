@@ -181,7 +181,7 @@ class ProfilePageState extends State<ProfilePage> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          maxLength: 40,
+          maxLength: 6,
           decoration: const InputDecoration(hintText: '输入新的名字'),
         ),
         actions: [
