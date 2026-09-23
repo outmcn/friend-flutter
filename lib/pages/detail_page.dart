@@ -30,6 +30,7 @@ class _DetailPageState extends State<DetailPage> {
   bool openingAuthor = false;
   bool reporting = false;
   int currentUserId = 0;
+  bool sessionLoaded = false;
   Future<void> _openAuthorProfile() async {
     if (openingAuthor) return;
     openingAuthor = true;
@@ -99,6 +100,7 @@ class _DetailPageState extends State<DetailPage> {
         currentUserId = (data['id'] as num?)?.toInt() ?? 0;
       }
     }
+    if (mounted) setState(() => sessionLoaded = true);
     await _loadComments();
   }
 
@@ -266,7 +268,7 @@ class _DetailPageState extends State<DetailPage> {
       appBar: AppBar(
         title: const Text('动态详情'),
         actions: [
-          if (!isOwnPost)
+          if (sessionLoaded && !isOwnPost)
             IconButton(
               onPressed: reporting ? null : _reportPost,
               icon: const Icon(Icons.flag_outlined),
