@@ -310,20 +310,6 @@ class ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
-                        if (city.isNotEmpty)
-                          Flexible(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: Text(
-                                'IP：$city',
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: colors.onSurfaceVariant,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
                         IconButton(
                           onPressed: _editNickname,
                           icon: Icon(
@@ -334,6 +320,29 @@ class ProfilePageState extends State<ProfilePage> {
                           tooltip: '修改名字',
                           visualDensity: VisualDensity.compact,
                         ),
+                        if (city.isNotEmpty)
+                          Flexible(
+                            child: Container(
+                              margin: const EdgeInsets.only(left: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colors.primaryContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                'IP：$city',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.onPrimaryContainer,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
