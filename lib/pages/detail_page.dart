@@ -35,6 +35,7 @@ class _DetailPageState extends State<DetailPage> {
   int currentUserId = 0;
   bool sessionLoaded = false;
   bool followingAuthor = false;
+  bool showExactPostTime = false;
   bool followAuthorLoading = false;
 
   String _relativeTime(String value) {
@@ -46,6 +47,13 @@ class _DetailPageState extends State<DetailPage> {
     if (diff.inHours < 24) return '${diff.inHours}小时前';
     if (diff.inDays < 30) return '${diff.inDays}天前';
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  String _exactTime(String value) {
+    final date = DateTime.tryParse(value)?.toLocal();
+    if (date == null) return value;
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${date.year}-${two(date.month)}-${two(date.day)} ${two(date.hour)}:${two(date.minute)}:${two(date.second)}';
   }
 
   Future<void> _toggleAuthorFollow() async {
@@ -467,12 +475,8 @@ class _DetailPageState extends State<DetailPage> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => showDialog<void>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('发布时间'),
-                            content: Text(post.time),
-                          ),
+                        onTap: () => setState(
+                          () => showExactPostTime = !showExactPostTime,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,7 +503,9 @@ class _DetailPageState extends State<DetailPage> {
                               ],
                             ),
                             Text(
-                              _relativeTime(post.time),
+                              showExactPostTime
+                                  ? _exactTime(post.time)
+                                  : _relativeTime(post.time),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: c.onSurfaceVariant,
