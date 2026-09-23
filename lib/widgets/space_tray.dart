@@ -14,16 +14,49 @@ class SpaceTray extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        width: double.infinity,
-        color: const Color(0xff303238),
-        padding: EdgeInsets.fromLTRB(16, 10, 16, expanded ? 14 : 10),
-        child: expanded
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+      child: Align(
+        alignment: Alignment.center,
+        child: FractionallySizedBox(
+          widthFactor: .75,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            decoration: const BoxDecoration(
+              color: Color(0xff303238),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(14)),
+            ),
+            padding: EdgeInsets.fromLTRB(16, 10, 16, expanded ? 14 : 10),
+            child: expanded
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Text(
+                            '空间',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Spacer(),
+                          Icon(
+                            Icons.keyboard_arrow_up,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        detail,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
                     children: const [
                       Text(
                         '空间',
@@ -34,36 +67,14 @@ class SpaceTray extends StatelessWidget {
                       ),
                       Spacer(),
                       Icon(
-                        Icons.keyboard_arrow_up,
+                        Icons.keyboard_arrow_down,
                         color: Colors.white70,
                         size: 20,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    detail,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-              )
-            : Row(
-                children: const [
-                  Text(
-                    '空间',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Spacer(),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: Colors.white70,
-                    size: 20,
-                  ),
-                ],
-              ),
+          ),
+        ),
       ),
     );
   }
