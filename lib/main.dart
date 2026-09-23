@@ -14,6 +14,7 @@ import 'pages/user_list_page.dart';
 import 'pages/game_page.dart';
 import 'widgets/post_card.dart';
 import 'widgets/discovery_top_bar.dart';
+import 'pages/compose_page.dart';
 
 const blue = Color(0xff4d8dff);
 
@@ -648,11 +649,9 @@ class DiscoveryPage extends StatelessWidget {
   }
 
   Future<void> _compose(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      builder: (_) => ComposeSheet(onCreate: onCreate),
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => ComposePage(onCreate: onCreate)),
     );
   }
 }

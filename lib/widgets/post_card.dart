@@ -171,16 +171,19 @@ class _PostCardState extends State<PostCard> {
                   if (p.imageUrl != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 14),
-                      child: GestureDetector(
-                        onTap: () => _showFullImage(context, p.imageUrl!),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(15),
-                          child: SizedBox(
-                            height: 240,
-                            width: double.infinity,
-                            child: Image.network(
-                              p.imageUrl!,
-                              fit: BoxFit.cover,
+                      child: Hero(
+                        tag: 'post-image-${p.id}',
+                        child: GestureDetector(
+                          onTap: () => _showFullImage(context, p.imageUrl!),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: SizedBox(
+                              height: 240,
+                              width: double.infinity,
+                              child: Image.network(
+                                p.imageUrl!,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
@@ -308,11 +311,17 @@ class _PostCardState extends State<PostCard> {
     barrierColor: Colors.black87,
     builder: (_) => Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(12),
-      child: InteractiveViewer(
-        minScale: 0.5,
-        maxScale: 4,
-        child: Image.network(url, fit: BoxFit.contain),
+      insetPadding: EdgeInsets.zero,
+      child: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Hero(
+          tag: 'post-image-${widget.post.id}',
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4,
+            child: Image.network(url, fit: BoxFit.contain),
+          ),
+        ),
       ),
     ),
   );
