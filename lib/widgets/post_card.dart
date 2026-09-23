@@ -75,6 +75,7 @@ class _PostCardState extends State<PostCard> {
       math.pow((p.latitude! - widget.currentLatitude!) * latScale, 2) +
           math.pow((p.longitude! - widget.currentLongitude!) * lonScale, 2),
     );
+    if (d > 100) return null;
     return '相距${d < 1 ? d.toStringAsFixed(2) : d.round()}km';
   }
 

@@ -728,9 +728,8 @@ class DiscoveryPage extends StatelessWidget {
                         currentLatitude: currentLatitude,
                         currentLongitude: currentLongitude,
                         currentUserId: currentUserId,
-                        onFollow: () => onFollowAuthor(post),
-                        isFollowing:
-                            post.following || isFollowing(post.authorId),
+                        onFollow: null,
+                        isFollowing: false,
                       ),
                     ),
                   ),
