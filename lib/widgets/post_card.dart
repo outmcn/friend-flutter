@@ -232,7 +232,7 @@ class _PostCardState extends State<PostCard> {
                     Text(
                       p.text,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         height: 1.35,
                         color: c.onSurface,
                       ),
