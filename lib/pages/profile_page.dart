@@ -22,7 +22,7 @@ class ProfilePageState extends State<ProfilePage> {
   int following = 0;
   int followers = 0;
   int likes = 0;
-  int postCount = 0;
+  int activeDays = 0;
   int selectedAvatar = 0;
   String city = '';
   static const avatarIcons = [
@@ -137,7 +137,7 @@ class ProfilePageState extends State<ProfilePage> {
           following = (profile['following'] as num?)?.toInt() ?? 0;
           followers = (profile['followers'] as num?)?.toInt() ?? 0;
           likes = (profile['likes'] as num?)?.toInt() ?? 0;
-          postCount = (profile['posts'] as num?)?.toInt() ?? 0;
+          activeDays = (profile['activeDays'] as num?)?.toInt() ?? 0;
 
           ownPosts = _posts(data['posts']);
           favoritePosts = _posts(data['favorited']);
@@ -390,9 +390,16 @@ class ProfilePageState extends State<ProfilePage> {
                                   ),
                                 ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 14),
                               Text(
-                                '获赞 $likes     动态 $postCount',
+                                '获赞 $likes',
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Text(
+                                '天数 $activeDays',
                                 style: TextStyle(
                                   color: colors.onSurfaceVariant,
                                 ),
