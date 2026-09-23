@@ -665,6 +665,7 @@ class _ComposeSheetState extends State<ComposeSheet> {
   final picker = ImagePicker();
   final controller = TextEditingController();
   XFile? selectedImage;
+  bool publishing = false;
   @override
   void dispose() {
     controller.dispose();
@@ -719,13 +720,20 @@ class _ComposeSheetState extends State<ComposeSheet> {
             ),
           const SizedBox(height: 14),
           FilledButton(
-            onPressed: () async {
-              final text = controller.text.trim();
-              if (text.isEmpty && selectedImage == null) return;
-              await widget.onCreate(text, selectedImage);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('发布'),
+            onPressed: publishing
+                ? null
+                : () async {
+                    final text = controller.text.trim();
+                    if (text.isEmpty && selectedImage == null) return;
+                    setState(() => publishing = true);
+                    try {
+                      await widget.onCreate(text, selectedImage);
+                      if (context.mounted) Navigator.pop(context);
+                    } finally {
+                      if (mounted) setState(() => publishing = false);
+                    }
+                  },
+            child: Text(publishing ? '发布中…' : '发布'),
           ),
         ],
       ),
