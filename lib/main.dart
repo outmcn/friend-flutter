@@ -230,7 +230,7 @@ class _FriendShellState extends State<FriendShell> {
   Widget build(BuildContext context) {
     final pages = [
       const HomePage(),
-      DiscoveryPage(posts: posts, onCreate: _createPost),
+      DiscoveryPage(posts: posts, onCreate: _createPost, onRefresh: _loadPosts),
       const MessagePage(),
       ProfilePage(posts: posts),
     ];
@@ -267,9 +267,33 @@ class _FriendShellState extends State<FriendShell> {
     );
   }
 
-  void _createPost(String text) => setState(() {
-    posts.insert(0, UiPost(text, '', '刚刚', Icons.auto_awesome_outlined, 0, 0));
-  });
+  Future<void> _createPost(String text, XFile? image) async {
+    final content = text.trim();
+    if (content.isEmpty && image == null) return;
+    try {
+      final response = await http.post(
+        Uri.parse('https://friend.outmcn.net/api/posts'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'content': content}),
+      );
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode < 200 ||
+          response.statusCode >= 300 ||
+          decoded['ok'] != true)
+        throw Exception(decoded['message'] ?? '发布失败');
+      await _loadPosts();
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+    }
+  }
 }
 
 class UiPost {
@@ -383,41 +407,54 @@ class HomePage extends StatelessWidget {
 
 class DiscoveryPage extends StatelessWidget {
   final List<UiPost> posts;
-  final ValueChanged<String> onCreate;
-  const DiscoveryPage({super.key, required this.posts, required this.onCreate});
+  final Future<void> Function(String, XFile?) onCreate;
+  final Future<void> Function() onRefresh;
+  const DiscoveryPage({
+    super.key,
+    required this.posts,
+    required this.onCreate,
+    required this.onRefresh,
+  });
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
-      children: [
-        Row(
-          children: [
-            Text(
-              '发现',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: c.onSurface,
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
+        children: [
+          Row(
+            children: [
+              Text(
+                '发现',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: c.onSurface,
+                ),
               ),
-            ),
-            const Spacer(),
-            IconButton(
-              onPressed: () => _compose(context),
-              icon: Icon(Icons.add_circle_outline, color: c.primary, size: 29),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        const ChoiceChips(),
-        const SizedBox(height: 18),
-        ...posts.map(
-          (post) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: PostCard(post: post),
+              const Spacer(),
+              IconButton(
+                onPressed: () => _compose(context),
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  color: c.primary,
+                  size: 29,
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          const ChoiceChips(),
+          const SizedBox(height: 18),
+          ...posts.map(
+            (post) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: PostCard(post: post),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -426,13 +463,14 @@ class DiscoveryPage extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      builder: (_) => const ComposeSheet(),
+      builder: (_) => ComposeSheet(onCreate: onCreate),
     );
   }
 }
 
 class ComposeSheet extends StatefulWidget {
-  const ComposeSheet({super.key});
+  final Future<void> Function(String, XFile?) onCreate;
+  const ComposeSheet({super.key, required this.onCreate});
   @override
   State<ComposeSheet> createState() => _ComposeSheetState();
 }
@@ -493,7 +531,12 @@ class _ComposeSheetState extends State<ComposeSheet> {
             ),
           const SizedBox(height: 14),
           FilledButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              final text = controller.text.trim();
+              if (text.isEmpty && selectedImage == null) return;
+              await widget.onCreate(text, selectedImage);
+              if (context.mounted) Navigator.pop(context);
+            },
             child: const Text('发布'),
           ),
         ],
