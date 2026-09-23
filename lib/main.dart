@@ -808,19 +808,30 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      loading ? '加载中…' : nickname,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: c.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: _editNickname,
-                      icon: const Icon(Icons.edit_outlined, size: 17),
-                      label: const Text('修改名字'),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            loading ? '加载中…' : nickname,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: c.onSurface,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _editNickname,
+                          icon: Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: c.onSurfaceVariant,
+                          ),
+                          tooltip: '修改名字',
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Text(
