@@ -27,36 +27,45 @@ class _DetailPageState extends State<DetailPage> {
   bool liked = false;
   bool favorited = false;
   bool sending = false;
+  bool openingAuthor = false;
   Future<void> _openAuthorProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final authToken = widget.token.isEmpty
-        ? (prefs.getString('friend.auth.token') ?? '')
-        : widget.token;
-    if (widget.post.authorId == 0 || authToken.isEmpty) return;
-    final r = await http.get(
-      Uri.parse('https://friend.outmcn.net/api/users/${widget.post.authorId}'),
-      headers: {'Authorization': 'Bearer $authToken'},
-    );
-    final b = jsonDecode(r.body) as Map<String, dynamic>;
-    if (b['ok'] == true && mounted) {
-      final meResponse = await http.get(
-        Uri.parse('https://friend.outmcn.net/api/me'),
+    if (openingAuthor) return;
+    openingAuthor = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final authToken = widget.token.isEmpty
+          ? (prefs.getString('friend.auth.token') ?? '')
+          : widget.token;
+      if (widget.post.authorId == 0 || authToken.isEmpty) return;
+      final r = await http.get(
+        Uri.parse(
+          'https://friend.outmcn.net/api/users/${widget.post.authorId}',
+        ),
         headers: {'Authorization': 'Bearer $authToken'},
       );
-      final meBody = jsonDecode(meResponse.body) as Map<String, dynamic>;
-      final me = meBody['data'] as Map<String, dynamic>?;
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OtherProfilePage(
-            data: b['data'] as Map<String, dynamic>,
-            dataToken: authToken,
-            onFollowChanged: widget.onActionChanged,
-            isSelf: (me?['id'] as num?)?.toInt() == widget.post.authorId,
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      if (b['ok'] == true && mounted) {
+        final meResponse = await http.get(
+          Uri.parse('https://friend.outmcn.net/api/me'),
+          headers: {'Authorization': 'Bearer $authToken'},
+        );
+        final meBody = jsonDecode(meResponse.body) as Map<String, dynamic>;
+        final me = meBody['data'] as Map<String, dynamic>?;
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtherProfilePage(
+              data: b['data'] as Map<String, dynamic>,
+              dataToken: authToken,
+              onFollowChanged: widget.onActionChanged,
+              isSelf: (me?['id'] as num?)?.toInt() == widget.post.authorId,
+            ),
           ),
-        ),
-      );
+        );
+      }
+    } finally {
+      openingAuthor = false;
     }
   }
 
