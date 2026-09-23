@@ -190,6 +190,7 @@ class _FriendShellState extends State<FriendShell> {
   int tab = 0;
   bool loadingPosts = true;
   final posts = <UiPost>[];
+  final profileKey = GlobalKey<ProfilePageState>();
 
   @override
   void initState() {
@@ -235,7 +236,7 @@ class _FriendShellState extends State<FriendShell> {
       const HomePage(),
       DiscoveryPage(posts: posts, onCreate: _createPost, onRefresh: _loadPosts),
       const MessagePage(),
-      ProfilePage(posts: posts, token: widget.token),
+      ProfilePage(key: profileKey, posts: posts, token: widget.token),
     ];
     return Scaffold(
       body: SafeArea(
@@ -472,7 +473,7 @@ class DiscoveryPage extends StatelessWidget {
           ...posts.map(
             (post) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: PostCard(post: post),
+              child: PostCard(post: post, onActionChanged: onRefresh),
             ),
           ),
         ],
@@ -603,7 +604,8 @@ class ChoiceChips extends StatelessWidget {
 
 class PostCard extends StatelessWidget {
   final UiPost post;
-  const PostCard({super.key, required this.post});
+  final Future<void> Function()? onActionChanged;
+  const PostCard({super.key, required this.post, this.onActionChanged});
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -611,7 +613,10 @@ class PostCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => DetailPage(post: post)),
+        MaterialPageRoute(
+          builder: (_) =>
+              DetailPage(post: post, onActionChanged: onActionChanged),
+        ),
       ),
       child: Card(
         child: Padding(
@@ -717,10 +722,10 @@ class ProfilePage extends StatefulWidget {
   final String token;
   const ProfilePage({super.key, required this.posts, required this.token});
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<ProfilePage> createState() => ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class ProfilePageState extends State<ProfilePage> {
   String nickname = '';
   bool loading = true;
   int section = 0;
@@ -732,6 +737,8 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _loadProfile();
   }
+
+  Future<void> refreshFromServer() => _loadProfile();
 
   Future<void> _loadProfile() async {
     try {
@@ -900,7 +907,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ...visiblePosts.map(
           (post) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: PostCard(post: post),
+            child: PostCard(post: post, onActionChanged: refreshFromServer),
           ),
         ),
       ],
@@ -986,7 +993,8 @@ class MessagePage extends StatelessWidget {
 
 class DetailPage extends StatefulWidget {
   final UiPost post;
-  const DetailPage({super.key, required this.post});
+  final Future<void> Function()? onActionChanged;
+  const DetailPage({super.key, required this.post, this.onActionChanged});
   @override
   State<DetailPage> createState() => _DetailPageState();
 }
@@ -1052,13 +1060,15 @@ class _DetailPageState extends State<DetailPage> {
         headers: {'Authorization': 'Bearer $token'},
       );
       final b = jsonDecode(r.body) as Map<String, dynamic>;
-      if (b['ok'] == true && mounted)
+      if (b['ok'] == true && mounted) {
         setState(() {
           if (action == 'like')
             liked = b['data']['liked'] == true;
           else
             favorited = b['data']['favorited'] == true;
         });
+        await widget.onActionChanged?.call();
+      }
     } catch (_) {}
   }
 
@@ -1082,6 +1092,7 @@ class _DetailPageState extends State<DetailPage> {
       if (b['ok'] == true) {
         commentController.clear();
         await _loadComments();
+        await widget.onActionChanged?.call();
       }
     } finally {
       if (mounted) setState(() => sending = false);
