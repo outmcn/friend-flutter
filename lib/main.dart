@@ -723,6 +723,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String nickname = '';
   bool loading = true;
+  int section = 0;
+  List<UiPost> favoritePosts = [];
+  List<UiPost> likedPosts = [];
+
   @override
   void initState() {
     super.initState();
@@ -732,20 +736,30 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadProfile() async {
     try {
       final r = await http.get(
-        Uri.parse('https://friend.outmcn.net/api/me'),
+        Uri.parse('https://friend.outmcn.net/api/me/summary'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       final b = jsonDecode(r.body) as Map<String, dynamic>;
       final d = b['data'];
-      if (b['ok'] == true && d is Map<String, dynamic> && mounted)
+      if (b['ok'] == true && d is Map<String, dynamic> && mounted) {
+        final p = d['profile'] as Map<String, dynamic>;
         setState(() {
           nickname =
-              (d['nickname']?.toString().trim().isNotEmpty == true
-                      ? d['nickname']
-                      : d['username'])
+              (p['nickname']?.toString().trim().isNotEmpty == true
+                      ? p['nickname']
+                      : p['username'])
                   .toString();
+          favoritePosts = (d['favorited'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map(UiPost.fromJson)
+              .toList();
+          likedPosts = (d['liked'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map(UiPost.fromJson)
+              .toList();
           loading = false;
         });
+      }
     } catch (_) {}
     if (mounted && loading) setState(() => loading = false);
   }
@@ -791,6 +805,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
+    final visiblePosts = section == 0
+        ? widget.posts
+        : (section == 1 ? favoritePosts : likedPosts);
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
       children: [
@@ -850,15 +867,37 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         const SizedBox(height: 18),
-        const Row(
+        Row(
           children: [
-            Expanded(child: _ProfileTab(text: '动态', selected: true)),
-            Expanded(child: _ProfileTab(text: '收藏')),
-            Expanded(child: _ProfileTab(text: '点赞')),
+            Expanded(
+              child: _ProfileTab(
+                text: '动态',
+                selected: section == 0,
+                onTap: () => setState(() => section = 0),
+              ),
+            ),
+            Expanded(
+              child: _ProfileTab(
+                text: '收藏',
+                selected: section == 1,
+                onTap: () => setState(() => section = 1),
+              ),
+            ),
+            Expanded(
+              child: _ProfileTab(
+                text: '点赞',
+                selected: section == 2,
+                onTap: () => setState(() => section = 2),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
-        ...widget.posts.map(
+        if (visiblePosts.isEmpty)
+          EmptyState(
+            text: section == 0 ? '还没有动态' : (section == 1 ? '还没有收藏' : '还没有点赞'),
+          ),
+        ...visiblePosts.map(
           (post) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: PostCard(post: post),
@@ -872,23 +911,27 @@ class _ProfilePageState extends State<ProfilePage> {
 class _ProfileTab extends StatelessWidget {
   final String text;
   final bool selected;
-  const _ProfileTab({required this.text, this.selected = false});
+  final VoidCallback? onTap;
+  const _ProfileTab({required this.text, this.selected = false, this.onTap});
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: selected ? c.primary : c.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: selected ? c.onPrimary : c.onSurface,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? c.primary : c.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: selected ? c.onPrimary : c.onSurface,
+          ),
         ),
       ),
     );
