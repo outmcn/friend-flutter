@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ui_post.dart';
 import '../widgets/post_card.dart';
 import '../widgets/empty_state.dart';
@@ -15,7 +15,19 @@ class ProfilePage extends StatefulWidget {
 
 class ProfilePageState extends State<ProfilePage> {
   String nickname = '';
-  String? avatarUrl;
+  int selectedAvatar = 0;
+  static const avatarIcons = [
+    Icons.public,
+    Icons.auto_awesome,
+    Icons.favorite,
+    Icons.bolt,
+    Icons.nightlight_round,
+    Icons.local_florist,
+    Icons.pets,
+    Icons.music_note,
+    Icons.rocket_launch,
+    Icons.face,
+  ];
   bool loading = true;
   int section = 0;
   List<UiPost> ownPosts = [];
@@ -25,7 +37,16 @@ class ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    _loadAvatar();
     refreshFromServer();
+  }
+
+  Future<void> _loadAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted)
+      setState(
+        () => selectedAvatar = prefs.getInt('friend.selected.avatar') ?? 0,
+      );
   }
 
   Future<void> refreshFromServer() async {
@@ -44,7 +65,7 @@ class ProfilePageState extends State<ProfilePage> {
                       ? profile['nickname']
                       : profile['username'])
                   .toString();
-          avatarUrl = _normalizeAvatar(profile['avatar']);
+
           ownPosts = _posts(data['posts']);
           favoritePosts = _posts(data['favorited']);
           likedPosts = _posts(data['liked']);
@@ -59,33 +80,50 @@ class ProfilePageState extends State<ProfilePage> {
   List<UiPost> _posts(dynamic value) => value is List
       ? value.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
       : <UiPost>[];
-  String? _normalizeAvatar(dynamic value) {
-    final raw = value?.toString() ?? '';
-    if (raw.isEmpty) return null;
-    return raw.startsWith('http') ? raw : 'https://friend.outmcn.net$raw';
+  Future<void> _pickAvatar() async {
+    final chosen = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('选择头像'),
+        content: SizedBox(
+          width: 320,
+          child: GridView.builder(
+            shrinkWrap: true,
+            itemCount: 10,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemBuilder: (_, index) => GestureDetector(
+              onTap: () => Navigator.pop(context, index),
+              child: CircleAvatar(
+                backgroundColor: _avatarColor(index),
+                child: Icon(avatarIcons[index], color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (chosen == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('friend.selected.avatar', chosen);
+    if (mounted) setState(() => selectedAvatar = chosen);
   }
 
-  Future<void> _pickAvatar() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    final data = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-    final response = await http.put(
-      Uri.parse('https://friend.outmcn.net/api/me'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'avatar': data}),
-    );
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    if (body['ok'] == true && mounted)
-      setState(
-        () => avatarUrl = _normalizeAvatar(
-          (body['data'] as Map<String, dynamic>)['avatar'],
-        ),
-      );
-  }
+  Color _avatarColor(int index) => [
+    const Color(0xff376bd6),
+    const Color(0xff7c4dff),
+    const Color(0xffe64a75),
+    const Color(0xff00897b),
+    const Color(0xff3949ab),
+    const Color(0xff43a047),
+    const Color(0xfffb8c00),
+    const Color(0xff8e24aa),
+    const Color(0xff039be5),
+    const Color(0xff546e7a),
+  ][index];
 
   Future<void> _editNickname() async {
     final controller = TextEditingController(text: nickname);
@@ -185,13 +223,12 @@ class ProfilePageState extends State<ProfilePage> {
                 onTap: _pickAvatar,
                 child: CircleAvatar(
                   radius: 42,
-                  backgroundColor: colors.primary,
-                  backgroundImage: avatarUrl == null
-                      ? null
-                      : NetworkImage(avatarUrl!),
-                  child: avatarUrl == null
-                      ? Icon(Icons.public, size: 48, color: colors.onPrimary)
-                      : null,
+                  backgroundColor: _avatarColor(selectedAvatar),
+                  child: Icon(
+                    avatarIcons[selectedAvatar],
+                    size: 48,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
