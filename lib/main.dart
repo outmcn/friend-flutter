@@ -312,6 +312,7 @@ class _FriendShellState extends State<FriendShell> {
         throw Exception(decoded['message'] ?? '发布失败');
       }
       await _loadPosts();
+      await profileKey.currentState?.refreshFromServer();
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
