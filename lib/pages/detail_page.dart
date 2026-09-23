@@ -625,6 +625,9 @@ class _DetailPageState extends State<DetailPage> {
                   Expanded(
                     child: TextField(
                       controller: commentController,
+                      minLines: 1,
+                      maxLines: 1,
+                      style: const TextStyle(fontSize: 14),
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => sendComment(),
                       decoration: InputDecoration(
@@ -632,12 +635,21 @@ class _DetailPageState extends State<DetailPage> {
                             ? '写评论…'
                             : '回复 ${replyingTo!['nickname']}…',
                         fillColor: c.surfaceContainerHighest,
+                        constraints: const BoxConstraints(minHeight: 38),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 9,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
                     onPressed: sending ? null : sendComment,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 38),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                    ),
                     child: Text(sending ? '发送中…' : '发送'),
                   ),
                   IconButton(

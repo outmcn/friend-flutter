@@ -49,6 +49,10 @@ class _ComposePageState extends State<ComposePage> {
             padding: const EdgeInsets.only(right: 12),
             child: FilledButton(
               onPressed: publishing ? null : _publish,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+              ),
               child: Text(publishing ? '发布中…' : '发布'),
             ),
           ),
@@ -66,6 +70,10 @@ class _ComposePageState extends State<ComposePage> {
           const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: _pickImage,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 38),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+            ),
             icon: const Icon(Icons.add_photo_alternate_outlined),
             label: Text(selectedImage == null ? '添加图片' : '更换图片'),
           ),
