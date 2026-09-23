@@ -264,11 +264,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton.filled(
+                  IconButton(
                     onPressed: profileLikeLoading ? null : _toggleProfileLike,
                     icon: Icon(
                       profileLiked ? Icons.favorite : Icons.favorite_border,
-                      color: profileLiked ? Colors.red : null,
+                      color: profileLiked ? Colors.red : c.onSurfaceVariant,
                     ),
                     tooltip: '主页点赞',
                   ),
