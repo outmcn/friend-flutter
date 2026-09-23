@@ -71,11 +71,21 @@ class _DetailPageState extends State<DetailPage> {
 
   Map<String, dynamic>? replyingTo;
 
+  DateTime? _parseServerTime(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return null;
+    final normalized = raw.contains('T')
+        ? raw
+        : '${raw.replaceFirst(' ', 'T')}Z';
+    final parsed = DateTime.tryParse(normalized);
+    return parsed?.toLocal();
+  }
+
   String _commentRelativeTime(String value) {
-    final date = DateTime.tryParse(value)?.toLocal();
+    final date = _parseServerTime(value);
     if (date == null) return value;
     final diff = DateTime.now().difference(date);
-    if (diff.inSeconds < 60) return '刚刚';
+    if (diff.isNegative || diff.inSeconds < 60) return '刚刚';
     if (diff.inMinutes < 60) return '${diff.inMinutes}分钟前';
     if (diff.inHours < 24) return '${diff.inHours}小时前';
     if (diff.inDays < 30) return '${diff.inDays}天前';
@@ -309,6 +319,30 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  List<Map<String, dynamic>> _orderedComments() {
+    final roots = comments.where((c) => c['parentId'] == null).toList();
+    final children = <int, List<Map<String, dynamic>>>{};
+    for (final comment in comments) {
+      final parentId = (comment['parentId'] as num?)?.toInt();
+      if (parentId != null) {
+        children.putIfAbsent(parentId, () => []).add(comment);
+      }
+    }
+    final ordered = <Map<String, dynamic>>[];
+    void append(Map<String, dynamic> comment) {
+      ordered.add(comment);
+      for (final child
+          in children[comment['id']] ?? const <Map<String, dynamic>>[]) {
+        append(child);
+      }
+    }
+
+    for (final root in roots) {
+      append(root);
+    }
+    return ordered;
+  }
+
   bool _canDeleteComment(Map<String, dynamic> comment) {
     final authorId = (comment['userId'] as num?)?.toInt() ?? 0;
     return authorId == currentUserId || widget.post.authorId == currentUserId;
@@ -523,7 +557,7 @@ class _DetailPageState extends State<DetailPage> {
                 if (comments.isEmpty)
                   EmptyState(text: '还没有评论')
                 else
-                  ...comments.map((comment) {
+                  ..._orderedComments().map((comment) {
                     final avatarId =
                         ((comment['avatarId'] as num?)?.toInt() ?? 0).clamp(
                           0,
@@ -595,26 +629,33 @@ class _DetailPageState extends State<DetailPage> {
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(comment['content']?.toString() ?? ''),
-                                  if (_canDeleteComment(comment))
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: SizedBox(
-                                        height: 28,
-                                        width: 32,
-                                        child: IconButton(
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(),
-                                          onPressed: () =>
-                                              _deleteComment(comment),
-                                          icon: const Icon(
-                                            Icons.delete_outline,
-                                            size: 18,
-                                          ),
-                                          tooltip: '删除评论',
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          comment['content']?.toString() ?? '',
+                                          softWrap: true,
                                         ),
                                       ),
-                                    ),
+                                      if (_canDeleteComment(comment))
+                                        SizedBox(
+                                          height: 28,
+                                          width: 32,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            onPressed: () =>
+                                                _deleteComment(comment),
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                              size: 18,
+                                            ),
+                                            tooltip: '删除评论',
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
