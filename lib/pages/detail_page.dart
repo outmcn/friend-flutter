@@ -39,6 +39,12 @@ class _DetailPageState extends State<DetailPage> {
     );
     final b = jsonDecode(r.body) as Map<String, dynamic>;
     if (b['ok'] == true && mounted) {
+      final meResponse = await http.get(
+        Uri.parse('https://friend.outmcn.net/api/me'),
+        headers: {'Authorization': 'Bearer $authToken'},
+      );
+      final meBody = jsonDecode(meResponse.body) as Map<String, dynamic>;
+      final me = meBody['data'] as Map<String, dynamic>?;
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -46,6 +52,7 @@ class _DetailPageState extends State<DetailPage> {
             data: b['data'] as Map<String, dynamic>,
             dataToken: authToken,
             onFollowChanged: widget.onActionChanged,
+            isSelf: (me?['id'] as num?)?.toInt() == widget.post.authorId,
           ),
         ),
       );

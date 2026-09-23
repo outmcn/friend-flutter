@@ -9,11 +9,13 @@ class OtherProfilePage extends StatefulWidget {
   final Map<String, dynamic> data;
   final String dataToken;
   final Future<void> Function()? onFollowChanged;
+  final bool isSelf;
   const OtherProfilePage({
     super.key,
     required this.data,
     this.dataToken = '',
     this.onFollowChanged,
+    this.isSelf = false,
   });
 
   @override
@@ -109,7 +111,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ta的主页')),
+      appBar: AppBar(title: Text(widget.isSelf ? '我的主页' : 'Ta的主页')),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
@@ -136,25 +138,26 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                     Text(
                       '关注 ${profile['following'] ?? 0}   粉丝 ${profile['followers'] ?? 0}   获赞 ${profile['likes'] ?? 0}',
                     ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: followLoading ? null : _toggleFollow,
-                            child: Text(following ? '已关注' : '关注'),
+                    if (!widget.isSelf) const SizedBox(height: 14),
+                    if (!widget.isSelf)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: followLoading ? null : _toggleFollow,
+                              child: Text(following ? '已关注' : '关注'),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _openChat,
-                            icon: const Icon(Icons.chat_bubble_outline),
-                            label: const Text('私聊'),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _openChat,
+                              icon: const Icon(Icons.chat_bubble_outline),
+                              label: const Text('私聊'),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
               ),
