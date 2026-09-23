@@ -22,12 +22,14 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   final commentController = TextEditingController();
-  final comments = <String>[];
+  final comments = <Map<String, dynamic>>[];
   String? token;
   bool liked = false;
   bool favorited = false;
   bool sending = false;
   bool openingAuthor = false;
+  bool reporting = false;
+  int currentUserId = 0;
   Future<void> _openAuthorProfile() async {
     if (openingAuthor) return;
     openingAuthor = true;
@@ -86,6 +88,17 @@ class _DetailPageState extends State<DetailPage> {
   Future<void> _loadSession() async {
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString('friend.auth.token');
+    if (token != null) {
+      final response = await http.get(
+        Uri.parse('https://friend.outmcn.net/api/me'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>?;
+      if (body['ok'] == true && data != null) {
+        currentUserId = (data['id'] as num?)?.toInt() ?? 0;
+      }
+    }
     await _loadComments();
   }
 
@@ -103,11 +116,7 @@ class _DetailPageState extends State<DetailPage> {
         setState(() {
           comments
             ..clear()
-            ..addAll(
-              (b['data'] as List).whereType<Map<String, dynamic>>().map(
-                (x) => x['content'].toString(),
-              ),
-            );
+            ..addAll((b['data'] as List).whereType<Map<String, dynamic>>());
         });
       }
     } catch (_) {}
@@ -163,12 +172,108 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  bool _canDeleteComment(Map<String, dynamic> comment) {
+    final authorId = (comment['userId'] as num?)?.toInt() ?? 0;
+    return authorId == currentUserId || widget.post.authorId == currentUserId;
+  }
+
+  Future<void> _deleteComment(Map<String, dynamic> comment) async {
+    if (token == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除评论'),
+        content: const Text('确定要删除这条评论吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final response = await http.delete(
+      Uri.parse('https://friend.outmcn.net/api/comments/${comment['id']}'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (body['ok'] == true) {
+      await _loadComments();
+      await widget.onActionChanged?.call();
+    }
+  }
+
+  Future<void> _reportPost() async {
+    if (token == null || reporting) return;
+    final reasonController = TextEditingController(text: '违规内容');
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('举报动态'),
+        content: TextField(
+          controller: reasonController,
+          maxLength: 200,
+          decoration: const InputDecoration(labelText: '举报原因'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, reasonController.text),
+            child: const Text('提交举报'),
+          ),
+        ],
+      ),
+    );
+    reasonController.dispose();
+    if (reason == null || reason.trim().isEmpty) return;
+    setState(() => reporting = true);
+    try {
+      final response = await http.post(
+        Uri.parse(
+          'https://friend.outmcn.net/api/posts/${widget.post.id}/report',
+        ),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'reason': reason.trim()}),
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      if (body['ok'] == true && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('举报已提交')));
+      }
+    } finally {
+      if (mounted) setState(() => reporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
     final post = widget.post;
+    final isOwnPost = post.authorId != 0 && post.authorId == currentUserId;
     return Scaffold(
-      appBar: AppBar(title: const Text('动态详情')),
+      appBar: AppBar(
+        title: const Text('动态详情'),
+        actions: [
+          if (!isOwnPost)
+            IconButton(
+              onPressed: reporting ? null : _reportPost,
+              icon: const Icon(Icons.flag_outlined),
+              tooltip: '举报',
+            ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -243,14 +348,21 @@ class _DetailPageState extends State<DetailPage> {
                   EmptyState(text: '还没有评论')
                 else
                   ...comments.map(
-                    (text) => ListTile(
+                    (comment) => ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: CircleAvatar(
                         backgroundColor: c.primary,
                         child: Icon(Icons.public, color: c.onPrimary),
                       ),
-                      title: const Text('评论'),
-                      subtitle: Text(text),
+                      title: Text(comment['nickname']?.toString() ?? '评论'),
+                      subtitle: Text(comment['content']?.toString() ?? ''),
+                      trailing: _canDeleteComment(comment)
+                          ? IconButton(
+                              onPressed: () => _deleteComment(comment),
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: '删除评论',
+                            )
+                          : null,
                     ),
                   ),
               ],
