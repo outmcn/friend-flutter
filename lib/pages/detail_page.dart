@@ -45,6 +45,7 @@ class _DetailPageState extends State<DetailPage> {
           builder: (_) => OtherProfilePage(
             data: b['data'] as Map<String, dynamic>,
             dataToken: authToken,
+            onFollowChanged: widget.onActionChanged,
           ),
         ),
       );

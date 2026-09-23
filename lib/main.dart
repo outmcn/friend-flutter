@@ -233,6 +233,11 @@ class _FriendShellState extends State<FriendShell> {
     }
   }
 
+  Future<void> _refreshAll() async {
+    await _loadPosts();
+    await profileKey.currentState?.refreshFromServer();
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -242,6 +247,7 @@ class _FriendShellState extends State<FriendShell> {
         token: widget.token,
         onCreate: _createPost,
         onRefresh: _loadPosts,
+        onActionChanged: _refreshAll,
       ),
       const MessagePage(),
       ProfilePage(key: profileKey, token: widget.token),
@@ -411,12 +417,14 @@ class DiscoveryPage extends StatelessWidget {
   final String token;
   final Future<void> Function(String, XFile?) onCreate;
   final Future<void> Function() onRefresh;
+  final Future<void> Function() onActionChanged;
   const DiscoveryPage({
     super.key,
     required this.posts,
     required this.token,
     required this.onCreate,
     required this.onRefresh,
+    required this.onActionChanged,
   });
   @override
   Widget build(BuildContext context) {
@@ -456,7 +464,7 @@ class DiscoveryPage extends StatelessWidget {
               child: PostCard(
                 post: post,
                 token: token,
-                onActionChanged: onRefresh,
+                onActionChanged: onActionChanged,
               ),
             ),
           ),

@@ -8,7 +8,13 @@ import '../widgets/empty_state.dart';
 class OtherProfilePage extends StatefulWidget {
   final Map<String, dynamic> data;
   final String dataToken;
-  const OtherProfilePage({super.key, required this.data, this.dataToken = ''});
+  final Future<void> Function()? onFollowChanged;
+  const OtherProfilePage({
+    super.key,
+    required this.data,
+    this.dataToken = '',
+    this.onFollowChanged,
+  });
 
   @override
   State<OtherProfilePage> createState() => _OtherProfilePageState();
@@ -59,6 +65,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           );
           following = data['following'] == true;
         });
+        await widget.onFollowChanged?.call();
       }
     } catch (_) {}
   }
@@ -85,6 +92,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   ? 1
                   : -1);
         });
+        await widget.onFollowChanged?.call();
       }
     } finally {
       if (mounted) setState(() => followLoading = false);
