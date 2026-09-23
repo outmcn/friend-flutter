@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const blue = Color(0xff4d8dff);
@@ -271,13 +274,32 @@ class _FriendShellState extends State<FriendShell> {
     final content = text.trim();
     if (content.isEmpty && image == null) return;
     try {
+      String? imageData;
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        final decodedImage = img.decodeImage(bytes);
+        if (decodedImage == null) throw Exception('图片读取失败');
+        final resized = decodedImage.width > 2048 || decodedImage.height > 2048
+            ? img.copyResize(
+                decodedImage,
+                width: decodedImage.width >= decodedImage.height ? 2048 : null,
+                height: decodedImage.height > decodedImage.width ? 2048 : null,
+              )
+            : decodedImage;
+        final compressed = Uint8List.fromList(
+          img.encodeJpg(resized, quality: 90),
+        );
+        imageData = 'data:image/jpeg;base64,${base64Encode(compressed)}';
+      }
+      final payload = <String, dynamic>{'content': content};
+      if (imageData != null) payload['image'] = imageData;
       final response = await http.post(
         Uri.parse('https://friend.outmcn.net/api/posts'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'content': content}),
+        body: jsonEncode(payload),
       );
       final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode < 200 ||
@@ -517,16 +539,18 @@ class _ComposeSheetState extends State<ComposeSheet> {
           OutlinedButton.icon(
             onPressed: _pickImage,
             icon: const Icon(Icons.add_photo_alternate_outlined),
-            label: Text(selectedImage == null ? '添加图片' : '已选择图片'),
+            label: Text(selectedImage == null ? '添加图片' : '更换图片'),
           ),
           if (selectedImage != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                selectedImage!.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: c.onSurfaceVariant),
+              padding: const EdgeInsets.only(top: 10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.file(
+                  File(selectedImage!.path),
+                  height: 160,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           const SizedBox(height: 14),
