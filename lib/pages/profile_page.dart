@@ -80,6 +80,15 @@ class ProfilePageState extends State<ProfilePage> {
   List<UiPost> _posts(dynamic value) => value is List
       ? value.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
       : <UiPost>[];
+  Future<void> _deletePost(UiPost post) async {
+    final response = await http.delete(
+      Uri.parse('https://friend.outmcn.net/api/posts/${post.id}'),
+      headers: {'Authorization': 'Bearer ${widget.token}'},
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (body['ok'] == true) await refreshFromServer();
+  }
+
   Future<void> _pickAvatar() async {
     final chosen = await showDialog<int>(
       context: context,
@@ -277,7 +286,12 @@ class ProfilePageState extends State<ProfilePage> {
         ...visiblePosts.map(
           (post) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: PostCard(post: post, onActionChanged: refreshFromServer),
+            child: PostCard(
+              post: post,
+              onActionChanged: refreshFromServer,
+              canDelete: section == 0,
+              onDeleted: () => _deletePost(post),
+            ),
           ),
         ),
       ],

@@ -5,7 +5,15 @@ import '../pages/detail_page.dart';
 class PostCard extends StatelessWidget {
   final UiPost post;
   final Future<void> Function()? onActionChanged;
-  const PostCard({super.key, required this.post, this.onActionChanged});
+  final bool canDelete;
+  final Future<void> Function()? onDeleted;
+  const PostCard({
+    super.key,
+    required this.post,
+    this.onActionChanged,
+    this.canDelete = false,
+    this.onDeleted,
+  });
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -53,7 +61,16 @@ class PostCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(Icons.more_horiz, color: c.onSurfaceVariant),
+                  if (canDelete)
+                    IconButton(
+                      onPressed: onDeleted,
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: c.onSurfaceVariant,
+                      ),
+                    )
+                  else
+                    Icon(Icons.more_horiz, color: c.onSurfaceVariant),
                 ],
               ),
               const SizedBox(height: 14),
@@ -97,7 +114,10 @@ class PostCard extends StatelessWidget {
                     color: c.onSurfaceVariant,
                   ),
                   const SizedBox(width: 5),
-                  Text('0', style: TextStyle(color: c.onSurfaceVariant)),
+                  Text(
+                    '${post.comments}',
+                    style: TextStyle(color: c.onSurfaceVariant),
+                  ),
                   const SizedBox(width: 20),
                   Icon(Icons.star_border, size: 19, color: c.onSurfaceVariant),
                   const SizedBox(width: 5),
