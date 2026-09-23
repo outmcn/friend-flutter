@@ -15,7 +15,27 @@ class FriendApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Friend',
-      theme: ThemeData.dark(useMaterial3: true).copyWith(
+      theme: ThemeData.light(useMaterial3: true).copyWith(
+        scaffoldBackgroundColor: const Color(0xfff5f7fb),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: blue,
+          brightness: Brightness.light,
+        ),
+        navigationBarTheme: const NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: Color(0xffdbe7ff),
+          labelTextStyle: WidgetStatePropertyAll(TextStyle(fontSize: 11)),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xffeef1f7),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
         scaffoldBackgroundColor: navy,
         colorScheme: ColorScheme.fromSeed(
           seedColor: blue,
@@ -35,6 +55,7 @@ class FriendApp extends StatelessWidget {
           ),
         ),
       ),
+      themeMode: ThemeMode.system,
       home: const FriendShell(),
     );
   }
