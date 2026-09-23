@@ -680,15 +680,26 @@ class ChoiceChips extends StatelessWidget {
           .map(
             (text) => Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(text),
-                selected: text == selected,
-                onSelected: (_) => onSelected(text),
-                selectedColor: c.primary,
-                backgroundColor: c.surfaceContainerHighest,
-                checkmarkColor: Colors.transparent,
-                labelStyle: TextStyle(
-                  color: text == '推荐' ? c.onPrimary : c.onSurface,
+              child: GestureDetector(
+                onTap: () => onSelected(text),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: text == selected
+                        ? c.primary
+                        : c.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      color: text == selected ? c.onPrimary : c.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ),
