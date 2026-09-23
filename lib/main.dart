@@ -585,13 +585,26 @@ class MessagePage extends StatelessWidget {
   }
 }
 
-class DetailPage extends StatelessWidget {
+class DetailPage extends StatefulWidget {
   final UiPost post;
   const DetailPage({super.key, required this.post});
+  @override
+  State<DetailPage> createState() => _DetailPageState();
+}
+
+class _DetailPageState extends State<DetailPage> {
+  final commentController = TextEditingController();
+  final comments = <String>[];
+  @override
+  void dispose() {
+    commentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
+    final post = widget.post;
     return Scaffold(
       appBar: AppBar(title: const Text('动态详情')),
       body: Column(
@@ -640,16 +653,22 @@ class DetailPage extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: 18),
-                AspectRatio(
-                  aspectRatio: 1.18,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [c.primaryContainer, c.surfaceContainerHighest],
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: AspectRatio(
+                    aspectRatio: 1.18,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            c.primaryContainer,
+                            c.surfaceContainerHighest,
+                          ],
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: Icon(post.icon, size: 66, color: c.primary),
+                      child: Center(
+                        child: Icon(post.icon, size: 66, color: c.primary),
+                      ),
                     ),
                   ),
                 ),
@@ -665,7 +684,20 @@ class DetailPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                EmptyState(text: '还没有评论'),
+                if (comments.isEmpty)
+                  EmptyState(text: '还没有评论')
+                else
+                  ...comments.map(
+                    (text) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: c.primary,
+                        child: Icon(Icons.public, color: c.onPrimary),
+                      ),
+                      title: Text('我'),
+                      subtitle: Text(text),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -681,13 +713,18 @@ class DetailPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: TextField(
+                      controller: commentController,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => sendComment(),
                       decoration: InputDecoration(
                         hintText: '写评论…',
                         fillColor: c.surfaceContainerHighest,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
+                  FilledButton(onPressed: sendComment, child: const Text('发送')),
+                  const SizedBox(width: 2),
                   IconButton(
                     onPressed: () {},
                     icon: Icon(Icons.favorite_border, color: c.primary),
@@ -703,6 +740,15 @@ class DetailPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void sendComment() {
+    final value = commentController.text.trim();
+    if (value.isEmpty) return;
+    setState(() {
+      comments.add(value);
+      commentController.clear();
+    });
   }
 }
 
