@@ -45,6 +45,7 @@ class _DetailPageState extends State<DetailPage> {
       );
       final meBody = jsonDecode(meResponse.body) as Map<String, dynamic>;
       final me = meBody['data'] as Map<String, dynamic>?;
+      if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
