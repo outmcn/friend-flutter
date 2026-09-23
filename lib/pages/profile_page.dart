@@ -8,6 +8,7 @@ import '../models/ui_post.dart';
 import '../widgets/post_card.dart';
 import '../widgets/empty_state.dart';
 import 'user_list_page.dart';
+import '../widgets/home_top_bar.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
@@ -280,172 +281,187 @@ class ProfilePageState extends State<ProfilePage> {
     final visiblePosts = section == 0
         ? ownPosts
         : (section == 1 ? favoritePosts : likedPosts);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+    return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              colors: [colors.surfaceContainer, colors.primaryContainer],
-            ),
-          ),
-          child: Row(
+        const HomeTopBar(),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    colors: [colors.surfaceContainer, colors.primaryContainer],
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            loading ? '加载中…' : nickname,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: _editNickname,
-                          icon: Icon(
-                            Icons.edit_outlined,
-                            size: 18,
-                            color: colors.onSurfaceVariant,
-                          ),
-                          tooltip: '修改名字',
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        if (city.isNotEmpty)
-                          Flexible(
-                            child: Container(
-                              margin: const EdgeInsets.only(left: 4),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colors.primaryContainer,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                'IP：$city',
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: colors.onPrimaryContainer,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  loading ? '加载中…' : nickname,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: colors.onSurface,
+                                  ),
                                 ),
                               ),
-                            ),
+                              IconButton(
+                                onPressed: _editNickname,
+                                icon: Icon(
+                                  Icons.edit_outlined,
+                                  size: 18,
+                                  color: colors.onSurfaceVariant,
+                                ),
+                                tooltip: '修改名字',
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              if (city.isNotEmpty)
+                                Flexible(
+                                  child: Container(
+                                    margin: const EdgeInsets.only(left: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colors.primaryContainer,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      'IP：$city',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: colors.onPrimaryContainer,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                      ],
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => UserListPage(
+                                      token: widget.token,
+                                      title: '关注',
+                                      relation: 'following',
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  '关注 $following',
+                                  style: TextStyle(
+                                    color: colors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => UserListPage(
+                                      token: widget.token,
+                                      title: '粉丝',
+                                      relation: 'followers',
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  '粉丝 $followers',
+                                  style: TextStyle(
+                                    color: colors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '获赞 $likes     动态 $postCount',
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => UserListPage(
-                                token: widget.token,
-                                title: '关注',
-                                relation: 'following',
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            '关注 $following',
-                            style: TextStyle(color: colors.onSurfaceVariant),
-                          ),
+                    GestureDetector(
+                      onTap: _pickAvatar,
+                      child: CircleAvatar(
+                        radius: 42,
+                        backgroundColor: _avatarColor(selectedAvatar),
+                        child: Icon(
+                          avatarIcons[selectedAvatar],
+                          size: 48,
+                          color: Colors.white,
                         ),
-                        const SizedBox(width: 14),
-                        GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => UserListPage(
-                                token: widget.token,
-                                title: '粉丝',
-                                relation: 'followers',
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            '粉丝 $followers',
-                            style: TextStyle(color: colors.onSurfaceVariant),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '获赞 $likes     动态 $postCount',
-                          style: TextStyle(color: colors.onSurfaceVariant),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              GestureDetector(
-                onTap: _pickAvatar,
-                child: CircleAvatar(
-                  radius: 42,
-                  backgroundColor: _avatarColor(selectedAvatar),
-                  child: Icon(
-                    avatarIcons[selectedAvatar],
-                    size: 48,
-                    color: Colors.white,
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ProfileTab(
+                      text: '动态',
+                      selected: section == 0,
+                      onTap: () => setState(() => section = 0),
+                    ),
+                  ),
+                  Expanded(
+                    child: _ProfileTab(
+                      text: '收藏',
+                      selected: section == 1,
+                      onTap: () => setState(() => section = 1),
+                    ),
+                  ),
+                  Expanded(
+                    child: _ProfileTab(
+                      text: '点赞',
+                      selected: section == 2,
+                      onTap: () => setState(() => section = 2),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (visiblePosts.isEmpty)
+                EmptyState(
+                  text: section == 0
+                      ? '还没有动态'
+                      : (section == 1 ? '还没有收藏' : '还没有点赞'),
+                ),
+              ...visiblePosts.map(
+                (post) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: PostCard(
+                    post: post,
+                    onActionChanged: refreshFromServer,
+                    canDelete: section == 0,
+                    onDeleted: () => _confirmDelete(post),
                   ),
                 ),
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: _ProfileTab(
-                text: '动态',
-                selected: section == 0,
-                onTap: () => setState(() => section = 0),
-              ),
-            ),
-            Expanded(
-              child: _ProfileTab(
-                text: '收藏',
-                selected: section == 1,
-                onTap: () => setState(() => section = 1),
-              ),
-            ),
-            Expanded(
-              child: _ProfileTab(
-                text: '点赞',
-                selected: section == 2,
-                onTap: () => setState(() => section = 2),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (visiblePosts.isEmpty)
-          EmptyState(
-            text: section == 0 ? '还没有动态' : (section == 1 ? '还没有收藏' : '还没有点赞'),
-          ),
-        ...visiblePosts.map(
-          (post) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: PostCard(
-              post: post,
-              onActionChanged: refreshFromServer,
-              canDelete: section == 0,
-              onDeleted: () => _confirmDelete(post),
-            ),
           ),
         ),
       ],
