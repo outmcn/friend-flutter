@@ -8,6 +8,8 @@ import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/ui_post.dart';
 import 'pages/profile_page.dart';
+import 'pages/contacts_page.dart';
+import 'pages/user_list_page.dart';
 import 'widgets/post_card.dart';
 
 const blue = Color(0xff4d8dff);
@@ -249,7 +251,7 @@ class _FriendShellState extends State<FriendShell> {
         onRefresh: _loadPosts,
         onActionChanged: _refreshAll,
       ),
-      const MessagePage(),
+      MessagePage(token: widget.token),
       ProfilePage(key: profileKey, token: widget.token),
     ];
     return Scaffold(
@@ -360,9 +362,7 @@ class HomePage extends StatelessWidget {
         const SizedBox(height: 28),
         _hero(context),
         const SizedBox(height: 20),
-        SectionTitle(title: '今日推荐', action: '查看全部'),
         const SizedBox(height: 12),
-        const RecommendationCard(),
       ],
     );
   }
@@ -385,7 +385,7 @@ class HomePage extends StatelessWidget {
           CircleAvatar(
             radius: 30,
             backgroundColor: c.primary,
-            child: Icon(Icons.public, size: 34, color: c.onPrimary),
+            child: Icon(Icons.sports_esports, size: 34, color: c.onPrimary),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -393,7 +393,7 @@ class HomePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '分享此刻的想法',
+                  '进入游戏',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -401,7 +401,7 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                Text('去发现新的朋友和兴趣', style: TextStyle(color: c.onSurfaceVariant)),
+                Text('和朋友一起玩游戏', style: TextStyle(color: c.onSurfaceVariant)),
               ],
             ),
           ),
@@ -456,7 +456,20 @@ class DiscoveryPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const ChoiceChips(),
+          Row(
+            children: [
+              const Expanded(child: ChoiceChips()),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () => _compose(context),
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  color: c.primary,
+                  size: 29,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 18),
           ...posts.map(
             (post) => Padding(
@@ -595,74 +608,120 @@ class ChoiceChips extends StatelessWidget {
 }
 
 class MessagePage extends StatelessWidget {
-  const MessagePage({super.key});
+  final String token;
+  const MessagePage({super.key, required this.token});
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
+    return Column(
       children: [
-        Text(
-          '消息',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: c.onSurface,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
+          child: Row(
+            children: [
+              Text(
+                '消息',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: c.onSurface,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => ContactsPage(token: token)),
+                ),
+                icon: const Icon(Icons.contacts_outlined),
+              ),
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UserListPage(
+                      token: token,
+                      title: '搜索用户',
+                      searchable: true,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.search),
+              ),
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => ContactsPage(token: token)),
+                ),
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 18),
-        ...List.generate(
-          6,
-          (i) => Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: SizedBox(
-              height: 84,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: c.primary,
-                      child: Icon(Icons.public, color: c.onPrimary),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
+            children: [
+              ...List.generate(
+                6,
+                (i) => Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: SizedBox(
+                    height: 84,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
                         children: [
-                          Text(
-                            '星空用户 ${i + 1}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          CircleAvatar(
+                            radius: 25,
+                            backgroundColor: c.primary,
+                            child: Icon(Icons.public, color: c.onPrimary),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '星空用户 ${i + 1}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  '期待和你交流',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: c.onSurfaceVariant,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
                           Text(
-                            '期待和你交流',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            '刚刚',
                             style: TextStyle(
                               color: c.onSurfaceVariant,
-                              fontSize: 13,
+                              fontSize: 12,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      '刚刚',
-                      style: TextStyle(color: c.onSurfaceVariant, fontSize: 12),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ],

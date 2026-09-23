@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ui_post.dart';
 import '../widgets/post_card.dart';
 import '../widgets/empty_state.dart';
+import 'user_list_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
@@ -260,9 +261,47 @@ class ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      '关注 $following     粉丝 $followers     获赞 $likes     动态 $postCount',
-                      style: TextStyle(color: colors.onSurfaceVariant),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => UserListPage(
+                                token: widget.token,
+                                title: '关注',
+                                relation: 'following',
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            '关注 $following',
+                            style: TextStyle(color: colors.onSurfaceVariant),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => UserListPage(
+                                token: widget.token,
+                                title: '粉丝',
+                                relation: 'followers',
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            '粉丝 $followers',
+                            style: TextStyle(color: colors.onSurfaceVariant),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Text(
+                          '获赞 $likes     动态 $postCount',
+                          style: TextStyle(color: colors.onSurfaceVariant),
+                        ),
+                      ],
                     ),
                   ],
                 ),
