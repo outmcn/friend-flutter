@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/post_card.dart';
-import '../widgets/space_tray.dart';
 import '../widgets/empty_state.dart';
 import '../models/ui_post.dart';
 
@@ -28,6 +27,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   late List<UiPost> posts;
   bool following = false;
   bool followLoading = false;
+  bool profileLiked = false;
+  bool profileLikeLoading = false;
 
   int get userId => (profile['id'] as num?)?.toInt() ?? 0;
   String get displayName =>
@@ -71,6 +72,26 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     context,
     MaterialPageRoute(builder: (_) => ChatPlaceholderPage(name: displayName)),
   );
+
+  Future<void> _toggleProfileLike() async {
+    if (profileLikeLoading || userId == 0 || widget.dataToken.isEmpty) return;
+    setState(() => profileLikeLoading = true);
+    try {
+      final r = await http.post(
+        Uri.parse('https://friend.outmcn.net/api/users/$userId/like'),
+        headers: {'Authorization': 'Bearer ${widget.dataToken}'},
+      );
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      if (b['ok'] == true && mounted) {
+        setState(() {
+          profileLiked = b['data']['liked'] == true;
+          profile['likes'] = b['data']['likes'];
+        });
+      }
+    } finally {
+      if (mounted) setState(() => profileLikeLoading = false);
+    }
+  }
 
   Future<void> _blockUser() async {
     final ok = await showDialog<bool>(
@@ -200,11 +221,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               ),
             ),
           ),
-          SpaceTray(
-            expanded: spaceExpanded,
-            onTap: () => setState(() => spaceExpanded = !spaceExpanded),
-            detail: '动态：${posts.length}',
-          ),
           if (!widget.isSelf)
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -213,16 +229,33 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   Expanded(
                     child: FilledButton(
                       onPressed: followLoading ? null : _toggleFollow,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
                       child: Text(following ? '已关注' : '关注'),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _openChat,
-                      icon: const Icon(Icons.chat_bubble_outline),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
                       label: const Text('私聊'),
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: profileLikeLoading ? null : _toggleProfileLike,
+                    icon: Icon(
+                      profileLiked ? Icons.favorite : Icons.favorite_border,
+                      color: profileLiked ? Colors.red : null,
+                    ),
+                    tooltip: '主页点赞',
                   ),
                 ],
               ),
