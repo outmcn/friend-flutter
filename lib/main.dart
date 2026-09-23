@@ -994,6 +994,9 @@ class DetailPage extends StatefulWidget {
 class _DetailPageState extends State<DetailPage> {
   final commentController = TextEditingController();
   final comments = <String>[];
+  bool liked = false;
+  bool favorited = false;
+  bool sending = false;
   @override
   void dispose() {
     commentController.dispose();
@@ -1112,15 +1115,24 @@ class _DetailPageState extends State<DetailPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(onPressed: sendComment, child: const Text('发送')),
+                  FilledButton(
+                    onPressed: sending ? null : sendComment,
+                    child: Text(sending ? '发送中…' : '发送'),
+                  ),
                   const SizedBox(width: 2),
                   IconButton(
-                    onPressed: () {},
-                    icon: Icon(Icons.favorite_border, color: c.primary),
+                    onPressed: () => setState(() => liked = !liked),
+                    icon: Icon(
+                      liked ? Icons.favorite : Icons.favorite_border,
+                      color: liked ? Colors.red : c.primary,
+                    ),
                   ),
                   IconButton(
-                    onPressed: () {},
-                    icon: Icon(Icons.star_border, color: c.primary),
+                    onPressed: () => setState(() => favorited = !favorited),
+                    icon: Icon(
+                      favorited ? Icons.star : Icons.star_border,
+                      color: favorited ? Colors.amber : c.primary,
+                    ),
                   ),
                 ],
               ),
@@ -1134,9 +1146,14 @@ class _DetailPageState extends State<DetailPage> {
   void sendComment() {
     final value = commentController.text.trim();
     if (value.isEmpty) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
+      sending = true;
       comments.add(value);
       commentController.clear();
+    });
+    Future<void>.delayed(const Duration(milliseconds: 180), () {
+      if (mounted) setState(() => sending = false);
     });
   }
 }
