@@ -207,6 +207,27 @@ class _FriendShellState extends State<FriendShell> {
   final profileKey = GlobalKey<ProfilePageState>();
 
   Future<Position?> _currentPosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedAt = prefs.getInt('friend.location.cachedAt') ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final cachedLat = prefs.getDouble('friend.location.latitude');
+    final cachedLon = prefs.getDouble('friend.location.longitude');
+    if (cachedLat != null &&
+        cachedLon != null &&
+        now - cachedAt < 6 * 60 * 60 * 1000) {
+      return Position(
+        latitude: cachedLat,
+        longitude: cachedLon,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(cachedAt),
+        accuracy: 0,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+      );
+    }
     if (!await Geolocator.isLocationServiceEnabled()) return null;
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -216,7 +237,11 @@ class _FriendShellState extends State<FriendShell> {
         permission == LocationPermission.deniedForever) {
       return null;
     }
-    return Geolocator.getCurrentPosition();
+    final position = await Geolocator.getCurrentPosition();
+    await prefs.setDouble('friend.location.latitude', position.latitude);
+    await prefs.setDouble('friend.location.longitude', position.longitude);
+    await prefs.setInt('friend.location.cachedAt', now);
+    return position;
   }
 
   @override

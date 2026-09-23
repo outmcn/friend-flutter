@@ -51,16 +51,43 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _updateCity() async {
-    if (!await Geolocator.isLocationServiceEnabled()) return;
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+    final prefs = await SharedPreferences.getInstance();
+    final cachedAt = prefs.getInt('friend.location.cachedAt') ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final cachedLat = prefs.getDouble('friend.location.latitude');
+    final cachedLon = prefs.getDouble('friend.location.longitude');
+    Position? position;
+    if (cachedLat != null &&
+        cachedLon != null &&
+        now - cachedAt < 6 * 60 * 60 * 1000) {
+      position = Position(
+        latitude: cachedLat,
+        longitude: cachedLon,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(cachedAt),
+        accuracy: 0,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+      );
     }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return;
+    if (position == null) {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+      position = await Geolocator.getCurrentPosition();
+      await prefs.setDouble('friend.location.latitude', position.latitude);
+      await prefs.setDouble('friend.location.longitude', position.longitude);
+      await prefs.setInt('friend.location.cachedAt', now);
     }
-    final position = await Geolocator.getCurrentPosition();
     final places = await placemarkFromCoordinates(
       position.latitude,
       position.longitude,
