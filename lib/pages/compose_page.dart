@@ -40,7 +40,6 @@ class _ComposePageState extends State<ComposePage> {
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('发一条'),
@@ -64,6 +63,7 @@ class _ComposePageState extends State<ComposePage> {
           TextField(
             controller: controller,
             maxLines: 8,
+            maxLength: 300,
             autofocus: true,
             decoration: const InputDecoration(hintText: '分享你的想法…'),
           ),
@@ -90,10 +90,6 @@ class _ComposePageState extends State<ComposePage> {
               ),
             ),
           const SizedBox(height: 18),
-          Text(
-            '发布后会立即同步到发现页和我的页面。',
-            style: TextStyle(color: c.onSurfaceVariant),
-          ),
         ],
       ),
     );
