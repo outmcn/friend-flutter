@@ -10,6 +10,7 @@ import 'models/ui_post.dart';
 import 'pages/profile_page.dart';
 import 'pages/contacts_page.dart';
 import 'pages/user_list_page.dart';
+import 'pages/game_page.dart';
 import 'widgets/post_card.dart';
 
 const blue = Color(0xff4d8dff);
@@ -360,7 +361,13 @@ class HomePage extends StatelessWidget {
           style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
         ),
         const SizedBox(height: 28),
-        _hero(context),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const GamePage()),
+          ),
+          child: _hero(context),
+        ),
         const SizedBox(height: 20),
         const SizedBox(height: 12),
       ],
