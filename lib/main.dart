@@ -252,6 +252,14 @@ class _FriendShellState extends State<FriendShell> {
     _loadCurrentUser();
   }
 
+  Future<Position?> _freshPositionForPost() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('friend.location.cachedAt');
+    await prefs.remove('friend.location.latitude');
+    await prefs.remove('friend.location.longitude');
+    return _currentPosition();
+  }
+
   Future<void> _loadCurrentUser() async {
     final response = await http.get(
       Uri.parse('https://friend.outmcn.net/api/me'),
@@ -450,7 +458,7 @@ class _FriendShellState extends State<FriendShell> {
         imageData = 'data:image/jpeg;base64,${base64Encode(compressed)}';
       }
       final payload = <String, dynamic>{'content': content};
-      final position = await _currentPosition();
+      final position = await _freshPositionForPost();
       if (position != null) {
         payload['latitude'] = position.latitude;
         payload['longitude'] = position.longitude;
