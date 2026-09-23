@@ -235,7 +235,7 @@ class _FriendShellState extends State<FriendShell> {
       const HomePage(),
       DiscoveryPage(posts: posts, onCreate: _createPost, onRefresh: _loadPosts),
       const MessagePage(),
-      ProfilePage(posts: posts),
+      ProfilePage(posts: posts, token: widget.token),
     ];
     return Scaffold(
       body: SafeArea(
@@ -712,9 +712,82 @@ class PostCard extends StatelessWidget {
   }
 }
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   final List<UiPost> posts;
-  const ProfilePage({super.key, required this.posts});
+  final String token;
+  const ProfilePage({super.key, required this.posts, required this.token});
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String nickname = '';
+  bool loading = true;
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final r = await http.get(
+        Uri.parse('https://friend.outmcn.net/api/me'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      final d = b['data'];
+      if (b['ok'] == true && d is Map<String, dynamic> && mounted)
+        setState(() {
+          nickname =
+              (d['nickname']?.toString().trim().isNotEmpty == true
+                      ? d['nickname']
+                      : d['username'])
+                  .toString();
+          loading = false;
+        });
+    } catch (_) {}
+    if (mounted && loading) setState(() => loading = false);
+  }
+
+  Future<void> _editNickname() async {
+    final controller = TextEditingController(text: nickname);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('修改名字'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 40,
+          decoration: const InputDecoration(hintText: '输入新的名字'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null || value.isEmpty) return;
+    final r = await http.put(
+      Uri.parse('https://friend.outmcn.net/api/me'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'nickname': value}),
+    );
+    final b = jsonDecode(r.body) as Map<String, dynamic>;
+    if (b['ok'] == true && mounted) setState(() => nickname = value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -736,14 +809,20 @@ class ProfilePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '15305113400',
+                      loading ? '加载中…' : nickname,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: c.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _editNickname,
+                      icon: const Icon(Icons.edit_outlined, size: 17),
+                      label: const Text('修改名字'),
+                    ),
+                    const SizedBox(height: 8),
                     Text(
                       '关注  0     粉丝  0     获赞  0',
                       style: TextStyle(color: c.onSurfaceVariant),
@@ -768,7 +847,7 @@ class ProfilePage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        ...posts.map(
+        ...widget.posts.map(
           (post) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: PostCard(post: post),
