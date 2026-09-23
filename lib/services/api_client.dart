@@ -38,10 +38,20 @@ class ApiClient {
   Future<Map<String, dynamic>> _request(
     Future<http.Response> Function() call,
   ) async {
-    final response = await call().timeout(const Duration(seconds: 15));
+    late final http.Response response;
+    try {
+      response = await call().timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw const ApiException('请求超时，请稍后重试', 408);
+    } on http.ClientException {
+      throw const ApiException('网络连接失败，请检查网络', 0);
+    }
     Map<String, dynamic> decoded;
     try {
-      decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final value = jsonDecode(response.body);
+      decoded = value is Map
+          ? Map<String, dynamic>.from(value)
+          : <String, dynamic>{};
     } catch (_) {
       throw ApiException('服务器返回格式无效', response.statusCode);
     }

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +14,8 @@ import 'pages/game_page.dart';
 import 'widgets/post_card.dart';
 import 'widgets/discovery_top_bar.dart';
 import 'pages/compose_page.dart';
+import 'services/api_client.dart';
+import 'services/location_service.dart';
 
 const blue = Color(0xff4d8dff);
 
@@ -112,20 +113,10 @@ class _LoginPageState extends State<LoginPage> {
       error = null;
     });
     try {
-      final response = await http.post(
-        Uri.parse('https://friend.outmcn.net/api/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': user.text.trim(),
-          'password': password.text,
-        }),
+      final body = await const ApiClient(token: '').post(
+        '/api/auth/login',
+        body: {'username': user.text.trim(), 'password': password.text},
       );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      if (response.statusCode < 200 ||
-          response.statusCode >= 300 ||
-          body['ok'] != true) {
-        throw Exception(body['message'] ?? '登录失败');
-      }
       final token = (body['data'] as Map<String, dynamic>)['token'] as String;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('friend.auth.token', token);
@@ -206,44 +197,10 @@ class _FriendShellState extends State<FriendShell> {
   Position? currentPosition;
   int currentUserId = 0;
   final profileKey = GlobalKey<ProfilePageState>();
+  late final ApiClient _api = ApiClient(token: widget.token);
+  final _location = LocationService();
 
-  Future<Position?> _currentPosition() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cachedAt = prefs.getInt('friend.location.cachedAt') ?? 0;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final cachedLat = prefs.getDouble('friend.location.latitude');
-    final cachedLon = prefs.getDouble('friend.location.longitude');
-    if (cachedLat != null &&
-        cachedLon != null &&
-        now - cachedAt < 6 * 60 * 60 * 1000) {
-      return Position(
-        latitude: cachedLat,
-        longitude: cachedLon,
-        timestamp: DateTime.fromMillisecondsSinceEpoch(cachedAt),
-        accuracy: 0,
-        altitude: 0,
-        altitudeAccuracy: 0,
-        heading: 0,
-        headingAccuracy: 0,
-        speed: 0,
-        speedAccuracy: 0,
-      );
-    }
-    if (!await Geolocator.isLocationServiceEnabled()) return null;
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return null;
-    }
-    final position = await Geolocator.getCurrentPosition();
-    await prefs.setDouble('friend.location.latitude', position.latitude);
-    await prefs.setDouble('friend.location.longitude', position.longitude);
-    await prefs.setInt('friend.location.cachedAt', now);
-    return position;
-  }
+  Future<Position?> _currentPosition() => _location.currentPosition();
 
   @override
   void initState() {
@@ -262,15 +219,13 @@ class _FriendShellState extends State<FriendShell> {
   }
 
   Future<void> _loadCurrentUser() async {
-    final response = await http.get(
-      Uri.parse('https://friend.outmcn.net/api/me'),
-      headers: {'Authorization': 'Bearer ${widget.token}'},
-    );
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final data = body['data'] as Map<String, dynamic>?;
-    if (body['ok'] == true && data != null && mounted) {
-      setState(() => currentUserId = (data['id'] as num?)?.toInt() ?? 0);
-    }
+    try {
+      final body = await _api.get('/api/me');
+      final data = body['data'] as Map<String, dynamic>?;
+      if (data != null && mounted) {
+        setState(() => currentUserId = (data['id'] as num?)?.toInt() ?? 0);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCurrentPosition() async {
@@ -294,16 +249,9 @@ class _FriendShellState extends State<FriendShell> {
           : selectedFilter == '附近'
           ? '/api/posts/nearby'
           : '/api/posts';
-      final response = await http.get(
-        Uri.parse('https://friend.outmcn.net$path'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final body = await _api.get(path);
       final data = body['data'];
-      if (response.statusCode >= 200 &&
-          response.statusCode < 300 &&
-          body['ok'] == true &&
-          data is List) {
+      if (data is List) {
         final loaded = data
             .whereType<Map<String, dynamic>>()
             .map(UiPost.fromJson)
@@ -353,11 +301,7 @@ class _FriendShellState extends State<FriendShell> {
         ? '/api/posts/nearby'
         : '/api/posts';
     try {
-      final response = await http.get(
-        Uri.parse('https://friend.outmcn.net$path'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final body = await _api.get(path);
       final data = body['data'];
       if (body['ok'] == true &&
           data is List &&
@@ -466,20 +410,7 @@ class _FriendShellState extends State<FriendShell> {
         payload['longitude'] = position.longitude;
       }
       if (imageData != null) payload['image'] = imageData;
-      final response = await http.post(
-        Uri.parse('https://friend.outmcn.net/api/posts'),
-        headers: {
-          'Authorization': 'Bearer ${widget.token}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(payload),
-      );
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-      if (response.statusCode < 200 ||
-          response.statusCode >= 300 ||
-          decoded['ok'] != true) {
-        throw Exception(decoded['message'] ?? '发布失败');
-      }
+      await _api.post('/api/posts', body: payload);
       await _loadPosts();
       await profileKey.currentState?.refreshFromServer();
     } catch (error) {

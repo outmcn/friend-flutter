@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/post_card.dart';
 import '../widgets/empty_state.dart';
 import '../models/ui_post.dart';
+import '../services/api_client.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -29,6 +28,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool followLoading = false;
   bool profileLiked = false;
   bool profileLikeLoading = false;
+  late final ApiClient _api = ApiClient(token: widget.dataToken);
 
   int get userId => (profile['id'] as num?)?.toInt() ?? 0;
   String get displayName =>
@@ -54,12 +54,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     if (followLoading || userId == 0 || widget.dataToken.isEmpty) return;
     setState(() => followLoading = true);
     try {
-      final r = await http.post(
-        Uri.parse('https://friend.outmcn.net/api/users/$userId/follow'),
-        headers: {'Authorization': 'Bearer ${widget.dataToken}'},
-      );
-      final b = jsonDecode(r.body) as Map<String, dynamic>;
-      if (b['ok'] == true && mounted) {
+      final b = await _api.post('/api/users/$userId/follow');
+      if (mounted) {
         setState(() => following = b['data']['following'] == true);
         await widget.onFollowChanged?.call();
       }
@@ -77,12 +73,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     if (profileLikeLoading || userId == 0 || widget.dataToken.isEmpty) return;
     setState(() => profileLikeLoading = true);
     try {
-      final r = await http.post(
-        Uri.parse('https://friend.outmcn.net/api/users/$userId/like'),
-        headers: {'Authorization': 'Bearer ${widget.dataToken}'},
-      );
-      final b = jsonDecode(r.body) as Map<String, dynamic>;
-      if (b['ok'] == true && mounted) {
+      final b = await _api.post('/api/users/$userId/like');
+      if (mounted) {
         setState(() {
           profileLiked = b['data']['liked'] == true;
           profile['likes'] = b['data']['likes'];
@@ -112,12 +104,17 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       ),
     );
     if (ok == true && mounted) {
-      final response = await http.post(
-        Uri.parse('https://friend.outmcn.net/api/users/$userId/block'),
-        headers: {'Authorization': 'Bearer ${widget.dataToken}'},
-      );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      if (body['ok'] == true && mounted) {
+      try {
+        await _api.post('/api/users/$userId/block');
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.toString())));
+        }
+        return;
+      }
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('已拉黑')));

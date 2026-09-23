@@ -1,6 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../services/api_client.dart';
 
 class UserListPage extends StatefulWidget {
   final String token;
@@ -26,6 +25,8 @@ class _UserListPageState extends State<UserListPage> {
   List<Map<String, dynamic>> users = [];
   bool loading = true;
   String? error;
+  late final ApiClient _api = ApiClient(token: widget.token);
+  bool requestActive = false;
 
   @override
   void initState() {
@@ -40,6 +41,8 @@ class _UserListPageState extends State<UserListPage> {
   }
 
   Future<void> _load() async {
+    if (requestActive) return;
+    requestActive = true;
     setState(() {
       loading = true;
       error = null;
@@ -48,16 +51,10 @@ class _UserListPageState extends State<UserListPage> {
     if (widget.relation != null) query['relation'] = widget.relation!;
     final keyword = searchController.text.trim();
     if (keyword.isNotEmpty) query['q'] = keyword;
-    final uri = Uri.https('friend.outmcn.net', '/api/users', query);
     try {
-      final response = await http.get(
-        uri,
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      if (body['ok'] != true || body['data'] is! List) {
-        throw Exception(body['message'] ?? '加载失败');
-      }
+      final path = Uri(path: '/api/users', queryParameters: query).toString();
+      final body = await _api.get(path);
+      if (body['data'] is! List) throw const ApiException('加载失败', 200);
       if (mounted) {
         setState(() {
           users = (body['data'] as List)
@@ -74,6 +71,7 @@ class _UserListPageState extends State<UserListPage> {
         });
       }
     }
+    requestActive = false;
   }
 
   @override
