@@ -38,7 +38,7 @@ class _DetailPageState extends State<DetailPage> {
       headers: {'Authorization': 'Bearer $authToken'},
     );
     final b = jsonDecode(r.body) as Map<String, dynamic>;
-    if (b['ok'] == true && mounted)
+    if (b['ok'] == true && mounted) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -46,6 +46,7 @@ class _DetailPageState extends State<DetailPage> {
               OtherProfilePage(data: b['data'] as Map<String, dynamic>),
         ),
       );
+    }
   }
 
   @override
@@ -78,7 +79,7 @@ class _DetailPageState extends State<DetailPage> {
         headers: {'Authorization': 'Bearer $token'},
       );
       final b = jsonDecode(r.body) as Map<String, dynamic>;
-      if (b['ok'] == true && b['data'] is List && mounted)
+      if (b['ok'] == true && b['data'] is List && mounted) {
         setState(() {
           comments
             ..clear()
@@ -88,6 +89,7 @@ class _DetailPageState extends State<DetailPage> {
               ),
             );
         });
+      }
     } catch (_) {}
   }
 
@@ -103,10 +105,11 @@ class _DetailPageState extends State<DetailPage> {
       final b = jsonDecode(r.body) as Map<String, dynamic>;
       if (b['ok'] == true && mounted) {
         setState(() {
-          if (action == 'like')
+          if (action == 'like') {
             liked = b['data']['liked'] == true;
-          else
+          } else {
             favorited = b['data']['favorited'] == true;
+          }
         });
         await widget.onActionChanged?.call();
       }
