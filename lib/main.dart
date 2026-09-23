@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 const blue = Color(0xff4d8dff);
 
@@ -329,39 +330,84 @@ class DiscoveryPage extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          18,
-          20,
-          MediaQuery.of(context).viewInsets.bottom + 22,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              '发一条',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+      builder: (_) => const ComposeSheet(),
+    );
+  }
+}
+
+class ComposeSheet extends StatefulWidget {
+  const ComposeSheet({super.key});
+  @override
+  State<ComposeSheet> createState() => _ComposeSheetState();
+}
+
+class _ComposeSheetState extends State<ComposeSheet> {
+  final picker = ImagePicker();
+  final controller = TextEditingController();
+  XFile? selectedImage;
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        18,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + 22,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '发一条',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: c.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: controller,
+            maxLines: 5,
+            decoration: const InputDecoration(hintText: '分享你的想法…'),
+          ),
+          const SizedBox(height: 14),
+          OutlinedButton.icon(
+            onPressed: _pickImage,
+            icon: const Icon(Icons.add_photo_alternate_outlined),
+            label: Text(selectedImage == null ? '添加图片' : '已选择图片'),
+          ),
+          if (selectedImage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                selectedImage!.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: c.onSurfaceVariant),
               ),
             ),
-            const SizedBox(height: 16),
-            const TextField(
-              maxLines: 5,
-              decoration: InputDecoration(hintText: '分享你的想法…'),
-            ),
-            const SizedBox(height: 14),
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('发布'),
-            ),
-          ],
-        ),
+          const SizedBox(height: 14),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('发布'),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _pickImage() async {
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null && mounted) setState(() => selectedImage = image);
   }
 }
 
