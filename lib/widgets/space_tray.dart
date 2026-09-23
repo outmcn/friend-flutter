@@ -17,7 +17,7 @@ class SpaceTray extends StatelessWidget {
       child: Align(
         alignment: Alignment.center,
         child: FractionallySizedBox(
-          widthFactor: .75,
+          widthFactor: .8,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             decoration: BoxDecoration(

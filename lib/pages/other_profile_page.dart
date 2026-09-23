@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../models/ui_post.dart';
 import '../widgets/post_card.dart';
-import '../widgets/empty_state.dart';
 import '../widgets/space_tray.dart';
+import '../widgets/empty_state.dart';
+import '../models/ui_post.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -18,18 +18,23 @@ class OtherProfilePage extends StatefulWidget {
     this.onFollowChanged,
     this.isSelf = false,
   });
-
   @override
   State<OtherProfilePage> createState() => _OtherProfilePageState();
 }
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
   bool spaceExpanded = false;
-  static const baseUrl = 'https://friend.outmcn.net';
   late Map<String, dynamic> profile;
   late List<UiPost> posts;
   bool following = false;
   bool followLoading = false;
+
+  int get userId => (profile['id'] as num?)?.toInt() ?? 0;
+  String get displayName =>
+      (profile['nickname']?.toString().trim().isNotEmpty == true)
+      ? profile['nickname'].toString()
+      : profile['username']?.toString() ?? '';
+  int get avatarId => ((profile['avatarId'] as num?)?.toInt() ?? 0).clamp(0, 9);
 
   @override
   void initState() {
@@ -41,61 +46,20 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     posts = raw is List
         ? raw.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
         : <UiPost>[];
-    _loadFollowState();
-  }
-
-  int get userId => (profile['id'] as num?)?.toInt() ?? 0;
-
-  String get displayName {
-    final nickname = profile['nickname']?.toString().trim() ?? '';
-    return nickname.isNotEmpty
-        ? nickname
-        : profile['username']?.toString() ?? '';
-  }
-
-  Future<void> _loadFollowState() async {
-    if (userId == 0 || widget.dataToken.isEmpty) return;
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/users/$userId'),
-        headers: {'Authorization': 'Bearer ${widget.dataToken}'},
-      );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final data = body['data'] as Map<String, dynamic>?;
-      if (body['ok'] == true && data != null && mounted) {
-        setState(() {
-          profile = Map<String, dynamic>.from(
-            data['profile'] as Map<String, dynamic>? ?? profile,
-          );
-          following = data['following'] == true;
-        });
-        await widget.onFollowChanged?.call();
-      }
-    } catch (_) {}
+    following = widget.data['following'] == true;
   }
 
   Future<void> _toggleFollow() async {
     if (followLoading || userId == 0 || widget.dataToken.isEmpty) return;
     setState(() => followLoading = true);
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/users/$userId/follow'),
+      final r = await http.post(
+        Uri.parse('https://friend.outmcn.net/api/users/$userId/follow'),
         headers: {'Authorization': 'Bearer ${widget.dataToken}'},
       );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final data = body['data'] as Map<String, dynamic>?;
-      if (body['ok'] == true && data != null && mounted) {
-        setState(() {
-          final wasFollowing = following;
-          following = data['following'] == true;
-          profile['followers'] =
-              ((profile['followers'] as num?)?.toInt() ?? 0) +
-              (following == wasFollowing
-                  ? 0
-                  : following
-                  ? 1
-                  : -1);
-        });
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      if (b['ok'] == true && mounted) {
+        setState(() => following = b['data']['following'] == true);
         await widget.onFollowChanged?.call();
       }
     } finally {
@@ -103,108 +67,160 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
-  void _openChat() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => ChatPlaceholderPage(name: displayName)),
+  void _openChat() => Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => ChatPlaceholderPage(name: displayName)),
+  );
+
+  Future<void> _blockUser() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('拉黑用户'),
+        content: Text('确定要拉黑 $displayName 吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('拉黑'),
+          ),
+        ],
+      ),
     );
+    if (ok == true && mounted) {
+      final response = await http.post(
+        Uri.parse('https://friend.outmcn.net/api/users/$userId/block'),
+        headers: {'Authorization': 'Bearer ${widget.dataToken}'},
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      if (body['ok'] == true && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('已拉黑')));
+        Navigator.pop(context);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.isSelf ? '我的主页' : 'Ta的主页')),
+      appBar: AppBar(
+        title: Text(widget.isSelf ? '我的主页' : 'Ta的主页'),
+        actions: [
+          if (!widget.isSelf)
+            IconButton(
+              onPressed: _blockUser,
+              icon: const Icon(Icons.block_outlined),
+              tooltip: '拉黑',
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CircleAvatar(
-                radius: 40,
-                child: Icon(Icons.public, size: 44),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 42,
+                    backgroundColor: avatarColors[avatarId],
+                    child: Icon(
+                      avatarIcons[avatarId],
+                      size: 48,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(
-                            displayName,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        if ((profile['city']?.toString() ?? '').isNotEmpty)
-                          Flexible(
-                            child: Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                        Row(
+                          children: [
+                            Flexible(
                               child: Text(
-                                'IP：${profile['city']}',
+                                displayName,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimaryContainer,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          ),
+                            if ((profile['city']?.toString() ?? '')
+                                .isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: c.primaryContainer,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'IP：${profile['city']}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: c.onPrimaryContainer,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '关注 ${profile['following'] ?? 0}   粉丝 ${profile['followers'] ?? 0}   获赞 ${profile['likes'] ?? 0}   动态 ${profile['posts'] ?? posts.length}',
+                          style: TextStyle(color: c.onSurfaceVariant),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '关注 ${profile['following'] ?? 0}   粉丝 ${profile['followers'] ?? 0}   获赞 ${profile['likes'] ?? 0}',
-                    ),
-
-                    if (!widget.isSelf) const SizedBox(height: 14),
-                    if (!widget.isSelf)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: followLoading ? null : _toggleFollow,
-                              child: Text(following ? '已关注' : '关注'),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _openChat,
-                              icon: const Icon(Icons.chat_bubble_outline),
-                              label: const Text('私聊'),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
           SpaceTray(
             expanded: spaceExpanded,
             onTap: () => setState(() => spaceExpanded = !spaceExpanded),
             detail: '动态：${posts.length}',
           ),
+          if (!widget.isSelf)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: followLoading ? null : _toggleFollow,
+                      child: Text(following ? '已关注' : '关注'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _openChat,
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      label: const Text('私聊'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 20),
           if (posts.isEmpty) const EmptyState(text: '还没有动态'),
           ...posts.map(
@@ -222,12 +238,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 class ChatPlaceholderPage extends StatelessWidget {
   final String name;
   const ChatPlaceholderPage({super.key, required this.name});
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('与$name私聊')),
-      body: const Center(child: Text('私聊功能尚未接入后端')),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text('与$name私聊')),
+    body: const Center(child: Text('私聊功能尚未接入后端')),
+  );
 }

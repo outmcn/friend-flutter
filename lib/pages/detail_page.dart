@@ -357,8 +357,17 @@ class _DetailPageState extends State<DetailPage> {
                     (comment) => ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: CircleAvatar(
-                        backgroundColor: c.primary,
-                        child: Icon(Icons.public, color: c.onPrimary),
+                        backgroundColor:
+                            avatarColors[((comment['avatarId'] as num?)
+                                        ?.toInt() ??
+                                    0)
+                                .clamp(0, 9)],
+                        child: Icon(
+                          avatarIcons[((comment['avatarId'] as num?)?.toInt() ??
+                                  0)
+                              .clamp(0, 9)],
+                          color: Colors.white,
+                        ),
                       ),
                       title: Text(comment['nickname']?.toString() ?? '评论'),
                       subtitle: Text(comment['content']?.toString() ?? ''),
