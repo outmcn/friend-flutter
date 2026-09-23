@@ -179,7 +179,7 @@ class _PostCardState extends State<PostCard> {
                         color: c.onSurface,
                       ),
                     ),
-                  if (p.imageUrl != null)
+                  if (p.imageUrl?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.only(top: 14),
                       child: Hero(
