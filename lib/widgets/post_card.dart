@@ -146,12 +146,15 @@ class PostCard extends StatelessWidget {
               if (post.imageUrl != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 14),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      post.imageUrl!,
-                      fit: BoxFit.contain,
-                      width: double.infinity,
+                  child: GestureDetector(
+                    onTap: () => _showFullImage(context, post.imageUrl!),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 240,
+                        child: Image.network(post.imageUrl!, fit: BoxFit.cover),
+                      ),
                     ),
                   ),
                 ),
@@ -192,6 +195,22 @@ class PostCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showFullImage(BuildContext context, String url) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(12),
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4,
+          child: Image.network(url, fit: BoxFit.contain),
         ),
       ),
     );
