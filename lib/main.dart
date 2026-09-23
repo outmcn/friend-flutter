@@ -206,6 +206,7 @@ class _FriendShellState extends State<FriendShell> {
   Position? currentPosition;
   int currentUserId = 0;
   final profileKey = GlobalKey<ProfilePageState>();
+  final Set<int> followedUsers = <int>{};
 
   Future<Position?> _currentPosition() async {
     final prefs = await SharedPreferences.getInstance();
@@ -336,6 +337,25 @@ class _FriendShellState extends State<FriendShell> {
     await profileKey.currentState?.refreshFromServer();
   }
 
+  Future<void> _followPostAuthor(UiPost post) async {
+    if (post.authorId == 0) return;
+    final response = await http.post(
+      Uri.parse('https://friend.outmcn.net/api/users/${post.authorId}/follow'),
+      headers: {'Authorization': 'Bearer ${widget.token}'},
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (body['ok'] == true && mounted) {
+      setState(() {
+        if (body['data']['following'] == true) {
+          followedUsers.add(post.authorId);
+        } else {
+          followedUsers.remove(post.authorId);
+        }
+      });
+      await _loadPosts();
+    }
+  }
+
   Future<void> _changeFilter(String filter) async {
     if (postsRequestActive) return;
     postsRequestActive = true;
@@ -398,6 +418,8 @@ class _FriendShellState extends State<FriendShell> {
         currentLatitude: currentPosition?.latitude,
         currentLongitude: currentPosition?.longitude,
         currentUserId: currentUserId,
+        onFollowAuthor: _followPostAuthor,
+        isFollowing: (id) => followedUsers.contains(id),
         loading: loadingPosts,
         error: discoveryError,
       ),
@@ -678,6 +700,8 @@ class DiscoveryPage extends StatelessWidget {
   final String? error;
   final double? currentLatitude, currentLongitude;
   final int currentUserId;
+  final Future<void> Function(UiPost) onFollowAuthor;
+  final bool Function(int) isFollowing;
   const DiscoveryPage({
     super.key,
     required this.posts,
@@ -689,6 +713,8 @@ class DiscoveryPage extends StatelessWidget {
     required this.selectedFilter,
     required this.loading,
     required this.error,
+    required this.onFollowAuthor,
+    required this.isFollowing,
     this.currentLatitude,
     this.currentLongitude,
     this.currentUserId = 0,
@@ -730,6 +756,8 @@ class DiscoveryPage extends StatelessWidget {
                         currentLatitude: currentLatitude,
                         currentLongitude: currentLongitude,
                         currentUserId: currentUserId,
+                        onFollow: () => onFollowAuthor(post),
+                        isFollowing: isFollowing(post.authorId),
                       ),
                     ),
                   ),

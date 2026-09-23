@@ -37,6 +37,8 @@ class PostCard extends StatefulWidget {
   final String token;
   final double? currentLatitude, currentLongitude;
   final int currentUserId;
+  final Future<void> Function()? onFollow;
+  final bool isFollowing;
   const PostCard({
     super.key,
     required this.post,
@@ -47,6 +49,8 @@ class PostCard extends StatefulWidget {
     this.currentLatitude,
     this.currentLongitude,
     this.currentUserId = 0,
+    this.onFollow,
+    this.isFollowing = false,
   });
   @override
   State<PostCard> createState() => _PostCardState();
@@ -155,7 +159,14 @@ class _PostCardState extends State<PostCard> {
                           ),
                         )
                       else
-                        Icon(Icons.more_horiz, color: c.onSurfaceVariant),
+                        OutlinedButton(
+                          onPressed: widget.onFollow,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          child: Text(widget.isFollowing ? '已关注' : '关注'),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 14),

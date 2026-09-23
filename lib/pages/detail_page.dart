@@ -33,6 +33,41 @@ class _DetailPageState extends State<DetailPage> {
   bool reporting = false;
   int currentUserId = 0;
   bool sessionLoaded = false;
+  bool followingAuthor = false;
+  bool followAuthorLoading = false;
+
+  String _relativeTime(String value) {
+    final date = DateTime.tryParse(value)?.toLocal();
+    if (date == null) return value;
+    final diff = DateTime.now().difference(date);
+    if (diff.inSeconds < 60) return '刚刚';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}分钟前';
+    if (diff.inHours < 24) return '${diff.inHours}小时前';
+    if (diff.inDays < 30) return '${diff.inDays}天前';
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _toggleAuthorFollow() async {
+    if (followAuthorLoading || token == null || widget.post.authorId == 0) {
+      return;
+    }
+    setState(() => followAuthorLoading = true);
+    try {
+      final r = await http.post(
+        Uri.parse(
+          'https://friend.outmcn.net/api/users/${widget.post.authorId}/follow',
+        ),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      if (b['ok'] == true && mounted) {
+        setState(() => followingAuthor = b['data']['following'] == true);
+      }
+    } finally {
+      if (mounted) setState(() => followAuthorLoading = false);
+    }
+  }
+
   Map<String, dynamic>? replyingTo;
 
   String _commentRelativeTime(String value) {
@@ -393,25 +428,61 @@ class _DetailPageState extends State<DetailPage> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post.author,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: c.onSurface,
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => showDialog<void>(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('发布时间'),
+                            content: Text(post.time),
                           ),
                         ),
-                        Text(
-                          post.time,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: c.onSurfaceVariant,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    post.author,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: c.onSurface,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'IP：${post.city}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: c.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              _relativeTime(post.time),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: c.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
+                    if (!isOwnPost)
+                      OutlinedButton(
+                        onPressed: followAuthorLoading
+                            ? null
+                            : _toggleAuthorFollow,
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        child: Text(followingAuthor ? '已关注' : '关注'),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 22),
