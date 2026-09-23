@@ -353,6 +353,7 @@ class _FriendShellState extends State<FriendShell> {
         }
       });
       await _loadPosts();
+      await profileKey.currentState?.refreshFromServer();
     }
   }
 
@@ -728,7 +729,8 @@ class DiscoveryPage extends StatelessWidget {
                         currentLongitude: currentLongitude,
                         currentUserId: currentUserId,
                         onFollow: () => onFollowAuthor(post),
-                        isFollowing: isFollowing(post.authorId),
+                        isFollowing:
+                            post.following || isFollowing(post.authorId),
                       ),
                     ),
                   ),
