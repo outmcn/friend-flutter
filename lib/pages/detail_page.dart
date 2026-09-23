@@ -599,40 +599,55 @@ class _DetailPageState extends State<DetailPage> {
                                   children: [
                                     Row(
                                       children: [
-                                        Flexible(
-                                          child: Text(
-                                            comment['nickname']?.toString() ??
-                                                '评论',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  comment['nickname']
+                                                          ?.toString() ??
+                                                      '评论',
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                              if ((comment['city']
+                                                          ?.toString() ??
+                                                      '')
+                                                  .isNotEmpty)
+                                                Container(
+                                                  margin: const EdgeInsets.only(
+                                                    left: 6,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: c.primaryContainer,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          7,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    comment['city'].toString(),
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      color:
+                                                          c.onPrimaryContainer,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
-                                        if ((comment['city']?.toString() ?? '')
-                                            .isNotEmpty)
-                                          Container(
-                                            margin: const EdgeInsets.only(
-                                              left: 6,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: c.primaryContainer,
-                                              borderRadius:
-                                                  BorderRadius.circular(7),
-                                            ),
-                                            child: Text(
-                                              comment['city'].toString(),
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: c.onPrimaryContainer,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                        const Spacer(),
                                         if (_canDeleteComment(comment))
                                           IconButton(
                                             padding: EdgeInsets.zero,
@@ -653,18 +668,9 @@ class _DetailPageState extends State<DetailPage> {
                                       ],
                                     ),
                                     const SizedBox(height: 4),
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            comment['content']?.toString() ??
-                                                '',
-                                            softWrap: true,
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      comment['content']?.toString() ?? '',
+                                      softWrap: true,
                                     ),
                                   ],
                                 ),
