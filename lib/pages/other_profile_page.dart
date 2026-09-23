@@ -109,7 +109,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('个人主页')),
+      appBar: AppBar(title: const Text('Ta的主页')),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
