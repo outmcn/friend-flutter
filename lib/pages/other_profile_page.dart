@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/ui_post.dart';
 import '../widgets/post_card.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/space_tray.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -23,6 +24,7 @@ class OtherProfilePage extends StatefulWidget {
 }
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
+  bool spaceExpanded = false;
   static const baseUrl = 'https://friend.outmcn.net';
   late Map<String, dynamic> profile;
   late List<UiPost> posts;
@@ -197,6 +199,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 ),
               ),
             ],
+          ),
+          SpaceTray(
+            expanded: spaceExpanded,
+            onTap: () => setState(() => spaceExpanded = !spaceExpanded),
+            detail: '动态：${posts.length}',
           ),
           const SizedBox(height: 20),
           if (posts.isEmpty) const EmptyState(text: '还没有动态'),

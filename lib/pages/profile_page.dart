@@ -8,6 +8,7 @@ import '../models/ui_post.dart';
 import '../widgets/post_card.dart';
 import '../widgets/empty_state.dart';
 import 'user_list_page.dart';
+import '../widgets/space_tray.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
@@ -17,6 +18,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class ProfilePageState extends State<ProfilePage> {
+  bool spaceExpanded = false;
   String nickname = '';
   int following = 0;
   int followers = 0;
@@ -405,6 +407,11 @@ class ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
+        ),
+        SpaceTray(
+          expanded: spaceExpanded,
+          onTap: () => setState(() => spaceExpanded = !spaceExpanded),
+          detail: '发布时间：${ownPosts.isEmpty ? '暂无' : '已有动态'}',
         ),
         const SizedBox(height: 18),
         Row(
