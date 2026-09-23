@@ -15,6 +15,10 @@ class ProfilePage extends StatefulWidget {
 
 class ProfilePageState extends State<ProfilePage> {
   String nickname = '';
+  int following = 0;
+  int followers = 0;
+  int likes = 0;
+  int postCount = 0;
   int selectedAvatar = 0;
   static const avatarIcons = [
     Icons.public,
@@ -65,6 +69,10 @@ class ProfilePageState extends State<ProfilePage> {
                       ? profile['nickname']
                       : profile['username'])
                   .toString();
+          following = (profile['following'] as num?)?.toInt() ?? 0;
+          followers = (profile['followers'] as num?)?.toInt() ?? 0;
+          likes = (profile['likes'] as num?)?.toInt() ?? 0;
+          postCount = (profile['posts'] as num?)?.toInt() ?? 0;
 
           ownPosts = _posts(data['posts']);
           favoritePosts = _posts(data['favorited']);
@@ -252,7 +260,7 @@ class ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '关注  0     粉丝  0     获赞  0',
+                      '关注 $following     粉丝 $followers     获赞 $likes     动态 $postCount',
                       style: TextStyle(color: colors.onSurfaceVariant),
                     ),
                   ],
