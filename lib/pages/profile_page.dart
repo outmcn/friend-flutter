@@ -80,6 +80,27 @@ class ProfilePageState extends State<ProfilePage> {
   List<UiPost> _posts(dynamic value) => value is List
       ? value.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
       : <UiPost>[];
+  Future<void> _confirmDelete(UiPost post) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除动态'),
+        content: const Text('确定要删除这条动态吗？删除后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _deletePost(post);
+  }
+
   Future<void> _deletePost(UiPost post) async {
     final response = await http.delete(
       Uri.parse('https://friend.outmcn.net/api/posts/${post.id}'),
@@ -290,7 +311,7 @@ class ProfilePageState extends State<ProfilePage> {
               post: post,
               onActionChanged: refreshFromServer,
               canDelete: section == 0,
-              onDeleted: () => _deletePost(post),
+              onDeleted: () => _confirmDelete(post),
             ),
           ),
         ),
