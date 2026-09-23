@@ -144,81 +144,96 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          Card(
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  colors: [c.surfaceContainer, c.primaryContainer],
-                ),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                colors: [c.surfaceContainer, c.primaryContainer],
               ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 42,
-                    backgroundColor: avatarColors[avatarId],
-                    child: Icon(
-                      avatarIcons[avatarId],
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              displayName,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: c.onSurface,
+                              ),
+                            ),
+                          ),
+                          if ((profile['city']?.toString() ?? '').isNotEmpty)
                             Flexible(
-                              child: Text(
-                                displayName,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: c.primaryContainer,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  'IP：${profile['city']}',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: c.onPrimaryContainer,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
-                            if ((profile['city']?.toString() ?? '')
-                                .isNotEmpty) ...[
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: c.primaryContainer,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    'IP：${profile['city']}',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: c.onPrimaryContainer,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '关注 ${profile['following'] ?? 0}   粉丝 ${profile['followers'] ?? 0}   获赞 ${profile['likes'] ?? 0}   动态 ${profile['posts'] ?? posts.length}',
-                          style: TextStyle(color: c.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Text(
+                            '关注 ${profile['following'] ?? 0}',
+                            style: TextStyle(color: c.onSurfaceVariant),
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            '粉丝 ${profile['followers'] ?? 0}',
+                            style: TextStyle(color: c.onSurfaceVariant),
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            '获赞 ${profile['likes'] ?? 0}',
+                            style: TextStyle(color: c.onSurfaceVariant),
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            '天数 ${profile['activeDays'] ?? 0}',
+                            style: TextStyle(color: c.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 14),
+                CircleAvatar(
+                  radius: 42,
+                  backgroundColor: avatarColors[avatarId],
+                  child: Icon(
+                    avatarIcons[avatarId],
+                    size: 48,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
           if (!widget.isSelf)
