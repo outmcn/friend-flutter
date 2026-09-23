@@ -82,6 +82,7 @@ class ProfileCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (actions != null) ...[const SizedBox(height: 8), actions!],
                 const SizedBox(height: 8),
                 Row(
                   children: [

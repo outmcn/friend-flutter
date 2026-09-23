@@ -7,6 +7,7 @@ import '../models/ui_post.dart';
 import '../widgets/empty_state.dart';
 import 'other_profile_page.dart';
 import '../widgets/post_card.dart';
+import '../widgets/comment_tile.dart';
 
 class DetailPage extends StatefulWidget {
   final UiPost post;
@@ -571,11 +572,6 @@ class _DetailPageState extends State<DetailPage> {
                     EmptyState(text: '还没有评论')
                   else
                     ..._orderedComments().map((comment) {
-                      final avatarId =
-                          ((comment['avatarId'] as num?)?.toInt() ?? 0).clamp(
-                            0,
-                            9,
-                          );
                       final parentId = (comment['parentId'] as num?)?.toInt();
                       return GestureDetector(
                         onTap: () {
@@ -585,109 +581,18 @@ class _DetailPageState extends State<DetailPage> {
                           FocusScope.of(context).requestFocus(commentFocusNode);
                         },
                         onLongPress: () => _showCommentActions(comment),
-                        child: Padding(
+                        child: CommentTile(
+                          comment: comment,
+                          colors: c,
                           padding: EdgeInsets.only(
                             left: parentId == null ? 0 : 28,
                             bottom: 12,
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () => _openCommentProfile(comment),
-                                child: CircleAvatar(
-                                  backgroundColor: avatarColors[avatarId],
-                                  child: Icon(
-                                    avatarIcons[avatarId],
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  comment['nickname']
-                                                          ?.toString() ??
-                                                      '评论',
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                              if ((comment['city']
-                                                          ?.toString() ??
-                                                      '')
-                                                  .isNotEmpty)
-                                                Container(
-                                                  margin: const EdgeInsets.only(
-                                                    left: 6,
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: c.primaryContainer,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          7,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    comment['city'].toString(),
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      color:
-                                                          c.onPrimaryContainer,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (_canDeleteComment(comment))
-                                          IconButton(
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(
-                                              minWidth: 24,
-                                              minHeight: 24,
-                                            ),
-                                            visualDensity:
-                                                VisualDensity.compact,
-                                            onPressed: () =>
-                                                _deleteComment(comment),
-                                            icon: const Icon(
-                                              Icons.delete_outline,
-                                              size: 18,
-                                            ),
-                                            tooltip: '删除评论',
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      comment['content']?.toString() ?? '',
-                                      softWrap: true,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                          onAvatarTap: () => _openCommentProfile(comment),
+                          onLongPress: () => _showCommentActions(comment),
+                          onDelete: _canDeleteComment(comment)
+                              ? () => _deleteComment(comment)
+                              : null,
                         ),
                       );
                     }),

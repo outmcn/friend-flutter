@@ -1,13 +1,11 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import '../models/ui_post.dart';
+import '../services/api_client.dart';
+import '../services/location_service.dart';
 import '../widgets/post_card.dart';
+import '../widgets/profile_card.dart';
 import '../widgets/empty_state.dart';
-import 'user_list_page.dart';
 import '../widgets/home_top_bar.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -43,71 +41,33 @@ class ProfilePageState extends State<ProfilePage> {
   List<UiPost> ownPosts = [];
   List<UiPost> favoritePosts = [];
   List<UiPost> likedPosts = [];
+  late final ApiClient _api;
+  final _location = LocationService();
 
   @override
   void initState() {
     super.initState();
+    _api = ApiClient(token: widget.token);
     _loadAvatar();
     refreshFromServer();
     _updateCity();
   }
 
   Future<void> _updateCity() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cachedAt = prefs.getInt('friend.location.cachedAt') ?? 0;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final cachedLat = prefs.getDouble('friend.location.latitude');
-    final cachedLon = prefs.getDouble('friend.location.longitude');
-    Position? position;
-    if (cachedLat != null &&
-        cachedLon != null &&
-        now - cachedAt < 6 * 60 * 60 * 1000) {
-      position = Position(
-        latitude: cachedLat,
-        longitude: cachedLon,
-        timestamp: DateTime.fromMillisecondsSinceEpoch(cachedAt),
-        accuracy: 0,
-        altitude: 0,
-        altitudeAccuracy: 0,
-        heading: 0,
-        headingAccuracy: 0,
-        speed: 0,
-        speedAccuracy: 0,
-      );
-    }
-    if (position == null) {
-      if (!await Geolocator.isLocationServiceEnabled()) return;
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+    try {
+      final value = await _location.city();
+      if (value == null || value.isEmpty) {
         return;
       }
-      position = await Geolocator.getCurrentPosition();
-      await prefs.setDouble('friend.location.latitude', position.latitude);
-      await prefs.setDouble('friend.location.longitude', position.longitude);
-      await prefs.setInt('friend.location.cachedAt', now);
+      await _api.put('/api/me', body: {'city': value});
+      if (mounted) setState(() => city = value);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('城市更新失败')));
+      }
     }
-    final places = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
-    if (places.isEmpty) return;
-    final value =
-        (places.first.locality ?? places.first.administrativeArea ?? '')
-            .replaceAll('市', '');
-    if (value.isEmpty || !mounted) return;
-    setState(() => city = value);
-    await http.put(
-      Uri.parse('https://friend.outmcn.net/api/me'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'city': value}),
-    );
   }
 
   Future<void> _loadAvatar() async {
@@ -121,11 +81,7 @@ class ProfilePageState extends State<ProfilePage> {
 
   Future<void> refreshFromServer() async {
     try {
-      final response = await http.get(
-        Uri.parse('https://friend.outmcn.net/api/me/summary'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final body = await _api.get('/api/me/summary');
       final data = body['data'];
       if (body['ok'] == true && data is Map<String, dynamic> && mounted) {
         final profile = data['profile'] as Map<String, dynamic>;
@@ -177,12 +133,16 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _deletePost(UiPost post) async {
-    final response = await http.delete(
-      Uri.parse('https://friend.outmcn.net/api/posts/${post.id}'),
-      headers: {'Authorization': 'Bearer ${widget.token}'},
-    );
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    if (body['ok'] == true) await refreshFromServer();
+    try {
+      await _api.delete('/api/posts/${post.id}');
+      await refreshFromServer();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('删除失败')));
+      }
+    }
   }
 
   Future<void> _pickAvatar() async {
@@ -211,19 +171,21 @@ class ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
-    if (chosen == null) return;
+    if (chosen == null) {
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('friend.selected.avatar', chosen);
-    final response = await http.put(
-      Uri.parse('https://friend.outmcn.net/api/me'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'avatarId': chosen}),
-    );
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    if (body['ok'] == true && mounted) setState(() => selectedAvatar = chosen);
+    try {
+      await _api.put('/api/me', body: {'avatarId': chosen});
+      if (mounted) setState(() => selectedAvatar = chosen);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('头像更新失败')));
+      }
+    }
   }
 
   Color _avatarColor(int index) => [
@@ -264,22 +226,23 @@ class ProfilePageState extends State<ProfilePage> {
       ),
     );
     controller.dispose();
-    if (value == null || value.isEmpty) return;
-    final response = await http.put(
-      Uri.parse('https://friend.outmcn.net/api/me'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'nickname': value}),
-    );
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    if (body['ok'] == true && mounted) setState(() => nickname = value);
+    if (value == null || value.isEmpty) {
+      return;
+    }
+    try {
+      await _api.put('/api/me', body: {'nickname': value});
+      if (mounted) setState(() => nickname = value);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('昵称更新失败')));
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     final visiblePosts = section == 0
         ? ownPosts
         : (section == 1 ? favoritePosts : likedPosts);
@@ -290,161 +253,19 @@ class ProfilePageState extends State<ProfilePage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
             children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: LinearGradient(
-                    colors: [colors.surfaceContainer, colors.primaryContainer],
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  loading ? '加载中…' : nickname,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                    color: colors.onSurface,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: _editNickname,
-                                icon: Icon(
-                                  Icons.edit_outlined,
-                                  size: 18,
-                                  color: colors.onSurfaceVariant,
-                                ),
-                                tooltip: '修改名字',
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              if (city.isNotEmpty)
-                                Flexible(
-                                  child: Container(
-                                    margin: const EdgeInsets.only(left: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: colors.primaryContainer,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      'IP：$city',
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: colors.onPrimaryContainer,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              if (postCount >= 0)
-                                Container(
-                                  margin: const EdgeInsets.only(left: 6),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colors.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '$activeDays天',
-                                    style: TextStyle(
-                                      color: colors.onSecondaryContainer,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => UserListPage(
-                                      token: widget.token,
-                                      title: '关注',
-                                      relation: 'following',
-                                    ),
-                                  ),
-                                ),
-                                child: Text(
-                                  '关注 $following',
-                                  style: TextStyle(
-                                    color: colors.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => UserListPage(
-                                      token: widget.token,
-                                      title: '粉丝',
-                                      relation: 'followers',
-                                    ),
-                                  ),
-                                ),
-                                child: Text(
-                                  '粉丝 $followers',
-                                  style: TextStyle(
-                                    color: colors.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Text(
-                                '获赞 $likes',
-                                style: TextStyle(
-                                  color: colors.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Text(
-                                '动态 $postCount',
-                                style: TextStyle(
-                                  color: colors.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _pickAvatar,
-                      child: CircleAvatar(
-                        radius: 42,
-                        backgroundColor: _avatarColor(selectedAvatar),
-                        child: Icon(
-                          avatarIcons[selectedAvatar],
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              ProfileCard(
+                nickname: loading ? '加载中…' : nickname,
+                city: city,
+                following: following,
+                followers: followers,
+                likes: likes,
+                posts: postCount,
+                activeDays: activeDays,
+                avatarId: selectedAvatar,
+                onAvatarTap: _pickAvatar,
+                showEdit: true,
+                onEdit: _editNickname,
+                actions: null,
               ),
               const SizedBox(height: 18),
               Row(
