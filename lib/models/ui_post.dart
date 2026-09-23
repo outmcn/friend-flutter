@@ -6,6 +6,7 @@ class UiPost {
   final int id;
   final int authorId;
   final int authorAvatarId;
+  final double? latitude, longitude;
   final String text, author, time;
   final IconData icon;
   final int likes, favorites, comments;
@@ -19,6 +20,8 @@ class UiPost {
     this.favorites, {
     this.authorId = 0,
     this.authorAvatarId = 0,
+    this.latitude,
+    this.longitude,
     this.comments = 0,
     this.id = 0,
     this.imageUrl,
@@ -38,6 +41,8 @@ class UiPost {
         (json['authorId'] as num?)?.toInt() ??
         0,
     authorAvatarId: (json['avatarId'] as num?)?.toInt() ?? 0,
+    latitude: (json['latitude'] as num?)?.toDouble(),
+    longitude: (json['longitude'] as num?)?.toDouble(),
   );
   static String? _normalizeImage(dynamic value) {
     final raw = value?.toString() ?? '';

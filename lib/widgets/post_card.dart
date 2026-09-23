@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/ui_post.dart';
 import '../pages/detail_page.dart';
+import 'dart:math' as math;
 
 const avatarIcons = [
   Icons.public,
@@ -33,6 +34,8 @@ class PostCard extends StatelessWidget {
   final bool canDelete;
   final Future<void> Function()? onDeleted;
   final String token;
+  final double? currentLatitude, currentLongitude;
+  final int currentUserId;
   const PostCard({
     super.key,
     required this.post,
@@ -40,7 +43,27 @@ class PostCard extends StatelessWidget {
     this.canDelete = false,
     this.onDeleted,
     this.token = '',
+    this.currentLatitude,
+    this.currentLongitude,
+    this.currentUserId = 0,
   });
+  String? _distanceLabel() {
+    if (post.authorId == currentUserId ||
+        post.latitude == null ||
+        post.longitude == null ||
+        currentLatitude == null ||
+        currentLongitude == null) {
+      return null;
+    }
+    final latScale = 111.2;
+    final lonScale = 111.2 * math.cos(currentLatitude! * math.pi / 180);
+    final distance = math.sqrt(
+      math.pow((post.latitude! - currentLatitude!) * latScale, 2) +
+          math.pow((post.longitude! - currentLongitude!) * lonScale, 2),
+    );
+    return '相距${distance < 1 ? distance.toStringAsFixed(2) : distance.round()}km';
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -87,7 +110,10 @@ class PostCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          post.time,
+                          [
+                            post.time,
+                            if (_distanceLabel() != null) _distanceLabel()!,
+                          ].join(' · '),
                           style: TextStyle(
                             color: c.onSurfaceVariant,
                             fontSize: 12,

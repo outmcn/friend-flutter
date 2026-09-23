@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
 import 'models/ui_post.dart';
 import 'pages/profile_page.dart';
 import 'pages/contacts_page.dart';
@@ -199,12 +200,46 @@ class _FriendShellState extends State<FriendShell> {
   String selectedFilter = '推荐';
   int filterRequestId = 0;
   String? discoveryError;
+  Position? currentPosition;
+  int currentUserId = 0;
   final profileKey = GlobalKey<ProfilePageState>();
+
+  Future<Position?> _currentPosition() async {
+    if (!await Geolocator.isLocationServiceEnabled()) return null;
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return null;
+    }
+    return Geolocator.getCurrentPosition();
+  }
 
   @override
   void initState() {
     super.initState();
     _loadPosts();
+    _loadCurrentPosition();
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final response = await http.get(
+      Uri.parse('https://friend.outmcn.net/api/me'),
+      headers: {'Authorization': 'Bearer ${widget.token}'},
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = body['data'] as Map<String, dynamic>?;
+    if (body['ok'] == true && data != null && mounted) {
+      setState(() => currentUserId = (data['id'] as num?)?.toInt() ?? 0);
+    }
+  }
+
+  Future<void> _loadCurrentPosition() async {
+    final position = await _currentPosition();
+    if (mounted) setState(() => currentPosition = position);
   }
 
   Future<void> _loadPosts() async {
@@ -317,6 +352,9 @@ class _FriendShellState extends State<FriendShell> {
         onActionChanged: _refreshAll,
         onFilterChanged: _changeFilter,
         selectedFilter: selectedFilter,
+        currentLatitude: currentPosition?.latitude,
+        currentLongitude: currentPosition?.longitude,
+        currentUserId: currentUserId,
         loading: loadingPosts,
         error: discoveryError,
       ),
@@ -378,6 +416,11 @@ class _FriendShellState extends State<FriendShell> {
         imageData = 'data:image/jpeg;base64,${base64Encode(compressed)}';
       }
       final payload = <String, dynamic>{'content': content};
+      final position = await _currentPosition();
+      if (position != null) {
+        payload['latitude'] = position.latitude;
+        payload['longitude'] = position.longitude;
+      }
       if (imageData != null) payload['image'] = imageData;
       final response = await http.post(
         Uri.parse('https://friend.outmcn.net/api/posts'),
@@ -497,6 +540,8 @@ class DiscoveryPage extends StatelessWidget {
   final String selectedFilter;
   final bool loading;
   final String? error;
+  final double? currentLatitude, currentLongitude;
+  final int currentUserId;
   const DiscoveryPage({
     super.key,
     required this.posts,
@@ -508,6 +553,9 @@ class DiscoveryPage extends StatelessWidget {
     required this.selectedFilter,
     required this.loading,
     required this.error,
+    this.currentLatitude,
+    this.currentLongitude,
+    this.currentUserId = 0,
   });
   @override
   Widget build(BuildContext context) {
@@ -517,7 +565,7 @@ class DiscoveryPage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
         children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 5),
           Row(
             children: [
               Expanded(
@@ -537,7 +585,7 @@ class DiscoveryPage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
           if (loading)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -562,6 +610,9 @@ class DiscoveryPage extends StatelessWidget {
                   post: post,
                   token: token,
                   onActionChanged: onActionChanged,
+                  currentLatitude: currentLatitude,
+                  currentLongitude: currentLongitude,
+                  currentUserId: currentUserId,
                 ),
               ),
             ),
