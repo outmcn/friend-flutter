@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/ui_post.dart';
 import '../pages/detail_page.dart';
 import 'dart:math' as math;
+import 'package:intl/intl.dart';
 
 const avatarIcons = [
   Icons.public,
@@ -64,6 +65,17 @@ class PostCard extends StatelessWidget {
     return '相距${distance < 1 ? distance.toStringAsFixed(2) : distance.round()}km';
   }
 
+  String _relativeTime() {
+    final date = DateTime.tryParse(post.time)?.toLocal();
+    if (date == null) return post.time;
+    final diff = DateTime.now().difference(date);
+    if (diff.inSeconds < 60) return '刚刚';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}分钟前';
+    if (diff.inHours < 24) return '${diff.inHours}小时前';
+    if (diff.inDays < 30) return '${diff.inDays}天前';
+    return DateFormat('yyyy-MM-dd').format(date);
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -111,7 +123,7 @@ class PostCard extends StatelessWidget {
                         ),
                         Text(
                           [
-                            post.time,
+                            _relativeTime(),
                             if (_distanceLabel() != null) _distanceLabel()!,
                           ].join(' · '),
                           style: TextStyle(
