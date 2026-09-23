@@ -165,33 +165,40 @@ class _PostCardState extends State<PostCard> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                p.author,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: c.onSurface,
-                                ),
-                              ),
-                              if (p.city.isNotEmpty)
-                                Container(
-                                  margin: const EdgeInsets.only(left: 6),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: c.primaryContainer,
-                                    borderRadius: BorderRadius.circular(7),
-                                  ),
-                                  child: Text(
-                                    p.city,
-                                    style: TextStyle(
-                                      color: c.onPrimaryContainer,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      p.author,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: c.onSurface,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                  if (p.city.isNotEmpty)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: c.primaryContainer,
+                                        borderRadius: BorderRadius.circular(7),
+                                      ),
+                                      child: Text(
+                                        p.city,
+                                        style: TextStyle(
+                                          color: c.onPrimaryContainer,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                               Text(
                                 [
                                   _relativeTime(),
