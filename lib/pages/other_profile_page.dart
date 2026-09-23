@@ -125,8 +125,14 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         children: [
           Card(
             clipBehavior: Clip.antiAlias,
-            child: Padding(
+            child: Container(
               padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  colors: [c.surfaceContainer, c.primaryContainer],
+                ),
+              ),
               child: Row(
                 children: [
                   CircleAvatar(

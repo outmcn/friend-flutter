@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 import '../models/ui_post.dart';
 import '../widgets/empty_state.dart';
 import 'other_profile_page.dart';
@@ -32,6 +33,97 @@ class _DetailPageState extends State<DetailPage> {
   bool reporting = false;
   int currentUserId = 0;
   bool sessionLoaded = false;
+  Map<String, dynamic>? replyingTo;
+
+  String _commentRelativeTime(String value) {
+    final date = DateTime.tryParse(value)?.toLocal();
+    if (date == null) return value;
+    final diff = DateTime.now().difference(date);
+    if (diff.inSeconds < 60) return '刚刚';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}分钟前';
+    if (diff.inHours < 24) return '${diff.inHours}小时前';
+    if (diff.inDays < 30) return '${diff.inDays}天前';
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _openCommentProfile(Map<String, dynamic> comment) async {
+    final id = (comment['userId'] as num?)?.toInt() ?? 0;
+    if (id == 0 || token == null || token!.isEmpty) return;
+    final r = await http.get(
+      Uri.parse('https://friend.outmcn.net/api/users/$id'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final body = jsonDecode(r.body) as Map<String, dynamic>;
+    if (!mounted || body['ok'] != true) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OtherProfilePage(
+          data: body['data'] as Map<String, dynamic>,
+          dataToken: token!,
+          onFollowChanged: widget.onActionChanged,
+          isSelf: id == currentUserId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showCommentActions(Map<String, dynamic> comment) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: DraggableScrollableSheet(
+          expand: false,
+          snap: true,
+          snapSizes: const [0.28, 0.52],
+          minChildSize: 0.22,
+          initialChildSize: 0.28,
+          maxChildSize: 0.52,
+          builder: (_, controller) => ListView(
+            controller: controller,
+            physics: const BouncingScrollPhysics(),
+            children: [
+              ListTile(
+                leading: const Icon(Icons.copy),
+                title: const Text('复制'),
+                onTap: () async {
+                  await Clipboard.setData(
+                    ClipboardData(text: comment['content']?.toString() ?? ''),
+                  );
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('举报'),
+                onTap: () async {
+                  final r = await http.post(
+                    Uri.parse(
+                      'https://friend.outmcn.net/api/comments/${comment['id']}/report',
+                    ),
+                    headers: {
+                      'Authorization': 'Bearer $token',
+                      'Content-Type': 'application/json',
+                    },
+                    body: jsonEncode({'reason': '违规评论'}),
+                  );
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  if (mounted && r.statusCode >= 200 && r.statusCode < 300) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text('举报已提交')));
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openAuthorProfile() async {
     if (openingAuthor) return;
     openingAuthor = true;
@@ -162,11 +254,15 @@ class _DetailPageState extends State<DetailPage> {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'content': value}),
+        body: jsonEncode({
+          'content': value,
+          if (replyingTo != null) 'parentId': replyingTo!['id'],
+        }),
       );
       final b = jsonDecode(r.body) as Map<String, dynamic>;
       if (b['ok'] == true) {
         commentController.clear();
+        if (mounted) setState(() => replyingTo = null);
         await _loadComments();
         await widget.onActionChanged?.call();
       }
@@ -353,33 +449,95 @@ class _DetailPageState extends State<DetailPage> {
                 if (comments.isEmpty)
                   EmptyState(text: '还没有评论')
                 else
-                  ...comments.map(
-                    (comment) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        backgroundColor:
-                            avatarColors[((comment['avatarId'] as num?)
-                                        ?.toInt() ??
-                                    0)
-                                .clamp(0, 9)],
-                        child: Icon(
-                          avatarIcons[((comment['avatarId'] as num?)?.toInt() ??
-                                  0)
-                              .clamp(0, 9)],
-                          color: Colors.white,
+                  ...comments.map((comment) {
+                    final avatarId =
+                        ((comment['avatarId'] as num?)?.toInt() ?? 0).clamp(
+                          0,
+                          9,
+                        );
+                    final parentId = (comment['parentId'] as num?)?.toInt();
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => replyingTo = comment);
+                        FocusScope.of(context).requestFocus(FocusNode());
+                      },
+                      onLongPress: () => _showCommentActions(comment),
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: parentId == null ? 0 : 28,
+                          bottom: 12,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: () => _openCommentProfile(comment),
+                              child: CircleAvatar(
+                                backgroundColor: avatarColors[avatarId],
+                                child: Icon(
+                                  avatarIcons[avatarId],
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          comment['nickname']?.toString() ??
+                                              '评论',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      if ((comment['city']?.toString() ?? '')
+                                          .isNotEmpty)
+                                        Text(
+                                          '  ${comment['city']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: c.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      const Spacer(),
+                                      Text(
+                                        _commentRelativeTime(
+                                          comment['createdAt']?.toString() ??
+                                              '',
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: c.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(comment['content']?.toString() ?? ''),
+                                  if (_canDeleteComment(comment))
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: IconButton(
+                                        onPressed: () =>
+                                            _deleteComment(comment),
+                                        icon: const Icon(Icons.delete_outline),
+                                        tooltip: '删除评论',
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      title: Text(comment['nickname']?.toString() ?? '评论'),
-                      subtitle: Text(comment['content']?.toString() ?? ''),
-                      trailing: _canDeleteComment(comment)
-                          ? IconButton(
-                              onPressed: () => _deleteComment(comment),
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: '删除评论',
-                            )
-                          : null,
-                    ),
-                  ),
+                    );
+                  }),
               ],
             ),
           ),
@@ -399,7 +557,9 @@ class _DetailPageState extends State<DetailPage> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => sendComment(),
                       decoration: InputDecoration(
-                        hintText: '写评论…',
+                        hintText: replyingTo == null
+                            ? '写评论…'
+                            : '回复 ${replyingTo!['nickname']}…',
                         fillColor: c.surfaceContainerHighest,
                       ),
                     ),
