@@ -20,9 +20,18 @@ class SpaceTray extends StatelessWidget {
           widthFactor: .75,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
-            decoration: const BoxDecoration(
-              color: Color(0xff303238),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(14)),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
+                  Theme.of(context).colorScheme.primaryContainer,
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(14),
+              ),
             ),
             padding: EdgeInsets.fromLTRB(16, 10, 16, expanded ? 14 : 10),
             child: expanded
@@ -30,16 +39,16 @@ class SpaceTray extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        children: const [
+                        children: [
                           Text(
                             '空间',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           Spacer(),
-                          Icon(
+                          const Icon(
                             Icons.keyboard_arrow_up,
                             color: Colors.white70,
                             size: 20,
@@ -49,24 +58,21 @@ class SpaceTray extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         detail,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ],
                   )
                 : Row(
-                    children: const [
+                    children: [
                       Text(
                         '空间',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Spacer(),
-                      Icon(
+                      const Icon(
                         Icons.keyboard_arrow_down,
                         color: Colors.white70,
                         size: 20,
