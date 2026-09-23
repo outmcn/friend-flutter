@@ -196,6 +196,7 @@ class _FriendShellState extends State<FriendShell> {
   int tab = 0;
   bool loadingPosts = true;
   final posts = <UiPost>[];
+  String selectedFilter = '推荐';
   final profileKey = GlobalKey<ProfilePageState>();
 
   @override
@@ -241,6 +242,28 @@ class _FriendShellState extends State<FriendShell> {
     await profileKey.currentState?.refreshFromServer();
   }
 
+  Future<void> _changeFilter(String filter) async {
+    final path = filter == '关注'
+        ? '/api/posts/following'
+        : filter == '附近'
+        ? '/api/posts/nearby'
+        : '/api/posts';
+    final response = await http.get(
+      Uri.parse('https://friend.outmcn.net$path'),
+      headers: {'Authorization': 'Bearer ${widget.token}'},
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = body['data'];
+    if (body['ok'] == true && data is List && mounted) {
+      setState(() {
+        selectedFilter = filter;
+        posts
+          ..clear()
+          ..addAll(data.whereType<Map<String, dynamic>>().map(UiPost.fromJson));
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -251,6 +274,8 @@ class _FriendShellState extends State<FriendShell> {
         onCreate: _createPost,
         onRefresh: _loadPosts,
         onActionChanged: _refreshAll,
+        onFilterChanged: _changeFilter,
+        selectedFilter: selectedFilter,
       ),
       MessagePage(token: widget.token),
       ProfilePage(key: profileKey, token: widget.token),
@@ -425,6 +450,8 @@ class DiscoveryPage extends StatelessWidget {
   final Future<void> Function(String, XFile?) onCreate;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onActionChanged;
+  final Future<void> Function(String) onFilterChanged;
+  final String selectedFilter;
   const DiscoveryPage({
     super.key,
     required this.posts,
@@ -432,6 +459,8 @@ class DiscoveryPage extends StatelessWidget {
     required this.onCreate,
     required this.onRefresh,
     required this.onActionChanged,
+    required this.onFilterChanged,
+    required this.selectedFilter,
   });
   @override
   Widget build(BuildContext context) {
@@ -444,7 +473,12 @@ class DiscoveryPage extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Expanded(child: ChoiceChips()),
+              Expanded(
+                child: ChoiceChips(
+                  selected: selectedFilter,
+                  onSelected: onFilterChanged,
+                ),
+              ),
               const SizedBox(width: 8),
               IconButton(
                 onPressed: () => _compose(context),
@@ -567,7 +601,13 @@ class _ComposeSheetState extends State<ComposeSheet> {
 }
 
 class ChoiceChips extends StatelessWidget {
-  const ChoiceChips({super.key});
+  final String selected;
+  final ValueChanged<String> onSelected;
+  const ChoiceChips({
+    super.key,
+    required this.selected,
+    required this.onSelected,
+  });
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -578,8 +618,8 @@ class ChoiceChips extends StatelessWidget {
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
                 label: Text(text),
-                selected: text == '推荐',
-                onSelected: (_) {},
+                selected: text == selected,
+                onSelected: (_) => onSelected(text),
                 selectedColor: c.primary,
                 backgroundColor: c.surfaceContainerHighest,
                 labelStyle: TextStyle(

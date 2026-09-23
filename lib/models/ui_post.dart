@@ -5,6 +5,7 @@ const imageOrigin = 'https://friend.outmcn.net';
 class UiPost {
   final int id;
   final int authorId;
+  final int authorAvatarId;
   final String text, author, time;
   final IconData icon;
   final int likes, favorites, comments;
@@ -17,6 +18,7 @@ class UiPost {
     this.likes,
     this.favorites, {
     this.authorId = 0,
+    this.authorAvatarId = 0,
     this.comments = 0,
     this.id = 0,
     this.imageUrl,
@@ -35,6 +37,7 @@ class UiPost {
         (json['userId'] as num?)?.toInt() ??
         (json['authorId'] as num?)?.toInt() ??
         0,
+    authorAvatarId: (json['avatarId'] as num?)?.toInt() ?? 0,
   );
   static String? _normalizeImage(dynamic value) {
     final raw = value?.toString() ?? '';

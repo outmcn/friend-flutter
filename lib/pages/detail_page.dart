@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ui_post.dart';
 import '../widgets/empty_state.dart';
 import 'other_profile_page.dart';
+import '../widgets/post_card.dart';
 
 class DetailPage extends StatefulWidget {
   final UiPost post;
@@ -287,9 +288,12 @@ class _DetailPageState extends State<DetailPage> {
                     GestureDetector(
                       onTap: _openAuthorProfile,
                       child: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: c.primary,
-                        child: Icon(Icons.public, color: c.onPrimary),
+                        backgroundColor:
+                            avatarColors[post.authorAvatarId.clamp(0, 9)],
+                        child: Icon(
+                          avatarIcons[post.authorAvatarId.clamp(0, 9)],
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),

@@ -2,6 +2,31 @@ import 'package:flutter/material.dart';
 import '../models/ui_post.dart';
 import '../pages/detail_page.dart';
 
+const avatarIcons = [
+  Icons.public,
+  Icons.auto_awesome,
+  Icons.favorite,
+  Icons.bolt,
+  Icons.nightlight_round,
+  Icons.local_florist,
+  Icons.pets,
+  Icons.music_note,
+  Icons.rocket_launch,
+  Icons.face,
+];
+const avatarColors = [
+  Color(0xff376bd6),
+  Color(0xff7c4dff),
+  Color(0xffe64a75),
+  Color(0xff00897b),
+  Color(0xff3949ab),
+  Color(0xff43a047),
+  Color(0xfffb8c00),
+  Color(0xff8e24aa),
+  Color(0xff039be5),
+  Color(0xff546e7a),
+];
+
 class PostCard extends StatelessWidget {
   final UiPost post;
   final Future<void> Function()? onActionChanged;
@@ -41,8 +66,13 @@ class PostCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 19,
-                    backgroundColor: c.primary,
-                    child: Icon(Icons.public, size: 21, color: c.onPrimary),
+                    backgroundColor:
+                        avatarColors[post.authorAvatarId.clamp(0, 9)],
+                    child: Icon(
+                      avatarIcons[post.authorAvatarId.clamp(0, 9)],
+                      size: 21,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
