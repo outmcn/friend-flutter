@@ -520,42 +520,32 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    return Column(
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
       children: [
-        HomeTopBar(
-          onQrCode: () => _showHomeQrCode(context),
-          onSettings: () => _showHomeSettings(context),
-        ),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-            children: [
-              Text(
-                'Friend',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  color: c.onSurface,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '找到真实的交流',
-                style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
-              ),
-              const SizedBox(height: 28),
-              GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const GamePage()),
-                ),
-                child: _hero(context),
-              ),
-              const SizedBox(height: 20),
-              const SizedBox(height: 12),
-            ],
+        Text(
+          'Friend',
+          style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w800,
+            color: c.onSurface,
           ),
         ),
+        const SizedBox(height: 6),
+        Text(
+          '找到真实的交流',
+          style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
+        ),
+        const SizedBox(height: 28),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const GamePage()),
+          ),
+          child: _hero(context),
+        ),
+        const SizedBox(height: 20),
+        const SizedBox(height: 12),
       ],
     );
   }
@@ -603,51 +593,12 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-
-  void _showHomeQrCode(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('二维码'),
-        content: SizedBox(
-          width: 220,
-          height: 220,
-          child: Center(
-            child: Icon(
-              Icons.qr_code_2,
-              size: 190,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showHomeSettings(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: ListTile(
-          leading: const Icon(Icons.settings_outlined),
-          title: const Text('设置'),
-          subtitle: const Text('设置功能正在完善'),
-          onTap: () => Navigator.pop(context),
-        ),
-      ),
-    );
-  }
 }
 
 class HomeTopBar extends StatelessWidget {
-  final VoidCallback onQrCode;
-  final VoidCallback onSettings;
-  const HomeTopBar({
-    super.key,
-    required this.onQrCode,
-    required this.onSettings,
-  });
+  final VoidCallback? onQrCode;
+  final VoidCallback? onSettings;
+  const HomeTopBar({super.key, this.onQrCode, this.onSettings});
 
   @override
   Widget build(BuildContext context) {
@@ -671,12 +622,32 @@ class HomeTopBar extends StatelessWidget {
               ),
               const Spacer(),
               IconButton(
-                onPressed: onQrCode,
+                onPressed:
+                    onQrCode ??
+                    () => showDialog<void>(
+                      context: context,
+                      builder: (_) => const AlertDialog(
+                        title: Text('二维码'),
+                        content: Icon(Icons.qr_code_2, size: 190),
+                      ),
+                    ),
                 tooltip: '二维码',
                 icon: const Icon(Icons.qr_code_2_outlined),
               ),
               IconButton(
-                onPressed: onSettings,
+                onPressed:
+                    onSettings ??
+                    () => showModalBottomSheet<void>(
+                      context: context,
+                      showDragHandle: true,
+                      builder: (_) => const SafeArea(
+                        child: ListTile(
+                          leading: Icon(Icons.settings_outlined),
+                          title: Text('设置'),
+                          subtitle: Text('设置功能正在完善'),
+                        ),
+                      ),
+                    ),
                 tooltip: '设置',
                 icon: const Icon(Icons.settings_outlined),
               ),
@@ -917,58 +888,62 @@ class ChoiceChips extends StatelessWidget {
 class MessagePage extends StatelessWidget {
   final String token;
   const MessagePage({super.key, required this.token});
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
-          child: Row(
-            children: [
-              Text(
-                '消息',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: c.onSurface,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ContactsPage(token: token)),
-                ),
-                icon: const Icon(Icons.contacts_outlined),
-              ),
-              IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => UserListPage(
-                      token: token,
-                      title: '搜索用户',
-                      searchable: true,
-                    ),
-                  ),
-                ),
-                icon: const Icon(Icons.search),
-              ),
-              IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ContactsPage(token: token)),
-                ),
-                icon: const Icon(Icons.add_circle_outline),
-              ),
-            ],
-          ),
-        ),
+        const HomeTopBar(),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
             children: [
+              Row(
+                children: [
+                  Text(
+                    '消息',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: c.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ContactsPage(token: token),
+                      ),
+                    ),
+                    icon: const Icon(Icons.contacts_outlined),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => UserListPage(
+                          token: token,
+                          title: '搜索用户',
+                          searchable: true,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.search),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ContactsPage(token: token),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               ...List.generate(
                 6,
                 (i) => Card(

@@ -24,6 +24,7 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   final commentController = TextEditingController();
+  final commentFocusNode = FocusNode();
   final comments = <Map<String, dynamic>>[];
   String? token;
   bool liked = false;
@@ -211,6 +212,7 @@ class _DetailPageState extends State<DetailPage> {
   @override
   void dispose() {
     commentController.dispose();
+    commentFocusNode.dispose();
     super.dispose();
   }
 
@@ -529,8 +531,10 @@ class _DetailPageState extends State<DetailPage> {
                     final parentId = (comment['parentId'] as num?)?.toInt();
                     return GestureDetector(
                       onTap: () {
-                        setState(() => replyingTo = comment);
-                        FocusScope.of(context).requestFocus(FocusNode());
+                        setState(() {
+                          replyingTo = comment;
+                        });
+                        FocusScope.of(context).requestFocus(commentFocusNode);
                       },
                       onLongPress: () => _showCommentActions(comment),
                       child: Padding(
@@ -594,11 +598,20 @@ class _DetailPageState extends State<DetailPage> {
                                   if (_canDeleteComment(comment))
                                     Align(
                                       alignment: Alignment.centerRight,
-                                      child: IconButton(
-                                        onPressed: () =>
-                                            _deleteComment(comment),
-                                        icon: const Icon(Icons.delete_outline),
-                                        tooltip: '删除评论',
+                                      child: SizedBox(
+                                        height: 28,
+                                        width: 32,
+                                        child: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          onPressed: () =>
+                                              _deleteComment(comment),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                          ),
+                                          tooltip: '删除评论',
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -625,6 +638,7 @@ class _DetailPageState extends State<DetailPage> {
                   Expanded(
                     child: TextField(
                       controller: commentController,
+                      focusNode: commentFocusNode,
                       minLines: 1,
                       maxLines: 1,
                       style: const TextStyle(fontSize: 14),
@@ -633,7 +647,7 @@ class _DetailPageState extends State<DetailPage> {
                       decoration: InputDecoration(
                         hintText: replyingTo == null
                             ? '写评论…'
-                            : '回复 ${replyingTo!['nickname']}…',
+                            : '回复：${replyingTo!['nickname']}…',
                         fillColor: c.surfaceContainerHighest,
                         constraints: const BoxConstraints(minHeight: 38),
                         contentPadding: const EdgeInsets.symmetric(
