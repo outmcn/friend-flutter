@@ -360,7 +360,7 @@ class ProfilePageState extends State<ProfilePage> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    '${postCount}条动态',
+                                    '${postCount.toString()}条动态',
                                     style: TextStyle(
                                       color: colors.onSecondaryContainer,
                                       fontSize: 12,
