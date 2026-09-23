@@ -47,10 +47,11 @@ class ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadAvatar() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted)
+    if (mounted) {
       setState(
         () => selectedAvatar = prefs.getInt('friend.selected.avatar') ?? 0,
       );
+    }
   }
 
   Future<void> refreshFromServer() async {
