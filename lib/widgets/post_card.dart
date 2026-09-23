@@ -22,8 +22,11 @@ class PostCard extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              DetailPage(post: post, onActionChanged: onActionChanged),
+          builder: (_) => DetailPage(
+            post: post,
+            token: '',
+            onActionChanged: onActionChanged,
+          ),
         ),
       ),
       child: Card(

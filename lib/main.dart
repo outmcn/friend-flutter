@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/ui_post.dart';
 import 'pages/profile_page.dart';
+import 'pages/detail_page.dart';
 import 'widgets/post_card.dart';
 
 const blue = Color(0xff4d8dff);

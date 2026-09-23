@@ -4,11 +4,18 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ui_post.dart';
 import '../widgets/empty_state.dart';
+import 'other_profile_page.dart';
 
 class DetailPage extends StatefulWidget {
   final UiPost post;
   final Future<void> Function()? onActionChanged;
-  const DetailPage({super.key, required this.post, this.onActionChanged});
+  final String token;
+  const DetailPage({
+    super.key,
+    required this.post,
+    this.token = '',
+    this.onActionChanged,
+  });
   @override
   State<DetailPage> createState() => _DetailPageState();
 }
@@ -20,6 +27,26 @@ class _DetailPageState extends State<DetailPage> {
   bool liked = false;
   bool favorited = false;
   bool sending = false;
+  Future<void> _openAuthorProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final authToken = widget.token.isEmpty
+        ? (prefs.getString('friend.auth.token') ?? '')
+        : widget.token;
+    if (widget.post.authorId == 0 || authToken.isEmpty) return;
+    final r = await http.get(
+      Uri.parse('https://friend.outmcn.net/api/users/${widget.post.authorId}'),
+      headers: {'Authorization': 'Bearer $authToken'},
+    );
+    final b = jsonDecode(r.body) as Map<String, dynamic>;
+    if (b['ok'] == true && mounted)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              OtherProfilePage(data: b['data'] as Map<String, dynamic>),
+        ),
+      );
+  }
 
   @override
   void initState() {
@@ -127,10 +154,13 @@ class _DetailPageState extends State<DetailPage> {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: c.primary,
-                      child: Icon(Icons.public, color: c.onPrimary),
+                    GestureDetector(
+                      onTap: _openAuthorProfile,
+                      child: CircleAvatar(
+                        radius: 22,
+                        backgroundColor: c.primary,
+                        child: Icon(Icons.public, color: c.onPrimary),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Column(
