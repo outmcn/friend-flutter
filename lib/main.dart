@@ -13,6 +13,7 @@ import 'pages/contacts_page.dart';
 import 'pages/user_list_page.dart';
 import 'pages/game_page.dart';
 import 'widgets/post_card.dart';
+import 'widgets/discovery_top_bar.dart';
 
 const blue = Color(0xff4d8dff);
 
@@ -559,65 +560,53 @@ class DiscoveryPage extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
-        children: [
-          const SizedBox(height: 5),
-          Row(
-            children: [
-              Expanded(
-                child: ChoiceChips(
-                  selected: selectedFilter,
-                  onSelected: onFilterChanged,
+    return Column(
+      children: [
+        DiscoveryTopBar(
+          selected: selectedFilter,
+          onSelected: onFilterChanged,
+          onCompose: () => _compose(context),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: onRefresh,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: () => _compose(context),
-                icon: Icon(
-                  Icons.add_circle_outline,
-                  color: c.primary,
-                  size: 29,
-                ),
-              ),
-            ],
+                if (!loading && error != null) Center(child: Text(error!)),
+                if (!loading && error == null && posts.isEmpty)
+                  Center(
+                    child: Text(
+                      selectedFilter == '关注'
+                          ? '还没有关注的人发布动态'
+                          : selectedFilter == '附近'
+                          ? '附近暂无动态'
+                          : '暂无动态',
+                    ),
+                  ),
+                if (!loading && error == null)
+                  ...posts.map(
+                    (post) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: PostCard(
+                        post: post,
+                        token: token,
+                        onActionChanged: onActionChanged,
+                        currentLatitude: currentLatitude,
+                        currentLongitude: currentLongitude,
+                        currentUserId: currentUserId,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          if (loading)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          if (!loading && error != null) Center(child: Text(error!)),
-          if (!loading && error == null && posts.isEmpty)
-            Center(
-              child: Text(
-                selectedFilter == '关注'
-                    ? '还没有关注的人发布动态'
-                    : selectedFilter == '附近'
-                    ? '附近暂无动态'
-                    : '暂无动态',
-              ),
-            ),
-          if (!loading && error == null)
-            ...posts.map(
-              (post) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: PostCard(
-                  post: post,
-                  token: token,
-                  onActionChanged: onActionChanged,
-                  currentLatitude: currentLatitude,
-                  currentLongitude: currentLongitude,
-                  currentUserId: currentUserId,
-                ),
-              ),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
