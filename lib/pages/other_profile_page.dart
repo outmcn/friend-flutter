@@ -280,7 +280,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           ...posts.map(
             (post) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: PostCard(post: post, token: widget.dataToken),
+              child: PostCard(
+                post: post,
+                token: widget.dataToken,
+                hideAuthor: true,
+              ),
             ),
           ),
         ],

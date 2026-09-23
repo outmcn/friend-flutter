@@ -464,6 +464,7 @@ class ProfilePageState extends State<ProfilePage> {
                     post: post,
                     onActionChanged: refreshFromServer,
                     canDelete: section == 0,
+                    hideAuthor: true,
                     onDeleted: () => _confirmDelete(post),
                   ),
                 ),

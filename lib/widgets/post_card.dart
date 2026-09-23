@@ -39,6 +39,7 @@ class PostCard extends StatefulWidget {
   final int currentUserId;
   final Future<void> Function()? onFollow;
   final bool isFollowing;
+  final bool hideAuthor;
   const PostCard({
     super.key,
     required this.post,
@@ -51,6 +52,7 @@ class PostCard extends StatefulWidget {
     this.currentUserId = 0,
     this.onFollow,
     this.isFollowing = false,
+    this.hideAuthor = false,
   });
   @override
   State<PostCard> createState() => _PostCardState();
@@ -113,61 +115,80 @@ class _PostCardState extends State<PostCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 19,
-                        backgroundColor:
-                            avatarColors[p.authorAvatarId.clamp(0, 9)],
-                        child: Icon(
-                          avatarIcons[p.authorAvatarId.clamp(0, 9)],
-                          size: 21,
-                          color: Colors.white,
+                  if (widget.hideAuthor)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        [
+                          _relativeTime(),
+                          if (distance != null) distance,
+                        ].join(' · '),
+                        style: TextStyle(
+                          color: c.onSurfaceVariant,
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              p.author,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: c.onSurface,
+                    ),
+                  Visibility(
+                    visible: !widget.hideAuthor,
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 19,
+                          backgroundColor:
+                              avatarColors[p.authorAvatarId.clamp(0, 9)],
+                          child: Icon(
+                            avatarIcons[p.authorAvatarId.clamp(0, 9)],
+                            size: 21,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                p.author,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: c.onSurface,
+                                ),
+                              ),
+                              Text(
+                                [
+                                  _relativeTime(),
+                                  if (distance != null) distance,
+                                ].join(' · '),
+                                style: TextStyle(
+                                  color: c.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (widget.canDelete)
+                          IconButton(
+                            onPressed: widget.onDeleted,
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: c.onSurfaceVariant,
+                            ),
+                          )
+                        else
+                          OutlinedButton(
+                            onPressed: widget.onFollow,
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 32),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
                               ),
                             ),
-                            Text(
-                              [
-                                _relativeTime(),
-                                if (distance != null) distance,
-                              ].join(' · '),
-                              style: TextStyle(
-                                color: c.onSurfaceVariant,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (widget.canDelete)
-                        IconButton(
-                          onPressed: widget.onDeleted,
-                          icon: Icon(
-                            Icons.delete_outline,
-                            color: c.onSurfaceVariant,
+                            child: Text(widget.isFollowing ? '已关注' : '关注'),
                           ),
-                        )
-                      else
-                        OutlinedButton(
-                          onPressed: widget.onFollow,
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 32),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
-                          child: Text(widget.isFollowing ? '已关注' : '关注'),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 14),
                   if (p.text.isNotEmpty)
