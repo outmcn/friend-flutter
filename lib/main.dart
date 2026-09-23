@@ -994,13 +994,98 @@ class DetailPage extends StatefulWidget {
 class _DetailPageState extends State<DetailPage> {
   final commentController = TextEditingController();
   final comments = <String>[];
+  String? token;
   bool liked = false;
   bool favorited = false;
   bool sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    liked = widget.post.likes > 0;
+    favorited = widget.post.favorites > 0;
+    _loadSession();
+  }
+
   @override
   void dispose() {
     commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    token = prefs.getString('friend.auth.token');
+    await _loadComments();
+  }
+
+  Future<void> _loadComments() async {
+    if (token == null || widget.post.id == 0) return;
+    try {
+      final r = await http.get(
+        Uri.parse(
+          'https://friend.outmcn.net/api/posts/${widget.post.id}/comments',
+        ),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      if (b['ok'] == true && b['data'] is List && mounted)
+        setState(() {
+          comments
+            ..clear()
+            ..addAll(
+              (b['data'] as List).whereType<Map<String, dynamic>>().map(
+                (x) => x['content'].toString(),
+              ),
+            );
+        });
+    } catch (_) {}
+  }
+
+  Future<void> _toggleAction(String action) async {
+    if (token == null || widget.post.id == 0) return;
+    try {
+      final r = await http.post(
+        Uri.parse(
+          'https://friend.outmcn.net/api/posts/${widget.post.id}/$action',
+        ),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      if (b['ok'] == true && mounted)
+        setState(() {
+          if (action == 'like')
+            liked = b['data']['liked'] == true;
+          else
+            favorited = b['data']['favorited'] == true;
+        });
+    } catch (_) {}
+  }
+
+  Future<void> sendComment() async {
+    final value = commentController.text.trim();
+    if (value.isEmpty || token == null || widget.post.id == 0) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => sending = true);
+    try {
+      final r = await http.post(
+        Uri.parse(
+          'https://friend.outmcn.net/api/posts/${widget.post.id}/comments',
+        ),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'content': value}),
+      );
+      final b = jsonDecode(r.body) as Map<String, dynamic>;
+      if (b['ok'] == true) {
+        commentController.clear();
+        await _loadComments();
+      }
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
   }
 
   @override
@@ -1086,7 +1171,7 @@ class _DetailPageState extends State<DetailPage> {
                         backgroundColor: c.primary,
                         child: Icon(Icons.public, color: c.onPrimary),
                       ),
-                      title: Text('我'),
+                      title: const Text('评论'),
                       subtitle: Text(text),
                     ),
                   ),
@@ -1119,16 +1204,15 @@ class _DetailPageState extends State<DetailPage> {
                     onPressed: sending ? null : sendComment,
                     child: Text(sending ? '发送中…' : '发送'),
                   ),
-                  const SizedBox(width: 2),
                   IconButton(
-                    onPressed: () => setState(() => liked = !liked),
+                    onPressed: () => _toggleAction('like'),
                     icon: Icon(
                       liked ? Icons.favorite : Icons.favorite_border,
                       color: liked ? Colors.red : c.primary,
                     ),
                   ),
                   IconButton(
-                    onPressed: () => setState(() => favorited = !favorited),
+                    onPressed: () => _toggleAction('favorite'),
                     icon: Icon(
                       favorited ? Icons.star : Icons.star_border,
                       color: favorited ? Colors.amber : c.primary,
@@ -1141,20 +1225,6 @@ class _DetailPageState extends State<DetailPage> {
         ],
       ),
     );
-  }
-
-  void sendComment() {
-    final value = commentController.text.trim();
-    if (value.isEmpty) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    setState(() {
-      sending = true;
-      comments.add(value);
-      commentController.clear();
-    });
-    Future<void>.delayed(const Duration(milliseconds: 180), () {
-      if (mounted) setState(() => sending = false);
-    });
   }
 }
 
