@@ -109,7 +109,16 @@ class ProfilePageState extends State<ProfilePage> {
     if (chosen == null) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('friend.selected.avatar', chosen);
-    if (mounted) setState(() => selectedAvatar = chosen);
+    final response = await http.put(
+      Uri.parse('https://friend.outmcn.net/api/me'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'avatarId': chosen}),
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (body['ok'] == true && mounted) setState(() => selectedAvatar = chosen);
   }
 
   Color _avatarColor(int index) => [
