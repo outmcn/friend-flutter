@@ -616,12 +616,13 @@ class ChoiceChips extends StatelessWidget {
           .map(
             (text) => Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
+              child: FilterChip(
                 label: Text(text),
                 selected: text == selected,
                 onSelected: (_) => onSelected(text),
                 selectedColor: c.primary,
                 backgroundColor: c.surfaceContainerHighest,
+                checkmarkColor: Colors.transparent,
                 labelStyle: TextStyle(
                   color: text == '推荐' ? c.onPrimary : c.onSurface,
                 ),
