@@ -15,8 +15,12 @@ class ContactsPage extends StatelessWidget {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    UserListPage(token: token, title: '搜索用户', searchable: true),
+                builder: (_) => UserListPage(
+                  token: token,
+                  title: '搜索用户',
+                  searchable: true,
+                  embedded: false,
+                ),
               ),
             ),
             icon: const Icon(Icons.search),
@@ -29,7 +33,12 @@ class ContactsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: UserListPage(token: token, title: '通讯录', searchable: false),
+      body: UserListPage(
+        token: token,
+        title: '通讯录',
+        searchable: false,
+        embedded: true,
+      ),
     );
   }
 }

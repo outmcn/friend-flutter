@@ -441,27 +441,6 @@ class DiscoveryPage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
         children: [
-          Row(
-            children: [
-              Text(
-                '发现',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: c.onSurface,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => _compose(context),
-                icon: Icon(
-                  Icons.add_circle_outline,
-                  color: c.primary,
-                  size: 29,
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
           Row(
             children: [

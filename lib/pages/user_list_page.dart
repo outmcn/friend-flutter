@@ -7,12 +7,14 @@ class UserListPage extends StatefulWidget {
   final String title;
   final String? relation;
   final bool searchable;
+  final bool embedded;
   const UserListPage({
     super.key,
     required this.token,
     required this.title,
     this.relation,
     this.searchable = false,
+    this.embedded = false,
   });
 
   @override
@@ -77,65 +79,68 @@ class _UserListPageState extends State<UserListPage> {
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: Column(
-        children: [
-          if (widget.searchable)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: TextField(
-                controller: searchController,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _load(),
-                decoration: InputDecoration(
-                  hintText: '搜索用户',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    onPressed: _load,
-                    icon: const Icon(Icons.arrow_forward),
-                  ),
+    final content = Column(
+      children: [
+        if (widget.searchable)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              controller: searchController,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => _load(),
+              decoration: InputDecoration(
+                hintText: '搜索用户',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  onPressed: _load,
+                  icon: const Icon(Icons.arrow_forward),
                 ),
               ),
             ),
-          Expanded(
-            child: loading
-                ? const Center(child: CircularProgressIndicator())
-                : error != null
-                ? Center(child: Text(error!))
-                : users.isEmpty
-                ? const Center(child: Text('暂无用户'))
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                    itemCount: users.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, index) {
-                      final user = users[index];
-                      final nickname = user['nickname']?.toString().trim();
-                      final name = nickname?.isNotEmpty == true
-                          ? nickname!
-                          : user['username']?.toString() ?? '';
-                      return Card(
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          leading: CircleAvatar(
-                            backgroundColor: c.primary,
-                            child: Icon(Icons.public, color: c.onPrimary),
-                          ),
-                          title: Text(name),
-                          subtitle: Text(
-                            '关注 ${user['following'] ?? 0}  粉丝 ${user['followers'] ?? 0}',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
           ),
-        ],
-      ),
+        Expanded(
+          child: loading
+              ? const Center(child: CircularProgressIndicator())
+              : error != null
+              ? Center(child: Text(error!))
+              : users.isEmpty
+              ? const Center(child: Text('暂无用户'))
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  itemCount: users.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, index) {
+                    final user = users[index];
+                    final nickname = user['nickname']?.toString().trim();
+                    final name = nickname?.isNotEmpty == true
+                        ? nickname!
+                        : user['username']?.toString() ?? '';
+                    return Card(
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        leading: CircleAvatar(
+                          backgroundColor: c.primary,
+                          child: Icon(Icons.public, color: c.onPrimary),
+                        ),
+                        title: Text(name),
+                        subtitle: Text(
+                          '关注 ${user['following'] ?? 0}  粉丝 ${user['followers'] ?? 0}',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
+    return widget.embedded
+        ? content
+        : Scaffold(
+            appBar: AppBar(title: Text(widget.title)),
+            body: content,
+          );
   }
 }
