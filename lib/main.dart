@@ -614,23 +614,53 @@ class MessagePage extends StatelessWidget {
         ...List.generate(
           6,
           (i) => Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 5,
-              ),
-              leading: CircleAvatar(
-                backgroundColor: c.primary,
-                child: Icon(Icons.public, color: c.onPrimary),
-              ),
-              title: Text('星空用户 ${i + 1}'),
-              subtitle: Text(
-                '期待和你交流',
-                style: TextStyle(color: c.onSurfaceVariant),
-              ),
-              trailing: Text(
-                '刚刚',
-                style: TextStyle(color: c.onSurfaceVariant, fontSize: 12),
+            margin: const EdgeInsets.only(bottom: 12),
+            child: SizedBox(
+              height: 84,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 25,
+                      backgroundColor: c.primary,
+                      child: Icon(Icons.public, color: c.onPrimary),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '星空用户 ${i + 1}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            '期待和你交流',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: c.onSurfaceVariant,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '刚刚',
+                      style: TextStyle(color: c.onSurfaceVariant, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
