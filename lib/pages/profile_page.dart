@@ -22,7 +22,7 @@ class ProfilePageState extends State<ProfilePage> {
   int following = 0;
   int followers = 0;
   int likes = 0;
-  int activeDays = 0;
+  int postCount = 0;
   int selectedAvatar = 0;
   String city = '';
   static const avatarIcons = [
@@ -137,7 +137,7 @@ class ProfilePageState extends State<ProfilePage> {
           following = (profile['following'] as num?)?.toInt() ?? 0;
           followers = (profile['followers'] as num?)?.toInt() ?? 0;
           likes = (profile['likes'] as num?)?.toInt() ?? 0;
-          activeDays = (profile['activeDays'] as num?)?.toInt() ?? 0;
+          postCount = (profile['posts'] as num?)?.toInt() ?? 0;
 
           ownPosts = _posts(data['posts']);
           favoritePosts = _posts(data['favorited']);
@@ -348,7 +348,7 @@ class ProfilePageState extends State<ProfilePage> {
                                     ),
                                   ),
                                 ),
-                              if (activeDays >= 0)
+                              if (postCount >= 0)
                                 Container(
                                   margin: const EdgeInsets.only(left: 6),
                                   padding: const EdgeInsets.symmetric(
@@ -360,7 +360,7 @@ class ProfilePageState extends State<ProfilePage> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    '$activeDays天',
+                                    '${postCount}条动态',
                                     style: TextStyle(
                                       color: colors.onSecondaryContainer,
                                       fontSize: 12,
@@ -419,7 +419,7 @@ class ProfilePageState extends State<ProfilePage> {
                               ),
                               const SizedBox(width: 14),
                               Text(
-                                '天数 $activeDays',
+                                '动态 $postCount',
                                 style: TextStyle(
                                   color: colors.onSurfaceVariant,
                                 ),

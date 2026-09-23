@@ -215,7 +215,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                           ),
                           const SizedBox(width: 14),
                           Text(
-                            '天数 ${profile['activeDays'] ?? 0}',
+                            '动态 ${profile['posts'] ?? posts.length}',
                             style: TextStyle(color: c.onSurfaceVariant),
                           ),
                         ],
