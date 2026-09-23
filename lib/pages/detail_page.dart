@@ -102,6 +102,7 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   Future<void> _showCommentActions(Map<String, dynamic> comment) async {
+    final canDelete = _canDeleteComment(comment);
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -128,28 +129,38 @@ class _DetailPageState extends State<DetailPage> {
                   if (sheetContext.mounted) Navigator.pop(sheetContext);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.flag_outlined),
-                title: const Text('举报'),
-                onTap: () async {
-                  final r = await http.post(
-                    Uri.parse(
-                      'https://friend.outmcn.net/api/comments/${comment['id']}/report',
-                    ),
-                    headers: {
-                      'Authorization': 'Bearer $token',
-                      'Content-Type': 'application/json',
-                    },
-                    body: jsonEncode({'reason': '违规评论'}),
-                  );
-                  if (sheetContext.mounted) Navigator.pop(sheetContext);
-                  if (mounted && r.statusCode >= 200 && r.statusCode < 300) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('举报已提交')));
-                  }
-                },
-              ),
+              if (canDelete)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline),
+                  title: const Text('删除'),
+                  onTap: () async {
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    await _deleteComment(comment);
+                  },
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.flag_outlined),
+                  title: const Text('举报'),
+                  onTap: () async {
+                    final r = await http.post(
+                      Uri.parse(
+                        'https://friend.outmcn.net/api/comments/${comment['id']}/report',
+                      ),
+                      headers: {
+                        'Authorization': 'Bearer $token',
+                        'Content-Type': 'application/json',
+                      },
+                      body: jsonEncode({'reason': '违规评论'}),
+                    );
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    if (mounted && r.statusCode >= 200 && r.statusCode < 300) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('举报已提交')));
+                    }
+                  },
+                ),
             ],
           ),
         ),
