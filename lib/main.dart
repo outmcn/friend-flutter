@@ -236,7 +236,7 @@ class _FriendShellState extends State<FriendShell> {
       const HomePage(),
       DiscoveryPage(posts: posts, onCreate: _createPost, onRefresh: _loadPosts),
       const MessagePage(),
-      ProfilePage(key: profileKey, posts: posts, token: widget.token),
+      ProfilePage(key: profileKey, token: widget.token),
     ];
     return Scaffold(
       body: SafeArea(
@@ -718,9 +718,8 @@ class PostCard extends StatelessWidget {
 }
 
 class ProfilePage extends StatefulWidget {
-  final List<UiPost> posts;
   final String token;
-  const ProfilePage({super.key, required this.posts, required this.token});
+  const ProfilePage({super.key, required this.token});
   @override
   State<ProfilePage> createState() => ProfilePageState();
 }
@@ -729,47 +728,46 @@ class ProfilePageState extends State<ProfilePage> {
   String nickname = '';
   bool loading = true;
   int section = 0;
+  List<UiPost> ownPosts = [];
   List<UiPost> favoritePosts = [];
   List<UiPost> likedPosts = [];
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    refreshFromServer();
   }
 
-  Future<void> refreshFromServer() => _loadProfile();
-
-  Future<void> _loadProfile() async {
+  Future<void> refreshFromServer() async {
     try {
-      final r = await http.get(
+      final response = await http.get(
         Uri.parse('https://friend.outmcn.net/api/me/summary'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
-      final b = jsonDecode(r.body) as Map<String, dynamic>;
-      final d = b['data'];
-      if (b['ok'] == true && d is Map<String, dynamic> && mounted) {
-        final p = d['profile'] as Map<String, dynamic>;
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'];
+      if (body['ok'] == true && data is Map<String, dynamic> && mounted) {
+        final profile = data['profile'] as Map<String, dynamic>;
         setState(() {
           nickname =
-              (p['nickname']?.toString().trim().isNotEmpty == true
-                      ? p['nickname']
-                      : p['username'])
+              (profile['nickname']?.toString().trim().isNotEmpty == true
+                      ? profile['nickname']
+                      : profile['username'])
                   .toString();
-          favoritePosts = (d['favorited'] as List)
-              .whereType<Map<String, dynamic>>()
-              .map(UiPost.fromJson)
-              .toList();
-          likedPosts = (d['liked'] as List)
-              .whereType<Map<String, dynamic>>()
-              .map(UiPost.fromJson)
-              .toList();
+          ownPosts = _posts(data['posts']);
+          favoritePosts = _posts(data['favorited']);
+          likedPosts = _posts(data['liked']);
           loading = false;
         });
       }
-    } catch (_) {}
-    if (mounted && loading) setState(() => loading = false);
+    } catch (_) {
+      if (mounted) setState(() => loading = false);
+    }
   }
+
+  List<UiPost> _posts(dynamic value) => value is List
+      ? value.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
+      : <UiPost>[];
 
   Future<void> _editNickname() async {
     final controller = TextEditingController(text: nickname);
@@ -797,7 +795,7 @@ class ProfilePageState extends State<ProfilePage> {
     );
     controller.dispose();
     if (value == null || value.isEmpty) return;
-    final r = await http.put(
+    final response = await http.put(
       Uri.parse('https://friend.outmcn.net/api/me'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
@@ -805,15 +803,15 @@ class ProfilePageState extends State<ProfilePage> {
       },
       body: jsonEncode({'nickname': value}),
     );
-    final b = jsonDecode(r.body) as Map<String, dynamic>;
-    if (b['ok'] == true && mounted) setState(() => nickname = value);
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (body['ok'] == true && mounted) setState(() => nickname = value);
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
+    final colors = Theme.of(context).colorScheme;
     final visiblePosts = section == 0
-        ? widget.posts
+        ? ownPosts
         : (section == 1 ? favoritePosts : likedPosts);
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
@@ -823,7 +821,7 @@ class ProfilePageState extends State<ProfilePage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
-              colors: [c.surfaceContainer, c.primaryContainer],
+              colors: [colors.surfaceContainer, colors.primaryContainer],
             ),
           ),
           child: Row(
@@ -841,7 +839,7 @@ class ProfilePageState extends State<ProfilePage> {
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: c.onSurface,
+                              color: colors.onSurface,
                             ),
                           ),
                         ),
@@ -850,7 +848,7 @@ class ProfilePageState extends State<ProfilePage> {
                           icon: Icon(
                             Icons.edit_outlined,
                             size: 18,
-                            color: c.onSurfaceVariant,
+                            color: colors.onSurfaceVariant,
                           ),
                           tooltip: '修改名字',
                           visualDensity: VisualDensity.compact,
@@ -860,15 +858,15 @@ class ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 8),
                     Text(
                       '关注  0     粉丝  0     获赞  0',
-                      style: TextStyle(color: c.onSurfaceVariant),
+                      style: TextStyle(color: colors.onSurfaceVariant),
                     ),
                   ],
                 ),
               ),
               CircleAvatar(
                 radius: 42,
-                backgroundColor: c.primary,
-                child: Icon(Icons.public, size: 48, color: c.onPrimary),
+                backgroundColor: colors.primary,
+                child: Icon(Icons.public, size: 48, color: colors.onPrimary),
               ),
             ],
           ),
