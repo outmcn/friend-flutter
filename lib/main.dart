@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 const blue = Color(0xff4d8dff);
 
@@ -68,6 +70,7 @@ class FriendShell extends StatefulWidget {
 
 class _FriendShellState extends State<FriendShell> {
   int tab = 0;
+  bool loadingPosts = true;
   final posts = <UiPost>[
     UiPost('动态图片测试', '15305113400', '22:34', Icons.image_outlined, 0, 0),
     UiPost(
@@ -87,6 +90,41 @@ class _FriendShellState extends State<FriendShell> {
       0,
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPosts();
+  }
+
+  Future<void> _loadPosts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://friend.outmcn.net/api/posts'),
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'];
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          body['ok'] == true &&
+          data is List) {
+        final loaded = data
+            .whereType<Map<String, dynamic>>()
+            .map(UiPost.fromJson)
+            .toList();
+        if (mounted) {
+          setState(() {
+            posts
+              ..clear()
+              ..addAll(loaded);
+            loadingPosts = false;
+          });
+        }
+        return;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => loadingPosts = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,17 +176,36 @@ class _FriendShellState extends State<FriendShell> {
 }
 
 class UiPost {
+  final int id;
   final String text, author, time;
   final IconData icon;
   final int likes, favorites;
+  final String? imageUrl;
   UiPost(
     this.text,
     this.author,
     this.time,
     this.icon,
     this.likes,
-    this.favorites,
+    this.favorites, {
+    this.id = 0,
+    this.imageUrl,
+  });
+  factory UiPost.fromJson(Map<String, dynamic> json) => UiPost(
+    json['content']?.toString() ?? '',
+    json['nickname']?.toString() ?? '',
+    json['createdAt']?.toString() ?? '',
+    Icons.image_outlined,
+    (json['likes'] as num?)?.toInt() ?? 0,
+    (json['favorites'] as num?)?.toInt() ?? 0,
+    id: (json['id'] as num?)?.toInt() ?? 0,
+    imageUrl: _normalizeImage(json['imageURL']),
   );
+  static String? _normalizeImage(dynamic value) {
+    final raw = value?.toString() ?? '';
+    if (raw.isEmpty) return null;
+    return raw.startsWith('http') ? raw : 'https://friend.outmcn.net$raw';
+  }
 }
 
 class HomePage extends StatelessWidget {
@@ -394,18 +451,18 @@ class PostCard extends StatelessWidget {
                   color: c.onSurface,
                 ),
               ),
-              const SizedBox(height: 14),
-              Container(
-                height: 150,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  gradient: LinearGradient(
-                    colors: [c.primaryContainer, c.surfaceContainerHighest],
+              if (post.imageUrl != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.network(
+                      post.imageUrl!,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                    ),
                   ),
                 ),
-                child: Icon(post.icon, size: 52, color: c.primary),
-              ),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -653,25 +710,15 @@ class _DetailPageState extends State<DetailPage> {
                     ),
                   ),
                 const SizedBox(height: 18),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: AspectRatio(
-                    aspectRatio: 1.18,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            c.primaryContainer,
-                            c.surfaceContainerHighest,
-                          ],
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(post.icon, size: 66, color: c.primary),
-                      ),
+                if (post.imageUrl != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.network(
+                      post.imageUrl!,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
                     ),
                   ),
-                ),
                 const SizedBox(height: 22),
                 Divider(color: c.outlineVariant),
                 const SizedBox(height: 8),
