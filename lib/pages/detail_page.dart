@@ -79,27 +79,6 @@ class _DetailPageState extends State<DetailPage> {
 
   Map<String, dynamic>? replyingTo;
 
-  DateTime? _parseServerTime(String value) {
-    final raw = value.trim();
-    if (raw.isEmpty) return null;
-    final normalized = raw.contains('T')
-        ? raw
-        : '${raw.replaceFirst(' ', 'T')}Z';
-    final parsed = DateTime.tryParse(normalized);
-    return parsed?.toLocal();
-  }
-
-  String _commentRelativeTime(String value) {
-    final date = _parseServerTime(value);
-    if (date == null) return value;
-    final diff = DateTime.now().difference(date);
-    if (diff.isNegative || diff.inSeconds < 60) return '刚刚';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}分钟前';
-    if (diff.inHours < 24) return '${diff.inHours}小时前';
-    if (diff.inDays < 30) return '${diff.inDays}天前';
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-
   Future<void> _openCommentProfile(Map<String, dynamic> comment) async {
     final id = (comment['userId'] as num?)?.toInt() ?? 0;
     if (id == 0 || token == null || token!.isEmpty) return;
@@ -619,24 +598,44 @@ class _DetailPageState extends State<DetailPage> {
                                         ),
                                         if ((comment['city']?.toString() ?? '')
                                             .isNotEmpty)
-                                          Text(
-                                            '  ${comment['city']}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: c.onSurfaceVariant,
+                                          Container(
+                                            margin: const EdgeInsets.only(
+                                              left: 6,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: c.primaryContainer,
+                                              borderRadius:
+                                                  BorderRadius.circular(7),
+                                            ),
+                                            child: Text(
+                                              comment['city'].toString(),
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: c.onPrimaryContainer,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
                                           ),
                                         const Spacer(),
-                                        Text(
-                                          _commentRelativeTime(
-                                            comment['createdAt']?.toString() ??
-                                                '',
+                                        if (_canDeleteComment(comment))
+                                          IconButton(
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(
+                                              minWidth: 28,
+                                              minHeight: 28,
+                                            ),
+                                            onPressed: () =>
+                                                _deleteComment(comment),
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                              size: 18,
+                                            ),
+                                            tooltip: '删除评论',
                                           ),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: c.onSurfaceVariant,
-                                          ),
-                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 4),
@@ -651,23 +650,6 @@ class _DetailPageState extends State<DetailPage> {
                                             softWrap: true,
                                           ),
                                         ),
-                                        if (_canDeleteComment(comment))
-                                          SizedBox(
-                                            height: 28,
-                                            width: 32,
-                                            child: IconButton(
-                                              padding: EdgeInsets.zero,
-                                              constraints:
-                                                  const BoxConstraints(),
-                                              onPressed: () =>
-                                                  _deleteComment(comment),
-                                              icon: const Icon(
-                                                Icons.delete_outline,
-                                                size: 18,
-                                              ),
-                                              tooltip: '删除评论',
-                                            ),
-                                          ),
                                       ],
                                     ),
                                   ],
