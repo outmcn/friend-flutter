@@ -614,11 +614,6 @@ class DiscoveryPage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
               children: [
-                if (loading)
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
                 if (!loading && error != null) Center(child: Text(error!)),
                 if (!loading && error == null && posts.isEmpty)
                   Center(

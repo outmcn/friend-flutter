@@ -310,6 +310,20 @@ class ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
+                        if (city.isNotEmpty)
+                          Flexible(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Text(
+                                'IP：$city',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
                         IconButton(
                           onPressed: _editNickname,
                           icon: Icon(
@@ -323,11 +337,6 @@ class ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    if (city.isNotEmpty)
-                      Text(
-                        'IP：$city',
-                        style: TextStyle(color: colors.onSurfaceVariant),
-                      ),
                     Row(
                       children: [
                         GestureDetector(
