@@ -598,6 +598,15 @@ class HomeTopBar extends StatelessWidget {
                       ),
                   tooltip: '二维码',
                   icon: const Icon(Icons.qr_code_2_outlined),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 32,
+                    height: 32,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  style: const ButtonStyle(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
                 IconButton(
                   onPressed:
@@ -615,6 +624,15 @@ class HomeTopBar extends StatelessWidget {
                       ),
                   tooltip: '设置',
                   icon: const Icon(Icons.settings_outlined),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 32,
+                    height: 32,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  style: const ButtonStyle(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
               ],
               ...trailingActions,

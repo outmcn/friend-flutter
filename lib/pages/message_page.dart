@@ -78,17 +78,44 @@ class _MessagePageState extends State<MessagePage> {
                 onPressed: _openContacts,
                 tooltip: '通讯录',
                 icon: const Icon(Icons.people_alt_outlined),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 32,
+                  height: 32,
+                ),
+                visualDensity: VisualDensity.compact,
+                style: const ButtonStyle(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
 
               IconButton(
                 onPressed: null,
                 tooltip: '搜索聊天记录',
                 icon: const Icon(Icons.search),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 32,
+                  height: 32,
+                ),
+                visualDensity: VisualDensity.compact,
+                style: const ButtonStyle(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
               IconButton(
                 onPressed: _openContacts,
                 tooltip: '添加好友',
                 icon: const Icon(Icons.person_add_alt_1_outlined),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 32,
+                  height: 32,
+                ),
+                visualDensity: VisualDensity.compact,
+                style: const ButtonStyle(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ],
           ),

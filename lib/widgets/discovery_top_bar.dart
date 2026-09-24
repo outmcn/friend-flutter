@@ -29,6 +29,15 @@ class DiscoveryTopBar extends StatelessWidget {
               const SizedBox(width: 8),
               IconButton(
                 onPressed: onCompose,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 32,
+                  height: 32,
+                ),
+                visualDensity: VisualDensity.compact,
+                style: const ButtonStyle(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 icon: Icon(
                   Icons.add_circle_outline,
                   color: Theme.of(context).colorScheme.primary,
