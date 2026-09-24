@@ -13,9 +13,8 @@ class DiscoveryTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
     return Material(
-      color: c.surface,
+      color: Theme.of(context).colorScheme.surface,
       elevation: 2,
       child: SafeArea(
         bottom: false,
@@ -31,7 +30,7 @@ class DiscoveryTopBar extends StatelessWidget {
                 onPressed: onCompose,
                 icon: Icon(
                   Icons.add_circle_outline,
-                  color: c.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 29,
                 ),
               ),
@@ -51,39 +50,29 @@ class ChoiceChips extends StatelessWidget {
     required this.selected,
     required this.onSelected,
   });
+
+  static const options = ['推荐', '附近', '关注'];
+
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    return Row(
-      children: ['推荐', '附近', '关注']
-          .map(
-            (text) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => onSelected(text),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 9,
-                  ),
-                  decoration: BoxDecoration(
-                    color: text == selected
-                        ? c.primary
-                        : c.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Text(
-                    text,
-                    style: TextStyle(
-                      color: text == selected ? c.onPrimary : c.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          )
-          .toList(),
+    return SegmentedButton<String>(
+      segments: [
+        for (final text in options)
+          ButtonSegment<String>(value: text, label: Text(text)),
+      ],
+      selected: {selected},
+      onSelectionChanged: (values) {
+        if (values.isNotEmpty) onSelected(values.first);
+      },
+      multiSelectionEnabled: false,
+      showSelectedIcon: false,
+      style: ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        ),
+      ),
     );
   }
 }
