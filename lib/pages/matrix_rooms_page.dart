@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/matrix_room_view.dart';
 import '../services/matrix_session.dart';
 import 'matrix_chat_page.dart';
+import 'matrix_new_chat_page.dart';
 
 class MatrixRoomsPage extends StatefulWidget {
   const MatrixRoomsPage({super.key, required this.session});
@@ -47,7 +48,21 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     final colors = Theme.of(context).colorScheme;
     final data = rooms;
     return Scaffold(
-      appBar: AppBar(title: const Text('Matrix 消息')),
+      appBar: AppBar(
+        title: const Text('Matrix 消息'),
+        actions: [
+          IconButton(
+            tooltip: '新建私聊',
+            icon: const Icon(Icons.add_comment_outlined),
+            onPressed: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MatrixNewChatPage(session: widget.session),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: data.isEmpty
           ? Center(
               child: Text(

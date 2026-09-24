@@ -45,6 +45,9 @@ class MatrixSession extends ChangeNotifier {
     return session;
   }
 
+  static Future<MatrixSession> fromBridgeJson(Map<String, dynamic> json) =>
+      fromBridgeSession(MatrixBridgeSession.fromJson(json));
+
   Future<void> _restore() async {
     try {
       if (client.isLogged()) {
@@ -88,6 +91,10 @@ class MatrixSession extends ChangeNotifier {
     final value = text.trim();
     if (value.isEmpty) return;
     await room.sendTextEvent(value);
+  }
+
+  Future<String> startDirectChat(String matrixUserId) {
+    return client.startDirectChat(matrixUserId);
   }
 
   Future<void> logout() async {
