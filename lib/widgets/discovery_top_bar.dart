@@ -20,7 +20,7 @@ class DiscoveryTopBar extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 0, 18, 5),
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
           child: Row(
             children: [
               Expanded(
