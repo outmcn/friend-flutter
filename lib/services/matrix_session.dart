@@ -133,9 +133,41 @@ class MatrixSession extends ChangeNotifier {
     }
   }
 
-  List<Room> directRooms() => client.rooms
-      .where((room) => room.isDirectChat && room.membership == Membership.join)
-      .toList();
+  List<Room> directRooms() {
+    final byPeer = <String, Room>{};
+    for (final room in client.rooms.where(
+      (room) => room.isDirectChat && room.membership == Membership.join,
+    )) {
+      final peer = room.directChatMatrixID;
+      if (peer == null) continue;
+      final previous = byPeer[peer];
+      if (previous == null ||
+          room.latestEventReceivedTime.isAfter(
+            previous.latestEventReceivedTime,
+          )) {
+        byPeer[peer] = room;
+      }
+    }
+    return byPeer.values.toList();
+  }
+
+  Room? directRoomForUser(String matrixUserId) {
+    final rooms = client.rooms.where(
+      (room) =>
+          room.membership == Membership.join &&
+          room.directChatMatrixID == matrixUserId,
+    );
+    Room? selected;
+    for (final room in rooms) {
+      if (selected == null ||
+          room.latestEventReceivedTime.isAfter(
+            selected.latestEventReceivedTime,
+          )) {
+        selected = room;
+      }
+    }
+    return selected;
+  }
 
   List<Room> invitedRooms() => client.rooms
       .where((room) => room.membership == Membership.invite)
