@@ -22,6 +22,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   String? error;
   bool loading = true;
   bool sending = false;
+  String? roomTitle;
 
   @override
   void initState() {
@@ -29,7 +30,18 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
     });
+    _loadRoomTitle();
     _loadTimeline();
+  }
+
+  Future<void> _loadRoomTitle() async {
+    try {
+      await widget.room.loadHeroUsers();
+      final title = widget.room.getLocalizedDisplayname();
+      if (mounted) setState(() => roomTitle = title);
+    } catch (_) {
+      // The room remains usable even when member profile loading is delayed.
+    }
   }
 
   Future<void> _loadTimeline() async {
@@ -86,7 +98,9 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     final colors = Theme.of(context).colorScheme;
     final events = messageEvents;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.room.getLocalizedDisplayname())),
+      appBar: AppBar(
+        title: Text(roomTitle ?? widget.room.getLocalizedDisplayname()),
+      ),
       body: Column(
         children: [
           if (error != null)
