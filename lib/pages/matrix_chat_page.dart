@@ -183,6 +183,8 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     return event.body == 'Redacted' ? '已撤回一条消息' : event.body;
   }
 
+  bool _isRedaction(Event event) => event.redacted || event.body == 'Redacted';
+
   Future<String> _replyLabel(Event event) async {
     final id = event.inReplyToEventId();
     if (id == null) return event.body;
@@ -190,7 +192,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     if (original == null) return event.body;
     final sender = await original.fetchSenderUser();
     final name = sender?.displayName?.trim();
-    return '${name?.isNotEmpty == true ? name : original.senderId}: ${original.body}';
+    return '${name?.isNotEmpty == true ? name : '对方'}: ${original.body}';
   }
 
   @override
@@ -241,6 +243,20 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                         final displayed = _displayEvent(event);
                         final mine =
                             event.senderId == widget.session.client.userID;
+                        if (_isRedaction(displayed)) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Center(
+                              child: Text(
+                                '—— 已撤回一条消息 ——',
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
                         return GestureDetector(
                           onLongPress: () => _showMessageActions(event),
                           child: Align(
