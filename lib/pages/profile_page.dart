@@ -248,7 +248,7 @@ class ProfilePageState extends State<ProfilePage> {
         : (section == 1 ? favoritePosts : likedPosts);
     return Column(
       children: [
-        const HomeTopBar(),
+        const HomeTopBar(showTitle: false),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),

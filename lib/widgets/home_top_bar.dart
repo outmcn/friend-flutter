@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class HomeTopBar extends StatelessWidget {
-  const HomeTopBar({super.key});
+  final bool showTitle;
+  const HomeTopBar({super.key, this.showTitle = true});
 
   @override
   Widget build(BuildContext context) {
@@ -15,14 +16,15 @@ class HomeTopBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 0, 12, 5),
           child: Row(
             children: [
-              Text(
-                '主页',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: c.onSurface,
+              if (showTitle)
+                Text(
+                  '主页',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: c.onSurface,
+                  ),
                 ),
-              ),
               const Spacer(),
               IconButton(
                 onPressed: () => showDialog<void>(
