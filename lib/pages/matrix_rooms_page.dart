@@ -25,6 +25,11 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   final Map<String, String> _titles = {};
   bool _loadingTitles = false;
 
+  Future<void> _refreshReadState() async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -138,16 +143,17 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
           trailing: item.unreadCount == 0
               ? null
               : Badge(label: Text('${item.unreadCount}')),
-          onTap: () {
+          onTap: () async {
             final room = widget.session.client.getRoomById(item.roomId);
             if (room == null) return;
-            Navigator.push<void>(
+            await Navigator.push<void>(
               context,
               MaterialPageRoute(
                 builder: (_) =>
                     MatrixChatPage(session: widget.session, room: room),
               ),
             );
+            await _refreshReadState();
           },
         );
       },
