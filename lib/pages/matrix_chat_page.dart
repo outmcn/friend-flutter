@@ -217,16 +217,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                 ),
               ],
             ),
-          if (replyingTo != null)
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.reply),
-              title: Text('回复：${replyingTo!.body}'),
-              trailing: IconButton(
-                onPressed: () => setState(() => replyingTo = null),
-                icon: const Icon(Icons.close),
-              ),
-            ),
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
@@ -300,6 +290,29 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                     ),
                   ),
           ),
+          if (replyingTo != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(12, 6, 8, 2),
+              color: colors.surfaceContainerHighest,
+              child: Row(
+                children: [
+                  const Icon(Icons.reply, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '回复：${replyingTo!.body}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => replyingTo = null),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
           SafeArea(
             top: false,
             child: Padding(
