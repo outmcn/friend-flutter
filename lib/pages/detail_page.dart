@@ -108,6 +108,34 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
+  Future<void> _openTopbarAuthorProfile() async {
+    if (openingAuthor || widget.post.authorId == 0 || token == null) return;
+    openingAuthor = true;
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://friend.outmcn.net/api/users/${widget.post.authorId}',
+        ),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      if (!mounted || body['ok'] != true) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OtherProfilePage(
+            data: body['data'] as Map<String, dynamic>,
+            dataToken: token!,
+            onFollowChanged: widget.onActionChanged,
+            isSelf: false,
+          ),
+        ),
+      );
+    } finally {
+      openingAuthor = false;
+    }
+  }
+
   Future<void> _showCommentActions(Map<String, dynamic> comment) async {
     final canDelete = _canDeleteComment(comment);
     await showModalBottomSheet<void>(
@@ -643,26 +671,32 @@ class _DetailPageState extends State<DetailPage> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 17,
-              backgroundColor: avatarColors[post.authorAvatarId.clamp(0, 9)],
-              child: Icon(
-                avatarIcons[post.authorAvatarId.clamp(0, 9)],
-                size: 19,
-                color: Colors.white,
+        title: InkWell(
+          onTap: isOwnPost ? null : _openTopbarAuthorProfile,
+          borderRadius: BorderRadius.circular(18),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 17,
+                backgroundColor: avatarColors[post.authorAvatarId.clamp(0, 9)],
+                child: Icon(
+                  avatarIcons[post.authorAvatarId.clamp(0, 9)],
+                  size: 19,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                post.author,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 16),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 150),
+                child: Text(
+                  post.author,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 16),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           if (sessionLoaded && !isOwnPost)
