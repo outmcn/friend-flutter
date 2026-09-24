@@ -1,0 +1,79 @@
+import 'package:flutter/material.dart';
+import '../models/matrix_room_view.dart';
+import '../services/matrix_session.dart';
+
+class MatrixRoomsPage extends StatefulWidget {
+  const MatrixRoomsPage({super.key, required this.session});
+
+  final MatrixSession session;
+
+  @override
+  State<MatrixRoomsPage> createState() => _MatrixRoomsPageState();
+}
+
+class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
+  @override
+  void initState() {
+    super.initState();
+    widget.session.updates.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  List<MatrixRoomViewData> get rooms =>
+      widget.session.directRooms().map((room) {
+        final event = room.lastEvent;
+        return MatrixRoomViewData(
+          roomId: room.id,
+          title: room.getLocalizedDisplayname(),
+          preview: event?.body ?? '暂无消息',
+          unreadCount: room.notificationCount,
+        );
+      }).toList()..sort((a, b) => a.roomId.compareTo(b.roomId));
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final data = rooms;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Matrix 消息')),
+      body: data.isEmpty
+          ? Center(
+              child: Text(
+                widget.session.isLoggedIn ? '暂无 Matrix 会话' : '请先登录 Matrix',
+                style: TextStyle(color: colors.onSurfaceVariant),
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: data.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final room = data[index];
+                return ListTile(
+                  tileColor: colors.surfaceContainer,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor: colors.primaryContainer,
+                    child: Icon(
+                      Icons.chat_bubble_outline,
+                      color: colors.onPrimaryContainer,
+                    ),
+                  ),
+                  title: Text(room.title),
+                  subtitle: Text(
+                    room.preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: room.unreadCount == 0
+                      ? null
+                      : Badge(label: Text('${room.unreadCount}')),
+                );
+              },
+            ),
+    );
+  }
+}

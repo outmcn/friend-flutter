@@ -16,6 +16,8 @@ import 'widgets/discovery_top_bar.dart';
 import 'pages/compose_page.dart';
 import 'services/api_client.dart';
 import 'services/location_service.dart';
+import 'pages/matrix_rooms_page.dart';
+import 'services/matrix_session.dart';
 
 const blue = Color(0xff4d8dff);
 
@@ -815,6 +817,19 @@ class MessagePage extends StatelessWidget {
   final String token;
   const MessagePage({super.key, required this.token});
 
+  Future<void> _openMatrix(BuildContext context) async {
+    final session = await MatrixSession.create();
+    if (!context.mounted) {
+      session.dispose();
+      return;
+    }
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => MatrixRoomsPage(session: session)),
+    );
+    session.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -831,6 +846,11 @@ class MessagePage extends StatelessWidget {
               ),
               tooltip: '通讯录',
               icon: const Icon(Icons.people_alt_outlined),
+            ),
+            IconButton(
+              onPressed: () => _openMatrix(context),
+              tooltip: 'Matrix 消息',
+              icon: const Icon(Icons.forum_outlined),
             ),
             IconButton(
               onPressed: () => showSearch<void>(

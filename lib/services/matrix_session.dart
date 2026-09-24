@@ -20,6 +20,7 @@ class MatrixSession extends ChangeNotifier {
       database: database,
     );
     final client = Client('Friend Matrix', database: matrixDatabase);
+    await client.checkHomeserver(Uri.parse('https://matrix.friend.outmcn.net'));
     final session = MatrixSession._(client);
     await session._restore();
     return session;
@@ -36,10 +37,7 @@ class MatrixSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> login({
-    required String userId,
-    required String password,
-  }) async {
+  Future<void> login({required String userId, required String password}) async {
     error = null;
     notifyListeners();
     try {
@@ -50,6 +48,7 @@ class MatrixSession extends ChangeNotifier {
         initialDeviceDisplayName: 'Friend Flutter',
       );
       ready = true;
+      client.backgroundSync = true;
       notifyListeners();
     } catch (e) {
       error = e.toString();
@@ -60,6 +59,10 @@ class MatrixSession extends ChangeNotifier {
 
   List<Room> directRooms() =>
       client.rooms.where((room) => room.isDirectChat).toList();
+
+  Stream<void> get updates => client.onSync.stream.map((_) {});
+
+  bool get isLoggedIn => client.isLogged();
 
   Future<void> sendText(Room room, String text) async {
     final value = text.trim();
