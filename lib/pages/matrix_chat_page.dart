@@ -19,10 +19,13 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   Timeline? timeline;
   final composer = TextEditingController();
   final scrollController = ScrollController();
+  Timer? typingTimer;
   String? error;
   bool loading = true;
   bool sending = false;
+  bool loadingHistory = false;
   String? roomTitle;
+  Event? replyingTo;
 
   @override
   void initState() {
@@ -39,9 +42,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       await widget.room.loadHeroUsers();
       final title = widget.room.getLocalizedDisplayname();
       if (mounted) setState(() => roomTitle = title);
-    } catch (_) {
-      // The room remains usable even when member profile loading is delayed.
-    }
+    } catch (_) {}
   }
 
   Future<void> _loadTimeline() async {
@@ -52,7 +53,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
           if (mounted) setState(() {});
         },
       );
-
       if (mounted) {
         setState(() {
           timeline = loaded;
@@ -70,6 +70,20 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     }
   }
 
+  Future<void> _loadOlderMessages() async {
+    final current = timeline;
+    if (current == null || loadingHistory || !current.canRequestHistory) return;
+    setState(() => loadingHistory = true);
+    try {
+      await current.requestHistory(historyCount: 60);
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => loadingHistory = false);
+    }
+  }
+
   Future<void> _markRoomRead() async {
     final latest = timeline?.events
         .where((event) => event.type == EventTypes.Message)
@@ -78,9 +92,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     try {
       await widget.session.clearRoomUnread(widget.room);
       if (mounted) setState(() {});
-    } catch (_) {
-      // Keep the chat usable if the receipt request fails.
-    }
+    } catch (_) {}
   }
 
   Future<void> _send() async {
@@ -91,13 +103,91 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       error = null;
     });
     try {
-      await widget.session.sendText(widget.room, text);
+      if (replyingTo != null) {
+        await widget.session.sendReply(widget.room, replyingTo!, text);
+      } else {
+        await widget.session.sendText(widget.room, text);
+      }
       composer.clear();
-      if (mounted) setState(() {});
+      typingTimer?.cancel();
+      await widget.session.setTyping(widget.room, false);
+      if (mounted) setState(() => replyingTo = null);
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
     } finally {
       if (mounted) setState(() => sending = false);
+    }
+  }
+
+  Future<void> _showMessageActions(Event event) async {
+    final mine = event.senderId == widget.session.client.userID;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.reply),
+              title: const Text('回复'),
+              onTap: () => Navigator.pop(context, 'reply'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_reaction_outlined),
+              title: const Text('赞'),
+              onTap: () => Navigator.pop(context, 'react'),
+            ),
+            if (mine)
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('编辑'),
+                onTap: () => Navigator.pop(context, 'edit'),
+              ),
+            if (mine)
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('撤回'),
+                onTap: () => Navigator.pop(context, 'redact'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+    try {
+      if (action == 'reply') {
+        setState(() => replyingTo = event);
+      } else if (action == 'react') {
+        await widget.session.reactToMessage(widget.room, event, '👍');
+      } else if (action == 'redact') {
+        await widget.session.redactMessage(widget.room, event);
+        if (mounted) setState(() {});
+      } else if (action == 'edit') {
+        final controller = TextEditingController(text: event.body);
+        final value = await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('编辑消息'),
+            content: TextField(controller: controller, autofocus: true),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, controller.text),
+                child: const Text('保存'),
+              ),
+            ],
+          ),
+        );
+        controller.dispose();
+        if (value != null && value.trim().isNotEmpty) {
+          await widget.session.editMessage(widget.room, event, value);
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
     }
   }
 
@@ -127,6 +217,16 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                 ),
               ],
             ),
+          if (replyingTo != null)
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.reply),
+              title: Text('回复：${replyingTo!.body}'),
+              trailing: IconButton(
+                onPressed: () => setState(() => replyingTo = null),
+                icon: const Icon(Icons.close),
+              ),
+            ),
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
@@ -137,36 +237,48 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                       style: TextStyle(color: colors.onSurfaceVariant),
                     ),
                   )
-                : ListView.builder(
-                    controller: scrollController,
-                    reverse: true,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: events.length,
-                    itemBuilder: (context, index) {
-                      final event = events[index];
-                      final mine =
-                          event.senderId == widget.session.client.userID;
-                      return Align(
-                        alignment: mine
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 300),
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: mine
-                                ? colors.primaryContainer
-                                : colors.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(event.body),
-                        ),
-                      );
+                : NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      if (notification.metrics.pixels >=
+                          notification.metrics.maxScrollExtent - 80) {
+                        unawaited(_loadOlderMessages());
+                      }
+                      return false;
                     },
+                    child: ListView.builder(
+                      controller: scrollController,
+                      reverse: true,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+                        final mine =
+                            event.senderId == widget.session.client.userID;
+                        return GestureDetector(
+                          onLongPress: () => _showMessageActions(event),
+                          child: Align(
+                            alignment: mine
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 300),
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: mine
+                                    ? colors.primaryContainer
+                                    : colors.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(event.body),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
           ),
           SafeArea(
@@ -185,6 +297,14 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                         hintText: '输入消息',
                         border: OutlineInputBorder(),
                       ),
+                      onChanged: (_) {
+                        typingTimer?.cancel();
+                        unawaited(widget.session.setTyping(widget.room, true));
+                        typingTimer = Timer(
+                          const Duration(seconds: 3),
+                          () => widget.session.setTyping(widget.room, false),
+                        );
+                      },
                       onSubmitted: (_) => _send(),
                     ),
                   ),
@@ -210,6 +330,8 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   @override
   void dispose() {
+    typingTimer?.cancel();
+    unawaited(widget.session.setTyping(widget.room, false));
     _updates?.cancel();
     composer.dispose();
     scrollController.dispose();
