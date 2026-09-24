@@ -451,12 +451,16 @@ class HomePage extends StatelessWidget {
           style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
         ),
         const SizedBox(height: 28),
-        GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const GamePage()),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GamePage()),
+            ),
+            borderRadius: BorderRadius.circular(26),
+            child: _hero(context),
           ),
-          child: _hero(context),
         ),
         const SizedBox(height: 20),
         const SizedBox(height: 12),
