@@ -642,7 +642,7 @@ class _DetailPageState extends State<DetailPage> {
             ),
           IconButton(
             onPressed: _showShareSheet,
-            icon: const Icon(Icons.share_outlined),
+            icon: const Icon(Icons.ios_share),
             tooltip: '分享',
           ),
         ],
