@@ -230,47 +230,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  Future<void> _openAuthorProfile() async {
-    if (openingAuthor) return;
-    openingAuthor = true;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = widget.token.isEmpty
-          ? (prefs.getString('friend.auth.token') ?? '')
-          : widget.token;
-      if (widget.post.authorId == 0 || authToken.isEmpty) return;
-      final r = await http.get(
-        Uri.parse(
-          'https://friend.outmcn.net/api/users/${widget.post.authorId}',
-        ),
-        headers: {'Authorization': 'Bearer $authToken'},
-      );
-      final b = jsonDecode(r.body) as Map<String, dynamic>;
-      if (b['ok'] == true && mounted) {
-        final meResponse = await http.get(
-          Uri.parse('https://friend.outmcn.net/api/me'),
-          headers: {'Authorization': 'Bearer $authToken'},
-        );
-        final meBody = jsonDecode(meResponse.body) as Map<String, dynamic>;
-        final me = meBody['data'] as Map<String, dynamic>?;
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OtherProfilePage(
-              data: b['data'] as Map<String, dynamic>,
-              dataToken: authToken,
-              onFollowChanged: widget.onActionChanged,
-              isSelf: (me?['id'] as num?)?.toInt() == widget.post.authorId,
-            ),
-          ),
-        );
-      }
-    } finally {
-      openingAuthor = false;
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -588,6 +547,16 @@ class _DetailPageState extends State<DetailPage> {
                         await Share.share(widget.post.text, subject: '分享动态');
                       },
                     ),
+                    if (sessionLoaded && widget.post.authorId != currentUserId)
+                      _shareTarget(
+                        context: sheetContext,
+                        icon: Icons.flag_outlined,
+                        label: '举报',
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          _reportPost();
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -632,13 +601,33 @@ class _DetailPageState extends State<DetailPage> {
     final isOwnPost = post.authorId != 0 && post.authorId == currentUserId;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('动态详情'),
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 17,
+              backgroundColor: avatarColors[post.authorAvatarId.clamp(0, 9)],
+              child: Icon(
+                avatarIcons[post.authorAvatarId.clamp(0, 9)],
+                size: 19,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                post.author,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
         actions: [
           if (sessionLoaded && !isOwnPost)
-            IconButton(
-              onPressed: reporting ? null : _reportPost,
-              icon: const Icon(Icons.flag_outlined),
-              tooltip: '举报',
+            OutlinedButton(
+              onPressed: followAuthorLoading ? null : _toggleAuthorFollow,
+              child: Text(followingAuthor ? '已关注' : '关注'),
             ),
           IconButton(
             onPressed: _showShareSheet,
@@ -658,98 +647,6 @@ class _DetailPageState extends State<DetailPage> {
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
                 children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: _openAuthorProfile,
-                        child: CircleAvatar(
-                          backgroundColor:
-                              avatarColors[post.authorAvatarId.clamp(0, 9)],
-                          child: Icon(
-                            avatarIcons[post.authorAvatarId.clamp(0, 9)],
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(
-                            () => showExactPostTime = !showExactPostTime,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      post.author,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: c.onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                  if (post.city.isNotEmpty)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 6),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: c.primaryContainer,
-                                        borderRadius: BorderRadius.circular(7),
-                                      ),
-                                      child: Text(
-                                        post.city,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: c.onPrimaryContainer,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              Text(
-                                showExactPostTime
-                                    ? _exactTime(post.time)
-                                    : _relativeTime(post.time),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: c.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (sessionLoaded && !isOwnPost)
-                        OutlinedButton(
-                          onPressed: followAuthorLoading
-                              ? null
-                              : _toggleAuthorFollow,
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 32),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
-                          child: Text(followingAuthor ? '已关注' : '关注'),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-                  if (post.text.isNotEmpty)
-                    Text(
-                      post.text,
-                      style: TextStyle(
-                        fontSize: 20,
-                        height: 1.45,
-                        color: c.onSurface,
-                      ),
-                    ),
-                  const SizedBox(height: 18),
                   if (post.imageUrl != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(18),
@@ -759,6 +656,44 @@ class _DetailPageState extends State<DetailPage> {
                         width: double.infinity,
                       ),
                     ),
+                  if (post.imageUrl != null) const SizedBox(height: 18),
+                  if (post.text.isNotEmpty)
+                    Text(
+                      post.text,
+                      style: TextStyle(
+                        fontSize: 20,
+                        height: 1.45,
+                        color: c.onSurface,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () =>
+                        setState(() => showExactPostTime = !showExactPostTime),
+                    child: Row(
+                      children: [
+                        Text(
+                          showExactPostTime
+                              ? _exactTime(post.time)
+                              : _relativeTime(post.time),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: c.onSurfaceVariant,
+                          ),
+                        ),
+                        if (post.city.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            post.city,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: c.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 22),
                   Divider(color: c.outlineVariant),
                   const SizedBox(height: 8),
@@ -812,14 +747,6 @@ class _DetailPageState extends State<DetailPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: sending ? null : sendComment,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 38),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                    ),
-                    child: Text(sending ? '发送中…' : '发送'),
-                  ),
                   IconButton(
                     onPressed: () => _toggleAction('like'),
                     icon: Icon(
@@ -827,12 +754,28 @@ class _DetailPageState extends State<DetailPage> {
                       color: liked ? Colors.red : c.primary,
                     ),
                   ),
+                  Text(
+                    '${widget.post.likes}',
+                    style: TextStyle(color: c.onSurfaceVariant),
+                  ),
                   IconButton(
                     onPressed: () => _toggleAction('favorite'),
                     icon: Icon(
-                      favorited ? Icons.star : Icons.star_border,
+                      favorited ? Icons.bookmark : Icons.bookmark_outline,
                       color: favorited ? Colors.amber : c.primary,
                     ),
+                  ),
+                  Text(
+                    '${widget.post.favorites}',
+                    style: TextStyle(color: c.onSurfaceVariant),
+                  ),
+                  IconButton(
+                    onPressed: () => commentFocusNode.requestFocus(),
+                    icon: Icon(Icons.chat_bubble_outline, color: c.primary),
+                  ),
+                  Text(
+                    '${comments.length}',
+                    style: TextStyle(color: c.onSurfaceVariant),
                   ),
                 ],
               ),
