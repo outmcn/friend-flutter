@@ -58,18 +58,7 @@ class _MessagePageState extends State<MessagePage> {
     if (mounted) await session?.joinInvitedRooms();
   }
 
-  Future<void> _openFullPage() async {
-    final current = session;
-    if (current == null) return;
-    await Navigator.push<void>(
-      context,
-      MaterialPageRoute(builder: (_) => MatrixRoomsPage(session: current)),
-    );
-    if (mounted) setState(() {});
-  }
-
   Widget _topBar(BuildContext context) {
-    final current = session;
     return Material(
       color: Theme.of(context).colorScheme.surface,
       elevation: 2,
@@ -90,11 +79,7 @@ class _MessagePageState extends State<MessagePage> {
                 tooltip: '通讯录',
                 icon: const Icon(Icons.people_alt_outlined),
               ),
-              IconButton(
-                onPressed: current == null ? null : _openFullPage,
-                tooltip: '全屏消息',
-                icon: const Icon(Icons.open_in_full),
-              ),
+
               IconButton(
                 onPressed: null,
                 tooltip: '搜索聊天记录',
