@@ -146,12 +146,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
             if (mine)
               ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('编辑'),
-                onTap: () => Navigator.pop(context, 'edit'),
-              ),
-            if (mine)
-              ListTile(
                 leading: const Icon(Icons.delete_outline),
                 title: const Text('撤回'),
                 onTap: () => Navigator.pop(context, 'redact'),
@@ -167,29 +161,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       } else if (action == 'redact') {
         await widget.session.redactMessage(widget.room, event);
         if (mounted) setState(() {});
-      } else if (action == 'edit') {
-        final controller = TextEditingController(text: event.body);
-        final value = await showDialog<String>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('编辑消息'),
-            content: TextField(controller: controller, autofocus: true),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, controller.text),
-                child: const Text('保存'),
-              ),
-            ],
-          ),
-        );
-        controller.dispose();
-        if (value != null && value.trim().isNotEmpty) {
-          await widget.session.editMessage(widget.room, event, value);
-        }
       }
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
@@ -343,7 +314,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                       controller: composer,
                       minLines: 1,
                       maxLines: 4,
-                      textInputAction: TextInputAction.newline,
+                      textInputAction: TextInputAction.send,
                       decoration: const InputDecoration(
                         hintText: '输入消息',
                         border: OutlineInputBorder(),
