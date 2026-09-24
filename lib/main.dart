@@ -111,6 +111,7 @@ class _FriendAppState extends State<FriendApp> {
       indicatorColor: colors.primaryContainer,
       height: 60,
       labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 11)),
+      labelPadding: const EdgeInsets.only(top: 4, bottom: 0),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
