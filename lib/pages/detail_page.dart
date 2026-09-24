@@ -707,9 +707,9 @@ class _DetailPageState extends State<DetailPage> {
         ),
         actions: [
           if (sessionLoaded && !isOwnPost)
-            OutlinedButton(
+            FilledButton(
               onPressed: followAuthorLoading ? null : _toggleAuthorFollow,
-              style: OutlinedButton.styleFrom(
+              style: FilledButton.styleFrom(
                 minimumSize: const Size(58, 34),
                 padding: const EdgeInsets.symmetric(horizontal: 11),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
