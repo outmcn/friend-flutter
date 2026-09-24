@@ -756,7 +756,7 @@ class _DetailPageState extends State<DetailPage> {
                         color: c.onSurface,
                       ),
                     ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   GestureDetector(
                     onTap: () =>
                         setState(() => showExactPostTime = !showExactPostTime),
@@ -784,7 +784,7 @@ class _DetailPageState extends State<DetailPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 8),
                   Divider(color: c.outlineVariant),
                   const SizedBox(height: 8),
                   Text(
