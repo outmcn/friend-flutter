@@ -74,6 +74,7 @@ class _FriendAppState extends State<FriendApp> {
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: colors.surfaceContainer,
       indicatorColor: colors.primaryContainer,
+      height: 60,
       labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 11)),
     ),
     filledButtonTheme: FilledButtonThemeData(
