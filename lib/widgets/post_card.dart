@@ -257,7 +257,7 @@ class _PostCardState extends State<PostCard> {
                         ),
                         const SizedBox(width: 20),
                         Icon(
-                          Icons.star_border,
+                          Icons.bookmark_outline,
                           size: 19,
                           color: c.onSurfaceVariant,
                         ),
