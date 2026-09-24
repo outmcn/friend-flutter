@@ -5,6 +5,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationService {
   static const cacheHours = 6;
+
+  Future<LocationPermission> requestPermissionAtStartup() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return LocationPermission.denied;
+    }
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    return permission;
+  }
+
   Future<Position?> currentPosition() async {
     final prefs = await SharedPreferences.getInstance();
     final cachedAt = prefs.getInt('friend.location.cachedAt') ?? 0;
@@ -25,13 +37,7 @@ class LocationService {
         speedAccuracy: 0,
       );
     }
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      return null;
-    }
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
+    final permission = await requestPermissionAtStartup();
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       return null;

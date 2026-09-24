@@ -33,11 +33,20 @@ class _FriendAppState extends State<FriendApp> {
   void initState() {
     super.initState();
     _loadToken();
+    _requestStartupAccess();
   }
 
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) setState(() => token = prefs.getString('friend.auth.token'));
+  }
+
+  Future<void> _requestStartupAccess() async {
+    try {
+      await LocationService().requestPermissionAtStartup();
+    } catch (_) {
+      // Permission denial is handled by the location service; startup remains usable.
+    }
   }
 
   @override
