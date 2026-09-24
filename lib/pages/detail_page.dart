@@ -491,6 +491,37 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  Future<void> _confirmDeletePost() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除动态'),
+        content: const Text('确定要删除这条动态吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || token == null) return;
+    final response = await http.delete(
+      Uri.parse('https://friend.outmcn.net/api/posts/${widget.post.id}'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (body['ok'] == true && mounted) {
+      await widget.onActionChanged?.call();
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    }
+  }
+
   Future<void> _showShareSheet() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -555,6 +586,16 @@ class _DetailPageState extends State<DetailPage> {
                         onTap: () {
                           Navigator.pop(sheetContext);
                           _reportPost();
+                        },
+                      ),
+                    if (sessionLoaded && widget.post.authorId == currentUserId)
+                      _shareTarget(
+                        context: sheetContext,
+                        icon: Icons.delete_outline,
+                        label: '删除动态',
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          _confirmDeletePost();
                         },
                       ),
                   ],
@@ -627,10 +668,18 @@ class _DetailPageState extends State<DetailPage> {
           if (sessionLoaded && !isOwnPost)
             OutlinedButton(
               onPressed: followAuthorLoading ? null : _toggleAuthorFollow,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 28),
+                padding: const EdgeInsets.symmetric(horizontal: 7),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
               child: Text(followingAuthor ? '已关注' : '关注'),
             ),
           IconButton(
             onPressed: _showShareSheet,
+            padding: const EdgeInsets.only(left: 2, right: 8),
+            constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
             icon: const Icon(Icons.ios_share),
             tooltip: '分享',
           ),
