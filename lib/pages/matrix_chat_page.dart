@@ -125,11 +125,10 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                   )
                 : ListView.builder(
                     controller: scrollController,
-                    reverse: true,
                     padding: const EdgeInsets.all(16),
                     itemCount: events.length,
                     itemBuilder: (context, index) {
-                      final event = events[events.length - index - 1];
+                      final event = events[index];
                       final mine =
                           event.senderId == widget.session.client.userID;
                       return Align(
