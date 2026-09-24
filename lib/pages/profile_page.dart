@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ui_post.dart';
 import '../services/api_client.dart';
 import '../services/location_service.dart';
+import '../services/matrix_session.dart';
+import '../models/matrix_bridge_session.dart';
 import '../widgets/post_card.dart';
 import '../widgets/profile_card.dart';
 import '../widgets/empty_state.dart';
@@ -235,6 +237,16 @@ class ProfilePageState extends State<ProfilePage> {
       return;
     }
     try {
+      final matrixResponse = await _api.getMatrixSession();
+      final bridge = MatrixBridgeSession.fromJson(
+        Map<String, dynamic>.from(matrixResponse['data'] as Map),
+      );
+      final matrix = await MatrixSession.fromBridgeSession(bridge);
+      try {
+        await matrix.setDisplayName(value);
+      } finally {
+        matrix.dispose();
+      }
       await _api.put('/api/me', body: {'nickname': value});
       if (mounted) setState(() => nickname = value);
     } catch (_) {

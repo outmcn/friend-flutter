@@ -151,6 +151,22 @@ class MatrixSession extends ChangeNotifier {
     await room.sendTextEvent(value);
   }
 
+  String get currentUserId {
+    final value = client.userID;
+    if (value == null || value.isEmpty) {
+      throw StateError('Matrix SDK 当前用户未初始化');
+    }
+    return value;
+  }
+
+  Future<void> setDisplayName(String displayName) async {
+    final value = displayName.trim();
+    if (value.isEmpty) throw ArgumentError('昵称不能为空');
+    await client.setProfileField(currentUserId, 'displayname', {
+      'displayname': value,
+    });
+  }
+
   Future<String> startDirectChat(String matrixUserId) {
     if (!ready) {
       throw StateError('Matrix SDK 会话尚未初始化完成');
