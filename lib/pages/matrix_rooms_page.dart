@@ -22,6 +22,8 @@ class MatrixRoomsPage extends StatefulWidget {
 
 class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   StreamSubscription<void>? _updates;
+  final Map<String, String> _titles = {};
+  bool _loadingTitles = false;
 
   @override
   void initState() {
@@ -29,6 +31,24 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
     });
+    _loadTitles();
+  }
+
+  Future<void> _loadTitles() async {
+    if (_loadingTitles) return;
+    _loadingTitles = true;
+    try {
+      for (final room in widget.session.directRooms()) {
+        try {
+          _titles[room.id] = await widget.session.roomDisplayName(room);
+        } catch (_) {
+          // Keep the SDK fallback title while member data is unavailable.
+        }
+      }
+      if (mounted) setState(() {});
+    } finally {
+      _loadingTitles = false;
+    }
   }
 
   @override
@@ -65,6 +85,10 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
 
   Widget _body(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    if (!_loadingTitles &&
+        _titles.length < widget.session.directRooms().length) {
+      unawaited(_loadTitles());
+    }
     final data = rooms;
     if (data.isEmpty) {
       final invites = widget.session.invitedRooms();
@@ -105,7 +129,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
               color: colors.onPrimaryContainer,
             ),
           ),
-          title: Text(item.title),
+          title: Text(_titles[item.roomId] ?? item.title),
           subtitle: Text(
             item.preview,
             maxLines: 1,

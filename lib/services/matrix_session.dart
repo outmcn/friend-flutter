@@ -176,6 +176,11 @@ class MatrixSession extends ChangeNotifier {
 
   Room? roomById(String roomId) => client.getRoomById(roomId);
 
+  Future<String> roomDisplayName(Room room) async {
+    await room.loadHeroUsers();
+    return room.getLocalizedDisplayname();
+  }
+
   Future<void> logout() async {
     await client.logout();
     ready = false;
