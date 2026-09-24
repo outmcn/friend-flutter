@@ -251,7 +251,8 @@ class _PostCardState extends State<PostCard> {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 12),
+                  if (p.text.isNotEmpty || p.imageUrl?.isNotEmpty == true)
+                    const SizedBox(height: 12),
                   Row(
                     children: [
                       Icon(

@@ -25,4 +25,11 @@ void main() {
     expect(post.following, isTrue);
     expect(post.icon, Icons.image_outlined);
   });
+
+  test('UiPost.fromJson does not create an image for empty values', () {
+    expect(UiPost.fromJson({'imageURL': ''}).imageUrl, isNull);
+    expect(UiPost.fromJson({'imageURL': '   '}).imageUrl, isNull);
+    expect(UiPost.fromJson({'imageURL': 'null'}).imageUrl, isNull);
+    expect(UiPost.fromJson({'imageURL': null}).imageUrl, isNull);
+  });
 }

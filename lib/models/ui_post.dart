@@ -51,8 +51,9 @@ class UiPost {
     following: json['following'] == true,
   );
   static String? _normalizeImage(dynamic value) {
-    final raw = value?.toString() ?? '';
-    if (raw.isEmpty) return null;
+    if (value == null) return null;
+    final raw = value.toString().trim();
+    if (raw.isEmpty || raw.toLowerCase() == 'null') return null;
     return raw.startsWith('http') ? raw : 'https://friend.outmcn.net$raw';
   }
 }
