@@ -717,6 +717,7 @@ class _DetailPageState extends State<DetailPage> {
               ),
               child: Text(followingAuthor ? '已关注' : '关注'),
             ),
+          const SizedBox(width: 8),
           IconButton(
             onPressed: _showShareSheet,
             padding: const EdgeInsets.only(left: 2, right: 16),
