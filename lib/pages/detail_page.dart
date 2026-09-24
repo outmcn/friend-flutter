@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/ui_post.dart';
 import '../widgets/empty_state.dart';
 import 'other_profile_page.dart';
@@ -531,6 +532,99 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  Future<void> _showShareSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '分享动态',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 88,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _shareTarget(
+                      context: sheetContext,
+                      icon: Icons.person,
+                      label: '最近聊天',
+                      onTap: () => Navigator.pop(sheetContext),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 24),
+              SizedBox(
+                height: 88,
+                child: Row(
+                  children: [
+                    _shareTarget(
+                      context: sheetContext,
+                      icon: Icons.wechat,
+                      label: '微信',
+                      onTap: () => Navigator.pop(sheetContext),
+                    ),
+                    _shareTarget(
+                      context: sheetContext,
+                      icon: Icons.chat,
+                      label: 'QQ',
+                      onTap: () => Navigator.pop(sheetContext),
+                    ),
+                    _shareTarget(
+                      context: sheetContext,
+                      icon: Icons.more_horiz,
+                      label: '更多',
+                      onTap: () async {
+                        Navigator.pop(sheetContext);
+                        await Share.share(widget.post.text, subject: '分享动态');
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _shareTarget({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 82,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              backgroundColor: colors.primaryContainer,
+              child: Icon(icon, color: colors.onPrimaryContainer),
+            ),
+            const SizedBox(height: 6),
+            Text(label, style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -546,6 +640,11 @@ class _DetailPageState extends State<DetailPage> {
               icon: const Icon(Icons.flag_outlined),
               tooltip: '举报',
             ),
+          IconButton(
+            onPressed: _showShareSheet,
+            icon: const Icon(Icons.share_outlined),
+            tooltip: '分享',
+          ),
         ],
       ),
       body: Column(
