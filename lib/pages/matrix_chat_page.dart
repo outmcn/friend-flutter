@@ -132,6 +132,8 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   Future<void> _showMessageActions(Event event) async {
     final mine = event.senderId == widget.session.client.userID;
+    final canRedact =
+        mine && DateTime.now().difference(event.originServerTs).inSeconds <= 60;
     final action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -144,7 +146,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
               onTap: () => Navigator.pop(context, 'reply'),
             ),
 
-            if (mine)
+            if (canRedact)
               ListTile(
                 leading: const Icon(Icons.delete_outline),
                 title: const Text('撤回'),
