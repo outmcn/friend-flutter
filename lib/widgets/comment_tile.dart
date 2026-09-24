@@ -5,18 +5,24 @@ class CommentTile extends StatelessWidget {
   final Map<String, dynamic> comment;
   final ColorScheme colors;
   final bool isSelf;
+  final bool isReply;
+  final String publishedLabel;
   final VoidCallback onAvatarTap;
   final VoidCallback onLongPress;
   final EdgeInsets padding;
+
   const CommentTile({
     super.key,
     required this.comment,
     required this.colors,
     required this.isSelf,
+    required this.isReply,
+    required this.publishedLabel,
     required this.onAvatarTap,
     required this.onLongPress,
     this.padding = EdgeInsets.zero,
   });
+
   @override
   Widget build(BuildContext context) {
     final avatarId = ((comment['avatarId'] as num?)?.toInt() ?? 0).clamp(0, 9);
@@ -34,8 +40,13 @@ class CommentTile extends StatelessWidget {
                 customBorder: const CircleBorder(),
                 onTap: onAvatarTap,
                 child: CircleAvatar(
+                  radius: isReply ? 14 : 20,
                   backgroundColor: avatarColors[avatarId],
-                  child: Icon(avatarIcons[avatarId], color: Colors.white),
+                  child: Icon(
+                    avatarIcons[avatarId],
+                    color: Colors.white,
+                    size: isReply ? 16 : 24,
+                  ),
                 ),
               ),
             ),
@@ -46,44 +57,44 @@ class CommentTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                comment['nickname']?.toString() ?? '评论',
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                      Flexible(
+                        child: Text(
+                          comment['nickname']?.toString() ?? '评论',
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      if (isSelf ||
+                          (comment['city']?.toString() ?? '').isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelf
+                                ? colors.tertiaryContainer
+                                : colors.primaryContainer,
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                          child: Text(
+                            isSelf ? '我' : comment['city'].toString(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isSelf
+                                  ? colors.onTertiaryContainer
+                                  : colors.onPrimaryContainer,
+                              fontWeight: FontWeight.w600,
                             ),
-                            if (isSelf ||
-                                (comment['city']?.toString() ?? '').isNotEmpty)
-                              Container(
-                                margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelf
-                                      ? colors.tertiaryContainer
-                                      : colors.primaryContainer,
-                                  borderRadius: BorderRadius.circular(7),
-                                ),
-                                child: Text(
-                                  isSelf ? '我' : comment['city'].toString(),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isSelf
-                                        ? colors.onTertiaryContainer
-                                        : colors.onPrimaryContainer,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                          ],
+                          ),
+                        ),
+                      const SizedBox(width: 6),
+                      Text(
+                        publishedLabel,
+                        style: TextStyle(
+                          color: colors.onSurfaceVariant,
+                          fontSize: 11,
                         ),
                       ),
                     ],

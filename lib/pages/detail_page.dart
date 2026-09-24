@@ -38,6 +38,7 @@ class _DetailPageState extends State<DetailPage> {
   bool followingAuthor = false;
   bool showExactPostTime = false;
   bool followAuthorLoading = false;
+  final expandedReplies = <int>{};
 
   String _relativeTime(String value) {
     final date = DateTime.tryParse(value)?.toLocal();
@@ -55,6 +56,10 @@ class _DetailPageState extends State<DetailPage> {
     if (date == null) return value;
     String two(int n) => n.toString().padLeft(2, '0');
     return '${date.year}-${two(date.month)}-${two(date.day)} ${two(date.hour)}:${two(date.minute)}:${two(date.second)}';
+  }
+
+  String _commentTime(Map<String, dynamic> comment) {
+    return _relativeTime(comment['createdAt']?.toString() ?? '');
   }
 
   Future<void> _toggleAuthorFollow() async {
@@ -318,7 +323,7 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  List<Map<String, dynamic>> _orderedComments() {
+  List<Widget> _buildCommentWidgets(BuildContext context, ColorScheme colors) {
     final roots = comments.where((c) => c['parentId'] == null).toList();
     final children = <int, List<Map<String, dynamic>>>{};
     for (final comment in comments) {
@@ -327,19 +332,63 @@ class _DetailPageState extends State<DetailPage> {
         children.putIfAbsent(parentId, () => []).add(comment);
       }
     }
-    final ordered = <Map<String, dynamic>>[];
-    void append(Map<String, dynamic> comment) {
-      ordered.add(comment);
-      for (final child
-          in children[comment['id']] ?? const <Map<String, dynamic>>[]) {
-        append(child);
+
+    final widgets = <Widget>[];
+    for (final root in roots) {
+      widgets.add(_commentWidget(context, colors, root, false));
+      final replies = children[(root['id'] as num?)?.toInt()] ?? const [];
+      final expanded = expandedReplies.contains((root['id'] as num?)?.toInt());
+      final visibleReplies = expanded ? replies : replies.take(2).toList();
+      widgets.addAll(
+        visibleReplies.map(
+          (reply) => _commentWidget(context, colors, reply, true),
+        ),
+      );
+      final remaining = replies.length - visibleReplies.length;
+      if (remaining > 0) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 50, bottom: 12),
+            child: TextButton(
+              onPressed: () {
+                setState(() {
+                  final id = (root['id'] as num?)?.toInt();
+                  if (id != null) expandedReplies.add(id);
+                });
+              },
+              child: Text('展开$remaining条回复'),
+            ),
+          ),
+        );
       }
     }
+    return widgets;
+  }
 
-    for (final root in roots) {
-      append(root);
-    }
-    return ordered;
+  Widget _commentWidget(
+    BuildContext context,
+    ColorScheme colors,
+    Map<String, dynamic> comment,
+    bool isReply,
+  ) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() => replyingTo = comment);
+        FocusScope.of(context).requestFocus(commentFocusNode);
+      },
+      onLongPress: () => _showCommentActions(comment),
+      child: CommentTile(
+        comment: comment,
+        colors: colors,
+        isReply: isReply,
+        isSelf: (comment['userId'] as num?)?.toInt() == currentUserId,
+        publishedLabel: _commentTime(comment),
+        padding: EdgeInsets.only(left: isReply ? 50 : 0, bottom: 12),
+        onAvatarTap: () => _openCommentProfile(comment),
+        onLongPress: () => _showCommentActions(comment),
+      ),
+    );
   }
 
   bool _canDeleteComment(Map<String, dynamic> comment) {
@@ -571,32 +620,7 @@ class _DetailPageState extends State<DetailPage> {
                   if (comments.isEmpty)
                     EmptyState(text: '还没有评论')
                   else
-                    ..._orderedComments().map((comment) {
-                      final parentId = (comment['parentId'] as num?)?.toInt();
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          setState(() {
-                            replyingTo = comment;
-                          });
-                          FocusScope.of(context).requestFocus(commentFocusNode);
-                        },
-                        onLongPress: () => _showCommentActions(comment),
-                        child: CommentTile(
-                          comment: comment,
-                          colors: c,
-                          isSelf:
-                              (comment['userId'] as num?)?.toInt() ==
-                              currentUserId,
-                          padding: EdgeInsets.only(
-                            left: parentId == null ? 0 : 28,
-                            bottom: 12,
-                          ),
-                          onAvatarTap: () => _openCommentProfile(comment),
-                          onLongPress: () => _showCommentActions(comment),
-                        ),
-                      );
-                    }),
+                    ..._buildCommentWidgets(context, c),
                 ],
               ),
             ),
