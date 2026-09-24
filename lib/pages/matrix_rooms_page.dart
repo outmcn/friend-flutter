@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/matrix_room_view.dart';
 import '../services/matrix_session.dart';
+import 'matrix_chat_page.dart';
 
 class MatrixRoomsPage extends StatefulWidget {
   const MatrixRoomsPage({super.key, required this.session});
@@ -12,12 +15,20 @@ class MatrixRoomsPage extends StatefulWidget {
 }
 
 class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
+  StreamSubscription<void>? _updates;
+
   @override
   void initState() {
     super.initState();
-    widget.session.updates.listen((_) {
+    _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
     });
+  }
+
+  @override
+  void dispose() {
+    _updates?.cancel();
+    super.dispose();
   }
 
   List<MatrixRoomViewData> get rooms =>
@@ -71,6 +82,21 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
                   trailing: room.unreadCount == 0
                       ? null
                       : Badge(label: Text('${room.unreadCount}')),
+                  onTap: () {
+                    final matrixRoom = widget.session.client.getRoomById(
+                      room.roomId,
+                    );
+                    if (matrixRoom == null) return;
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MatrixChatPage(
+                          session: widget.session,
+                          room: matrixRoom,
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
