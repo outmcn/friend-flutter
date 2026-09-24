@@ -9,7 +9,6 @@ import 'package:geolocator/geolocator.dart';
 import 'models/ui_post.dart';
 import 'pages/profile_page.dart';
 import 'pages/contacts_page.dart';
-import 'pages/user_list_page.dart';
 import 'pages/game_page.dart';
 import 'widgets/post_card.dart';
 import 'widgets/discovery_top_bar.dart';
@@ -509,11 +508,15 @@ class HomeTopBar extends StatelessWidget {
   final VoidCallback? onQrCode;
   final VoidCallback? onSettings;
   final List<Widget> trailingActions;
+  final bool showTitle;
+  final bool showDefaultActions;
   const HomeTopBar({
     super.key,
     this.onQrCode,
     this.onSettings,
     this.trailingActions = const [],
+    this.showTitle = true,
+    this.showDefaultActions = true,
   });
 
   @override
@@ -528,45 +531,48 @@ class HomeTopBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 0, 12, 5),
           child: Row(
             children: [
-              Text(
-                '主页',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: c.onSurface,
+              if (showTitle)
+                Text(
+                  '主页',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: c.onSurface,
+                  ),
                 ),
-              ),
               const Spacer(),
-              IconButton(
-                onPressed:
-                    onQrCode ??
-                    () => showDialog<void>(
-                      context: context,
-                      builder: (_) => const AlertDialog(
-                        title: Text('二维码'),
-                        content: Icon(Icons.qr_code_2, size: 190),
-                      ),
-                    ),
-                tooltip: '二维码',
-                icon: const Icon(Icons.qr_code_2_outlined),
-              ),
-              IconButton(
-                onPressed:
-                    onSettings ??
-                    () => showModalBottomSheet<void>(
-                      context: context,
-                      showDragHandle: true,
-                      builder: (_) => const SafeArea(
-                        child: ListTile(
-                          leading: Icon(Icons.settings_outlined),
-                          title: Text('设置'),
-                          subtitle: Text('设置功能正在完善'),
+              if (showDefaultActions) ...[
+                IconButton(
+                  onPressed:
+                      onQrCode ??
+                      () => showDialog<void>(
+                        context: context,
+                        builder: (_) => const AlertDialog(
+                          title: Text('二维码'),
+                          content: Icon(Icons.qr_code_2, size: 190),
                         ),
                       ),
-                    ),
-                tooltip: '设置',
-                icon: const Icon(Icons.settings_outlined),
-              ),
+                  tooltip: '二维码',
+                  icon: const Icon(Icons.qr_code_2_outlined),
+                ),
+                IconButton(
+                  onPressed:
+                      onSettings ??
+                      () => showModalBottomSheet<void>(
+                        context: context,
+                        showDragHandle: true,
+                        builder: (_) => const SafeArea(
+                          child: ListTile(
+                            leading: Icon(Icons.settings_outlined),
+                            title: Text('设置'),
+                            subtitle: Text('设置功能正在完善'),
+                          ),
+                        ),
+                      ),
+                  tooltip: '设置',
+                  icon: const Icon(Icons.settings_outlined),
+                ),
+              ],
               ...trailingActions,
             ],
           ),
@@ -806,35 +812,61 @@ class MessagePage extends StatelessWidget {
     return Column(
       children: [
         HomeTopBar(
+          showTitle: false,
+          showDefaultActions: false,
           trailingActions: [
             IconButton(
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => ContactsPage(token: token)),
               ),
-              tooltip: '联系人',
-              icon: const Icon(Icons.contacts_outlined),
+              tooltip: '通讯录',
+              icon: const Icon(Icons.people_alt_outlined),
             ),
             IconButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => UserListPage(
-                    token: token,
-                    title: '搜索用户',
-                    searchable: true,
+              onPressed: () => showSearch<void>(
+                context: context,
+                delegate: _MessageSearchDelegate(
+                  List.generate(
+                    6,
+                    (i) => {'name': '星空用户 ${i + 1}', 'content': '期待和你交流'},
                   ),
                 ),
               ),
-              tooltip: '搜索',
+              tooltip: '搜索聊天记录',
               icon: const Icon(Icons.search),
             ),
             IconButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ContactsPage(token: token)),
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                showDragHandle: true,
+                builder: (sheetContext) => SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.qr_code_scanner),
+                        title: const Text('扫一扫'),
+                        onTap: () => Navigator.pop(sheetContext),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.person_add_alt_1_outlined),
+                        title: const Text('添加好友'),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ContactsPage(token: token),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              tooltip: '新增',
+              tooltip: '更多',
               icon: const Icon(Icons.add_circle_outline),
             ),
           ],
@@ -906,6 +938,50 @@ class MessagePage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MessageSearchDelegate extends SearchDelegate<void> {
+  final List<Map<String, String>> records;
+  _MessageSearchDelegate(this.records);
+
+  @override
+  List<Widget>? buildActions(BuildContext context) => [
+    if (query.isNotEmpty)
+      IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear)),
+  ];
+
+  @override
+  Widget? buildLeading(BuildContext context) => IconButton(
+    onPressed: () => close(context, null),
+    icon: const Icon(Icons.arrow_back),
+  );
+
+  @override
+  Widget buildResults(BuildContext context) => _buildMatches(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _buildMatches(context);
+
+  Widget _buildMatches(BuildContext context) {
+    final keyword = query.trim().toLowerCase();
+    final matches = records.where((record) {
+      if (keyword.isEmpty) return true;
+      return record.values.any(
+        (value) => value.toLowerCase().contains(keyword),
+      );
+    }).toList();
+    if (matches.isEmpty) {
+      return const Center(child: Text('没有找到聊天记录'));
+    }
+    return ListView.builder(
+      itemCount: matches.length,
+      itemBuilder: (_, index) => ListTile(
+        leading: const CircleAvatar(child: Icon(Icons.public)),
+        title: Text(matches[index]['name']!),
+        subtitle: Text(matches[index]['content']!),
+      ),
     );
   }
 }
