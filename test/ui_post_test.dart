@@ -15,6 +15,8 @@ void main() {
       'comments': 4,
       'imageURL': '/uploads/a.jpg',
       'following': true,
+      'liked': true,
+      'favorited': true,
     });
     expect(post.id, 7);
     expect(post.authorId, 3);
@@ -23,6 +25,8 @@ void main() {
     expect(post.comments, 4);
     expect(post.imageUrl, 'https://friend.outmcn.net/uploads/a.jpg');
     expect(post.following, isTrue);
+    expect(post.liked, isTrue);
+    expect(post.favorited, isTrue);
     expect(post.icon, Icons.image_outlined);
   });
 

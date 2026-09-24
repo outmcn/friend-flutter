@@ -213,8 +213,8 @@ class _DetailPageState extends State<DetailPage> {
   @override
   void initState() {
     super.initState();
-    liked = widget.post.likes > 0;
-    favorited = widget.post.favorites > 0;
+    liked = widget.post.liked;
+    favorited = widget.post.favorited;
     followingAuthor = widget.post.following;
     _loadSession();
   }

@@ -10,6 +10,7 @@ class UiPost {
   final String text, author, time;
   final String city;
   final bool following;
+  final bool liked, favorited;
   final IconData icon;
   final int likes, favorites, comments;
   final String? imageUrl;
@@ -29,6 +30,8 @@ class UiPost {
     this.imageUrl,
     this.city = '',
     this.following = false,
+    this.liked = false,
+    this.favorited = false,
   });
   factory UiPost.fromJson(Map<String, dynamic> json) => UiPost(
     json['content']?.toString() ?? '',
@@ -49,6 +52,8 @@ class UiPost {
     longitude: (json['longitude'] as num?)?.toDouble(),
     city: json['city']?.toString() ?? '',
     following: json['following'] == true,
+    liked: json['liked'] == true,
+    favorited: json['favorited'] == true,
   );
   static String? _normalizeImage(dynamic value) {
     if (value == null) return null;
