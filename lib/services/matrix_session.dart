@@ -171,10 +171,6 @@ class MatrixSession extends ChangeNotifier {
     await room.sendReaction(event.eventId, reaction);
   }
 
-  Future<void> setTyping(Room room, bool typing) async {
-    await room.setTyping(typing, timeout: 5000);
-  }
-
   bool otherUserHasRead(Room room, Event event) {
     final otherUsers = room.receiptState.global.otherUsers;
     return otherUsers.values.any((receipt) => receipt.eventId == event.eventId);

@@ -19,7 +19,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   Timeline? timeline;
   final composer = TextEditingController();
   final scrollController = ScrollController();
-  Timer? typingTimer;
+
   String? error;
   bool loading = true;
   bool sending = false;
@@ -109,8 +109,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
         await widget.session.sendText(widget.room, text);
       }
       composer.clear();
-      typingTimer?.cancel();
-      await widget.session.setTyping(widget.room, false);
       if (mounted) setState(() => replyingTo = null);
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
@@ -324,14 +322,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                         hintText: '输入消息',
                         border: OutlineInputBorder(),
                       ),
-                      onChanged: (_) {
-                        typingTimer?.cancel();
-                        unawaited(widget.session.setTyping(widget.room, true));
-                        typingTimer = Timer(
-                          const Duration(seconds: 3),
-                          () => widget.session.setTyping(widget.room, false),
-                        );
-                      },
                       onSubmitted: (_) => _send(),
                     ),
                   ),
@@ -357,8 +347,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   @override
   void dispose() {
-    typingTimer?.cancel();
-    unawaited(widget.session.setTyping(widget.room, false));
     _updates?.cancel();
     composer.dispose();
     scrollController.dispose();
