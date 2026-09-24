@@ -124,7 +124,7 @@ class MatrixSession extends ChangeNotifier {
 
   Stream<void> get updates => client.onSync.stream.map((_) {});
 
-  bool get isLoggedIn => client.isLogged();
+  bool get isLoggedIn => ready;
 
   Future<void> sendText(Room room, String text) async {
     final value = text.trim();
