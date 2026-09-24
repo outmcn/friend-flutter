@@ -26,6 +26,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   bool loadingHistory = false;
   String? roomTitle;
   Event? replyingTo;
+  final Map<String, String> replyLabels = {};
 
   @override
   void initState() {
@@ -60,6 +61,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
         });
       }
       await _markRoomRead();
+      await _loadReplyLabels();
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -93,6 +95,17 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       await widget.session.clearRoomUnread(widget.room);
       if (mounted) setState(() {});
     } catch (_) {}
+  }
+
+  Future<void> _loadReplyLabels() async {
+    for (final event in messageEvents) {
+      if (event.inReplyToEventId() == null ||
+          replyLabels.containsKey(event.eventId)) {
+        continue;
+      }
+      replyLabels[event.eventId] = await _replyLabel(event);
+    }
+    if (mounted) setState(() {});
   }
 
   Future<void> _send() async {
@@ -197,6 +210,16 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     return event.body == 'Redacted' ? '已撤回一条消息' : event.body;
   }
 
+  Future<String> _replyLabel(Event event) async {
+    final id = event.inReplyToEventId();
+    if (id == null) return event.body;
+    final original = await widget.room.getEventById(id);
+    if (original == null) return event.body;
+    final sender = await original.fetchSenderUser();
+    final name = sender?.displayName?.trim();
+    return '${name?.isNotEmpty == true ? name : original.senderId}: ${original.body}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -268,19 +291,15 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(_messageBody(displayed)),
-                                  if (mine &&
-                                      widget.session.otherUserHasRead(
-                                        widget.room,
-                                        event,
-                                      ))
-                                    const Padding(
-                                      padding: EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        '已读',
-                                        style: TextStyle(fontSize: 11),
+                                  if (replyLabels.containsKey(event.eventId))
+                                    Text(
+                                      '回复：${replyLabels[event.eventId]}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: colors.onSurfaceVariant,
                                       ),
                                     ),
+                                  Text(_messageBody(displayed)),
                                 ],
                               ),
                             ),

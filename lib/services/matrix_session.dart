@@ -167,11 +167,6 @@ class MatrixSession extends ChangeNotifier {
     await room.redactEvent(event.eventId);
   }
 
-  bool otherUserHasRead(Room room, Event event) {
-    final otherUsers = room.receiptState.global.otherUsers;
-    return otherUsers.values.any((receipt) => receipt.eventId == event.eventId);
-  }
-
   String get currentUserId {
     final value = client.userID;
     if (value == null || value.isEmpty) {
