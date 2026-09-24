@@ -127,20 +127,6 @@ class _PostCardState extends State<PostCard> {
                             ),
                           ),
                         ),
-                        if (widget.canDelete)
-                          IconButton(
-                            onPressed: widget.onDeleted,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ),
-                            icon: Icon(
-                              Icons.delete_outline,
-                              color: c.onSurfaceVariant,
-                              size: 19,
-                            ),
-                          ),
                       ],
                     ),
                   Visibility(
@@ -209,14 +195,6 @@ class _PostCardState extends State<PostCard> {
                             ],
                           ),
                         ),
-                        if (widget.canDelete)
-                          IconButton(
-                            onPressed: widget.onDeleted,
-                            icon: Icon(
-                              Icons.delete_outline,
-                              color: c.onSurfaceVariant,
-                            ),
-                          ),
                       ],
                     ),
                   ),
@@ -253,44 +231,45 @@ class _PostCardState extends State<PostCard> {
                     ),
                   if (p.text.isNotEmpty || p.imageUrl?.isNotEmpty == true)
                     const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.favorite_border,
-                        size: 19,
-                        color: c.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        '${p.likes}',
-                        style: TextStyle(color: c.onSurfaceVariant),
-                      ),
-                      const SizedBox(width: 20),
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 18,
-                        color: c.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        '${p.comments}',
-                        style: TextStyle(color: c.onSurfaceVariant),
-                      ),
-                      const SizedBox(width: 20),
-                      Icon(
-                        Icons.star_border,
-                        size: 19,
-                        color: c.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        '${p.favorites}',
-                        style: TextStyle(color: c.onSurfaceVariant),
-                      ),
-                      const Spacer(),
-                      Icon(Icons.chevron_right, color: c.onSurfaceVariant),
-                    ],
-                  ),
+                  if (!widget.hideAuthor)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.favorite_border,
+                          size: 19,
+                          color: c.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${p.likes}',
+                          style: TextStyle(color: c.onSurfaceVariant),
+                        ),
+                        const SizedBox(width: 20),
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 18,
+                          color: c.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${p.comments}',
+                          style: TextStyle(color: c.onSurfaceVariant),
+                        ),
+                        const SizedBox(width: 20),
+                        Icon(
+                          Icons.star_border,
+                          size: 19,
+                          color: c.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${p.favorites}',
+                          style: TextStyle(color: c.onSurfaceVariant),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.chevron_right, color: c.onSurfaceVariant),
+                      ],
+                    ),
                   const SizedBox(height: 12),
                 ],
               ),
