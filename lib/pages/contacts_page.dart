@@ -70,12 +70,18 @@ class _ContactsPageState extends State<ContactsPage> {
       final room = session.client.getRoomById(roomId);
       if (!mounted || room == null) {
         session.dispose();
+        if (mounted && room == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Matrix 私聊房间创建成功但暂未同步，请稍后重试')),
+          );
+        }
         return;
       }
+      final activeSession = session;
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
-          builder: (_) => MatrixChatPage(session: session!, room: room),
+          builder: (_) => MatrixChatPage(session: activeSession, room: room),
         ),
       );
       session.dispose();
