@@ -130,11 +130,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
               title: const Text('回复'),
               onTap: () => Navigator.pop(context, 'reply'),
             ),
-            ListTile(
-              leading: const Icon(Icons.add_reaction_outlined),
-              title: const Text('赞'),
-              onTap: () => Navigator.pop(context, 'react'),
-            ),
+
             if (mine)
               ListTile(
                 leading: const Icon(Icons.edit_outlined),
@@ -155,8 +151,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     try {
       if (action == 'reply') {
         setState(() => replyingTo = event);
-      } else if (action == 'react') {
-        await widget.session.reactToMessage(widget.room, event, '👍');
       } else if (action == 'redact') {
         await widget.session.redactMessage(widget.room, event);
         if (mounted) setState(() {});

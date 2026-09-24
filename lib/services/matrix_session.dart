@@ -167,10 +167,6 @@ class MatrixSession extends ChangeNotifier {
     await room.redactEvent(event.eventId);
   }
 
-  Future<void> reactToMessage(Room room, Event event, String reaction) async {
-    await room.sendReaction(event.eventId, reaction);
-  }
-
   bool otherUserHasRead(Room room, Event event) {
     final otherUsers = room.receiptState.global.otherUsers;
     return otherUsers.values.any((receipt) => receipt.eventId == event.eventId);
