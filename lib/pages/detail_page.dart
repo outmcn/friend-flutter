@@ -763,7 +763,7 @@ class _DetailPageState extends State<DetailPage> {
                   Divider(color: c.outlineVariant),
                   const SizedBox(height: 8),
                   Text(
-                    '评论',
+                    '共${comments.length}条评论',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
