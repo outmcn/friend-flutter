@@ -284,11 +284,15 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                         final mine =
                             event.senderId == widget.session.client.userID;
                         if (_isRedaction(displayed)) {
+                          final redactedByMe =
+                              event.senderId == widget.session.client.userID;
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             child: Center(
                               child: Text(
-                                '—— 已撤回一条消息 ——',
+                                redactedByMe
+                                    ? '—— 你已撤回一条消息 ——'
+                                    : '—— 对方已撤回一条消息 ——',
                                 style: TextStyle(
                                   color: colors.onSurfaceVariant,
                                   fontSize: 12,
