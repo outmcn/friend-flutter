@@ -111,12 +111,16 @@ class ProfileCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          GestureDetector(
-            onTap: onAvatarTap,
-            child: CircleAvatar(
-              radius: 42,
-              backgroundColor: avatarColors[avatar],
-              child: Icon(avatarIcons[avatar], size: 48, color: Colors.white),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onAvatarTap,
+              child: CircleAvatar(
+                radius: 42,
+                backgroundColor: avatarColors[avatar],
+                child: Icon(avatarIcons[avatar], size: 48, color: Colors.white),
+              ),
             ),
           ),
         ],

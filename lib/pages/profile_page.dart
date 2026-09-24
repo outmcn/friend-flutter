@@ -160,11 +160,15 @@ class ProfilePageState extends State<ProfilePage> {
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
-            itemBuilder: (_, index) => GestureDetector(
-              onTap: () => Navigator.pop(context, index),
-              child: CircleAvatar(
-                backgroundColor: _avatarColor(index),
-                child: Icon(avatarIcons[index], color: Colors.white),
+            itemBuilder: (_, index) => Material(
+              color: Colors.transparent,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => Navigator.pop(context, index),
+                child: CircleAvatar(
+                  backgroundColor: _avatarColor(index),
+                  child: Icon(avatarIcons[index], color: Colors.white),
+                ),
               ),
             ),
           ),
@@ -268,30 +272,20 @@ class ProfilePageState extends State<ProfilePage> {
                 actions: null,
               ),
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ProfileTab(
-                      text: '动态',
-                      selected: section == 0,
-                      onTap: () => setState(() => section = 0),
-                    ),
-                  ),
-                  Expanded(
-                    child: _ProfileTab(
-                      text: '收藏',
-                      selected: section == 1,
-                      onTap: () => setState(() => section = 1),
-                    ),
-                  ),
-                  Expanded(
-                    child: _ProfileTab(
-                      text: '点赞',
-                      selected: section == 2,
-                      onTap: () => setState(() => section = 2),
-                    ),
-                  ),
-                ],
+              SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 0, label: Text('动态')),
+                    ButtonSegment(value: 1, label: Text('收藏')),
+                    ButtonSegment(value: 2, label: Text('点赞')),
+                  ],
+                  selected: {section},
+                  onSelectionChanged: (selected) {
+                    setState(() => section = selected.first);
+                  },
+                  showSelectedIcon: false,
+                ),
               ),
               const SizedBox(height: 16),
               if (visiblePosts.isEmpty)
@@ -316,36 +310,6 @@ class ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ProfileTab extends StatelessWidget {
-  final String text;
-  final bool selected;
-  final VoidCallback? onTap;
-  const _ProfileTab({required this.text, this.selected = false, this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? c.primary : c.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: selected ? c.onPrimary : c.onSurface,
-          ),
-        ),
-      ),
     );
   }
 }

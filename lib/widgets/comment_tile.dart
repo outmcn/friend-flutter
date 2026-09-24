@@ -28,11 +28,15 @@ class CommentTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              onTap: onAvatarTap,
-              child: CircleAvatar(
-                backgroundColor: avatarColors[avatarId],
-                child: Icon(avatarIcons[avatarId], color: Colors.white),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onAvatarTap,
+                child: CircleAvatar(
+                  backgroundColor: avatarColors[avatarId],
+                  child: Icon(avatarIcons[avatarId], color: Colors.white),
+                ),
               ),
             ),
             const SizedBox(width: 10),

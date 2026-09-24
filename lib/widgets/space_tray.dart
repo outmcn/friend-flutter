@@ -10,75 +10,86 @@ class SpaceTray extends StatelessWidget {
     required this.onTap,
     required this.detail,
   });
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Align(
-        alignment: Alignment.center,
-        child: FractionallySizedBox(
-          widthFactor: .9,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.surfaceContainerHighest,
-                  Theme.of(context).colorScheme.primaryContainer,
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(14),
-              ),
+    final colors = Theme.of(context).colorScheme;
+    return Align(
+      alignment: Alignment.center,
+      child: FractionallySizedBox(
+        widthFactor: .9,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(14),
             ),
-            padding: EdgeInsets.fromLTRB(16, 10, 16, expanded ? 14 : 10),
-            child: expanded
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            '空间',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colors.surfaceContainerHighest,
+                    colors.primaryContainer,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(14),
+                ),
+              ),
+              padding: EdgeInsets.fromLTRB(16, 10, 16, expanded ? 14 : 10),
+              child: expanded
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              '空间',
+                              style: TextStyle(
+                                color: colors.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                          ),
-                          Spacer(),
-                          const Icon(
-                            Icons.keyboard_arrow_up,
-                            color: Colors.white70,
-                            size: 20,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        detail,
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Text(
-                        '空间',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
+                            const Spacer(),
+                            Icon(
+                              Icons.keyboard_arrow_up,
+                              color: colors.onSurfaceVariant,
+                              size: 20,
+                            ),
+                          ],
                         ),
-                      ),
-                      Spacer(),
-                      const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.white70,
-                        size: 20,
-                      ),
-                    ],
-                  ),
+                        const SizedBox(height: 8),
+                        Text(
+                          detail,
+                          style: TextStyle(
+                            color: colors.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Text(
+                          '空间',
+                          style: TextStyle(
+                            color: colors.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          color: colors.onSurfaceVariant,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),
