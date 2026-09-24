@@ -133,8 +133,8 @@ class MatrixSession extends ChangeNotifier {
   }
 
   Future<String> startDirectChat(String matrixUserId) {
-    if (!ready || !client.isLogged()) {
-      throw StateError('Matrix 会话尚未完成登录');
+    if (!ready) {
+      throw StateError('Matrix 会话尚未完成初始化');
     }
     return client.startDirectChat(
       matrixUserId,
