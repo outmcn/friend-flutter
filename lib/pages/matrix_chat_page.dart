@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:matrix/matrix.dart';
+import 'package:flutter/services.dart';
 import '../services/matrix_session.dart';
 
 class MatrixChatPage extends StatefulWidget {
@@ -146,11 +147,23 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
               onTap: () => Navigator.pop(context, 'reply'),
             ),
 
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: const Text('复制'),
+              onTap: () => Navigator.pop(context, 'copy'),
+            ),
+
             if (canRedact)
               ListTile(
                 leading: const Icon(Icons.delete_outline),
                 title: const Text('撤回'),
                 onTap: () => Navigator.pop(context, 'redact'),
+              ),
+            if (!mine)
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('举报'),
+                onTap: () => Navigator.pop(context, 'report'),
               ),
           ],
         ),
@@ -160,6 +173,24 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     try {
       if (action == 'reply') {
         setState(() => replyingTo = event);
+      } else if (action == 'copy') {
+        await Clipboard.setData(ClipboardData(text: _messageBody(event)));
+      } else if (action == 'report') {
+        if (mounted) {
+          await showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('举报消息'),
+              content: const Text('举报功能暂未连接后端'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('知道了'),
+                ),
+              ],
+            ),
+          );
+        }
       } else if (action == 'redact') {
         await widget.session.redactMessage(widget.room, event);
         if (mounted) setState(() {});
