@@ -719,7 +719,7 @@ class _DetailPageState extends State<DetailPage> {
             ),
           IconButton(
             onPressed: _showShareSheet,
-            padding: const EdgeInsets.only(left: 2, right: 8),
+            padding: const EdgeInsets.only(left: 2, right: 16),
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
             icon: const Icon(Icons.ios_share),
             tooltip: '分享',
