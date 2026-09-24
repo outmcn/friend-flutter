@@ -574,6 +574,7 @@ class _DetailPageState extends State<DetailPage> {
                     ..._orderedComments().map((comment) {
                       final parentId = (comment['parentId'] as num?)?.toInt();
                       return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
                         onTap: () {
                           setState(() {
                             replyingTo = comment;

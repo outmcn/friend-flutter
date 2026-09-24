@@ -21,6 +21,7 @@ class CommentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarId = ((comment['avatarId'] as num?)?.toInt() ?? 0).clamp(0, 9);
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onLongPress: onLongPress,
       child: Padding(
         padding: padding,
