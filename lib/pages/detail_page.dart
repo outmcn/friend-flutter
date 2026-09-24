@@ -584,6 +584,9 @@ class _DetailPageState extends State<DetailPage> {
                         child: CommentTile(
                           comment: comment,
                           colors: c,
+                          isSelf:
+                              (comment['userId'] as num?)?.toInt() ==
+                              currentUserId,
                           padding: EdgeInsets.only(
                             left: parentId == null ? 0 : 28,
                             bottom: 12,

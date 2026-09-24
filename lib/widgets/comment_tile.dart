@@ -4,6 +4,7 @@ import 'post_card.dart';
 class CommentTile extends StatelessWidget {
   final Map<String, dynamic> comment;
   final ColorScheme colors;
+  final bool isSelf;
   final VoidCallback onAvatarTap;
   final VoidCallback onLongPress;
   final EdgeInsets padding;
@@ -11,6 +12,7 @@ class CommentTile extends StatelessWidget {
     super.key,
     required this.comment,
     required this.colors,
+    required this.isSelf,
     required this.onAvatarTap,
     required this.onLongPress,
     this.padding = EdgeInsets.zero,
@@ -51,7 +53,8 @@ class CommentTile extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if ((comment['city']?.toString() ?? '').isNotEmpty)
+                            if (isSelf ||
+                                (comment['city']?.toString() ?? '').isNotEmpty)
                               Container(
                                 margin: const EdgeInsets.only(left: 6),
                                 padding: const EdgeInsets.symmetric(
@@ -63,7 +66,7 @@ class CommentTile extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(7),
                                 ),
                                 child: Text(
-                                  comment['city'].toString(),
+                                  isSelf ? '我' : comment['city'].toString(),
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: colors.onPrimaryContainer,
