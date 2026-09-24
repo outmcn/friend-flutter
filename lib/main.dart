@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'models/ui_post.dart';
 import 'pages/profile_page.dart';
 import 'pages/message_page.dart';
@@ -29,6 +30,7 @@ class FriendApp extends StatefulWidget {
 
 class _FriendAppState extends State<FriendApp> {
   String? token;
+  bool _networkDialogShown = false;
   @override
   void initState() {
     super.initState();
@@ -43,10 +45,33 @@ class _FriendAppState extends State<FriendApp> {
 
   Future<void> _requestStartupAccess() async {
     try {
+      await _showNetworkAccessDialog();
       await LocationService().requestPermissionAtStartup();
     } catch (_) {
       // Permission denial is handled by the location service; startup remains usable.
     }
+  }
+
+  Future<void> _showNetworkAccessDialog() async {
+    if (_networkDialogShown) return;
+    _networkDialogShown = true;
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('需要网络访问'),
+        content: const Text('Friend 需要连接网络加载动态、消息和用户资料。'),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('继续'),
+          ),
+        ],
+      ),
+    );
+    await Connectivity().checkConnectivity();
   }
 
   @override
