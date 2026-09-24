@@ -15,63 +15,81 @@ class MatrixSession extends ChangeNotifier {
   StreamSubscription<SyncUpdate>? _syncSubscription;
   bool _joiningInvites = false;
 
-  static Future<MatrixSession> create() async {
+  static Future<MatrixSdkDatabase> _openDatabase() async {
     final directory = await getApplicationSupportDirectory();
     final database = await sqflite.openDatabase(
       '${directory.path}/friend_matrix.sqlite',
     );
-    final matrixDatabase = await MatrixSdkDatabase.init(
-      'friend_matrix',
-      database: database,
-    );
-    final client = Client('Friend Matrix', database: matrixDatabase);
+    return MatrixSdkDatabase.init('friend_matrix', database: database);
+  }
+
+  static Future<MatrixSession> create() async {
+    final client = Client('Friend Matrix', database: await _openDatabase());
     await client.checkHomeserver(Uri.parse('https://matrix.friend.outmcn.net'));
     final session = MatrixSession._(client);
-    await session._restore();
+    await session._restoreStoredSession();
     return session;
   }
 
   static Future<MatrixSession> fromBridgeSession(
     MatrixBridgeSession bridge,
   ) async {
-    final session = await create();
-    await session.client.init(
+    final client = Client('Friend Matrix', database: await _openDatabase());
+    final homeserver = Uri.parse('https://matrix.friend.outmcn.net');
+    await client.checkHomeserver(homeserver);
+    await client.init(
       newToken: bridge.accessToken,
-      newHomeserver: Uri.parse('https://matrix.friend.outmcn.net'),
+      newHomeserver: homeserver,
       newUserID: bridge.userId,
       newDeviceID: bridge.deviceId,
       newDeviceName: 'Friend Flutter',
-      waitUntilLoadCompletedLoaded: false,
+      waitForFirstSync: true,
+      waitUntilLoadCompletedLoaded: true,
     );
-    session.ready = true;
-    session._startBackgroundSync();
-    session.notifyListeners();
+    final session = MatrixSession._(client);
+    session._markReady();
+    session._startSyncListener();
+    await session.joinInvitedRooms();
     return session;
   }
 
   static Future<MatrixSession> fromBridgeJson(Map<String, dynamic> json) =>
       fromBridgeSession(MatrixBridgeSession.fromJson(json));
 
-  Future<void> _restore() async {
+  Future<void> _restoreStoredSession() async {
     try {
-      if (client.isLogged()) {
-        ready = true;
-        _startBackgroundSync();
+      await client.init(
+        waitForFirstSync: true,
+        waitUntilLoadCompletedLoaded: true,
+      );
+      if (client.userID != null && client.accessToken != null) {
+        _markReady();
+        _startSyncListener();
+        await joinInvitedRooms();
       }
     } catch (e) {
       error = e.toString();
+      notifyListeners();
     }
+  }
+
+  void _markReady() {
+    if (client.userID == null || client.userID!.isEmpty) {
+      throw StateError('Matrix SDK 未返回当前用户 ID');
+    }
+    if (client.accessToken == null || client.accessToken!.isEmpty) {
+      throw StateError('Matrix SDK 未返回 Access Token');
+    }
+    ready = true;
     notifyListeners();
   }
 
-  void _startBackgroundSync() {
+  void _startSyncListener() {
     if (_syncSubscription != null) return;
-    client.backgroundSync = true;
     _syncSubscription = client.onSync.stream.listen((_) {
       unawaited(joinInvitedRooms());
       notifyListeners();
     });
-    unawaited(joinInvitedRooms());
   }
 
   Future<void> joinInvitedRooms() async {
@@ -104,9 +122,9 @@ class MatrixSession extends ChangeNotifier {
         password: password,
         initialDeviceDisplayName: 'Friend Flutter',
       );
-      ready = true;
-      _startBackgroundSync();
-      notifyListeners();
+      _markReady();
+      _startSyncListener();
+      await joinInvitedRooms();
     } catch (e) {
       error = e.toString();
       notifyListeners();
@@ -134,13 +152,9 @@ class MatrixSession extends ChangeNotifier {
 
   Future<String> startDirectChat(String matrixUserId) {
     if (!ready) {
-      throw StateError('Matrix 会话尚未完成初始化');
+      throw StateError('Matrix SDK 会话尚未初始化完成');
     }
-    return client.startDirectChat(
-      matrixUserId,
-      enableEncryption: false,
-      waitForSync: true,
-    );
+    return client.startDirectChat(matrixUserId);
   }
 
   Room? roomById(String roomId) => client.getRoomById(roomId);
