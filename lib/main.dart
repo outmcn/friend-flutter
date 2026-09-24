@@ -508,7 +508,13 @@ class HomePage extends StatelessWidget {
 class HomeTopBar extends StatelessWidget {
   final VoidCallback? onQrCode;
   final VoidCallback? onSettings;
-  const HomeTopBar({super.key, this.onQrCode, this.onSettings});
+  final List<Widget> trailingActions;
+  const HomeTopBar({
+    super.key,
+    this.onQrCode,
+    this.onSettings,
+    this.trailingActions = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -561,6 +567,7 @@ class HomeTopBar extends StatelessWidget {
                 tooltip: '设置',
                 icon: const Icon(Icons.settings_outlined),
               ),
+              ...trailingActions,
             ],
           ),
         ),
@@ -798,56 +805,44 @@ class MessagePage extends StatelessWidget {
     final c = Theme.of(context).colorScheme;
     return Column(
       children: [
-        const HomeTopBar(),
+        HomeTopBar(
+          trailingActions: [
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ContactsPage(token: token)),
+              ),
+              tooltip: '联系人',
+              icon: const Icon(Icons.contacts_outlined),
+            ),
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => UserListPage(
+                    token: token,
+                    title: '搜索用户',
+                    searchable: true,
+                  ),
+                ),
+              ),
+              tooltip: '搜索',
+              icon: const Icon(Icons.search),
+            ),
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ContactsPage(token: token)),
+              ),
+              tooltip: '新增',
+              icon: const Icon(Icons.add_circle_outline),
+            ),
+          ],
+        ),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
             children: [
-              Row(
-                children: [
-                  Text(
-                    '消息',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: c.onSurface,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ContactsPage(token: token),
-                      ),
-                    ),
-                    icon: const Icon(Icons.contacts_outlined),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => UserListPage(
-                          token: token,
-                          title: '搜索用户',
-                          searchable: true,
-                        ),
-                      ),
-                    ),
-                    icon: const Icon(Icons.search),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ContactsPage(token: token),
-                      ),
-                    ),
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
               ...List.generate(
                 6,
                 (i) => Card(
