@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ui_post.dart';
 import '../services/api_client.dart';
@@ -282,6 +283,7 @@ class ProfilePageState extends State<ProfilePage> {
                   ],
                   selected: {section},
                   onSelectionChanged: (selected) {
+                    HapticFeedback.selectionClick();
                     setState(() => section = selected.first);
                   },
                   showSelectedIcon: false,

@@ -148,26 +148,81 @@ class _DetailPageState extends State<DetailPage> {
                 ListTile(
                   leading: const Icon(Icons.flag_outlined),
                   title: const Text('举报'),
-                  onTap: () async {
-                    final r = await http.post(
-                      Uri.parse(
-                        'https://friend.outmcn.net/api/comments/${comment['id']}/report',
-                      ),
-                      headers: {
-                        'Authorization': 'Bearer $token',
-                        'Content-Type': 'application/json',
-                      },
-                      body: jsonEncode({'reason': '违规评论'}),
-                    );
-                    if (sheetContext.mounted) Navigator.pop(sheetContext);
-                    if (mounted && r.statusCode >= 200 && r.statusCode < 300) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('举报已提交')));
-                    }
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _showReportReasons();
                   },
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showReportReasons() async {
+    const reasons = [
+      '涉嫌欺诈',
+      '涉政不当言论',
+      '违法信息',
+      '色情低俗',
+      '涉嫌广告',
+      '危害人身安全',
+      '谣言',
+      '涉及未成年',
+      '攻击辱骂',
+      '违反公共道德',
+      '搬运/盗图',
+      '侵权行为',
+      '其他违规',
+    ];
+    String? selectedReason;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '选择举报原因',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Flexible(
+                  child: RadioGroup<String>(
+                    groupValue: selectedReason,
+                    onChanged: (value) =>
+                        setSheetState(() => selectedReason = value),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: reasons.length,
+                      itemBuilder: (_, index) => RadioListTile<String>(
+                        value: reasons[index],
+                        title: Text(reasons[index]),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: selectedReason == null
+                        ? null
+                        : () => Navigator.pop(sheetContext),
+                    child: const Text('提交举报'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

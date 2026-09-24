@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class DiscoveryTopBar extends StatelessWidget {
   final String selected;
@@ -62,7 +63,10 @@ class ChoiceChips extends StatelessWidget {
       ],
       selected: {selected},
       onSelectionChanged: (values) {
-        if (values.isNotEmpty) onSelected(values.first);
+        if (values.isNotEmpty) {
+          HapticFeedback.selectionClick();
+          onSelected(values.first);
+        }
       },
       multiSelectionEnabled: false,
       showSelectedIcon: false,
