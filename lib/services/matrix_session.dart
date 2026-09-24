@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:matrix/matrix.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,6 +12,8 @@ class MatrixSession extends ChangeNotifier {
   final Client client;
   bool ready = false;
   String? error;
+  StreamSubscription<SyncUpdate>? _syncSubscription;
+  bool _joiningInvites = false;
 
   static Future<MatrixSession> create() async {
     final directory = await getApplicationSupportDirectory();
@@ -40,7 +44,7 @@ class MatrixSession extends ChangeNotifier {
       waitUntilLoadCompletedLoaded: false,
     );
     session.ready = true;
-    session.client.backgroundSync = true;
+    session._startBackgroundSync();
     session.notifyListeners();
     return session;
   }
@@ -52,12 +56,42 @@ class MatrixSession extends ChangeNotifier {
     try {
       if (client.isLogged()) {
         ready = true;
-        client.backgroundSync = true;
+        _startBackgroundSync();
       }
     } catch (e) {
       error = e.toString();
     }
     notifyListeners();
+  }
+
+  void _startBackgroundSync() {
+    if (_syncSubscription != null) return;
+    client.backgroundSync = true;
+    _syncSubscription = client.onSync.stream.listen((_) {
+      unawaited(joinInvitedRooms());
+      notifyListeners();
+    });
+    unawaited(joinInvitedRooms());
+  }
+
+  Future<void> joinInvitedRooms() async {
+    if (_joiningInvites) return;
+    _joiningInvites = true;
+    try {
+      final invites = client.rooms
+          .where((room) => room.membership == Membership.invite)
+          .toList();
+      for (final room in invites) {
+        try {
+          await room.join();
+        } catch (e) {
+          error = '加入 Matrix 私聊失败：$e';
+        }
+      }
+      if (invites.isNotEmpty) notifyListeners();
+    } finally {
+      _joiningInvites = false;
+    }
   }
 
   Future<void> login({required String userId, required String password}) async {
@@ -71,7 +105,7 @@ class MatrixSession extends ChangeNotifier {
         initialDeviceDisplayName: 'Friend Flutter',
       );
       ready = true;
-      client.backgroundSync = true;
+      _startBackgroundSync();
       notifyListeners();
     } catch (e) {
       error = e.toString();
@@ -80,8 +114,13 @@ class MatrixSession extends ChangeNotifier {
     }
   }
 
-  List<Room> directRooms() =>
-      client.rooms.where((room) => room.isDirectChat).toList();
+  List<Room> directRooms() => client.rooms
+      .where((room) => room.isDirectChat && room.membership == Membership.join)
+      .toList();
+
+  List<Room> invitedRooms() => client.rooms
+      .where((room) => room.membership == Membership.invite)
+      .toList();
 
   Stream<void> get updates => client.onSync.stream.map((_) {});
 
@@ -105,6 +144,7 @@ class MatrixSession extends ChangeNotifier {
 
   @override
   void dispose() {
+    _syncSubscription?.cancel();
     client.dispose();
     super.dispose();
   }

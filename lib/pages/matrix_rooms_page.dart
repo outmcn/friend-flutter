@@ -43,6 +43,11 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
         );
       }).toList()..sort((a, b) => a.roomId.compareTo(b.roomId));
 
+  Future<void> _joinInvites() async {
+    await widget.session.joinInvitedRooms();
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -65,9 +70,23 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
       ),
       body: data.isEmpty
           ? Center(
-              child: Text(
-                widget.session.isLoggedIn ? '暂无 Matrix 会话' : '请先登录 Matrix',
-                style: TextStyle(color: colors.onSurfaceVariant),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.session.isLoggedIn ? '暂无 Matrix 会话' : '请先登录 Matrix',
+                    style: TextStyle(color: colors.onSurfaceVariant),
+                  ),
+                  if (widget.session.invitedRooms().isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: _joinInvites,
+                      child: Text(
+                        '加入 ${widget.session.invitedRooms().length} 个邀请',
+                      ),
+                    ),
+                  ],
+                ],
               ),
             )
           : ListView.separated(
