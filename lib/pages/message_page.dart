@@ -65,7 +65,7 @@ class _MessagePageState extends State<MessagePage> {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 8, 4),
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
           child: Row(
             children: [
               const Expanded(

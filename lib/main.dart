@@ -571,7 +571,7 @@ class HomeTopBar extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 0, 12, 5),
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
           child: Row(
             children: [
               if (showTitle)
