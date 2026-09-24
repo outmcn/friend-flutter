@@ -180,6 +180,15 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   String _messageBody(Event event) {
     if (event.redacted) return '已撤回一条消息';
+    final replyId = event.inReplyToEventId();
+    if (replyId != null) {
+      final fallback = event.body;
+      final lines = fallback.split('\n');
+      final contentIndex = lines.lastIndexWhere(
+        (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
+      );
+      if (contentIndex >= 0) return lines[contentIndex].trim();
+    }
     return event.body == 'Redacted' ? '已撤回一条消息' : event.body;
   }
 
