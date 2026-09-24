@@ -671,31 +671,38 @@ class _DetailPageState extends State<DetailPage> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: InkWell(
-          onTap: isOwnPost ? null : _openTopbarAuthorProfile,
-          borderRadius: BorderRadius.circular(18),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(
-                radius: 17,
-                backgroundColor: avatarColors[post.authorAvatarId.clamp(0, 9)],
-                child: Icon(
-                  avatarIcons[post.authorAvatarId.clamp(0, 9)],
-                  size: 19,
-                  color: Colors.white,
-                ),
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: InkWell(
+            onTap: isOwnPost ? null : _openTopbarAuthorProfile,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 17,
+                    backgroundColor:
+                        avatarColors[post.authorAvatarId.clamp(0, 9)],
+                    child: Icon(
+                      avatarIcons[post.authorAvatarId.clamp(0, 9)],
+                      size: 19,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 150),
+                    child: Text(
+                      post.author,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 150),
-                child: Text(
-                  post.author,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
         actions: [
@@ -703,8 +710,8 @@ class _DetailPageState extends State<DetailPage> {
             OutlinedButton(
               onPressed: followAuthorLoading ? null : _toggleAuthorFollow,
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 28),
-                padding: const EdgeInsets.symmetric(horizontal: 7),
+                minimumSize: const Size(58, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 11),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),
