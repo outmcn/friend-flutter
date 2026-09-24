@@ -40,12 +40,13 @@ class MatrixSession extends ChangeNotifier {
     await client.init(
       newToken: bridge.accessToken,
       newHomeserver: homeserver,
-      newUserID: bridge.userId,
-      newDeviceID: bridge.deviceId,
       newDeviceName: 'Friend Flutter',
       waitForFirstSync: true,
       waitUntilLoadCompletedLoaded: true,
     );
+    if (client.userID == null || client.userID!.isEmpty) {
+      throw StateError('Matrix SDK whoami 未返回当前用户 ID');
+    }
     final session = MatrixSession._(client);
     session._markReady();
     session._startSyncListener();
