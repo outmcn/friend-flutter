@@ -59,6 +59,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
           loading = false;
         });
       }
+      await _markRoomRead();
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -66,6 +67,18 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
           loading = false;
         });
       }
+    }
+  }
+
+  Future<void> _markRoomRead() async {
+    final latest = timeline?.events
+        .where((event) => event.type == EventTypes.Message)
+        .lastOrNull;
+    if (latest == null) return;
+    try {
+      await widget.room.setReadMarker(latest.eventId, mRead: latest.eventId);
+    } catch (_) {
+      // Keep the chat usable if the receipt request fails.
     }
   }
 
@@ -125,6 +138,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                   )
                 : ListView.builder(
                     controller: scrollController,
+                    reverse: true,
                     padding: const EdgeInsets.all(16),
                     itemCount: events.length,
                     itemBuilder: (context, index) {
