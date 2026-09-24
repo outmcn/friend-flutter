@@ -282,7 +282,25 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                                     : colors.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Text(_messageBody(displayed)),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(_messageBody(displayed)),
+                                  if (mine &&
+                                      widget.session.otherUserHasRead(
+                                        widget.room,
+                                        event,
+                                      ))
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        '已读',
+                                        style: TextStyle(fontSize: 11),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                         );
