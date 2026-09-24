@@ -77,6 +77,8 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     if (latest == null) return;
     try {
       await widget.room.setReadMarker(latest.eventId, mRead: latest.eventId);
+      await widget.room.markUnread(false);
+      if (mounted) setState(() {});
     } catch (_) {
       // Keep the chat usable if the receipt request fails.
     }
