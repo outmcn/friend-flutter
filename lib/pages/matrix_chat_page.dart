@@ -197,6 +197,14 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
           .toList() ??
       const [];
 
+  Event _displayEvent(Event event) =>
+      timeline == null ? event : event.getDisplayEvent(timeline!);
+
+  String _messageBody(Event event) {
+    if (event.redacted) return '已撤回一条消息';
+    return event.body == 'Redacted' ? '已撤回一条消息' : event.body;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -252,6 +260,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                       itemCount: events.length,
                       itemBuilder: (context, index) {
                         final event = events[index];
+                        final displayed = _displayEvent(event);
                         final mine =
                             event.senderId == widget.session.client.userID;
                         return GestureDetector(
@@ -273,7 +282,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                                     : colors.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Text(event.body),
+                              child: Text(_messageBody(displayed)),
                             ),
                           ),
                         );
