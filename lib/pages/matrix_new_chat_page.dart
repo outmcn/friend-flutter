@@ -25,12 +25,23 @@ class _MatrixNewChatPageState extends State<MatrixNewChatPage> {
     });
     try {
       final roomId = await widget.session.startDirectChat(value);
-      final room = widget.session.client.getRoomById(roomId);
-      if (!mounted || room == null) return;
+      var room = widget.session.roomById(roomId);
+      if (room == null) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        room = widget.session.roomById(roomId);
+      }
+      if (!mounted || room == null) {
+        if (mounted) {
+          setState(() => error = '私聊房间正在同步，请稍后重试');
+        }
+        return;
+      }
+      final activeRoom = room;
       await Navigator.pushReplacement<void, void>(
         context,
         MaterialPageRoute(
-          builder: (_) => MatrixChatPage(session: widget.session, room: room),
+          builder: (_) =>
+              MatrixChatPage(session: widget.session, room: activeRoom),
         ),
       );
     } catch (e) {

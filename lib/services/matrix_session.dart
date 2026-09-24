@@ -136,6 +136,8 @@ class MatrixSession extends ChangeNotifier {
     return client.startDirectChat(matrixUserId);
   }
 
+  Room? roomById(String roomId) => client.getRoomById(roomId);
+
   Future<void> logout() async {
     await client.logout();
     ready = false;

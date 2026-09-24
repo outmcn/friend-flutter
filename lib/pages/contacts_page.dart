@@ -67,7 +67,11 @@ class _ContactsPageState extends State<ContactsPage> {
       final roomId = await session.startDirectChat(
         '@friend_$targetId:matrix.friend.outmcn.net',
       );
-      final room = session.client.getRoomById(roomId);
+      var room = session.roomById(roomId);
+      if (room == null) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        room = session.roomById(roomId);
+      }
       if (!mounted || room == null) {
         session.dispose();
         if (mounted && room == null) {
@@ -78,10 +82,12 @@ class _ContactsPageState extends State<ContactsPage> {
         return;
       }
       final activeSession = session;
+      final activeRoom = room;
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
-          builder: (_) => MatrixChatPage(session: activeSession, room: room),
+          builder: (_) =>
+              MatrixChatPage(session: activeSession, room: activeRoom),
         ),
       );
       session.dispose();
