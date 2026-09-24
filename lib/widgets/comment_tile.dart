@@ -62,14 +62,18 @@ class CommentTile extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: colors.primaryContainer,
+                                  color: isSelf
+                                      ? colors.tertiaryContainer
+                                      : colors.primaryContainer,
                                   borderRadius: BorderRadius.circular(7),
                                 ),
                                 child: Text(
                                   isSelf ? '我' : comment['city'].toString(),
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: colors.onPrimaryContainer,
+                                    color: isSelf
+                                        ? colors.onTertiaryContainer
+                                        : colors.onPrimaryContainer,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
