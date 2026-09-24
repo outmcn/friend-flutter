@@ -62,6 +62,7 @@ class _ContactsPageState extends State<ContactsPage> {
       final matrixResponse = await api.getMatrixSession();
       final bridge = Map<String, dynamic>.from(matrixResponse['data'] as Map);
       session = await MatrixSession.fromBridgeJson(bridge);
+      await session.joinInvitedRooms();
       final targetId = user['id'];
       if (targetId == null) throw const ApiException('用户 ID 无效', 200);
       final roomId = await session.startDirectChat(

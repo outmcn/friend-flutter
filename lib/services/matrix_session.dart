@@ -133,7 +133,14 @@ class MatrixSession extends ChangeNotifier {
   }
 
   Future<String> startDirectChat(String matrixUserId) {
-    return client.startDirectChat(matrixUserId);
+    if (!ready || !client.isLogged()) {
+      throw StateError('Matrix 会话尚未完成登录');
+    }
+    return client.startDirectChat(
+      matrixUserId,
+      enableEncryption: false,
+      waitForSync: true,
+    );
   }
 
   Room? roomById(String roomId) => client.getRoomById(roomId);
