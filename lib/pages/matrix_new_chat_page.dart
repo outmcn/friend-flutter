@@ -3,9 +3,14 @@ import '../services/matrix_session.dart';
 import 'matrix_chat_page.dart';
 
 class MatrixNewChatPage extends StatefulWidget {
-  const MatrixNewChatPage({super.key, required this.session});
+  const MatrixNewChatPage({
+    super.key,
+    required this.session,
+    required this.token,
+  });
 
   final MatrixSession session;
+  final String token;
 
   @override
   State<MatrixNewChatPage> createState() => _MatrixNewChatPageState();
@@ -42,8 +47,11 @@ class _MatrixNewChatPageState extends State<MatrixNewChatPage> {
       await Navigator.pushReplacement<void, void>(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              MatrixChatPage(session: widget.session, room: activeRoom),
+          builder: (_) => MatrixChatPage(
+            session: widget.session,
+            room: activeRoom,
+            token: widget.token,
+          ),
         ),
       );
     } catch (e) {

@@ -10,11 +10,13 @@ class MatrixRoomsPage extends StatefulWidget {
   const MatrixRoomsPage({
     super.key,
     required this.session,
+    required this.token,
     this.embedded = false,
   });
 
   final MatrixSession session;
   final bool embedded;
+  final String token;
 
   @override
   State<MatrixRoomsPage> createState() => _MatrixRoomsPageState();
@@ -82,7 +84,8 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     await Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (_) => MatrixNewChatPage(session: widget.session),
+        builder: (_) =>
+            MatrixNewChatPage(session: widget.session, token: widget.token),
       ),
     );
     if (mounted) setState(() {});
@@ -149,8 +152,11 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
             await Navigator.push<void>(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    MatrixChatPage(session: widget.session, room: room),
+                builder: (_) => MatrixChatPage(
+                  session: widget.session,
+                  room: room,
+                  token: widget.token,
+                ),
               ),
             );
             await _refreshReadState();

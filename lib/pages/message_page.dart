@@ -128,7 +128,11 @@ class _MessagePageState extends State<MessagePage> {
                 )
               : current == null
               ? const Center(child: Text('Matrix 会话不可用'))
-              : MatrixRoomsPage(session: current, embedded: true),
+              : MatrixRoomsPage(
+                  session: current,
+                  token: widget.token,
+                  embedded: true,
+                ),
         ),
       ],
     );

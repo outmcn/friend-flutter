@@ -65,10 +65,10 @@ class _ContactsPageState extends State<ContactsPage> {
       await session.joinInvitedRooms();
       final targetId = user['id'];
       if (targetId == null) throw const ApiException('用户 ID 无效', 200);
-      final roomId = await session.startDirectChat(
-        '@friend_$targetId:matrix.friend.outmcn.net',
-      );
-      var room = session.roomById(roomId);
+      final matrixUserId = '@friend_$targetId:matrix.friend.outmcn.net';
+      var room = session.directRoomForUser(matrixUserId);
+      final roomId = room?.id ?? await session.startDirectChat(matrixUserId);
+      room ??= session.roomById(roomId);
       if (room == null) {
         await Future<void>.delayed(const Duration(milliseconds: 500));
         room = session.roomById(roomId);
@@ -87,8 +87,11 @@ class _ContactsPageState extends State<ContactsPage> {
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              MatrixChatPage(session: activeSession, room: activeRoom),
+          builder: (_) => MatrixChatPage(
+            session: activeSession,
+            room: activeRoom,
+            token: widget.token,
+          ),
         ),
       );
       session.dispose();

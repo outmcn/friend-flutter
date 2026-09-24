@@ -3,13 +3,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:matrix/matrix.dart';
 import 'package:flutter/services.dart';
+import '../pages/other_profile_page.dart';
+import '../services/api_client.dart';
 import '../services/matrix_session.dart';
+import '../widgets/post_card.dart';
 
 class MatrixChatPage extends StatefulWidget {
-  const MatrixChatPage({super.key, required this.session, required this.room});
+  const MatrixChatPage({
+    super.key,
+    required this.session,
+    required this.room,
+    required this.token,
+  });
 
   final MatrixSession session;
   final Room room;
+  final String token;
 
   @override
   State<MatrixChatPage> createState() => _MatrixChatPageState();
@@ -28,6 +37,9 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   String? roomTitle;
   Event? replyingTo;
   final Map<String, String> replyLabels = {};
+  Map<String, dynamic>? peerProfile;
+  Map<String, dynamic>? ownProfile;
+  bool followLoading = false;
 
   @override
   void initState() {
@@ -44,7 +56,81 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       await widget.room.loadHeroUsers();
       final title = widget.room.getLocalizedDisplayname();
       if (mounted) setState(() => roomTitle = title);
+      await _loadPeerProfile();
     } catch (_) {}
+  }
+
+  int? get _peerFriendId {
+    final peer = widget.room.directChatMatrixID;
+    if (peer == null) return null;
+    return int.tryParse(peer.split(':').first.replaceFirst('@friend_', ''));
+  }
+
+  Future<void> _loadPeerProfile() async {
+    final id = _peerFriendId;
+    if (id == null || widget.token.isEmpty) return;
+    try {
+      final response = await ApiClient(
+        token: widget.token,
+      ).get('/api/users/$id');
+      final own = await ApiClient(token: widget.token).get('/api/me');
+      if (mounted) {
+        setState(() {
+          peerProfile = Map<String, dynamic>.from(response['data'] as Map);
+          ownProfile = Map<String, dynamic>.from(own['data'] as Map);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _openPeerProfile() async {
+    final data = peerProfile;
+    if (data == null || !mounted) return;
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OtherProfilePage(data: data, dataToken: widget.token),
+      ),
+    );
+    await _loadPeerProfile();
+  }
+
+  Future<void> _toggleFollow() async {
+    final id = _peerFriendId;
+    if (id == null || followLoading || widget.token.isEmpty) return;
+    setState(() => followLoading = true);
+    try {
+      final response = await ApiClient(
+        token: widget.token,
+      ).post('/api/users/$id/follow');
+      if (mounted && peerProfile != null) {
+        setState(
+          () => peerProfile = {
+            ...peerProfile!,
+            'following': response['data']['following'] == true,
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => followLoading = false);
+    }
+  }
+
+  Widget _avatarFor(Event event) {
+    final mine = event.senderId == widget.session.client.userID;
+    final rawProfile = mine
+        ? ownProfile
+        : (peerProfile?['profile'] is Map
+              ? Map<String, dynamic>.from(peerProfile!['profile'] as Map)
+              : peerProfile);
+    final id = ((rawProfile?['avatarId'] as num?)?.toInt() ?? 0).clamp(0, 9);
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: avatarColors[id],
+      child: Icon(avatarIcons[id], size: 20, color: Colors.white),
+    );
   }
 
   Future<void> _loadTimeline() async {
@@ -241,7 +327,21 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     final events = messageEvents;
     return Scaffold(
       appBar: AppBar(
-        title: Text(roomTitle ?? widget.room.getLocalizedDisplayname()),
+        titleSpacing: 0,
+        title: InkWell(
+          onTap: _openPeerProfile,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(roomTitle ?? widget.room.getLocalizedDisplayname()),
+          ),
+        ),
+        actions: [
+          if (peerProfile != null)
+            TextButton(
+              onPressed: followLoading ? null : _toggleFollow,
+              child: Text(peerProfile!['following'] == true ? '已关注' : '关注'),
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -303,39 +403,50 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                         }
                         return GestureDetector(
                           onLongPress: () => _showMessageActions(event),
-                          child: Align(
-                            alignment: mine
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              constraints: const BoxConstraints(maxWidth: 300),
-                              margin: const EdgeInsets.only(bottom: 10),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: mine
-                                    ? colors.primaryContainer
-                                    : colors.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (replyLabels.containsKey(event.eventId))
-                                    Text(
-                                      '回复：${replyLabels[event.eventId]}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: colors.onSurfaceVariant,
+                          child: Row(
+                            mainAxisAlignment: mine
+                                ? MainAxisAlignment.end
+                                : MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (!mine) _avatarFor(event),
+                              const SizedBox(width: 6),
+                              Container(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 300,
+                                ),
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: mine
+                                      ? colors.primaryContainer
+                                      : colors.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (replyLabels.containsKey(event.eventId))
+                                      Text(
+                                        '回复：${replyLabels[event.eventId]}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: colors.onSurfaceVariant,
+                                        ),
                                       ),
-                                    ),
-                                  Text(_messageBody(displayed)),
-                                ],
+                                    Text(_messageBody(displayed)),
+                                  ],
+                                ),
                               ),
-                            ),
+                              if (mine) ...[
+                                const SizedBox(width: 6),
+                                _avatarFor(event),
+                              ],
+                            ],
                           ),
                         );
                       },
