@@ -35,6 +35,8 @@ class ApiClient {
     () => http.delete(Uri.parse('$baseUrl$path'), headers: _headers),
   );
 
+  Future<Map<String, dynamic>> getMatrixSession() => get('/api/matrix/session');
+
   Future<Map<String, dynamic>> _request(
     Future<http.Response> Function() call,
   ) async {

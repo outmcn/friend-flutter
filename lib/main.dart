@@ -18,6 +18,7 @@ import 'services/api_client.dart';
 import 'services/location_service.dart';
 import 'pages/matrix_rooms_page.dart';
 import 'services/matrix_session.dart';
+import 'models/matrix_bridge_session.dart';
 
 const blue = Color(0xff4d8dff);
 
@@ -818,7 +819,11 @@ class MessagePage extends StatelessWidget {
   const MessagePage({super.key, required this.token});
 
   Future<void> _openMatrix(BuildContext context) async {
-    final session = await MatrixSession.create();
+    final api = ApiClient(token: token);
+    final response = await api.getMatrixSession();
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    final bridge = MatrixBridgeSession.fromJson(data);
+    final session = await MatrixSession.fromBridgeSession(bridge);
     if (!context.mounted) {
       session.dispose();
       return;

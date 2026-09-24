@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:matrix/matrix.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
+import '../models/matrix_bridge_session.dart';
 
 class MatrixSession extends ChangeNotifier {
   MatrixSession._(this.client);
@@ -26,10 +27,29 @@ class MatrixSession extends ChangeNotifier {
     return session;
   }
 
+  static Future<MatrixSession> fromBridgeSession(
+    MatrixBridgeSession bridge,
+  ) async {
+    final session = await create();
+    await session.client.init(
+      newToken: bridge.accessToken,
+      newHomeserver: Uri.parse('https://matrix.friend.outmcn.net'),
+      newUserID: bridge.userId,
+      newDeviceID: bridge.deviceId,
+      newDeviceName: 'Friend Flutter',
+      waitUntilLoadCompletedLoaded: false,
+    );
+    session.ready = true;
+    session.client.backgroundSync = true;
+    session.notifyListeners();
+    return session;
+  }
+
   Future<void> _restore() async {
     try {
       if (client.isLogged()) {
         ready = true;
+        client.backgroundSync = true;
       }
     } catch (e) {
       error = e.toString();
