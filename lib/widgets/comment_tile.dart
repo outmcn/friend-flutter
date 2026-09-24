@@ -6,7 +6,6 @@ class CommentTile extends StatelessWidget {
   final ColorScheme colors;
   final VoidCallback onAvatarTap;
   final VoidCallback onLongPress;
-  final VoidCallback? onDelete;
   final EdgeInsets padding;
   const CommentTile({
     super.key,
@@ -14,7 +13,6 @@ class CommentTile extends StatelessWidget {
     required this.colors,
     required this.onAvatarTap,
     required this.onLongPress,
-    this.onDelete,
     this.padding = EdgeInsets.zero,
   });
   @override
@@ -76,17 +74,6 @@ class CommentTile extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (onDelete != null)
-                        IconButton(
-                          onPressed: onDelete,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 24,
-                            minHeight: 24,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                        ),
                     ],
                   ),
                   const SizedBox(height: 4),

@@ -590,9 +590,6 @@ class _DetailPageState extends State<DetailPage> {
                           ),
                           onAvatarTap: () => _openCommentProfile(comment),
                           onLongPress: () => _showCommentActions(comment),
-                          onDelete: _canDeleteComment(comment)
-                              ? () => _deleteComment(comment)
-                              : null,
                         ),
                       );
                     }),
