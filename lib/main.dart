@@ -387,31 +387,31 @@ class _FriendShellState extends State<FriendShell> {
     ];
     return Scaffold(
       body: IndexedStack(index: tab, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: tab,
-        onTap: (value) {
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: tab,
+        onDestinationSelected: (value) {
           HapticFeedback.selectionClick();
           setState(() => tab = value);
         },
-        items: const [
-          BottomNavigationBarItem(
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home),
             label: '主页',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore),
+            selectedIcon: Icon(Icons.explore),
             label: '发现',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.chat_bubble_outline),
-            activeIcon: Icon(Icons.chat_bubble),
+            selectedIcon: Icon(Icons.chat_bubble),
             label: '消息',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+            selectedIcon: Icon(Icons.person),
             label: '我的',
           ),
         ],
