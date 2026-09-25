@@ -83,21 +83,36 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     super.dispose();
   }
 
-  List<MatrixRoomViewData> get rooms =>
-      widget.session.directRooms().map((room) {
-        final event = room.lastEvent;
-        return MatrixRoomViewData(
-          roomId: room.id,
-          title: room.getLocalizedDisplayname(),
-          preview: _previewFor(event),
-          timestamp: event?.originServerTs,
-          unreadCount: room.notificationCount,
-        );
-      }).toList()..sort((a, b) {
-        final at = a.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bt = b.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bt.compareTo(at);
-      });
+  List<MatrixRoomViewData> get rooms {
+    final cached = widget.session.cachedRoomSummaries;
+    if (cached.isNotEmpty) {
+      return cached
+          .map(
+            (summary) => MatrixRoomViewData(
+              roomId: summary.roomId,
+              title: summary.title,
+              preview: summary.preview,
+              timestamp: summary.timestamp,
+              unreadCount: summary.unreadCount,
+            ),
+          )
+          .toList();
+    }
+    return widget.session.directRooms().map((room) {
+      final event = room.lastEvent;
+      return MatrixRoomViewData(
+        roomId: room.id,
+        title: room.getLocalizedDisplayname(),
+        preview: _previewFor(event),
+        timestamp: event?.originServerTs,
+        unreadCount: room.notificationCount,
+      );
+    }).toList()..sort((a, b) {
+      final at = a.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bt = b.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bt.compareTo(at);
+    });
+  }
 
   String _previewFor(Event? event) {
     if (event == null) return '暂无消息';
