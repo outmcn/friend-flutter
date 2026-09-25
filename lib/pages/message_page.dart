@@ -131,35 +131,38 @@ class _MessagePageState extends State<MessagePage> {
       children: [
         _topBar(context),
         Expanded(
-          child: loading
-              ? const Center(child: CircularProgressIndicator())
-              : error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(error!),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            error = null;
-                            loading = true;
-                          });
-                          _loadSession();
-                        },
-                        child: const Text('重试'),
-                      ),
-                    ],
+          child: SafeArea(
+            top: false,
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : error != null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(error!),
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              error = null;
+                              loading = true;
+                            });
+                            _loadSession();
+                          },
+                          child: const Text('重试'),
+                        ),
+                      ],
+                    ),
+                  )
+                : current == null
+                ? const Center(child: Text('Matrix 会话不可用'))
+                : MatrixRoomsPage(
+                    session: current,
+                    token: widget.token,
+                    embedded: true,
                   ),
-                )
-              : current == null
-              ? const Center(child: Text('Matrix 会话不可用'))
-              : MatrixRoomsPage(
-                  session: current,
-                  token: widget.token,
-                  embedded: true,
-                ),
+          ),
         ),
       ],
     );

@@ -386,9 +386,11 @@ class _FriendShellState extends State<FriendShell> {
       ProfilePage(key: profileKey, token: widget.token),
     ];
     return Scaffold(
-      body: SafeArea(
-        child: IndexedStack(index: tab, children: pages),
-      ),
+      body: tab == 2
+          ? IndexedStack(index: tab, children: pages)
+          : SafeArea(
+              child: IndexedStack(index: tab, children: pages),
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: tab,
         onDestinationSelected: (value) {
