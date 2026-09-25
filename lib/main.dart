@@ -699,15 +699,19 @@ class DiscoveryPage extends StatelessWidget {
                     ),
                   ),
                 if (!loading && error == null)
-                  ...posts.map(
-                    (post) => PostCard(
-                      post: post,
-                      token: token,
-                      onActionChanged: onActionChanged,
-                      currentLatitude: currentLatitude,
-                      currentLongitude: currentLongitude,
-                      currentUserId: currentUserId,
-                    ),
+                  ...posts.asMap().entries.expand(
+                    (entry) => [
+                      PostCard(
+                        post: entry.value,
+                        token: token,
+                        onActionChanged: onActionChanged,
+                        currentLatitude: currentLatitude,
+                        currentLongitude: currentLongitude,
+                        currentUserId: currentUserId,
+                      ),
+                      if (entry.key < posts.length - 1)
+                        const Divider(height: 1),
+                    ],
                   ),
               ],
             ),
