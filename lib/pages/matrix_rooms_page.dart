@@ -38,6 +38,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   @override
   void initState() {
     super.initState();
+    widget.session.refreshRoomSummaries();
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
     });

@@ -20,6 +20,33 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, int> _roomAvatarIds = {};
   final Map<String, Uri> _attachmentUris = {};
   final Map<String, Future<Uri?>> _attachmentLoads = {};
+  final Map<String, MatrixRoomSummary> _roomSummaries = {};
+
+  List<MatrixRoomSummary> get cachedRoomSummaries =>
+      _roomSummaries.values.toList()
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+  void refreshRoomSummaries() {
+    for (final room in directRooms()) {
+      final event = room.lastEvent;
+      if (event == null) continue;
+      _roomSummaries[room.id] = MatrixRoomSummary(
+        roomId: room.id,
+        peerId: room.directChatMatrixID,
+        title: room.getLocalizedDisplayname(),
+        preview: _summaryPreview(event),
+        timestamp: event.originServerTs,
+        unreadCount: room.notificationCount,
+      );
+    }
+    notifyListeners();
+  }
+
+  String _summaryPreview(Event event) {
+    if (event.messageType == MessageTypes.Image) return '[图片]';
+    if (event.redacted || event.body == 'Redacted') return '消息已撤回';
+    return event.body.trim();
+  }
 
   Uri? cachedAttachmentUri(String eventId) => _attachmentUris[eventId];
 
@@ -151,6 +178,7 @@ class MatrixSession extends ChangeNotifier {
     if (_syncSubscription != null) return;
     _syncSubscription = client.onSync.stream.listen((_) {
       unawaited(joinInvitedRooms());
+      refreshRoomSummaries();
       notifyListeners();
     });
   }
@@ -319,4 +347,22 @@ class MatrixSession extends ChangeNotifier {
     client.dispose();
     super.dispose();
   }
+}
+
+class MatrixRoomSummary {
+  const MatrixRoomSummary({
+    required this.roomId,
+    required this.peerId,
+    required this.title,
+    required this.preview,
+    required this.timestamp,
+    required this.unreadCount,
+  });
+
+  final String roomId;
+  final String? peerId;
+  final String title;
+  final String preview;
+  final DateTime timestamp;
+  final int unreadCount;
 }
