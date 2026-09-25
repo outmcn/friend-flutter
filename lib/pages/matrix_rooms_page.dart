@@ -94,6 +94,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
               preview: summary.preview,
               timestamp: summary.timestamp,
               unreadCount: summary.unreadCount,
+              avatarId: summary.avatarId,
             ),
           )
           .toList();

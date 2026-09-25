@@ -5,6 +5,7 @@ class MatrixRoomViewData {
     required this.preview,
     this.timestamp,
     required this.unreadCount,
+    this.avatarId = 0,
   });
 
   final String roomId;
@@ -12,4 +13,5 @@ class MatrixRoomViewData {
   final String preview;
   final DateTime? timestamp;
   final int unreadCount;
+  final int avatarId;
 }

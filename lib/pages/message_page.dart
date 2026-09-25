@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/matrix_session.dart';
 import 'contacts_page.dart';
 import 'matrix_rooms_page.dart';
+import '../widgets/post_card.dart';
 
 class MessagePage extends StatefulWidget {
   const MessagePage({
@@ -82,7 +83,13 @@ class _MessagePageState extends State<MessagePage> {
       itemBuilder: (context, index) {
         final item = widget.cachedSummaries[index];
         return ListTile(
-          leading: const CircleAvatar(child: Icon(Icons.person)),
+          leading: CircleAvatar(
+            backgroundColor: avatarColors[item.avatarId.clamp(0, 9)],
+            child: Icon(
+              avatarIcons[item.avatarId.clamp(0, 9)],
+              color: Colors.white,
+            ),
+          ),
           title: Text(item.title),
           subtitle: Text(
             item.preview,

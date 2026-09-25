@@ -38,7 +38,7 @@ class MatrixSession extends ChangeNotifier {
           'CREATE TABLE room_summary ('
           'room_id TEXT PRIMARY KEY, peer_id TEXT, title TEXT NOT NULL, '
           'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
-          'unread_count INTEGER NOT NULL)',
+          'unread_count INTEGER NOT NULL, avatar_id INTEGER NOT NULL)',
         );
       },
     );
@@ -72,7 +72,7 @@ class MatrixSession extends ChangeNotifier {
           'CREATE TABLE room_summary ('
           'room_id TEXT PRIMARY KEY, peer_id TEXT, title TEXT NOT NULL, '
           'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
-          'unread_count INTEGER NOT NULL)',
+          'unread_count INTEGER NOT NULL, avatar_id INTEGER NOT NULL)',
         );
         await db.execute(
           'CREATE TABLE friend_profile ('
@@ -109,6 +109,7 @@ class MatrixSession extends ChangeNotifier {
         preview: row['preview'] as String,
         timestamp: DateTime.fromMillisecondsSinceEpoch(row['timestamp'] as int),
         unreadCount: row['unread_count'] as int,
+        avatarId: (row['avatar_id'] as int?) ?? 0,
       );
     }
     final profiles = await _cacheDatabase!.query('friend_profile');
@@ -147,6 +148,7 @@ class MatrixSession extends ChangeNotifier {
         preview: _summaryPreview(event),
         timestamp: event.originServerTs,
         unreadCount: room.notificationCount,
+        avatarId: _roomAvatarIds[room.id] ?? 0,
       );
       unawaited(_persistRoomSummary(_roomSummaries[room.id]!));
     }
@@ -586,6 +588,7 @@ class MatrixRoomSummary {
     required this.preview,
     required this.timestamp,
     required this.unreadCount,
+    this.avatarId = 0,
   });
 
   final String roomId;
@@ -594,6 +597,7 @@ class MatrixRoomSummary {
   final String preview;
   final DateTime timestamp;
   final int unreadCount;
+  final int avatarId;
 
   Map<String, Object?> toMap() => {
     'room_id': roomId,
@@ -602,5 +606,6 @@ class MatrixRoomSummary {
     'preview': preview,
     'timestamp': timestamp.millisecondsSinceEpoch,
     'unread_count': unreadCount,
+    'avatar_id': avatarId,
   };
 }
