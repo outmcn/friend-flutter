@@ -624,6 +624,12 @@ class MatrixSession extends ChangeNotifier {
     if (latest?.eventId == null) return;
     await room.setReadMarker(latest!.eventId, mRead: latest.eventId);
     await room.markUnread(false);
+    final summary = _roomSummaries[room.id];
+    if (summary != null) {
+      _roomSummaries[room.id] = summary.copyWith(unreadCount: 0);
+      unawaited(_persistRoomSummary(_roomSummaries[room.id]!));
+      notifyListeners();
+    }
   }
 
   Future<String> roomDisplayName(Room room) async {
@@ -664,6 +670,15 @@ class MatrixRoomSummary {
   final int unreadCount;
   final int avatarId;
 
+  MatrixRoomSummary copyWith({int? unreadCount}) => MatrixRoomSummary(
+    roomId: roomId,
+    peerId: peerId,
+    title: title,
+    preview: preview,
+    timestamp: timestamp,
+    unreadCount: unreadCount ?? this.unreadCount,
+    avatarId: avatarId,
+  );
   Map<String, Object?> toMap() => {
     'room_id': roomId,
     'peer_id': peerId,
