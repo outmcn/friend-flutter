@@ -578,6 +578,11 @@ class MatrixSession extends ChangeNotifier {
     return await room.sendFileEvent(image) ?? '';
   }
 
+  Future<List<Event>> searchRoomEvents(Room room, String query) async {
+    final result = await room.searchEvents(searchTerm: query, limit: 200);
+    return result.events;
+  }
+
   Future<String> sendReply(Room room, Event event, String text) async {
     final value = text.trim();
     if (value.isEmpty) return '';
