@@ -21,6 +21,7 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, Uri> _attachmentUris = {};
   final Map<String, Future<Uri?>> _attachmentLoads = {};
   final Map<String, MatrixRoomSummary> _roomSummaries = {};
+  final Map<String, Timeline> _timelines = {};
   sqflite.Database? _cacheDatabase;
 
   Future<void> _openSummaryCache() async {
@@ -90,6 +91,20 @@ class MatrixSession extends ChangeNotifier {
       summary.toMap(),
       conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
     );
+  }
+
+  Timeline? cachedTimeline(String roomId) => _timelines[roomId];
+
+  Future<Timeline> loadRoomTimeline(
+    Room room, {
+    int limit = 60,
+    VoidCallback? onUpdate,
+  }) async {
+    final cached = _timelines[room.id];
+    if (cached != null) return cached;
+    final loaded = await room.getTimeline(limit: limit, onUpdate: onUpdate);
+    _timelines[room.id] = loaded;
+    return loaded;
   }
 
   Uri? cachedAttachmentUri(String eventId) => _attachmentUris[eventId];

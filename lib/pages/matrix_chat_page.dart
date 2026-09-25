@@ -151,7 +151,8 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   Future<void> _loadTimeline() async {
     try {
-      final loaded = await widget.room.getTimeline(
+      final loaded = await widget.session.loadRoomTimeline(
+        widget.room,
         limit: 60,
         onUpdate: () {
           if (mounted) setState(() {});
