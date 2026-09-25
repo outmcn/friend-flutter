@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
-import '../models/matrix_bridge_session.dart';
-import '../services/api_client.dart';
 import '../services/matrix_session.dart';
 import 'contacts_page.dart';
 import 'matrix_rooms_page.dart';
 
 class MessagePage extends StatefulWidget {
-  const MessagePage({super.key, required this.token});
+  const MessagePage({
+    super.key,
+    required this.token,
+    required this.sessionLoader,
+    this.sessionError,
+  });
 
   final String token;
+  final Future<MatrixSession?> Function() sessionLoader;
+  final String? sessionError;
 
   @override
   State<MessagePage> createState() => _MessagePageState();
@@ -25,19 +30,25 @@ class _MessagePageState extends State<MessagePage> {
     _loadSession();
   }
 
+  @override
+  void didUpdateWidget(covariant MessagePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.sessionError != oldWidget.sessionError &&
+        widget.sessionError != null) {
+      setState(() {
+        error = widget.sessionError;
+        loading = false;
+      });
+    }
+  }
+
   Future<void> _loadSession() async {
     try {
-      final response = await ApiClient(token: widget.token).getMatrixSession();
-      final bridge = MatrixBridgeSession.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map),
-      );
-      final value = await MatrixSession.fromBridgeSession(bridge);
-      if (!mounted) {
-        value.dispose();
-        return;
-      }
+      final value = await widget.sessionLoader();
+      if (!mounted) return;
       setState(() {
         session = value;
+        error = widget.sessionError;
         loading = false;
       });
     } catch (e) {
@@ -116,11 +127,5 @@ class _MessagePageState extends State<MessagePage> {
               ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    session?.dispose();
-    super.dispose();
   }
 }
