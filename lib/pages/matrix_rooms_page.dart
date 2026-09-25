@@ -72,9 +72,14 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
           roomId: room.id,
           title: room.getLocalizedDisplayname(),
           preview: _previewFor(event),
+          timestamp: event?.originServerTs,
           unreadCount: room.notificationCount,
         );
-      }).toList()..sort((a, b) => b.roomId.compareTo(a.roomId));
+      }).toList()..sort((a, b) {
+        final at = a.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bt = b.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bt.compareTo(at);
+      });
 
   String _previewFor(Event? event) {
     if (event == null) return '暂无消息';
@@ -91,6 +96,20 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
       if (contentIndex >= 0) return lines[contentIndex].trim();
     }
     return event.body;
+  }
+
+  String _timeLabel(DateTime? value) {
+    if (value == null) return '';
+    final now = DateTime.now();
+    final local = value.toLocal();
+    if (local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day) {
+      final hour = local.hour.toString().padLeft(2, '0');
+      final minute = local.minute.toString().padLeft(2, '0');
+      return '$hour:$minute';
+    }
+    return '${local.month}/${local.day}';
   }
 
   Future<void> _joinInvites() async {
@@ -155,15 +174,34 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
               color: colors.onPrimaryContainer,
             ),
           ),
-          title: Text(_titles[item.roomId] ?? item.title),
-          subtitle: Text(
-            item.preview,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          title: Row(
+            children: [
+              Expanded(child: Text(_titles[item.roomId] ?? item.title)),
+              if (item.timestamp != null)
+                Text(
+                  _timeLabel(item.timestamp),
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+            ],
           ),
-          trailing: item.unreadCount == 0
-              ? null
-              : Badge(label: Text('${item.unreadCount}')),
+          subtitle: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  item.preview,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (item.unreadCount > 0) ...[
+                const SizedBox(width: 8),
+                Badge(label: Text('${item.unreadCount}')),
+              ],
+            ],
+          ),
           onTap: () async {
             final room = widget.session.client.getRoomById(item.roomId);
             if (room == null) return;
