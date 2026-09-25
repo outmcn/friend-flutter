@@ -124,15 +124,13 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
       final mine = event.senderId == widget.session.client.userID;
       return mine ? '你已撤回一条消息' : '对方已撤回一条消息';
     }
-    final replyId = event.inReplyToEventId();
-    if (replyId != null) {
-      final lines = event.body.split('\n');
-      final contentIndex = lines.lastIndexWhere(
-        (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
-      );
-      if (contentIndex >= 0) return lines[contentIndex].trim();
-    }
-    return event.body;
+    final lines = event.body.split('\n');
+    final contentIndex = lines.lastIndexWhere(
+      (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
+    );
+    if (contentIndex >= 0) return lines[contentIndex].trim();
+    final cleaned = event.body.replaceFirst(RegExp(r'^>\\s*<@[^>]+>\\s*'), '');
+    return cleaned.trim().isEmpty ? event.body : cleaned.trim();
   }
 
   String _timeLabel(DateTime? value) {
