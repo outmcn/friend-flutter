@@ -6,7 +6,6 @@ import '../models/matrix_room_view.dart';
 import '../services/matrix_session.dart';
 import '../widgets/post_card.dart';
 import 'matrix_chat_page.dart';
-import 'matrix_new_chat_page.dart';
 
 class MatrixRoomsPage extends StatefulWidget {
   const MatrixRoomsPage({
@@ -169,17 +168,6 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
 
   Future<void> _joinInvites() async {
     await widget.session.joinInvitedRooms();
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _openNewChat() async {
-    await Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            MatrixNewChatPage(session: widget.session, token: widget.token),
-      ),
-    );
     if (mounted) setState(() {});
   }
 
@@ -361,12 +349,10 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
           IconButton(
             tooltip: _searchQuery.isEmpty ? '搜索' : '清除搜索',
             icon: Icon(_searchQuery.isEmpty ? Icons.search : Icons.close),
-            onPressed: () => setState(() => _searchQuery = ''),
-          ),
-          IconButton(
-            tooltip: '新建私聊',
-            icon: const Icon(Icons.add_comment_outlined),
-            onPressed: _openNewChat,
+            onPressed: () => setState(() {
+              _searchQuery = '';
+              searchController.clear();
+            }),
           ),
         ],
       ),
