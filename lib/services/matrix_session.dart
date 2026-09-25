@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import '../services/api_client.dart';
 
 import 'package:flutter/foundation.dart';
@@ -29,7 +30,7 @@ class MatrixSession extends ChangeNotifier {
     final directory = await getApplicationSupportDirectory();
     _cacheDatabase = await sqflite.openDatabase(
       '${directory.path}/friend_matrix_cache.sqlite',
-      version: 1,
+      version: 2,
       onCreate: (db, _) async {
         await db.execute(
           'CREATE TABLE room_summary ('
@@ -37,6 +38,26 @@ class MatrixSession extends ChangeNotifier {
           'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
           'unread_count INTEGER NOT NULL)',
         );
+        await db.execute(
+          'CREATE TABLE friend_profile ('
+          'friend_id INTEGER PRIMARY KEY, payload TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE TABLE media_cache ('
+          'event_id TEXT PRIMARY KEY, uri TEXT NOT NULL)',
+        );
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'CREATE TABLE friend_profile ('
+            'friend_id INTEGER PRIMARY KEY, payload TEXT NOT NULL)',
+          );
+          await db.execute(
+            'CREATE TABLE media_cache ('
+            'event_id TEXT PRIMARY KEY, uri TEXT NOT NULL)',
+          );
+        }
       },
     );
   }
@@ -52,6 +73,18 @@ class MatrixSession extends ChangeNotifier {
         preview: row['preview'] as String,
         timestamp: DateTime.fromMillisecondsSinceEpoch(row['timestamp'] as int),
         unreadCount: row['unread_count'] as int,
+      );
+    }
+    final profiles = await _cacheDatabase!.query('friend_profile');
+    for (final row in profiles) {
+      _friendProfiles[row['friend_id'] as int] = Map<String, dynamic>.from(
+        jsonDecode(row['payload'] as String),
+      );
+    }
+    final media = await _cacheDatabase!.query('media_cache');
+    for (final row in media) {
+      _attachmentUris[row['event_id'] as String] = Uri.parse(
+        row['uri'] as String,
       );
     }
     notifyListeners();
@@ -115,12 +148,23 @@ class MatrixSession extends ChangeNotifier {
     final pending = _attachmentLoads[event.eventId];
     if (pending != null) return pending;
     final load = event.getAttachmentUri(getThumbnail: true).then((uri) {
-      if (uri != null) _attachmentUris[event.eventId] = uri;
+      if (uri != null) {
+        _attachmentUris[event.eventId] = uri;
+        unawaited(_persistMedia(event.eventId, uri));
+      }
       _attachmentLoads.remove(event.eventId);
       return uri;
     });
     _attachmentLoads[event.eventId] = load;
     return load;
+  }
+
+  Future<void> _persistMedia(String eventId, Uri uri) async {
+    await _openSummaryCache();
+    await _cacheDatabase!.insert('media_cache', {
+      'event_id': eventId,
+      'uri': uri.toString(),
+    }, conflictAlgorithm: sqflite.ConflictAlgorithm.replace);
   }
 
   int? cachedRoomAvatarId(String roomId) => _roomAvatarIds[roomId];
@@ -156,11 +200,23 @@ class MatrixSession extends ChangeNotifier {
       profile['avatarId'] = nested['avatarId'];
     }
     _friendProfiles[friendId] = profile;
+    unawaited(_persistProfile(friendId, profile));
     final avatar = (profile['avatarId'] as num?)?.toInt();
     if (roomId != null && avatar != null) {
       _roomAvatarIds[roomId] = avatar.clamp(0, 9);
     }
     return profile;
+  }
+
+  Future<void> _persistProfile(
+    int friendId,
+    Map<String, dynamic> profile,
+  ) async {
+    await _openSummaryCache();
+    await _cacheDatabase!.insert('friend_profile', {
+      'friend_id': friendId,
+      'payload': jsonEncode(profile),
+    }, conflictAlgorithm: sqflite.ConflictAlgorithm.replace);
   }
 
   static Future<MatrixSdkDatabase> _openDatabase() async {
