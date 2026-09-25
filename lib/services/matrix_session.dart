@@ -34,6 +34,8 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, Uint8List> _attachmentBytes = {};
   final Map<String, Future<Uint8List>> _attachmentByteLoads = {};
   final Map<String, MatrixRoomSummary> _roomSummaries = {};
+  final Set<String> _pinnedRooms = {};
+  final Set<String> _mutedRooms = {};
   final Map<String, Timeline> _timelines = {};
   sqflite.Database? _cacheDatabase;
 
@@ -222,6 +224,26 @@ class MatrixSession extends ChangeNotifier {
       summary.toMap(),
       conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
     );
+  }
+
+  bool isRoomPinned(String roomId) => _pinnedRooms.contains(roomId);
+  bool isRoomMuted(String roomId) => _mutedRooms.contains(roomId);
+
+  void toggleRoomPinned(String roomId) {
+    if (!_pinnedRooms.add(roomId)) _pinnedRooms.remove(roomId);
+    notifyListeners();
+  }
+
+  void toggleRoomMuted(String roomId) {
+    if (!_mutedRooms.add(roomId)) _mutedRooms.remove(roomId);
+    notifyListeners();
+  }
+
+  void hideRoom(String roomId) {
+    _roomSummaries.remove(roomId);
+    _pinnedRooms.remove(roomId);
+    _mutedRooms.remove(roomId);
+    notifyListeners();
   }
 
   Timeline? cachedTimeline(String roomId) => _timelines[roomId];

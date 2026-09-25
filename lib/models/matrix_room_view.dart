@@ -6,6 +6,8 @@ class MatrixRoomViewData {
     this.timestamp,
     required this.unreadCount,
     this.avatarId = 0,
+    this.pinned = false,
+    this.muted = false,
   });
 
   final String roomId;
@@ -14,4 +16,6 @@ class MatrixRoomViewData {
   final DateTime? timestamp;
   final int unreadCount;
   final int avatarId;
+  final bool pinned;
+  final bool muted;
 }
