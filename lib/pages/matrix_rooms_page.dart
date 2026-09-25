@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:matrix/matrix.dart';
 import '../models/matrix_room_view.dart';
 import '../services/matrix_session.dart';
-import '../services/api_client.dart';
 import '../widgets/post_card.dart';
 import 'matrix_chat_page.dart';
 import 'matrix_new_chat_page.dart';
@@ -59,19 +58,16 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
                   peer.split(':').first.replaceFirst('@friend_', ''),
                 );
           if (friendId != null) {
-            final response = await ApiClient(
+            await widget.session.loadFriendProfile(
               token: widget.token,
-            ).get('/api/users/$friendId');
-            final profile = response['data'];
-            final raw = profile is Map && profile['profile'] is Map
-                ? profile['profile']['avatarId']
-                : profile is Map
-                ? profile['avatarId']
-                : null;
-            _avatars[room.id] = (raw as num?)?.toInt().clamp(0, 9) ?? 0;
+              friendId: friendId,
+              roomId: room.id,
+            );
+            final avatar = widget.session.cachedRoomAvatarId(room.id);
+            if (avatar != null) _avatars[room.id] = avatar;
           }
         } catch (_) {
-          // Keep the SDK fallback title while member data is unavailable.
+          // Keep the SDK fallback title and default avatar on failure.
         }
       }
       if (mounted) setState(() {});

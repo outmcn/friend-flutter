@@ -71,13 +71,17 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     final id = _peerFriendId;
     if (id == null || widget.token.isEmpty) return;
     try {
-      final response = await ApiClient(
-        token: widget.token,
-      ).get('/api/users/$id');
+      final cached = widget.session.cachedFriendProfile(id);
+      final profile =
+          cached ??
+          await widget.session.loadFriendProfile(
+            token: widget.token,
+            friendId: id,
+          );
       final own = await ApiClient(token: widget.token).get('/api/me');
-      if (mounted) {
+      if (mounted && profile != null) {
         setState(() {
-          peerProfile = Map<String, dynamic>.from(response['data'] as Map);
+          peerProfile = profile;
           ownProfile = Map<String, dynamic>.from(own['data'] as Map);
         });
       }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../services/api_client.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:matrix/matrix.dart';
@@ -14,6 +15,42 @@ class MatrixSession extends ChangeNotifier {
   String? error;
   StreamSubscription<SyncUpdate>? _syncSubscription;
   bool _joiningInvites = false;
+  final Map<int, Map<String, dynamic>> _friendProfiles = {};
+  final Map<String, int> _roomAvatarIds = {};
+
+  int? cachedRoomAvatarId(String roomId) => _roomAvatarIds[roomId];
+
+  Map<String, dynamic>? cachedFriendProfile(int friendId) =>
+      _friendProfiles[friendId];
+
+  Future<Map<String, dynamic>?> loadFriendProfile({
+    required String token,
+    required int friendId,
+    String? roomId,
+  }) async {
+    final cached = _friendProfiles[friendId];
+    if (cached != null) {
+      if (roomId != null) {
+        final avatar = (cached['avatarId'] as num?)?.toInt();
+        if (avatar != null) _roomAvatarIds[roomId] = avatar.clamp(0, 9);
+      }
+      return cached;
+    }
+    final response = await ApiClient(token: token).get('/api/users/$friendId');
+    final raw = response['data'];
+    if (raw is! Map) return null;
+    final profile = Map<String, dynamic>.from(raw);
+    final nested = profile['profile'];
+    if (nested is Map && profile['avatarId'] == null) {
+      profile['avatarId'] = nested['avatarId'];
+    }
+    _friendProfiles[friendId] = profile;
+    final avatar = (profile['avatarId'] as num?)?.toInt();
+    if (roomId != null && avatar != null) {
+      _roomAvatarIds[roomId] = avatar.clamp(0, 9);
+    }
+    return profile;
+  }
 
   static Future<MatrixSdkDatabase> _openDatabase() async {
     final directory = await getApplicationSupportDirectory();
