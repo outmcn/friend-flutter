@@ -32,23 +32,11 @@ class DiscoveryTopBar extends StatelessWidget {
         unselectedLabelColor: colors.onSurfaceVariant,
         labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(fontSize: 15),
-        tabs: [
-          for (final option in options)
-            Tab(
-              text: option,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onSelected(option);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(option),
-                ),
-              ),
-            ),
-        ],
+        tabs: [for (final option in options) Tab(text: option)],
+        onTap: (index) {
+          HapticFeedback.selectionClick();
+          onSelected(options[index]);
+        },
       ),
       actions: [
         IconButton(
@@ -58,22 +46,5 @@ class DiscoveryTopBar extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-// Kept as a compatibility wrapper for existing imports.
-class ChoiceChips extends StatelessWidget {
-  final String selected;
-  final ValueChanged<String> onSelected;
-
-  const ChoiceChips({
-    super.key,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();
   }
 }
