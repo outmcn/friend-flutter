@@ -45,8 +45,11 @@ class _ContactsPageState extends State<ContactsPage> {
     try {
       final query = search.text.trim();
       final path = query.isEmpty
-          ? '/api/users'
-          : Uri(path: '/api/users', queryParameters: {'q': query}).toString();
+          ? '/api/users?relation=mutual'
+          : Uri(
+              path: '/api/users',
+              queryParameters: {'q': query, 'relation': 'mutual'},
+            ).toString();
       final loaded = widget.onLoadUsers != null
           ? await widget.onLoadUsers!(query)
           : await _requestUsers(path);
