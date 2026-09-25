@@ -348,6 +348,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     setState(() {
       sending = true;
       error = null;
+      sendError = null;
     });
     try {
       final sentEventId = replyingTo == null
@@ -370,7 +371,14 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
           )
           .lastOrNull;
       if (latestReply != null) _setImmediateReplyLabel(latestReply, text);
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+          sendError = null;
+          failedText = null;
+          failedReplyTo = null;
+          error = null;
+        });
+      }
       composer.clear();
       if (mounted) setState(() => replyingTo = null);
     } catch (e) {
@@ -392,6 +400,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     if (text == null || sending) return;
     setState(() {
       composer.text = text;
+      composer.selection = TextSelection.collapsed(offset: text.length);
       replyingTo = failedReplyTo;
       sendError = null;
     });
