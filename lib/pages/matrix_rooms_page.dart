@@ -104,6 +104,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
 
   String _previewFor(Event? event) {
     if (event == null) return '暂无消息';
+    if (event.messageType == MessageTypes.Image) return '[图片]';
     if (event.redacted || event.body == 'Redacted') {
       final mine = event.senderId == widget.session.client.userID;
       return mine ? '你已撤回一条消息' : '对方已撤回一条消息';

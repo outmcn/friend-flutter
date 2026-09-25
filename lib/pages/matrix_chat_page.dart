@@ -368,6 +368,50 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   bool _isRedaction(Event event) => event.redacted || event.body == 'Redacted';
 
+  Future<Widget> _messageContent(Event event, ColorScheme colors) async {
+    if (event.messageType != MessageTypes.Image || !event.hasAttachment) {
+      return Text(_messageBody(event));
+    }
+    try {
+      final uri = await event.getAttachmentUri(getThumbnail: true);
+      if (uri == null) return Text('[图片]');
+      return GestureDetector(
+        onTap: () => _showFullImageUri(uri),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            uri.toString(),
+            headers: {
+              'Authorization': 'Bearer ${widget.session.client.accessToken}',
+            },
+            width: 220,
+            height: 220,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const Text('[图片加载失败]'),
+          ),
+        ),
+      );
+    } catch (_) {
+      return const Text('[图片加载失败]');
+    }
+  }
+
+  void _showFullImageUri(Uri uri) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => Dialog(
+        child: InteractiveViewer(
+          child: Image.network(
+            uri.toString(),
+            headers: {
+              'Authorization': 'Bearer ${widget.session.client.accessToken}',
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<String> _replyLabel(Event event) async {
     final id = event.inReplyToEventId();
     if (id == null) return event.body;
@@ -495,7 +539,15 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                                           color: colors.onSurfaceVariant,
                                         ),
                                       ),
-                                    Text(_messageBody(displayed)),
+                                    FutureBuilder<Widget>(
+                                      future: _messageContent(
+                                        displayed,
+                                        colors,
+                                      ),
+                                      builder: (context, snapshot) =>
+                                          snapshot.data ??
+                                          Text(_messageBody(displayed)),
+                                    ),
                                   ],
                                 ),
                               ),
