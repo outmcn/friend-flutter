@@ -104,8 +104,9 @@ class _PostCardState extends State<PostCard> {
     return ClipRect(
       child: Column(
         children: [
-          InkWell(
+          GestureDetector(
             onTap: _openDetail,
+            behavior: HitTestBehavior.opaque,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
               child: Column(

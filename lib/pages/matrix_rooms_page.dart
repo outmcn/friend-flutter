@@ -183,46 +183,60 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
       separatorBuilder: (_, __) => const Divider(height: 1, indent: 80),
       itemBuilder: (context, index) {
         final item = data[index];
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 6,
-          ),
-          tileColor: Colors.transparent,
-          leading: CircleAvatar(
-            backgroundColor: avatarColors[_avatars[item.roomId] ?? 0],
-            child: Icon(
-              avatarIcons[_avatars[item.roomId] ?? 0],
-              color: Colors.white,
-            ),
-          ),
-          title: Row(
-            children: [
-              Expanded(child: Text(_titles[item.roomId] ?? item.title)),
-              if (item.timestamp != null)
-                Text(
-                  _timeLabel(item.timestamp),
-                  style: TextStyle(
-                    color: colors.onSurfaceVariant,
-                    fontSize: 12,
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: avatarColors[_avatars[item.roomId] ?? 0],
+                  child: Icon(
+                    avatarIcons[_avatars[item.roomId] ?? 0],
+                    color: Colors.white,
                   ),
                 ),
-            ],
-          ),
-          subtitle: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  item.preview,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(_titles[item.roomId] ?? item.title),
+                          ),
+                          if (item.timestamp != null)
+                            Text(
+                              _timeLabel(item.timestamp),
+                              style: TextStyle(
+                                color: colors.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.preview,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (item.unreadCount > 0) ...[
+                            const SizedBox(width: 8),
+                            Badge(label: Text('${item.unreadCount}')),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              if (item.unreadCount > 0) ...[
-                const SizedBox(width: 8),
-                Badge(label: Text('${item.unreadCount}')),
               ],
-            ],
+            ),
           ),
           onTap: () async {
             final room = widget.session.client.getRoomById(item.roomId);
