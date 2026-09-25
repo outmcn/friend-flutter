@@ -142,6 +142,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
           if (mounted) setState(() {});
         },
       );
+      _primeReplyLabels(loaded);
       if (mounted) {
         setState(() {
           timeline = loaded;
@@ -200,6 +201,32 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     );
     replyLabels.addEntries(labels);
     if (mounted) setState(() {});
+  }
+
+  void _primeReplyLabels(Timeline loaded) {
+    final eventsById = <String, Event>{
+      for (final event in loaded.events) event.eventId: event,
+    };
+    for (final event in loaded.events) {
+      final replyId = event.inReplyToEventId();
+      if (replyId == null || replyLabels.containsKey(event.eventId)) continue;
+      final original = eventsById[replyId];
+      if (original == null) {
+        replyLabels[event.eventId] = _fallbackReplyText(event);
+        continue;
+      }
+      final name = original.senderFromMemoryOrFallback.displayName?.trim();
+      final sender = name?.isNotEmpty == true ? name! : '对方';
+      replyLabels[event.eventId] = '$sender: ${_plainEventBody(original)}';
+    }
+  }
+
+  String _plainEventBody(Event event) {
+    final lines = event.body.split('\n');
+    final index = lines.lastIndexWhere(
+      (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
+    );
+    return index >= 0 ? lines[index].trim() : event.body;
   }
 
   void _setImmediateReplyLabel(Event event, String text) {
