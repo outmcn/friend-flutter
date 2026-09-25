@@ -564,18 +564,18 @@ class MatrixSession extends ChangeNotifier {
     await room.sendTextEvent(value);
   }
 
-  Future<String> sendFile(
+  Future<String> sendImage(
     Room room, {
     required Uint8List bytes,
     required String name,
     String? mimeType,
   }) async {
-    final file = MatrixFile.fromMimeType(
+    final image = MatrixImageFile(
       bytes: bytes,
       name: name,
-      mimeType: mimeType,
+      mimeType: mimeType ?? 'image/jpeg',
     );
-    return await room.sendFileEvent(file) ?? '';
+    return await room.sendFileEvent(image) ?? '';
   }
 
   Future<String> sendReply(Room room, Event event, String text) async {

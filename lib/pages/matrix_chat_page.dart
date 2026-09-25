@@ -341,7 +341,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     });
     try {
       final bytes = Uint8List.fromList(await image.readAsBytes());
-      await widget.session.sendFile(
+      await widget.session.sendImage(
         widget.room,
         bytes: bytes,
         name: image.name,
