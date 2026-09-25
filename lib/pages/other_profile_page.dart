@@ -40,14 +40,25 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   @override
   void initState() {
     super.initState();
-    profile = Map<String, dynamic>.from(
-      widget.data['profile'] as Map<String, dynamic>? ?? const {},
-    );
+    final nested = widget.data['profile'];
+    profile = nested is Map
+        ? Map<String, dynamic>.from(nested)
+        : Map<String, dynamic>.from(widget.data);
+    if (profile['id'] == null && widget.data['id'] != null) {
+      profile['id'] = widget.data['id'];
+    }
+    if (profile['nickname'] == null && widget.data['nickname'] != null) {
+      profile['nickname'] = widget.data['nickname'];
+    }
+    if (profile['avatarId'] == null && widget.data['avatarId'] != null) {
+      profile['avatarId'] = widget.data['avatarId'];
+    }
     final raw = widget.data['posts'];
     posts = raw is List
         ? raw.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
         : <UiPost>[];
     following = widget.data['following'] == true;
+    profileLiked = widget.data['liked'] == true || profile['liked'] == true;
   }
 
   Future<void> _toggleFollow() async {

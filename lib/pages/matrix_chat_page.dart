@@ -104,15 +104,28 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   }
 
   Future<void> _openPeerProfile() async {
-    final data = peerProfile;
-    if (data == null || !mounted) return;
-    await Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OtherProfilePage(data: data, dataToken: widget.token),
-      ),
-    );
-    await _loadPeerProfile();
+    final id = _peerFriendId;
+    if (id == null || widget.token.isEmpty || !mounted) return;
+    try {
+      final response = await ApiClient(
+        token: widget.token,
+      ).get('/api/users/$id');
+      final data = Map<String, dynamic>.from(response['data'] as Map);
+      if (!mounted) return;
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OtherProfilePage(
+            data: data,
+            dataToken: widget.token,
+            isSelf: false,
+          ),
+        ),
+      );
+      await _loadPeerProfile();
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    }
   }
 
   Future<void> _toggleFollow() async {
