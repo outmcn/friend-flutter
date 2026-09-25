@@ -544,6 +544,20 @@ class MatrixSession extends ChangeNotifier {
 
   bool get isLoggedIn => ready;
 
+  Future<void> waitUntilReady({
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    if (ready) return;
+    final deadline = DateTime.now().add(timeout);
+    while (!ready) {
+      if (error != null) throw StateError(error!);
+      if (DateTime.now().isAfter(deadline)) {
+        throw TimeoutException('Matrix SDK 初始化超时');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+  }
+
   Future<void> sendText(Room room, String text) async {
     final value = text.trim();
     if (value.isEmpty) return;

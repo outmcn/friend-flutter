@@ -29,6 +29,7 @@ class _MatrixNewChatPageState extends State<MatrixNewChatPage> {
       error = null;
     });
     try {
+      await widget.session.waitUntilReady();
       await widget.session.joinInvitedRooms();
       var room = widget.session.directRoomForUser(value);
       final roomId = room?.id ?? await widget.session.startDirectChat(value);

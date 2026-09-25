@@ -62,6 +62,7 @@ class _ContactsPageState extends State<ContactsPage> {
       final matrixResponse = await api.getMatrixSession();
       final bridge = Map<String, dynamic>.from(matrixResponse['data'] as Map);
       session = await MatrixSession.fromBridgeJson(bridge);
+      await session.waitUntilReady();
       await session.joinInvitedRooms();
       final targetId = user['id'];
       if (targetId == null) throw const ApiException('用户 ID 无效', 200);
@@ -130,7 +131,7 @@ class _ContactsPageState extends State<ContactsPage> {
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => _load(),
               decoration: const InputDecoration(
-                hintText: '搜索 Friend 用户',
+                hintText: '搜索用户',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
@@ -160,7 +161,7 @@ class _ContactsPageState extends State<ContactsPage> {
                             child: Icon(Icons.person, color: colors.onPrimary),
                           ),
                           title: Text(name),
-                          subtitle: Text('Friend ID ${user['id']}'),
+                          subtitle: Text('用户 ID ${user['id']}'),
                           trailing: const Icon(Icons.chat_outlined),
                           onTap: () => _openChat(user),
                         ),
