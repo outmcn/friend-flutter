@@ -71,18 +71,30 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     final id = _peerFriendId;
     if (id == null || widget.token.isEmpty) return;
     try {
-      final cached = widget.session.cachedFriendProfile(id);
+      final cachedPeer = widget.session.cachedFriendProfile(id);
+      final cachedOwn = widget.session.cachedOwnProfile;
+      if (mounted && (cachedPeer != null || cachedOwn != null)) {
+        setState(() {
+          if (cachedPeer != null) peerProfile = cachedPeer;
+          if (cachedOwn != null) ownProfile = cachedOwn;
+        });
+      }
       final profile =
-          cached ??
+          cachedPeer ??
           await widget.session.loadFriendProfile(
             token: widget.token,
             friendId: id,
           );
-      final own = await ApiClient(token: widget.token).get('/api/me');
+      var own = cachedOwn;
+      if (own == null) {
+        final response = await ApiClient(token: widget.token).get('/api/me');
+        own = Map<String, dynamic>.from(response['data'] as Map);
+        widget.session.cacheOwnProfile(own);
+      }
       if (mounted && profile != null) {
         setState(() {
           peerProfile = profile;
-          ownProfile = Map<String, dynamic>.from(own['data'] as Map);
+          ownProfile = own;
         });
       }
     } catch (_) {}
@@ -126,10 +138,9 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   Widget _avatarFor(Event event) {
     final mine = event.senderId == widget.session.client.userID;
     final rawProfile = mine
-        ? ownProfile
-        : (peerProfile?['profile'] is Map
-              ? Map<String, dynamic>.from(peerProfile!['profile'] as Map)
-              : peerProfile);
+        ? (ownProfile ?? widget.session.cachedOwnProfile)
+        : (peerProfile ??
+              widget.session.cachedFriendProfile(_peerFriendId ?? -1));
     final id = ((rawProfile?['avatarId'] as num?)?.toInt() ?? 0).clamp(0, 9);
     return CircleAvatar(
       radius: 18,

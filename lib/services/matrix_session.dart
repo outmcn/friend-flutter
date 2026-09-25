@@ -16,6 +16,7 @@ class MatrixSession extends ChangeNotifier {
   StreamSubscription<SyncUpdate>? _syncSubscription;
   bool _joiningInvites = false;
   final Map<int, Map<String, dynamic>> _friendProfiles = {};
+  Map<String, dynamic>? _ownProfile;
   final Map<String, int> _roomAvatarIds = {};
   final Map<String, Uri> _attachmentUris = {};
   final Map<String, Future<Uri?>> _attachmentLoads = {};
@@ -40,6 +41,12 @@ class MatrixSession extends ChangeNotifier {
 
   Map<String, dynamic>? cachedFriendProfile(int friendId) =>
       _friendProfiles[friendId];
+
+  Map<String, dynamic>? get cachedOwnProfile => _ownProfile;
+
+  void cacheOwnProfile(Map<String, dynamic> profile) {
+    _ownProfile = profile;
+  }
 
   Future<Map<String, dynamic>?> loadFriendProfile({
     required String token,
