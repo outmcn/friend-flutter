@@ -94,8 +94,6 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
                   timestamp: summary.timestamp,
                   unreadCount: summary.unreadCount,
                   avatarId: summary.avatarId,
-                  pinned: widget.session.isRoomPinned(summary.roomId),
-                  muted: widget.session.isRoomMuted(summary.roomId),
                 ),
               )
               .toList()
@@ -112,7 +110,6 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
             );
           }).toList();
     return source..sort((a, b) {
-      if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
       final at = a.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bt = b.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
       return bt.compareTo(at);
@@ -265,41 +262,25 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   }
 
   Future<void> _showRoomActions(MatrixRoomViewData item) async {
-    final action = await showModalBottomSheet<String>(
+    final confirmed = await showDialog<bool>(
       context: context,
-      showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: Icon(
-                item.pinned ? Icons.push_pin : Icons.push_pin_outlined,
-              ),
-              title: Text(item.pinned ? '取消置顶' : '置顶会话'),
-              onTap: () => Navigator.pop(context, 'pin'),
-            ),
-            ListTile(
-              leading: Icon(
-                item.muted
-                    ? Icons.notifications
-                    : Icons.notifications_off_outlined,
-              ),
-              title: Text(item.muted ? '开启通知' : '免打扰'),
-              onTap: () => Navigator.pop(context, 'mute'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.visibility_off_outlined),
-              title: const Text('隐藏会话'),
-              onTap: () => Navigator.pop(context, 'hide'),
-            ),
-          ],
-        ),
+      builder: (context) => AlertDialog(
+        title: const Text('删除聊天？'),
+        content: const Text('只删除本机的会话记录和缓存，不影响 Matrix 房间及对方记录。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
       ),
     );
-    if (!mounted || action == null) return;
-    if (action == 'pin') widget.session.toggleRoomPinned(item.roomId);
-    if (action == 'mute') widget.session.toggleRoomMuted(item.roomId);
-    if (action == 'hide') widget.session.hideRoom(item.roomId);
+    if (confirmed != true || !mounted) return;
+    await widget.session.deleteRoomChat(item.roomId);
     if (mounted) setState(() {});
   }
 

@@ -34,9 +34,7 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, Uint8List> _attachmentBytes = {};
   final Map<String, Future<Uint8List>> _attachmentByteLoads = {};
   final Map<String, MatrixRoomSummary> _roomSummaries = {};
-  final Set<String> _pinnedRooms = {};
-  final Set<String> _mutedRooms = {};
-  final Set<String> _hiddenRooms = {};
+  final Set<String> _deletedRooms = {};
   final Map<String, Timeline> _timelines = {};
   sqflite.Database? _cacheDatabase;
 
@@ -84,8 +82,7 @@ class MatrixSession extends ChangeNotifier {
       'room_id TEXT PRIMARY KEY, peer_id TEXT, title TEXT NOT NULL, '
       'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
       'unread_count INTEGER NOT NULL, avatar_id INTEGER NOT NULL DEFAULT 0, '
-      'pinned INTEGER NOT NULL DEFAULT 0, muted INTEGER NOT NULL DEFAULT 0, '
-      'hidden INTEGER NOT NULL DEFAULT 0)',
+      'deleted INTEGER NOT NULL DEFAULT 0)',
     );
     await db.execute(
       'CREATE TABLE IF NOT EXISTS room_draft ('
@@ -113,15 +110,11 @@ class MatrixSession extends ChangeNotifier {
   }
 
   static Future<void> _ensureRoomSettingsColumns(sqflite.Database db) async {
-    for (final sql in [
-      'ALTER TABLE room_summary ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0',
-      'ALTER TABLE room_summary ADD COLUMN muted INTEGER NOT NULL DEFAULT 0',
-      'ALTER TABLE room_summary ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0',
-    ]) {
-      try {
-        await db.execute(sql);
-      } catch (_) {}
-    }
+    try {
+      await db.execute(
+        'ALTER TABLE room_summary ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0',
+      );
+    } catch (_) {}
   }
 
   Future<void> _openSummaryCache() async {
@@ -148,8 +141,8 @@ class MatrixSession extends ChangeNotifier {
     final rows = await _cacheDatabase!.query('room_summary');
     for (final row in rows) {
       final roomId = row['room_id'] as String;
-      if ((row['hidden'] as int? ?? 0) != 0) {
-        _hiddenRooms.add(roomId);
+      if ((row['deleted'] as int? ?? 0) != 0) {
+        _deletedRooms.add(roomId);
         continue;
       }
       _roomSummaries[roomId] = MatrixRoomSummary(
@@ -160,11 +153,7 @@ class MatrixSession extends ChangeNotifier {
         timestamp: DateTime.fromMillisecondsSinceEpoch(row['timestamp'] as int),
         unreadCount: row['unread_count'] as int,
         avatarId: (row['avatar_id'] as int?) ?? 0,
-        pinned: (row['pinned'] as int? ?? 0) != 0,
-        muted: (row['muted'] as int? ?? 0) != 0,
       );
-      if ((row['pinned'] as int? ?? 0) != 0) _pinnedRooms.add(roomId);
-      if ((row['muted'] as int? ?? 0) != 0) _mutedRooms.add(roomId);
     }
     final profiles = await _cacheDatabase!.query('friend_profile');
     for (final row in profiles) {
@@ -189,17 +178,14 @@ class MatrixSession extends ChangeNotifier {
 
   List<MatrixRoomSummary> get cachedRoomSummaries =>
       _roomSummaries.values
-          .where((summary) => !_hiddenRooms.contains(summary.roomId))
+          .where((summary) => !_deletedRooms.contains(summary.roomId))
           .toList()
-        ..sort((a, b) {
-          if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
-          return b.timestamp.compareTo(a.timestamp);
-        });
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
   void refreshRoomSummaries() {
     for (final room in directRooms()) {
       final event = room.lastEvent;
-      if (event == null || _hiddenRooms.contains(room.id)) continue;
+      if (event == null || _deletedRooms.contains(room.id)) continue;
       _roomSummaries[room.id] = MatrixRoomSummary(
         roomId: room.id,
         peerId: room.directChatMatrixID,
@@ -210,10 +196,8 @@ class MatrixSession extends ChangeNotifier {
         timestamp: event.originServerTs,
         unreadCount: room.notificationCount,
         avatarId: _roomAvatarIds[room.id] ?? 0,
-        pinned: _pinnedRooms.contains(room.id),
-        muted: _mutedRooms.contains(room.id),
       );
-      if (!_hiddenRooms.contains(room.id)) {
+      if (!_deletedRooms.contains(room.id)) {
         unawaited(_persistRoomSummary(_roomSummaries[room.id]!));
       }
     }
@@ -243,41 +227,22 @@ class MatrixSession extends ChangeNotifier {
     );
   }
 
-  Future<void> _persistRoomSettings(String roomId) async {
+  Future<void> deleteRoomChat(String roomId) async {
+    _deletedRooms.add(roomId);
+    _roomSummaries.remove(roomId);
+    _timelines.remove(roomId);
     await _openSummaryCache();
     await _cacheDatabase!.update(
       'room_summary',
-      {
-        'pinned': isRoomPinned(roomId) ? 1 : 0,
-        'muted': isRoomMuted(roomId) ? 1 : 0,
-        'hidden': _hiddenRooms.contains(roomId) ? 1 : 0,
-      },
+      {'deleted': 1},
       where: 'room_id = ?',
       whereArgs: [roomId],
     );
-  }
-
-  bool isRoomPinned(String roomId) => _pinnedRooms.contains(roomId);
-  bool isRoomMuted(String roomId) => _mutedRooms.contains(roomId);
-
-  void toggleRoomPinned(String roomId) {
-    if (!_pinnedRooms.add(roomId)) _pinnedRooms.remove(roomId);
-    unawaited(_persistRoomSettings(roomId));
-    notifyListeners();
-  }
-
-  void toggleRoomMuted(String roomId) {
-    if (!_mutedRooms.add(roomId)) _mutedRooms.remove(roomId);
-    unawaited(_persistRoomSettings(roomId));
-    notifyListeners();
-  }
-
-  void hideRoom(String roomId) {
-    _hiddenRooms.add(roomId);
-    _roomSummaries.remove(roomId);
-    _pinnedRooms.remove(roomId);
-    _mutedRooms.remove(roomId);
-    unawaited(_persistRoomSettings(roomId));
+    await _cacheDatabase!.delete(
+      'room_draft',
+      where: 'room_id = ?',
+      whereArgs: [roomId],
+    );
     notifyListeners();
   }
 
@@ -763,8 +728,6 @@ class MatrixRoomSummary {
     required this.timestamp,
     required this.unreadCount,
     this.avatarId = 0,
-    this.pinned = false,
-    this.muted = false,
   });
 
   final String roomId;
@@ -774,21 +737,16 @@ class MatrixRoomSummary {
   final DateTime timestamp;
   final int unreadCount;
   final int avatarId;
-  final bool pinned;
-  final bool muted;
 
-  MatrixRoomSummary copyWith({int? unreadCount, bool? pinned, bool? muted}) =>
-      MatrixRoomSummary(
-        roomId: roomId,
-        peerId: peerId,
-        title: title,
-        preview: preview,
-        timestamp: timestamp,
-        unreadCount: unreadCount ?? this.unreadCount,
-        avatarId: avatarId,
-        pinned: pinned ?? this.pinned,
-        muted: muted ?? this.muted,
-      );
+  MatrixRoomSummary copyWith({int? unreadCount}) => MatrixRoomSummary(
+    roomId: roomId,
+    peerId: peerId,
+    title: title,
+    preview: preview,
+    timestamp: timestamp,
+    unreadCount: unreadCount ?? this.unreadCount,
+    avatarId: avatarId,
+  );
   Map<String, Object?> toMap() => {
     'room_id': roomId,
     'peer_id': peerId,
@@ -797,8 +755,6 @@ class MatrixRoomSummary {
     'timestamp': timestamp.millisecondsSinceEpoch,
     'unread_count': unreadCount,
     'avatar_id': avatarId,
-    'pinned': pinned ? 1 : 0,
-    'muted': muted ? 1 : 0,
-    'hidden': 0,
+    'deleted': 0,
   };
 }
