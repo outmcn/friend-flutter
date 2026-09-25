@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../services/matrix_session.dart';
+import '../widgets/post_card.dart';
 import 'matrix_chat_page.dart';
 
 class ContactsPage extends StatefulWidget {
@@ -72,6 +73,67 @@ class _ContactsPageState extends State<ContactsPage> {
     return data.whereType<Map<String, dynamic>>().toList();
   }
 
+  Future<void> _openBlacklist() async {
+    try {
+      final response = await api.get('/api/users?relation=blocked');
+      final data = response['data'];
+      final blocked = data is List
+          ? data.whereType<Map<String, dynamic>>().toList()
+          : <Map<String, dynamic>>[];
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (_) => SafeArea(
+          child: blocked.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(28),
+                  child: Center(child: Text('黑名单为空')),
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: blocked.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, index) {
+                    final user = blocked[index];
+                    return ListTile(
+                      leading: _avatar(user),
+                      title: Text(_displayName(user)),
+                      trailing: TextButton(
+                        onPressed: () async {
+                          await api.post('/api/users/${user['id']}/unblock');
+                          if (mounted) Navigator.pop(context);
+                        },
+                        child: const Text('解除'),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      );
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  String _displayName(Map<String, dynamic> user) {
+    final nickname = user['nickname']?.toString().trim();
+    return nickname?.isNotEmpty == true
+        ? nickname!
+        : user['username']?.toString() ?? '未知用户';
+  }
+
+  Widget _avatar(Map<String, dynamic> user) {
+    final id = ((user['avatarId'] as num?)?.toInt() ?? 0).clamp(0, 9);
+    return CircleAvatar(
+      backgroundColor: avatarColors[id],
+      child: Icon(avatarIcons[id], color: Colors.white),
+    );
+  }
+
   Future<void> _openChat(Map<String, dynamic> user) async {
     if (opening) return;
     setState(() => opening = true);
@@ -125,15 +187,14 @@ class _ContactsPageState extends State<ContactsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('通讯录'),
         actions: [
-          IconButton(
-            onPressed: _load,
-            tooltip: '搜索',
-            icon: const Icon(Icons.search),
+          TextButton.icon(
+            onPressed: _openBlacklist,
+            icon: const Icon(Icons.block_outlined),
+            label: const Text('黑名单'),
           ),
         ],
       ),
@@ -165,18 +226,10 @@ class _ContactsPageState extends State<ContactsPage> {
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (_, index) {
                       final user = users[index];
-                      final nickname = user['nickname']?.toString().trim();
-                      final name = nickname?.isNotEmpty == true
-                          ? nickname!
-                          : user['username']?.toString() ?? '';
                       return Card(
                         child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: colors.primary,
-                            child: Icon(Icons.person, color: colors.onPrimary),
-                          ),
-                          title: Text(name),
-                          subtitle: null,
+                          leading: _avatar(user),
+                          title: Text(_displayName(user)),
                           trailing: const Icon(Icons.chat_outlined),
                           onTap: () => _openChat(user),
                         ),
