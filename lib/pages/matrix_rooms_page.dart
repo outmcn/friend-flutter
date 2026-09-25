@@ -128,7 +128,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     final contentIndex = lines.lastIndexWhere(
       (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
     );
-    if (contentIndex >= 0) return lines[contentIndex].trim();
+    if (contentIndex >= 0) return '回复信息：${lines[contentIndex].trim()}';
     final cleaned = event.body.replaceFirst(RegExp(r'^>\\s*<@[^>]+>\\s*'), '');
     return cleaned.trim().isEmpty ? event.body : cleaned.trim();
   }

@@ -204,6 +204,14 @@ class MatrixSession extends ChangeNotifier {
   String _summaryPreview(Event event) {
     if (event.messageType == MessageTypes.Image) return '[图片]';
     if (event.redacted || event.body == 'Redacted') return '消息已撤回';
+    final lines = event.body.split('\n');
+    final replyIndex = lines.lastIndexWhere(
+      (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
+    );
+    if (event.inReplyToEventId() != null && replyIndex >= 0) {
+      return '回复信息：${lines[replyIndex].trim()}';
+    }
+    if (replyIndex >= 0) return lines[replyIndex].trim();
     return event.body.trim();
   }
 
