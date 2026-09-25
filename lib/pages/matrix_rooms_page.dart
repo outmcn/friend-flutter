@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:matrix/matrix.dart';
 import '../models/matrix_room_view.dart';
 import '../services/matrix_session.dart';
+import '../services/api_client.dart';
+import '../widgets/post_card.dart';
 import 'matrix_chat_page.dart';
 import 'matrix_new_chat_page.dart';
 
@@ -26,6 +28,7 @@ class MatrixRoomsPage extends StatefulWidget {
 class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   StreamSubscription<void>? _updates;
   final Map<String, String> _titles = {};
+  final Map<String, int> _avatars = {};
   bool _loadingTitles = false;
 
   Future<void> _refreshReadState() async {
@@ -49,6 +52,24 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
       for (final room in widget.session.directRooms()) {
         try {
           _titles[room.id] = await widget.session.roomDisplayName(room);
+          final peer = room.directChatMatrixID;
+          final friendId = peer == null
+              ? null
+              : int.tryParse(
+                  peer.split(':').first.replaceFirst('@friend_', ''),
+                );
+          if (friendId != null) {
+            final response = await ApiClient(
+              token: widget.token,
+            ).get('/api/users/$friendId');
+            final profile = response['data'];
+            final raw = profile is Map && profile['profile'] is Map
+                ? profile['profile']['avatarId']
+                : profile is Map
+                ? profile['avatarId']
+                : null;
+            _avatars[room.id] = (raw as num?)?.toInt().clamp(0, 9) ?? 0;
+          }
         } catch (_) {
           // Keep the SDK fallback title while member data is unavailable.
         }
@@ -168,10 +189,10 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           leading: CircleAvatar(
-            backgroundColor: colors.primaryContainer,
+            backgroundColor: avatarColors[_avatars[item.roomId] ?? 0],
             child: Icon(
-              Icons.chat_bubble_outline,
-              color: colors.onPrimaryContainer,
+              avatarIcons[_avatars[item.roomId] ?? 0],
+              color: Colors.white,
             ),
           ),
           title: Row(
