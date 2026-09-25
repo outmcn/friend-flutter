@@ -199,9 +199,9 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  if (p.text.isNotEmpty)
+                  if (p.text.trim().isNotEmpty)
                     Text(
-                      p.text,
+                      p.text.trim(),
                       style: TextStyle(
                         fontSize: 18,
                         height: 1.35,

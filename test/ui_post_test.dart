@@ -36,4 +36,13 @@ void main() {
     expect(UiPost.fromJson({'imageURL': 'null'}).imageUrl, isNull);
     expect(UiPost.fromJson({'imageURL': null}).imageUrl, isNull);
   });
+
+  test('UiPost.fromJson preserves discovery text when an image is present', () {
+    final post = UiPost.fromJson({
+      'content': '测试图',
+      'imageURL': '/uploads/test.jpg',
+    });
+    expect(post.text, '测试图');
+    expect(post.imageUrl, 'https://friend.outmcn.net/uploads/test.jpg');
+  });
 }
