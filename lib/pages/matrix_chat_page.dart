@@ -34,6 +34,9 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   String? error;
   bool loading = true;
   bool sending = false;
+  String? sendError;
+  String? failedText;
+  Event? failedReplyTo;
   bool loadingHistory = false;
   String? roomTitle;
   Event? replyingTo;
@@ -304,10 +307,28 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       composer.clear();
       if (mounted) setState(() => replyingTo = null);
     } catch (e) {
-      if (mounted) setState(() => error = e.toString());
+      if (mounted) {
+        setState(() {
+          error = e.toString();
+          sendError = e.toString();
+          failedText = text;
+          failedReplyTo = replyingTo;
+        });
+      }
     } finally {
       if (mounted) setState(() => sending = false);
     }
+  }
+
+  Future<void> _retryFailedMessage() async {
+    final text = failedText;
+    if (text == null || sending) return;
+    setState(() {
+      composer.text = text;
+      replyingTo = failedReplyTo;
+      sendError = null;
+    });
+    await _send();
   }
 
   Future<void> _pickAndSendImage() async {
@@ -670,6 +691,24 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                   IconButton(
                     onPressed: () => setState(() => replyingTo = null),
                     icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+          if (sendError != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      sendError!,
+                      style: TextStyle(color: colors.error, fontSize: 12),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _retryFailedMessage,
+                    child: const Text('重试'),
                   ),
                 ],
               ),
