@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../services/matrix_session.dart';
@@ -5,7 +6,14 @@ import 'matrix_chat_page.dart';
 
 class ContactsPage extends StatefulWidget {
   final String token;
-  const ContactsPage({super.key, required this.token});
+  final List<Map<String, dynamic>> initialUsers;
+  final Future<List<Map<String, dynamic>>> Function(String query)? onLoadUsers;
+  const ContactsPage({
+    super.key,
+    required this.token,
+    this.initialUsers = const [],
+    this.onLoadUsers,
+  });
 
   @override
   State<ContactsPage> createState() => _ContactsPageState();
@@ -14,15 +22,18 @@ class ContactsPage extends StatefulWidget {
 class _ContactsPageState extends State<ContactsPage> {
   late final ApiClient api = ApiClient(token: widget.token);
   final search = TextEditingController();
-  List<Map<String, dynamic>> users = [];
-  bool loading = true;
+  late List<Map<String, dynamic>> users = [...widget.initialUsers];
+  bool loading = false;
   bool opening = false;
   String? error;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    if (users.isEmpty)
+      _load();
+    else
+      unawaited(_load());
   }
 
   Future<void> _load() async {
@@ -35,12 +46,12 @@ class _ContactsPageState extends State<ContactsPage> {
       final path = query.isEmpty
           ? '/api/users'
           : Uri(path: '/api/users', queryParameters: {'q': query}).toString();
-      final response = await api.get(path);
-      final data = response['data'];
-      if (data is! List) throw const ApiException('用户数据格式无效', 200);
+      final loaded = widget.onLoadUsers != null
+          ? await widget.onLoadUsers!(query)
+          : await _requestUsers(path);
       if (mounted) {
         setState(() {
-          users = data.whereType<Map<String, dynamic>>().toList();
+          users = loaded;
           loading = false;
         });
       }
@@ -52,6 +63,13 @@ class _ContactsPageState extends State<ContactsPage> {
         });
       }
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _requestUsers(String path) async {
+    final response = await api.get(path);
+    final data = response['data'];
+    if (data is! List) throw const ApiException('用户数据格式无效', 200);
+    return data.whereType<Map<String, dynamic>>().toList();
   }
 
   Future<void> _openChat(Map<String, dynamic> user) async {

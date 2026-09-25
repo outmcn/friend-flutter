@@ -11,12 +11,16 @@ class MessagePage extends StatefulWidget {
     required this.token,
     required this.sessionLoader,
     this.cachedSummaries = const [],
+    required this.parentContacts,
+    required this.loadContacts,
     this.sessionError,
   });
 
   final String token;
   final Future<MatrixSession?> Function() sessionLoader;
   final List<MatrixRoomSummary> cachedSummaries;
+  final List<Map<String, dynamic>> parentContacts;
+  final Future<List<Map<String, dynamic>>> Function(String query) loadContacts;
   final String? sessionError;
 
   @override
@@ -71,7 +75,13 @@ class _MessagePageState extends State<MessagePage> {
   Future<void> _openContacts() async {
     await Navigator.push<void>(
       context,
-      MaterialPageRoute(builder: (_) => ContactsPage(token: widget.token)),
+      MaterialPageRoute(
+        builder: (_) => ContactsPage(
+          token: widget.token,
+          initialUsers: widget.parentContacts,
+          onLoadUsers: widget.loadContacts,
+        ),
+      ),
     );
     if (mounted) await session?.joinInvitedRooms();
   }

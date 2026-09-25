@@ -240,6 +240,8 @@ class _FriendShellState extends State<FriendShell> {
   MatrixSession? matrixSession;
   Future<MatrixSession?>? matrixSessionLoad;
   String? matrixSessionError;
+  final Map<int, List<Map<String, dynamic>>> contactsCache = {};
+  int contactsCacheVersion = 0;
   List<MatrixRoomSummary> cachedMessageSummaries = const [];
   Future<void>? cachedMessageLoad;
 
@@ -251,6 +253,26 @@ class _FriendShellState extends State<FriendShell> {
       } catch (_) {}
     }();
     await cachedMessageLoad;
+  }
+
+  Future<List<Map<String, dynamic>>> _loadContacts(String query) async {
+    final key = query.hashCode;
+    if (query.isEmpty && contactsCache.containsKey(key)) {
+      return contactsCache[key]!;
+    }
+    final path = query.isEmpty
+        ? '/api/users'
+        : Uri(path: '/api/users', queryParameters: {'q': query}).toString();
+    final response = await _api.get(path);
+    final data = response['data'];
+    if (data is! List) throw const ApiException('用户数据格式无效', 200);
+    final users = data.whereType<Map<String, dynamic>>().toList();
+    if (query.isEmpty) {
+      contactsCache[key] = users;
+      contactsCacheVersion++;
+      if (mounted) setState(() {});
+    }
+    return users;
   }
 
   Future<MatrixSession?> _getMatrixSession() async {
@@ -439,6 +461,8 @@ class _FriendShellState extends State<FriendShell> {
         sessionLoader: _getMatrixSession,
         sessionError: matrixSessionError,
         cachedSummaries: cachedMessageSummaries,
+        parentContacts: contactsCache[''.hashCode] ?? const [],
+        loadContacts: _loadContacts,
       ),
       ProfilePage(key: profileKey, token: widget.token),
     ];
