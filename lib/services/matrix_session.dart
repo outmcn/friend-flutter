@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:matrix/matrix.dart';
@@ -181,6 +182,20 @@ class MatrixSession extends ChangeNotifier {
     final value = text.trim();
     if (value.isEmpty) return;
     await room.sendTextEvent(value);
+  }
+
+  Future<String> sendFile(
+    Room room, {
+    required Uint8List bytes,
+    required String name,
+    String? mimeType,
+  }) async {
+    final file = MatrixFile.fromMimeType(
+      bytes: bytes,
+      name: name,
+      mimeType: mimeType,
+    );
+    return await room.sendFileEvent(file) ?? '';
   }
 
   Future<String> sendReply(Room room, Event event, String text) async {

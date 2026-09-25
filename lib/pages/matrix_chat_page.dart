@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:matrix/matrix.dart';
 import 'package:flutter/services.dart';
 import '../pages/other_profile_page.dart';
@@ -243,6 +245,29 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       if (mounted) setState(() {});
       composer.clear();
       if (mounted) setState(() => replyingTo = null);
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  Future<void> _pickAndSendImage() async {
+    if (sending) return;
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+    setState(() {
+      sending = true;
+      error = null;
+    });
+    try {
+      final bytes = Uint8List.fromList(await image.readAsBytes());
+      await widget.session.sendFile(
+        widget.room,
+        bytes: bytes,
+        name: image.name,
+        mimeType: 'image/${image.name.split('.').last}',
+      );
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
     } finally {
@@ -515,6 +540,11 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
               child: Row(
                 children: [
+                  IconButton(
+                    onPressed: sending ? null : _pickAndSendImage,
+                    icon: const Icon(Icons.image_outlined),
+                    tooltip: '发送图片',
+                  ),
                   Expanded(
                     child: TextField(
                       controller: composer,
