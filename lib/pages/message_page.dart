@@ -72,6 +72,46 @@ class _MessagePageState extends State<MessagePage> {
     }
   }
 
+  Future<void> _openSessionSearch() async {
+    final current = session;
+    if (current == null) return;
+    final controller = TextEditingController();
+    final query = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('搜索会话'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '联系人或最后消息'),
+          onSubmitted: (value) => Navigator.pop(context, value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('搜索'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || query == null) return;
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MatrixRoomsPage(
+          session: current,
+          token: widget.token,
+          initialSearchQuery: query,
+        ),
+      ),
+    );
+  }
+
   Future<void> _openContacts() async {
     await Navigator.push<void>(
       context,
@@ -132,8 +172,8 @@ class _MessagePageState extends State<MessagePage> {
             icon: const Icon(Icons.people_alt_outlined),
           ),
           IconButton(
-            onPressed: null,
-            tooltip: '搜索聊天记录',
+            onPressed: _openSessionSearch,
+            tooltip: '搜索会话',
             icon: const Icon(Icons.search),
           ),
           IconButton(
