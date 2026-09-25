@@ -22,21 +22,34 @@ class DiscoveryTopBar extends StatelessWidget {
       toolbarHeight: 48,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
-      title: TabBar(
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
-        dividerColor: Colors.transparent,
-        indicatorColor: colors.primary,
-        indicatorWeight: 2,
-        labelColor: colors.primary,
-        unselectedLabelColor: colors.onSurfaceVariant,
-        labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(fontSize: 15),
-        tabs: [for (final option in options) Tab(text: option)],
-        onTap: (index) {
-          HapticFeedback.selectionClick();
-          onSelected(options[index]);
+      title: SegmentedButton<String>(
+        segments: [
+          for (final option in options)
+            ButtonSegment<String>(value: option, label: Text(option)),
+        ],
+        selected: {selected},
+        showSelectedIcon: false,
+        onSelectionChanged: (values) {
+          if (values.isNotEmpty) {
+            HapticFeedback.selectionClick();
+            onSelected(values.first);
+          }
         },
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          ),
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            return states.contains(WidgetState.selected)
+                ? colors.onSecondaryContainer
+                : colors.onSurfaceVariant;
+          }),
+        ),
       ),
       actions: [
         IconButton(
