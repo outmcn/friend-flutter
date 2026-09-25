@@ -101,14 +101,13 @@ class _PostCardState extends State<PostCard> {
     final c = Theme.of(context).colorScheme;
     final p = widget.post;
     final distance = _distanceLabel();
-    return Card(
-      clipBehavior: Clip.antiAlias,
+    return ClipRect(
       child: Column(
         children: [
           InkWell(
             onTap: _openDetail,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -216,7 +215,7 @@ class _PostCardState extends State<PostCard> {
                         child: GestureDetector(
                           onTap: () => _showFullImage(context, p.imageUrl!),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.zero,
                             child: SizedBox(
                               height: 240,
                               width: double.infinity,

@@ -700,16 +700,13 @@ class DiscoveryPage extends StatelessWidget {
                   ),
                 if (!loading && error == null)
                   ...posts.map(
-                    (post) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: PostCard(
-                        post: post,
-                        token: token,
-                        onActionChanged: onActionChanged,
-                        currentLatitude: currentLatitude,
-                        currentLongitude: currentLongitude,
-                        currentUserId: currentUserId,
-                      ),
+                    (post) => PostCard(
+                      post: post,
+                      token: token,
+                      onActionChanged: onActionChanged,
+                      currentLatitude: currentLatitude,
+                      currentLongitude: currentLongitude,
+                      currentUserId: currentUserId,
                     ),
                   ),
               ],
