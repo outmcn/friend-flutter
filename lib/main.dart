@@ -240,6 +240,18 @@ class _FriendShellState extends State<FriendShell> {
   MatrixSession? matrixSession;
   Future<MatrixSession?>? matrixSessionLoad;
   String? matrixSessionError;
+  List<MatrixRoomSummary> cachedMessageSummaries = const [];
+  Future<void>? cachedMessageLoad;
+
+  Future<void> _loadMessageCache() async {
+    cachedMessageLoad ??= () async {
+      try {
+        cachedMessageSummaries = await MatrixSession.readCachedRoomSummaries();
+        if (mounted) setState(() {});
+      } catch (_) {}
+    }();
+    await cachedMessageLoad;
+  }
 
   Future<MatrixSession?> _getMatrixSession() async {
     if (matrixSession != null) return matrixSession;
@@ -280,6 +292,7 @@ class _FriendShellState extends State<FriendShell> {
   @override
   void initState() {
     super.initState();
+    _loadMessageCache();
     _loadPosts();
     _loadCurrentPosition();
     _loadCurrentUser();
@@ -425,6 +438,7 @@ class _FriendShellState extends State<FriendShell> {
         token: widget.token,
         sessionLoader: _getMatrixSession,
         sessionError: matrixSessionError,
+        cachedSummaries: cachedMessageSummaries,
       ),
       ProfilePage(key: profileKey, token: widget.token),
     ];

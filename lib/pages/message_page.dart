@@ -8,11 +8,13 @@ class MessagePage extends StatefulWidget {
     super.key,
     required this.token,
     required this.sessionLoader,
+    this.cachedSummaries = const [],
     this.sessionError,
   });
 
   final String token;
   final Future<MatrixSession?> Function() sessionLoader;
+  final List<MatrixRoomSummary> cachedSummaries;
   final String? sessionError;
 
   @override
@@ -69,6 +71,32 @@ class _MessagePageState extends State<MessagePage> {
     if (mounted) await session?.joinInvitedRooms();
   }
 
+  Widget _cachedSummaryBody(BuildContext context) {
+    if (widget.cachedSummaries.isEmpty) {
+      return const Center(child: Text('正在恢复消息缓存…'));
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 4, bottom: 20),
+      itemCount: widget.cachedSummaries.length,
+      separatorBuilder: (_, __) => const Divider(height: 1, indent: 80),
+      itemBuilder: (context, index) {
+        final item = widget.cachedSummaries[index];
+        return ListTile(
+          leading: const CircleAvatar(child: Icon(Icons.person)),
+          title: Text(item.title),
+          subtitle: Text(
+            item.preview,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: item.unreadCount > 0
+              ? Badge(label: Text('${item.unreadCount}'))
+              : null,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final current = session;
@@ -119,7 +147,7 @@ class _MessagePageState extends State<MessagePage> {
                 ),
               )
             : current == null
-            ? const Center(child: Text('正在恢复消息缓存…'))
+            ? _cachedSummaryBody(context)
             : MatrixRoomsPage(
                 session: current,
                 token: widget.token,

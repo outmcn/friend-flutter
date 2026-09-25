@@ -28,6 +28,39 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, Timeline> _timelines = {};
   sqflite.Database? _cacheDatabase;
 
+  static Future<List<MatrixRoomSummary>> readCachedRoomSummaries() async {
+    final directory = await getApplicationSupportDirectory();
+    final db = await sqflite.openDatabase(
+      '${directory.path}/friend_matrix_cache.sqlite',
+      version: 2,
+      onCreate: (db, _) async {
+        await db.execute(
+          'CREATE TABLE room_summary ('
+          'room_id TEXT PRIMARY KEY, peer_id TEXT, title TEXT NOT NULL, '
+          'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
+          'unread_count INTEGER NOT NULL)',
+        );
+      },
+    );
+    final rows = await db.query('room_summary');
+    await db.close();
+    return rows
+        .map(
+          (row) => MatrixRoomSummary(
+            roomId: row['room_id'] as String,
+            peerId: row['peer_id'] as String?,
+            title: row['title'] as String,
+            preview: row['preview'] as String,
+            timestamp: DateTime.fromMillisecondsSinceEpoch(
+              row['timestamp'] as int,
+            ),
+            unreadCount: row['unread_count'] as int,
+          ),
+        )
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  }
+
   Future<void> _openSummaryCache() async {
     if (_cacheDatabase != null) return;
     final directory = await getApplicationSupportDirectory();
