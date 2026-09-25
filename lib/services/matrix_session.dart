@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import '../services/api_client.dart';
 
 import 'package:flutter/foundation.dart';
@@ -150,20 +151,50 @@ class MatrixSession extends ChangeNotifier {
 
   Uri? cachedAttachmentUri(String eventId) => _attachmentUris[eventId];
 
+  String? _mediaDirectoryPath;
+
+  Future<void> _ensureMediaDirectory() async {
+    if (_mediaDirectoryPath != null) return;
+    final directory = await getApplicationSupportDirectory();
+    final media = Directory('${directory.path}/friend_matrix_media');
+    await media.create(recursive: true);
+    _mediaDirectoryPath = media.path;
+  }
+
+  File _attachmentFile(Event event) {
+    final name = base64Url
+        .encode(utf8.encode(event.eventId))
+        .replaceAll('=', '');
+    return File('$_mediaDirectoryPath/$name.bin');
+  }
+
+  Future<File?> cachedAttachmentFile(Event event) async {
+    await _ensureMediaDirectory();
+    final file = _attachmentFile(event);
+    return await file.exists() ? file : null;
+  }
+
   Future<Uint8List> loadAttachmentBytes(Event event) {
     final cached = _attachmentBytes[event.eventId];
     if (cached != null) return Future.value(cached);
     final pending = _attachmentByteLoads[event.eventId];
     if (pending != null) return pending;
-    final load = event.downloadAndDecryptAttachment(getThumbnail: true).then((
-      file,
-    ) {
-      _attachmentBytes[event.eventId] = file.bytes;
+    final load = _loadAttachmentBytes(event).then((bytes) {
+      _attachmentBytes[event.eventId] = bytes;
       _attachmentByteLoads.remove(event.eventId);
-      return file.bytes;
+      return bytes;
     });
     _attachmentByteLoads[event.eventId] = load;
     return load;
+  }
+
+  Future<Uint8List> _loadAttachmentBytes(Event event) async {
+    await _ensureMediaDirectory();
+    final local = _attachmentFile(event);
+    if (await local.exists()) return local.readAsBytes();
+    final file = await event.downloadAndDecryptAttachment(getThumbnail: true);
+    await local.writeAsBytes(file.bytes, flush: true);
+    return file.bytes;
   }
 
   Future<Uri?> loadAttachmentUri(Event event) {
