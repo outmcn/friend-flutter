@@ -108,7 +108,7 @@ class _PostCardState extends State<PostCard> {
             onTap: _openDetail,
             behavior: HitTestBehavior.opaque,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
