@@ -161,7 +161,7 @@ class _ContactsPageState extends State<ContactsPage> {
                             child: Icon(Icons.person, color: colors.onPrimary),
                           ),
                           title: Text(name),
-                          subtitle: Text('用户 ID ${user['id']}'),
+                          subtitle: null,
                           trailing: const Icon(Icons.chat_outlined),
                           onTap: () => _openChat(user),
                         ),
