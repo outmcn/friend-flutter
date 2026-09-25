@@ -61,8 +61,10 @@ class ApiClient {
         response.statusCode >= 300 ||
         decoded['ok'] != true) {
       throw ApiException(
-        decoded['message']?.toString() ?? '请求失败',
+        decoded['message']?.toString() ??
+            (response.statusCode == 429 ? '服务暂时限流，请稍后重试' : '请求失败'),
         response.statusCode,
+        retryAfter: int.tryParse(response.headers['retry-after'] ?? ''),
       );
     }
     return decoded;
@@ -72,7 +74,8 @@ class ApiClient {
 class ApiException implements Exception {
   final String message;
   final int statusCode;
-  const ApiException(this.message, this.statusCode);
+  final int? retryAfter;
+  const ApiException(this.message, this.statusCode, {this.retryAfter});
   @override
   String toString() => message;
 }

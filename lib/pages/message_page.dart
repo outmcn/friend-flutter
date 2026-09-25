@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_client.dart';
 import '../services/matrix_session.dart';
 import 'contacts_page.dart';
 import 'matrix_rooms_page.dart';
@@ -25,6 +26,7 @@ class MessagePage extends StatefulWidget {
 class _MessagePageState extends State<MessagePage> {
   MatrixSession? session;
   String? error;
+  int? retryAfter;
   bool loading = false;
 
   @override
@@ -52,12 +54,14 @@ class _MessagePageState extends State<MessagePage> {
       setState(() {
         session = value;
         error = widget.sessionError;
+        retryAfter = null;
         loading = false;
       });
     } catch (e) {
       if (mounted) {
         setState(() {
           error = e.toString();
+          retryAfter = e is ApiException ? e.retryAfter : null;
           loading = false;
         });
       }
@@ -139,6 +143,10 @@ class _MessagePageState extends State<MessagePage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(error!),
+                    if (retryAfter != null) ...[
+                      const SizedBox(height: 6),
+                      Text('建议等待约 $retryAfter 秒后再重试'),
+                    ],
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: () {
