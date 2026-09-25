@@ -386,11 +386,7 @@ class _FriendShellState extends State<FriendShell> {
       ProfilePage(key: profileKey, token: widget.token),
     ];
     return Scaffold(
-      body: tab == 2
-          ? IndexedStack(index: tab, children: pages)
-          : SafeArea(
-              child: IndexedStack(index: tab, children: pages),
-            ),
+      body: IndexedStack(index: tab, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: tab,
         onDestinationSelected: (value) {
@@ -471,37 +467,40 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-      children: [
-        Text(
-          'Friend',
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w800,
-            color: c.onSurface,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '找到真实的交流',
-          style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
-        ),
-        const SizedBox(height: 28),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const GamePage()),
+    return SafeArea(
+      child: ListView(
+        primary: false,
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+        children: [
+          Text(
+            'Friend',
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              color: c.onSurface,
             ),
-            borderRadius: BorderRadius.circular(26),
-            child: _hero(context),
           ),
-        ),
-        const SizedBox(height: 20),
-        const SizedBox(height: 12),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            '找到真实的交流',
+            style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
+          ),
+          const SizedBox(height: 28),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GamePage()),
+              ),
+              borderRadius: BorderRadius.circular(26),
+              child: _hero(context),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+        ],
+      ),
     );
   }
 
