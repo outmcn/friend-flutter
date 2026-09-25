@@ -366,12 +366,30 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     return event.body == 'Redacted' ? '已撤回一条消息' : event.body;
   }
 
+  String _fallbackReplyText(Event event) {
+    final id = event.inReplyToEventId();
+    if (id == null) return '';
+    final lines = event.body.split('\n');
+    final contentIndex = lines.lastIndexWhere(
+      (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
+    );
+    return contentIndex >= 0 ? lines[contentIndex].trim() : '';
+  }
+
   bool _isRedaction(Event event) => event.redacted || event.body == 'Redacted';
 
   Future<Widget> _messageContent(Event event, ColorScheme colors) async {
+    if (event.messageType == MessageTypes.Image) {
+      if (!event.hasAttachment) return const Text('[图片加载失败]');
+      return _imageWidget(event);
+    }
     if (event.messageType != MessageTypes.Image || !event.hasAttachment) {
       return Text(_messageBody(event));
     }
+    return Text(_messageBody(event));
+  }
+
+  Future<Widget> _imageWidget(Event event) async {
     try {
       final uri = await event.getAttachmentUri(getThumbnail: true);
       if (uri == null) return Text('[图片]');
@@ -394,6 +412,17 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     } catch (_) {
       return const Text('[图片加载失败]');
     }
+  }
+
+  Widget _messageLoading(Event event, ColorScheme colors) {
+    if (event.messageType == MessageTypes.Image) {
+      return const SizedBox(
+        width: 220,
+        height: 80,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    return Text(_messageBody(event));
   }
 
   void _showFullImageUri(Uri uri) {
@@ -531,9 +560,9 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    if (replyLabels.containsKey(event.eventId))
+                                    if (event.inReplyToEventId() != null)
                                       Text(
-                                        '回复：${replyLabels[event.eventId]}',
+                                        '回复：${replyLabels[event.eventId] ?? _fallbackReplyText(event)}',
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: colors.onSurfaceVariant,
@@ -545,8 +574,9 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                                         colors,
                                       ),
                                       builder: (context, snapshot) =>
-                                          snapshot.data ??
-                                          Text(_messageBody(displayed)),
+                                          snapshot.hasData
+                                          ? snapshot.data!
+                                          : _messageLoading(displayed, colors),
                                     ),
                                   ],
                                 ),
