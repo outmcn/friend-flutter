@@ -28,6 +28,7 @@ class MatrixSession extends ChangeNotifier {
     final directory = await getApplicationSupportDirectory();
     _cacheDatabase = await sqflite.openDatabase(
       '${directory.path}/friend_matrix_cache.sqlite',
+      version: 1,
       onCreate: (db, _) async {
         await db.execute(
           'CREATE TABLE room_summary ('
