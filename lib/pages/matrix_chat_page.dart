@@ -45,6 +45,8 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   Map<String, dynamic>? ownProfile;
   bool followLoading = false;
   final Map<String, Future<Widget>> _messageContentFutures = {};
+  Timer? _draftTimer;
+  bool _draftLoaded = false;
 
   @override
   void initState() {
@@ -52,9 +54,30 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
     });
+    composer.addListener(_scheduleDraftSave);
     _loadPeerProfile();
     _loadRoomTitle();
+    _loadDraft();
     _loadTimeline();
+  }
+
+  Future<void> _loadDraft() async {
+    if (_draftLoaded) return;
+    _draftLoaded = true;
+    final draft = await widget.session.loadRoomDraft(widget.room.id);
+    if (!mounted || draft == null || composer.text.isNotEmpty) return;
+    composer.value = TextEditingValue(
+      text: draft,
+      selection: TextSelection.collapsed(offset: draft.length),
+    );
+  }
+
+  void _scheduleDraftSave() {
+    if (!_draftLoaded) return;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 350), () {
+      widget.session.saveRoomDraft(widget.room.id, composer.text);
+    });
   }
 
   Future<void> _loadRoomTitle() async {
@@ -380,6 +403,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
         });
       }
       composer.clear();
+      await widget.session.clearRoomDraft(widget.room.id);
       if (mounted) setState(() => replyingTo = null);
     } catch (e) {
       if (mounted) {
@@ -840,6 +864,11 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   @override
   void dispose() {
+    _draftTimer?.cancel();
+    composer.removeListener(_scheduleDraftSave);
+    if (composer.text.trim().isNotEmpty) {
+      widget.session.saveRoomDraft(widget.room.id, composer.text);
+    }
     _updates?.cancel();
     composer.dispose();
     scrollController.dispose();

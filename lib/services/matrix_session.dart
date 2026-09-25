@@ -88,6 +88,11 @@ class MatrixSession extends ChangeNotifier {
       'hidden INTEGER NOT NULL DEFAULT 0)',
     );
     await db.execute(
+      'CREATE TABLE IF NOT EXISTS room_draft ('
+      'room_id TEXT PRIMARY KEY, draft TEXT NOT NULL, '
+      'updated_at INTEGER NOT NULL)',
+    );
+    await db.execute(
       'CREATE TABLE IF NOT EXISTS friend_profile ('
       'friend_id INTEGER PRIMARY KEY, payload TEXT NOT NULL)',
     );
@@ -274,6 +279,44 @@ class MatrixSession extends ChangeNotifier {
     _mutedRooms.remove(roomId);
     unawaited(_persistRoomSettings(roomId));
     notifyListeners();
+  }
+
+  Future<String?> loadRoomDraft(String roomId) async {
+    await _openSummaryCache();
+    final rows = await _cacheDatabase!.query(
+      'room_draft',
+      columns: ['draft'],
+      where: 'room_id = ?',
+      whereArgs: [roomId],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first['draft'] as String?;
+  }
+
+  Future<void> saveRoomDraft(String roomId, String draft) async {
+    await _openSummaryCache();
+    if (draft.trim().isEmpty) {
+      await _cacheDatabase!.delete(
+        'room_draft',
+        where: 'room_id = ?',
+        whereArgs: [roomId],
+      );
+      return;
+    }
+    await _cacheDatabase!.insert('room_draft', {
+      'room_id': roomId,
+      'draft': draft,
+      'updated_at': DateTime.now().millisecondsSinceEpoch,
+    }, conflictAlgorithm: sqflite.ConflictAlgorithm.replace);
+  }
+
+  Future<void> clearRoomDraft(String roomId) async {
+    await _openSummaryCache();
+    await _cacheDatabase!.delete(
+      'room_draft',
+      where: 'room_id = ?',
+      whereArgs: [roomId],
+    );
   }
 
   Timeline? cachedTimeline(String roomId) => _timelines[roomId];
