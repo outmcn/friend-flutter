@@ -241,22 +241,30 @@ class MatrixSession extends ChangeNotifier {
     final client = Client('Friend Matrix', database: await _openDatabase());
     final homeserver = Uri.parse('https://matrix.friend.outmcn.net');
     await client.checkHomeserver(homeserver);
+    final session = MatrixSession._(client);
+    await session.loadCachedRoomSummaries();
     await client.init(
       newToken: bridge.accessToken,
       newHomeserver: homeserver,
       newDeviceName: 'Friend Flutter',
-      waitForFirstSync: true,
-      waitUntilLoadCompletedLoaded: true,
+      waitForFirstSync: false,
+      waitUntilLoadCompletedLoaded: false,
     );
     if (client.userID == null || client.userID!.isEmpty) {
       throw StateError('Matrix SDK whoami 未返回当前用户 ID');
     }
-    final session = MatrixSession._(client);
-    await session.loadCachedRoomSummaries();
     session._markReady();
     session._startSyncListener();
-    await session.joinInvitedRooms();
+    unawaited(session._finishInitialSync());
     return session;
+  }
+
+  Future<void> _finishInitialSync() async {
+    try {
+      await client.onSync.stream.first;
+      refreshRoomSummaries();
+      await joinInvitedRooms();
+    } catch (_) {}
   }
 
   static Future<MatrixSession> fromBridgeJson(Map<String, dynamic> json) =>
