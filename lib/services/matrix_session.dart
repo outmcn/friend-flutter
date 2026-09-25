@@ -21,6 +21,39 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, Uri> _attachmentUris = {};
   final Map<String, Future<Uri?>> _attachmentLoads = {};
   final Map<String, MatrixRoomSummary> _roomSummaries = {};
+  sqflite.Database? _cacheDatabase;
+
+  Future<void> _openSummaryCache() async {
+    if (_cacheDatabase != null) return;
+    final directory = await getApplicationSupportDirectory();
+    _cacheDatabase = await sqflite.openDatabase(
+      '${directory.path}/friend_matrix_cache.sqlite',
+      onCreate: (db, _) async {
+        await db.execute(
+          'CREATE TABLE room_summary ('
+          'room_id TEXT PRIMARY KEY, peer_id TEXT, title TEXT NOT NULL, '
+          'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
+          'unread_count INTEGER NOT NULL)',
+        );
+      },
+    );
+  }
+
+  Future<void> loadCachedRoomSummaries() async {
+    await _openSummaryCache();
+    final rows = await _cacheDatabase!.query('room_summary');
+    for (final row in rows) {
+      _roomSummaries[row['room_id'] as String] = MatrixRoomSummary(
+        roomId: row['room_id'] as String,
+        peerId: row['peer_id'] as String?,
+        title: row['title'] as String,
+        preview: row['preview'] as String,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(row['timestamp'] as int),
+        unreadCount: row['unread_count'] as int,
+      );
+    }
+    notifyListeners();
+  }
 
   List<MatrixRoomSummary> get cachedRoomSummaries =>
       _roomSummaries.values.toList()
@@ -38,6 +71,7 @@ class MatrixSession extends ChangeNotifier {
         timestamp: event.originServerTs,
         unreadCount: room.notificationCount,
       );
+      unawaited(_persistRoomSummary(_roomSummaries[room.id]!));
     }
     notifyListeners();
   }
@@ -46,6 +80,15 @@ class MatrixSession extends ChangeNotifier {
     if (event.messageType == MessageTypes.Image) return '[图片]';
     if (event.redacted || event.body == 'Redacted') return '消息已撤回';
     return event.body.trim();
+  }
+
+  Future<void> _persistRoomSummary(MatrixRoomSummary summary) async {
+    await _openSummaryCache();
+    await _cacheDatabase!.insert(
+      'room_summary',
+      summary.toMap(),
+      conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
+    );
   }
 
   Uri? cachedAttachmentUri(String eventId) => _attachmentUris[eventId];
@@ -137,6 +180,7 @@ class MatrixSession extends ChangeNotifier {
       throw StateError('Matrix SDK whoami 未返回当前用户 ID');
     }
     final session = MatrixSession._(client);
+    await session.loadCachedRoomSummaries();
     session._markReady();
     session._startSyncListener();
     await session.joinInvitedRooms();
@@ -365,4 +409,13 @@ class MatrixRoomSummary {
   final String preview;
   final DateTime timestamp;
   final int unreadCount;
+
+  Map<String, Object?> toMap() => {
+    'room_id': roomId,
+    'peer_id': peerId,
+    'title': title,
+    'preview': preview,
+    'timestamp': timestamp.millisecondsSinceEpoch,
+    'unread_count': unreadCount,
+  };
 }
