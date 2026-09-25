@@ -154,73 +154,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     }
   }
 
-  String _timeLabel(DateTime value) {
-    final local = value.toLocal();
-    return '${local.month}/${local.day} ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> _openSearch() async {
-    final controller = TextEditingController();
-    final query = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('搜索聊天记录'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textInputAction: TextInputAction.search,
-          onSubmitted: (_) => Navigator.pop(context, controller.text.trim()),
-          decoration: const InputDecoration(hintText: '输入关键词'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('搜索'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (!mounted || query == null || query.isEmpty) return;
-    try {
-      final results = await widget.session.searchRoomEvents(widget.room, query);
-      if (!mounted) return;
-      await showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (_) => SafeArea(
-          child: results.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.all(28),
-                  child: Center(child: Text('没有找到匹配消息')),
-                )
-              : ListView.separated(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: results.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, index) => ListTile(
-                    title: Text(
-                      results[index].messageType == MessageTypes.Image
-                          ? '[图片]'
-                          : results[index].body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(_timeLabel(results[index].originServerTs)),
-                  ),
-                ),
-        ),
-      );
-    } catch (e) {
-      if (mounted) setState(() => error = e.toString());
-    }
-  }
-
   Future<void> _toggleFollow() async {
     final id = _peerFriendId;
     if (id == null || followLoading || widget.token.isEmpty) return;
@@ -646,11 +579,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
           ),
         ),
         actions: [
-          IconButton(
-            onPressed: _openSearch,
-            tooltip: '搜索聊天记录',
-            icon: const Icon(Icons.search),
-          ),
           if (peerProfile != null)
             TextButton(
               onPressed: followLoading ? null : _toggleFollow,

@@ -13,13 +13,11 @@ class MatrixRoomsPage extends StatefulWidget {
     required this.session,
     required this.token,
     this.embedded = false,
-    this.initialSearchQuery = '',
   });
 
   final MatrixSession session;
   final bool embedded;
   final String token;
-  final String initialSearchQuery;
 
   @override
   State<MatrixRoomsPage> createState() => _MatrixRoomsPageState();
@@ -30,8 +28,6 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   final Map<String, String> _titles = {};
   final Map<String, int> _avatars = {};
   bool _loadingTitles = false;
-  String _searchQuery = '';
-  final searchController = TextEditingController();
 
   Future<void> _refreshReadState() async {
     await Future<void>.delayed(const Duration(milliseconds: 150));
@@ -41,8 +37,6 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   @override
   void initState() {
     super.initState();
-    _searchQuery = widget.initialSearchQuery;
-    searchController.text = _searchQuery;
     widget.session.refreshRoomSummaries();
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
@@ -85,7 +79,6 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   @override
   void dispose() {
     _updates?.cancel();
-    searchController.dispose();
     super.dispose();
   }
 
@@ -118,17 +111,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
               unreadCount: room.notificationCount,
             );
           }).toList();
-    final query = _searchQuery.trim().toLowerCase();
-    final filtered = query.isEmpty
-        ? source
-        : source
-              .where(
-                (item) =>
-                    item.title.toLowerCase().contains(query) ||
-                    item.preview.toLowerCase().contains(query),
-              )
-              .toList();
-    return filtered..sort((a, b) {
+    return source..sort((a, b) {
       if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
       final at = a.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bt = b.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -179,14 +162,6 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     }
     final data = rooms;
     if (data.isEmpty) {
-      if (_searchQuery.trim().isNotEmpty) {
-        return Center(
-          child: Text(
-            '没有找到匹配会话',
-            style: TextStyle(color: colors.onSurfaceVariant),
-          ),
-        );
-      }
       final invites = widget.session.invitedRooms();
       return Center(
         child: Column(
@@ -333,29 +308,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     final content = _body(context);
     if (widget.embedded) return content;
     return Scaffold(
-      appBar: AppBar(
-        title: _searchQuery.isEmpty
-            ? const Text('Matrix 消息')
-            : TextField(
-                controller: searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: '搜索会话或消息',
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) => setState(() => _searchQuery = value),
-              ),
-        actions: [
-          IconButton(
-            tooltip: _searchQuery.isEmpty ? '搜索' : '清除搜索',
-            icon: Icon(_searchQuery.isEmpty ? Icons.search : Icons.close),
-            onPressed: () => setState(() {
-              _searchQuery = '';
-              searchController.clear();
-            }),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Matrix 消息'), actions: const []),
       body: content,
     );
   }
