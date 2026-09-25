@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:matrix/matrix.dart';
 import '../models/matrix_room_view.dart';
 import '../services/matrix_session.dart';
 import 'matrix_chat_page.dart';
@@ -70,10 +71,27 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
         return MatrixRoomViewData(
           roomId: room.id,
           title: room.getLocalizedDisplayname(),
-          preview: event?.body ?? '暂无消息',
+          preview: _previewFor(event),
           unreadCount: room.notificationCount,
         );
       }).toList()..sort((a, b) => b.roomId.compareTo(a.roomId));
+
+  String _previewFor(Event? event) {
+    if (event == null) return '暂无消息';
+    if (event.redacted || event.body == 'Redacted') {
+      final mine = event.senderId == widget.session.client.userID;
+      return mine ? '你已撤回一条消息' : '对方已撤回一条消息';
+    }
+    final replyId = event.inReplyToEventId();
+    if (replyId != null) {
+      final lines = event.body.split('\n');
+      final contentIndex = lines.lastIndexWhere(
+        (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
+      );
+      if (contentIndex >= 0) return lines[contentIndex].trim();
+    }
+    return event.body;
+  }
 
   Future<void> _joinInvites() async {
     await widget.session.joinInvitedRooms();
