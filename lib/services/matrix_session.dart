@@ -21,6 +21,8 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, int> _roomAvatarIds = {};
   final Map<String, Uri> _attachmentUris = {};
   final Map<String, Future<Uri?>> _attachmentLoads = {};
+  final Map<String, Uint8List> _attachmentBytes = {};
+  final Map<String, Future<Uint8List>> _attachmentByteLoads = {};
   final Map<String, MatrixRoomSummary> _roomSummaries = {};
   final Map<String, Timeline> _timelines = {};
   sqflite.Database? _cacheDatabase;
@@ -77,9 +79,15 @@ class MatrixSession extends ChangeNotifier {
     }
     final profiles = await _cacheDatabase!.query('friend_profile');
     for (final row in profiles) {
-      _friendProfiles[row['friend_id'] as int] = Map<String, dynamic>.from(
+      final id = row['friend_id'] as int;
+      final profile = Map<String, dynamic>.from(
         jsonDecode(row['payload'] as String),
       );
+      if (id == -1) {
+        _ownProfile = profile;
+      } else {
+        _friendProfiles[id] = profile;
+      }
     }
     final media = await _cacheDatabase!.query('media_cache');
     for (final row in media) {
@@ -142,6 +150,22 @@ class MatrixSession extends ChangeNotifier {
 
   Uri? cachedAttachmentUri(String eventId) => _attachmentUris[eventId];
 
+  Future<Uint8List> loadAttachmentBytes(Event event) {
+    final cached = _attachmentBytes[event.eventId];
+    if (cached != null) return Future.value(cached);
+    final pending = _attachmentByteLoads[event.eventId];
+    if (pending != null) return pending;
+    final load = event.downloadAndDecryptAttachment(getThumbnail: true).then((
+      file,
+    ) {
+      _attachmentBytes[event.eventId] = file.bytes;
+      _attachmentByteLoads.remove(event.eventId);
+      return file.bytes;
+    });
+    _attachmentByteLoads[event.eventId] = load;
+    return load;
+  }
+
   Future<Uri?> loadAttachmentUri(Event event) {
     final cached = _attachmentUris[event.eventId];
     if (cached != null) return Future.value(cached);
@@ -176,6 +200,7 @@ class MatrixSession extends ChangeNotifier {
 
   void cacheOwnProfile(Map<String, dynamic> profile) {
     _ownProfile = profile;
+    unawaited(_persistProfile(-1, profile));
   }
 
   Future<Map<String, dynamic>?> loadFriendProfile({

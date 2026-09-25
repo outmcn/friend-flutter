@@ -434,17 +434,13 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   Future<Widget> _imageWidget(Event event) async {
     try {
-      final uri = await widget.session.loadAttachmentUri(event);
-      if (uri == null) return Text('[图片]');
+      final bytes = await widget.session.loadAttachmentBytes(event);
       return GestureDetector(
-        onTap: () => _showFullImageUri(uri),
+        onTap: () => _showFullImageBytes(bytes),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Image.network(
-            uri.toString(),
-            headers: {
-              'Authorization': 'Bearer ${widget.session.client.accessToken}',
-            },
+          child: Image.memory(
+            bytes,
             width: 220,
             height: 220,
             fit: BoxFit.cover,
@@ -457,6 +453,14 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     }
   }
 
+  void _showFullImageBytes(Uint8List bytes) {
+    showDialog<void>(
+      context: context,
+      builder: (_) =>
+          Dialog(child: InteractiveViewer(child: Image.memory(bytes))),
+    );
+  }
+
   Widget _messageLoading(Event event, ColorScheme colors) {
     if (event.messageType == MessageTypes.Image) {
       return const SizedBox(
@@ -466,22 +470,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       );
     }
     return Text(_messageBody(event));
-  }
-
-  void _showFullImageUri(Uri uri) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => Dialog(
-        child: InteractiveViewer(
-          child: Image.network(
-            uri.toString(),
-            headers: {
-              'Authorization': 'Bearer ${widget.session.client.accessToken}',
-            },
-          ),
-        ),
-      ),
-    );
   }
 
   Future<String> _replyLabel(Event event) async {
