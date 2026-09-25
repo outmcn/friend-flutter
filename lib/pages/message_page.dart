@@ -63,6 +63,7 @@ class _MessagePageState extends State<MessagePage> {
     final current = session;
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: const Text('消息'),
         actions: [
           IconButton(

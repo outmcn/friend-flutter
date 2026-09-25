@@ -7,6 +7,7 @@ class HomeTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      toolbarHeight: 48,
       title: showTitle ? const Text('主页') : null,
       automaticallyImplyLeading: false,
       actions: [

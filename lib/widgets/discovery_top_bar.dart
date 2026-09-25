@@ -16,6 +16,7 @@ class DiscoveryTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      toolbarHeight: 48,
       automaticallyImplyLeading: false,
       title: ChoiceChips(selected: selected, onSelected: onSelected),
       actions: [
