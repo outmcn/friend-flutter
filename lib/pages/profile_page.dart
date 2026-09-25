@@ -298,15 +298,12 @@ class ProfilePageState extends State<ProfilePage> {
                       : (section == 1 ? '还没有收藏' : '还没有点赞'),
                 ),
               ...visiblePosts.map(
-                (post) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: PostCard(
-                    post: post,
-                    onActionChanged: refreshFromServer,
-                    canDelete: section == 0,
-                    hideAuthor: true,
-                    onDeleted: () => _confirmDelete(post),
-                  ),
+                (post) => PostCard(
+                  post: post,
+                  onActionChanged: refreshFromServer,
+                  canDelete: section == 0,
+                  hideAuthor: true,
+                  onDeleted: () => _confirmDelete(post),
                 ),
               ),
             ],
