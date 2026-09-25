@@ -57,11 +57,10 @@ class _ContactsPageState extends State<ContactsPage> {
   Future<void> _openChat(Map<String, dynamic> user) async {
     if (opening) return;
     setState(() => opening = true);
-    MatrixSession? session;
     try {
       final matrixResponse = await api.getMatrixSession();
       final bridge = Map<String, dynamic>.from(matrixResponse['data'] as Map);
-      session = await MatrixSession.fromBridgeJson(bridge);
+      final session = await MatrixSession.fromBridgeJson(bridge);
       await session.waitUntilReady();
       await session.joinInvitedRooms();
       final targetId = user['id'];
@@ -75,29 +74,27 @@ class _ContactsPageState extends State<ContactsPage> {
         room = session.roomById(roomId);
       }
       if (!mounted || room == null) {
-        session.dispose();
         if (mounted && room == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Matrix 私聊房间创建成功但暂未同步，请稍后重试')),
+            const SnackBar(content: Text('Matrix 私聊房间正在同步，请稍后重试')),
           );
         }
+        session.dispose();
         return;
       }
-      final activeSession = session;
-      final activeRoom = room;
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
           builder: (_) => MatrixChatPage(
-            session: activeSession,
-            room: activeRoom,
+            session: session,
+            room: room!,
             token: widget.token,
           ),
         ),
       );
+      // MatrixSession is owned by this route and is disposed after chat returns.
       session.dispose();
     } catch (e) {
-      session?.dispose();
       if (mounted) {
         ScaffoldMessenger.of(
           context,
