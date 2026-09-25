@@ -43,6 +43,7 @@ class MatrixSession extends ChangeNotifier {
         }
       },
     );
+    await _createCacheTables(db);
     final rows = await db.query('room_summary');
     await db.close();
     return rows
@@ -129,6 +130,7 @@ class MatrixSession extends ChangeNotifier {
         }
       },
     );
+    await _createCacheTables(_cacheDatabase!);
   }
 
   Future<void> loadCachedRoomSummaries() async {
