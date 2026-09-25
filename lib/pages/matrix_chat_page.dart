@@ -41,6 +41,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   Map<String, dynamic>? peerProfile;
   Map<String, dynamic>? ownProfile;
   bool followLoading = false;
+  final Map<String, Future<Widget>> _messageContentFutures = {};
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
     });
+    _loadPeerProfile();
     _loadRoomTitle();
     _loadTimeline();
   }
@@ -57,7 +59,6 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       await widget.room.loadHeroUsers();
       final title = widget.room.getLocalizedDisplayname();
       if (mounted) setState(() => roomTitle = title);
-      await _loadPeerProfile();
     } catch (_) {}
   }
 
@@ -432,6 +433,13 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     return Text(_messageBody(event));
   }
 
+  Future<Widget> _cachedMessageContent(Event event, ColorScheme colors) {
+    return _messageContentFutures.putIfAbsent(
+      event.eventId,
+      () => _messageContent(event, colors),
+    );
+  }
+
   Future<Widget> _imageWidget(Event event) async {
     try {
       final bytes = await widget.session.loadAttachmentBytes(event);
@@ -600,7 +608,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                                         ),
                                       ),
                                     FutureBuilder<Widget>(
-                                      future: _messageContent(
+                                      future: _cachedMessageContent(
                                         displayed,
                                         colors,
                                       ),
