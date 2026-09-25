@@ -5,6 +5,7 @@ class DiscoveryTopBar extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
   final VoidCallback onCompose;
+
   const DiscoveryTopBar({
     super.key,
     required this.selected,
@@ -14,40 +15,16 @@ class DiscoveryTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      elevation: 2,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 0, 18, 5),
-          child: Row(
-            children: [
-              Expanded(
-                child: ChoiceChips(selected: selected, onSelected: onSelected),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: onCompose,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 32,
-                  height: 32,
-                ),
-                visualDensity: VisualDensity.compact,
-                style: const ButtonStyle(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: Icon(
-                  Icons.add_circle_outline,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 29,
-                ),
-              ),
-            ],
-          ),
+    return AppBar(
+      automaticallyImplyLeading: false,
+      title: ChoiceChips(selected: selected, onSelected: onSelected),
+      actions: [
+        IconButton(
+          onPressed: onCompose,
+          icon: const Icon(Icons.add_circle_outline),
+          tooltip: '发布动态',
         ),
-      ),
+      ],
     );
   }
 }
@@ -55,6 +32,7 @@ class DiscoveryTopBar extends StatelessWidget {
 class ChoiceChips extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
+
   const ChoiceChips({
     super.key,
     required this.selected,
@@ -79,12 +57,9 @@ class ChoiceChips extends StatelessWidget {
       },
       multiSelectionEnabled: false,
       showSelectedIcon: false,
-      style: ButtonStyle(
+      style: const ButtonStyle(
         visualDensity: VisualDensity.compact,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        ),
       ),
     );
   }

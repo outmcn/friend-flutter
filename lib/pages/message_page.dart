@@ -58,113 +58,62 @@ class _MessagePageState extends State<MessagePage> {
     if (mounted) await session?.joinInvitedRooms();
   }
 
-  Widget _topBar(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      elevation: 2,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 0, 18, 5),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  '消息',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                ),
-              ),
-              IconButton(
-                onPressed: _openContacts,
-                tooltip: '通讯录',
-                icon: const Icon(Icons.people_alt_outlined),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 32,
-                  height: 32,
-                ),
-                visualDensity: VisualDensity.compact,
-                style: const ButtonStyle(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-
-              IconButton(
-                onPressed: null,
-                tooltip: '搜索聊天记录',
-                icon: const Icon(Icons.search),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 32,
-                  height: 32,
-                ),
-                visualDensity: VisualDensity.compact,
-                style: const ButtonStyle(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-              IconButton(
-                onPressed: _openContacts,
-                tooltip: '添加好友',
-                icon: const Icon(Icons.person_add_alt_1_outlined),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 32,
-                  height: 32,
-                ),
-                visualDensity: VisualDensity.compact,
-                style: const ButtonStyle(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final current = session;
-    return Column(
-      children: [
-        _topBar(context),
-        Expanded(
-          child: SafeArea(
-            top: false,
-            child: loading
-                ? const Center(child: CircularProgressIndicator())
-                : error != null
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(error!),
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: () {
-                            setState(() {
-                              error = null;
-                              loading = true;
-                            });
-                            _loadSession();
-                          },
-                          child: const Text('重试'),
-                        ),
-                      ],
-                    ),
-                  )
-                : current == null
-                ? const Center(child: Text('Matrix 会话不可用'))
-                : MatrixRoomsPage(
-                    session: current,
-                    token: widget.token,
-                    embedded: true,
-                  ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('消息'),
+        actions: [
+          IconButton(
+            onPressed: _openContacts,
+            tooltip: '通讯录',
+            icon: const Icon(Icons.people_alt_outlined),
           ),
-        ),
-      ],
+          IconButton(
+            onPressed: null,
+            tooltip: '搜索聊天记录',
+            icon: const Icon(Icons.search),
+          ),
+          IconButton(
+            onPressed: _openContacts,
+            tooltip: '添加好友',
+            icon: const Icon(Icons.person_add_alt_1_outlined),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: loading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(error!),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          error = null;
+                          loading = true;
+                        });
+                        _loadSession();
+                      },
+                      child: const Text('重试'),
+                    ),
+                  ],
+                ),
+              )
+            : current == null
+            ? const Center(child: Text('Matrix 会话不可用'))
+            : MatrixRoomsPage(
+                session: current,
+                token: widget.token,
+                embedded: true,
+              ),
+      ),
     );
   }
 
