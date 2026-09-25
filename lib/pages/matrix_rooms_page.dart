@@ -178,16 +178,17 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      padding: const EdgeInsets.only(top: 4, bottom: 20),
       itemCount: data.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const Divider(height: 1, indent: 80),
       itemBuilder: (context, index) {
         final item = data[index];
         return ListTile(
-          tileColor: colors.surfaceContainer,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 6,
           ),
+          tileColor: Colors.transparent,
           leading: CircleAvatar(
             backgroundColor: avatarColors[_avatars[item.roomId] ?? 0],
             child: Icon(
