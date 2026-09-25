@@ -32,7 +32,7 @@ class MatrixSession extends ChangeNotifier {
     final directory = await getApplicationSupportDirectory();
     final db = await sqflite.openDatabase(
       '${directory.path}/friend_matrix_cache.sqlite',
-      version: 2,
+      version: 3,
       onCreate: (db, _) async {
         await db.execute(
           'CREATE TABLE room_summary ('
@@ -40,6 +40,13 @@ class MatrixSession extends ChangeNotifier {
           'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
           'unread_count INTEGER NOT NULL, avatar_id INTEGER NOT NULL)',
         );
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 3) {
+          await db.execute(
+            'ALTER TABLE room_summary ADD COLUMN avatar_id INTEGER NOT NULL DEFAULT 0',
+          );
+        }
       },
     );
     final rows = await db.query('room_summary');
@@ -66,7 +73,7 @@ class MatrixSession extends ChangeNotifier {
     final directory = await getApplicationSupportDirectory();
     _cacheDatabase = await sqflite.openDatabase(
       '${directory.path}/friend_matrix_cache.sqlite',
-      version: 2,
+      version: 3,
       onCreate: (db, _) async {
         await db.execute(
           'CREATE TABLE room_summary ('
@@ -92,6 +99,11 @@ class MatrixSession extends ChangeNotifier {
           await db.execute(
             'CREATE TABLE media_cache ('
             'event_id TEXT PRIMARY KEY, uri TEXT NOT NULL)',
+          );
+        }
+        if (oldVersion < 3) {
+          await db.execute(
+            'ALTER TABLE room_summary ADD COLUMN avatar_id INTEGER NOT NULL DEFAULT 0',
           );
         }
       },
