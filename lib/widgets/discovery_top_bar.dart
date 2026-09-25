@@ -13,12 +13,43 @@ class DiscoveryTopBar extends StatelessWidget {
     required this.onCompose,
   });
 
+  static const options = ['推荐', '附近', '关注'];
+
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return AppBar(
       toolbarHeight: 48,
       automaticallyImplyLeading: false,
-      title: ChoiceChips(selected: selected, onSelected: onSelected),
+      titleSpacing: 0,
+      title: TabBar(
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        dividerColor: Colors.transparent,
+        indicatorColor: colors.primary,
+        indicatorWeight: 2,
+        labelColor: colors.primary,
+        unselectedLabelColor: colors.onSurfaceVariant,
+        labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(fontSize: 15),
+        tabs: [
+          for (final option in options)
+            Tab(
+              text: option,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onSelected(option);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(option),
+                ),
+              ),
+            ),
+        ],
+      ),
       actions: [
         IconButton(
           onPressed: onCompose,
@@ -30,6 +61,7 @@ class DiscoveryTopBar extends StatelessWidget {
   }
 }
 
+// Kept as a compatibility wrapper for existing imports.
 class ChoiceChips extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
@@ -40,28 +72,8 @@ class ChoiceChips extends StatelessWidget {
     required this.onSelected,
   });
 
-  static const options = ['推荐', '附近', '关注'];
-
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<String>(
-      segments: [
-        for (final text in options)
-          ButtonSegment<String>(value: text, label: Text(text)),
-      ],
-      selected: {selected},
-      onSelectionChanged: (values) {
-        if (values.isNotEmpty) {
-          HapticFeedback.selectionClick();
-          onSelected(values.first);
-        }
-      },
-      multiSelectionEnabled: false,
-      showSelectedIcon: false,
-      style: const ButtonStyle(
-        visualDensity: VisualDensity.compact,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
