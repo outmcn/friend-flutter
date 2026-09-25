@@ -57,7 +57,9 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   Future<void> _loadRoomTitle() async {
     try {
       await widget.room.loadHeroUsers();
-      final title = widget.room.getLocalizedDisplayname();
+      final title = MatrixSession.sanitizeDisplayName(
+        widget.room.getLocalizedDisplayname(),
+      );
       if (mounted) setState(() => roomTitle = title);
     } catch (_) {}
   }
@@ -501,7 +503,12 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
           onTap: _openPeerProfile,
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text(roomTitle ?? widget.room.getLocalizedDisplayname()),
+            child: Text(
+              roomTitle ??
+                  MatrixSession.sanitizeDisplayName(
+                    widget.room.getLocalizedDisplayname(),
+                  ),
+            ),
           ),
         ),
         actions: [

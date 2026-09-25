@@ -103,7 +103,9 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
       final event = room.lastEvent;
       return MatrixRoomViewData(
         roomId: room.id,
-        title: room.getLocalizedDisplayname(),
+        title: MatrixSession.sanitizeDisplayName(
+          room.getLocalizedDisplayname(),
+        ),
         preview: _previewFor(event),
         timestamp: event?.originServerTs,
         unreadCount: room.notificationCount,

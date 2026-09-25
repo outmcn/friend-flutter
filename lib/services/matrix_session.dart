@@ -15,6 +15,15 @@ class MatrixSession extends ChangeNotifier {
   final Client client;
   bool ready = false;
   String? error;
+
+  static String sanitizeDisplayName(String value, {String fallback = '未知用户'}) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || RegExp(r'^Friend \d+$').hasMatch(trimmed)) {
+      return fallback;
+    }
+    return trimmed;
+  }
+
   StreamSubscription<SyncUpdate>? _syncSubscription;
   bool _joiningInvites = false;
   final Map<int, Map<String, dynamic>> _friendProfiles = {};
@@ -179,7 +188,9 @@ class MatrixSession extends ChangeNotifier {
       _roomSummaries[room.id] = MatrixRoomSummary(
         roomId: room.id,
         peerId: room.directChatMatrixID,
-        title: room.getLocalizedDisplayname(),
+        title: MatrixSession.sanitizeDisplayName(
+          room.getLocalizedDisplayname(),
+        ),
         preview: _summaryPreview(event),
         timestamp: event.originServerTs,
         unreadCount: room.notificationCount,
@@ -598,7 +609,7 @@ class MatrixSession extends ChangeNotifier {
 
   Future<String> roomDisplayName(Room room) async {
     await room.loadHeroUsers();
-    return room.getLocalizedDisplayname();
+    return sanitizeDisplayName(room.getLocalizedDisplayname());
   }
 
   Future<void> logout() async {
