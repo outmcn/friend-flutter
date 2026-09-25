@@ -257,37 +257,41 @@ class ProfilePageState extends State<ProfilePage> {
         const HomeTopBar(showTitle: false),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+            padding: const EdgeInsets.fromLTRB(0, 18, 0, 24),
             children: [
-              ProfileCard(
-                nickname: loading ? '加载中…' : nickname,
-                city: city,
-                following: following,
-                followers: followers,
-                likes: likes,
-                posts: postCount,
-                activeDays: activeDays,
-                avatarId: selectedAvatar,
-                onAvatarTap: _pickAvatar,
-                showEdit: true,
-                onEdit: _editNickname,
-                actions: null,
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 0, label: Text('动态')),
-                    ButtonSegment(value: 1, label: Text('收藏')),
-                    ButtonSegment(value: 2, label: Text('点赞')),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Column(
+                  children: [
+                    ProfileCard(
+                      nickname: loading ? '加载中…' : nickname,
+                      city: city,
+                      following: following,
+                      followers: followers,
+                      likes: likes,
+                      posts: postCount,
+                      activeDays: activeDays,
+                      avatarId: selectedAvatar,
+                      onAvatarTap: _pickAvatar,
+                      showEdit: true,
+                      onEdit: _editNickname,
+                      actions: null,
+                    ),
+                    const SizedBox(height: 18),
+                    SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 0, label: Text('动态')),
+                        ButtonSegment(value: 1, label: Text('收藏')),
+                        ButtonSegment(value: 2, label: Text('点赞')),
+                      ],
+                      selected: {section},
+                      onSelectionChanged: (selected) {
+                        HapticFeedback.selectionClick();
+                        setState(() => section = selected.first);
+                      },
+                      showSelectedIcon: false,
+                    ),
                   ],
-                  selected: {section},
-                  onSelectionChanged: (selected) {
-                    HapticFeedback.selectionClick();
-                    setState(() => section = selected.first);
-                  },
-                  showSelectedIcon: false,
                 ),
               ),
               const SizedBox(height: 16),

@@ -685,7 +685,7 @@ class DiscoveryPage extends StatelessWidget {
           child: RefreshIndicator(
             onRefresh: onRefresh,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
+              padding: const EdgeInsets.fromLTRB(0, 18, 0, 22),
               children: [
                 if (!loading && error != null) Center(child: Text(error!)),
                 if (!loading && error == null && posts.isEmpty)
