@@ -296,23 +296,39 @@ class MatrixSession extends ChangeNotifier {
   ) async {
     final client = Client('Friend Matrix', database: await _openDatabase());
     final homeserver = Uri.parse('https://matrix.friend.outmcn.net');
-    await client.checkHomeserver(homeserver);
     final session = MatrixSession._(client);
     await session.loadCachedRoomSummaries();
-    await client.init(
-      newToken: bridge.accessToken,
-      newHomeserver: homeserver,
-      newDeviceName: 'Friend Flutter',
-      waitForFirstSync: false,
-      waitUntilLoadCompletedLoaded: false,
+    unawaited(
+      session._initializeInBackground(
+        token: bridge.accessToken,
+        homeserver: homeserver,
+      ),
     );
-    if (client.userID == null || client.userID!.isEmpty) {
-      throw StateError('Matrix SDK whoami 未返回当前用户 ID');
-    }
-    session._markReady();
-    session._startSyncListener();
-    unawaited(session._finishInitialSync());
     return session;
+  }
+
+  Future<void> _initializeInBackground({
+    required String token,
+    required Uri homeserver,
+  }) async {
+    try {
+      await client.init(
+        newToken: token,
+        newHomeserver: homeserver,
+        newDeviceName: 'Friend Flutter',
+        waitForFirstSync: false,
+        waitUntilLoadCompletedLoaded: false,
+      );
+      if (client.userID == null || client.userID!.isEmpty) {
+        throw StateError('Matrix SDK whoami 未返回当前用户 ID');
+      }
+      _markReady();
+      _startSyncListener();
+      unawaited(_finishInitialSync());
+    } catch (e) {
+      error = e.toString();
+      notifyListeners();
+    }
   }
 
   Future<void> _finishInitialSync() async {

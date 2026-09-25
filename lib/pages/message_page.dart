@@ -22,7 +22,7 @@ class MessagePage extends StatefulWidget {
 class _MessagePageState extends State<MessagePage> {
   MatrixSession? session;
   String? error;
-  bool loading = true;
+  bool loading = false;
 
   @override
   void initState() {
@@ -96,7 +96,7 @@ class _MessagePageState extends State<MessagePage> {
       ),
       body: SafeArea(
         top: false,
-        child: loading
+        child: current == null && loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
             ? Center(
@@ -119,7 +119,7 @@ class _MessagePageState extends State<MessagePage> {
                 ),
               )
             : current == null
-            ? const Center(child: Text('Matrix 会话不可用'))
+            ? const Center(child: Text('正在恢复消息缓存…'))
             : MatrixRoomsPage(
                 session: current,
                 token: widget.token,
