@@ -17,6 +17,24 @@ class MatrixSession extends ChangeNotifier {
   bool _joiningInvites = false;
   final Map<int, Map<String, dynamic>> _friendProfiles = {};
   final Map<String, int> _roomAvatarIds = {};
+  final Map<String, Uri> _attachmentUris = {};
+  final Map<String, Future<Uri?>> _attachmentLoads = {};
+
+  Uri? cachedAttachmentUri(String eventId) => _attachmentUris[eventId];
+
+  Future<Uri?> loadAttachmentUri(Event event) {
+    final cached = _attachmentUris[event.eventId];
+    if (cached != null) return Future.value(cached);
+    final pending = _attachmentLoads[event.eventId];
+    if (pending != null) return pending;
+    final load = event.getAttachmentUri(getThumbnail: true).then((uri) {
+      if (uri != null) _attachmentUris[event.eventId] = uri;
+      _attachmentLoads.remove(event.eventId);
+      return uri;
+    });
+    _attachmentLoads[event.eventId] = load;
+    return load;
+  }
 
   int? cachedRoomAvatarId(String roomId) => _roomAvatarIds[roomId];
 

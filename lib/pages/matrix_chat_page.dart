@@ -422,7 +422,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
 
   Future<Widget> _imageWidget(Event event) async {
     try {
-      final uri = await event.getAttachmentUri(getThumbnail: true);
+      final uri = await widget.session.loadAttachmentUri(event);
       if (uri == null) return Text('[图片]');
       return GestureDetector(
         onTap: () => _showFullImageUri(uri),
