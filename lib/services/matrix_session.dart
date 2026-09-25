@@ -183,10 +183,11 @@ class MatrixSession extends ChangeNotifier {
     await room.sendTextEvent(value);
   }
 
-  Future<void> sendReply(Room room, Event event, String text) async {
+  Future<String> sendReply(Room room, Event event, String text) async {
     final value = text.trim();
-    if (value.isEmpty) return;
-    await room.sendTextEvent(value, inReplyTo: event);
+    if (value.isEmpty) return '';
+    final eventId = await room.sendTextEvent(value, inReplyTo: event);
+    return eventId ?? '';
   }
 
   Future<void> redactMessage(Room room, Event event) async {

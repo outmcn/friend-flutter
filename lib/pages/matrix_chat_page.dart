@@ -185,14 +185,31 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   }
 
   Future<void> _loadReplyLabels() async {
-    for (final event in messageEvents) {
-      if (event.inReplyToEventId() == null ||
-          replyLabels.containsKey(event.eventId)) {
-        continue;
-      }
-      replyLabels[event.eventId] = await _replyLabel(event);
-    }
+    final pending = messageEvents
+        .where(
+          (event) =>
+              event.inReplyToEventId() != null &&
+              !replyLabels.containsKey(event.eventId),
+        )
+        .toList();
+    final labels = await Future.wait(
+      pending.map(
+        (event) async => MapEntry(event.eventId, await _replyLabel(event)),
+      ),
+    );
+    replyLabels.addEntries(labels);
     if (mounted) setState(() {});
+  }
+
+  void _setImmediateReplyLabel(Event event, String text) {
+    final id = event.inReplyToEventId();
+    if (id == null) return;
+    final lines = event.body.split('\n');
+    final contentIndex = lines.lastIndexWhere(
+      (line) => line.trim().isNotEmpty && !line.trim().startsWith('>'),
+    );
+    final content = contentIndex >= 0 ? lines[contentIndex].trim() : text;
+    replyLabels[event.eventId] = '对方: $content';
   }
 
   Future<void> _send() async {
@@ -203,11 +220,27 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       error = null;
     });
     try {
-      if (replyingTo != null) {
-        await widget.session.sendReply(widget.room, replyingTo!, text);
-      } else {
+      final sentEventId = replyingTo == null
+          ? null
+          : await widget.session.sendReply(widget.room, replyingTo!, text);
+      if (replyingTo == null) {
         await widget.session.sendText(widget.room, text);
       }
+      if (sentEventId != null && sentEventId.isNotEmpty) {
+        final event = timeline?.events
+            .where((item) => item.eventId == sentEventId)
+            .firstOrNull;
+        if (event != null) _setImmediateReplyLabel(event, text);
+      }
+      final latestReply = timeline?.events
+          .where(
+            (event) =>
+                event.senderId == widget.session.client.userID &&
+                event.inReplyToEventId() == replyingTo?.eventId,
+          )
+          .lastOrNull;
+      if (latestReply != null) _setImmediateReplyLabel(latestReply, text);
+      if (mounted) setState(() {});
       composer.clear();
       if (mounted) setState(() => replyingTo = null);
     } catch (e) {
