@@ -34,18 +34,12 @@ class MatrixSession extends ChangeNotifier {
       '${directory.path}/friend_matrix_cache.sqlite',
       version: 3,
       onCreate: (db, _) async {
-        await db.execute(
-          'CREATE TABLE room_summary ('
-          'room_id TEXT PRIMARY KEY, peer_id TEXT, title TEXT NOT NULL, '
-          'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
-          'unread_count INTEGER NOT NULL, avatar_id INTEGER NOT NULL)',
-        );
+        await _createCacheTables(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
+        await _createCacheTables(db);
         if (oldVersion < 3) {
-          await db.execute(
-            'ALTER TABLE room_summary ADD COLUMN avatar_id INTEGER NOT NULL DEFAULT 0',
-          );
+          await _ensureAvatarColumn(db);
         }
       },
     );
@@ -66,6 +60,33 @@ class MatrixSession extends ChangeNotifier {
         )
         .toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  }
+
+  static Future<void> _createCacheTables(sqflite.Database db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS room_summary ('
+      'room_id TEXT PRIMARY KEY, peer_id TEXT, title TEXT NOT NULL, '
+      'preview TEXT NOT NULL, timestamp INTEGER NOT NULL, '
+      'unread_count INTEGER NOT NULL, avatar_id INTEGER NOT NULL DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS friend_profile ('
+      'friend_id INTEGER PRIMARY KEY, payload TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS media_cache ('
+      'event_id TEXT PRIMARY KEY, uri TEXT NOT NULL)',
+    );
+  }
+
+  static Future<void> _ensureAvatarColumn(sqflite.Database db) async {
+    try {
+      await db.execute(
+        'ALTER TABLE room_summary ADD COLUMN avatar_id INTEGER NOT NULL DEFAULT 0',
+      );
+    } catch (_) {
+      // Column already exists; keep the existing cache intact.
+    }
   }
 
   Future<void> _openSummaryCache() async {
