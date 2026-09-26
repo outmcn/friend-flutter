@@ -699,17 +699,66 @@ class DiscoveryPage extends StatelessWidget {
           child: RefreshIndicator(
             onRefresh: onRefresh,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(0, 18, 0, 22),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 22),
               children: [
-                if (!loading && error != null) Center(child: Text(error!)),
+                if (loading && posts.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 72),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                if (!loading && error != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.cloud_off_outlined,
+                          size: 36,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          error!,
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: onRefresh,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('重新加载'),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (!loading && error == null && posts.isEmpty)
-                  Center(
-                    child: Text(
-                      selectedFilter == '关注'
-                          ? '还没有关注的人发布动态'
-                          : selectedFilter == '附近'
-                          ? '附近暂无动态'
-                          : '暂无动态',
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_outlined,
+                          size: 38,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          selectedFilter == '关注'
+                              ? '还没有关注的人发布动态'
+                              : selectedFilter == '附近'
+                              ? '附近暂无动态'
+                              : '暂无动态',
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 if (!loading && error == null)
