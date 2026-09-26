@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/ui_post.dart';
 import '../services/api_client.dart';
 import '../services/location_service.dart';
-
-import '../widgets/post_card.dart';
-import '../widgets/profile_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/home_top_bar.dart';
+import '../widgets/post_card.dart';
+import '../widgets/profile_card.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
+
   const ProfilePage({super.key, required this.token});
+
   @override
   State<ProfilePage> createState() => ProfilePageState();
 }
@@ -26,7 +28,15 @@ class ProfilePageState extends State<ProfilePage> {
   int activeDays = 0;
   int selectedAvatar = 0;
   String city = '';
-  static const avatarIcons = [
+  bool loading = true;
+  int section = 0;
+  List<UiPost> ownPosts = [];
+  List<UiPost> favoritePosts = [];
+  List<UiPost> likedPosts = [];
+  late final ApiClient _api;
+  final _location = LocationService();
+
+  static const avatarIcons = <IconData>[
     Icons.public,
     Icons.auto_awesome,
     Icons.favorite,
@@ -38,13 +48,6 @@ class ProfilePageState extends State<ProfilePage> {
     Icons.rocket_launch,
     Icons.face,
   ];
-  bool loading = true;
-  int section = 0;
-  List<UiPost> ownPosts = [];
-  List<UiPost> favoritePosts = [];
-  List<UiPost> likedPosts = [];
-  late final ApiClient _api;
-  final _location = LocationService();
 
   @override
   void initState() {
@@ -58,26 +61,18 @@ class ProfilePageState extends State<ProfilePage> {
   Future<void> _updateCity() async {
     try {
       final value = await _location.city();
-      if (value == null || value.isEmpty) {
-        return;
-      }
+      if (value == null || value.isEmpty) return;
       await _api.put('/api/me', body: {'city': value});
       if (mounted) setState(() => city = value);
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('城市更新失败')));
-      }
+      if (mounted) _showMessage('城市更新失败');
     }
   }
 
   Future<void> _loadAvatar() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
-      setState(
-        () => selectedAvatar = prefs.getInt('friend.selected.avatar') ?? 0,
-      );
+      setState(() => selectedAvatar = prefs.getInt('friend.selected.avatar') ?? 0);
     }
   }
 
@@ -88,22 +83,24 @@ class ProfilePageState extends State<ProfilePage> {
       if (body['ok'] == true && data is Map<String, dynamic> && mounted) {
         final profile = data['profile'] as Map<String, dynamic>;
         setState(() {
-          nickname =
-              (profile['nickname']?.toString().trim().isNotEmpty == true
-                      ? profile['nickname']
-                      : profile['username'])
-                  .toString();
+          nickname = (profile['nickname']?.toString().trim().isNotEmpty == true
+                  ? profile['nickname']
+                  : profile['username'])
+              .toString();
           following = (profile['following'] as num?)?.toInt() ?? 0;
           followers = (profile['followers'] as num?)?.toInt() ?? 0;
           likes = (profile['likes'] as num?)?.toInt() ?? 0;
           postCount = (profile['posts'] as num?)?.toInt() ?? 0;
           activeDays = (profile['activeDays'] as num?)?.toInt() ?? 0;
-
+          city = profile['city']?.toString() ?? city;
+          selectedAvatar = (profile['avatarId'] as num?)?.toInt() ?? selectedAvatar;
           ownPosts = _posts(data['posts']);
           favoritePosts = _posts(data['favorited']);
           likedPosts = _posts(data['liked']);
           loading = false;
         });
+      } else if (mounted) {
+        setState(() => loading = false);
       }
     } catch (_) {
       if (mounted) setState(() => loading = false);
@@ -113,6 +110,7 @@ class ProfilePageState extends State<ProfilePage> {
   List<UiPost> _posts(dynamic value) => value is List
       ? value.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
       : <UiPost>[];
+
   Future<void> _confirmDelete(UiPost post) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -120,14 +118,8 @@ class ProfilePageState extends State<ProfilePage> {
         title: const Text('删除动态'),
         content: const Text('确定要删除这条动态吗？删除后无法恢复。'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('删除')),
         ],
       ),
     );
@@ -139,11 +131,7 @@ class ProfilePageState extends State<ProfilePage> {
       await _api.delete('/api/posts/${post.id}');
       await refreshFromServer();
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('删除失败')));
-      }
+      if (mounted) _showMessage('删除失败');
     }
   }
 
@@ -156,56 +144,47 @@ class ProfilePageState extends State<ProfilePage> {
           width: 320,
           child: GridView.builder(
             shrinkWrap: true,
-            itemCount: 10,
+            itemCount: avatarIcons.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 5,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
-            itemBuilder: (_, index) => Material(
-              color: Colors.transparent,
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: () => Navigator.pop(context, index),
-                child: CircleAvatar(
-                  backgroundColor: _avatarColor(index),
-                  child: Icon(avatarIcons[index], color: Colors.white),
-                ),
+            itemBuilder: (_, index) => InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => Navigator.pop(context, index),
+              child: CircleAvatar(
+                backgroundColor: _avatarColor(index),
+                child: Icon(avatarIcons[index], color: Colors.white),
               ),
             ),
           ),
         ),
       ),
     );
-    if (chosen == null) {
-      return;
-    }
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('friend.selected.avatar', chosen);
+    if (chosen == null) return;
     try {
       await _api.put('/api/me', body: {'avatarId': chosen});
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('friend.selected.avatar', chosen);
       if (mounted) setState(() => selectedAvatar = chosen);
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('头像更新失败')));
-      }
+      if (mounted) _showMessage('头像更新失败');
     }
   }
 
-  Color _avatarColor(int index) => [
-    const Color(0xff376bd6),
-    const Color(0xff7c4dff),
-    const Color(0xffe64a75),
-    const Color(0xff00897b),
-    const Color(0xff3949ab),
-    const Color(0xff43a047),
-    const Color(0xfffb8c00),
-    const Color(0xff8e24aa),
-    const Color(0xff039be5),
-    const Color(0xff546e7a),
-  ][index];
+  Color _avatarColor(int index) => <Color>[
+        const Color(0xff376bd6),
+        const Color(0xff7c4dff),
+        const Color(0xffe64a75),
+        const Color(0xff00897b),
+        const Color(0xff3949ab),
+        const Color(0xff43a047),
+        const Color(0xfffb8c00),
+        const Color(0xff8e24aa),
+        const Color(0xff039be5),
+        const Color(0xff546e7a),
+      ][index];
 
   Future<void> _editNickname() async {
     final controller = TextEditingController(text: nickname);
@@ -220,10 +199,7 @@ class ProfilePageState extends State<ProfilePage> {
           decoration: const InputDecoration(hintText: '输入新的名字'),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: const Text('保存'),
@@ -232,91 +208,212 @@ class ProfilePageState extends State<ProfilePage> {
       ),
     );
     controller.dispose();
-    if (value == null || value.isEmpty) {
-      return;
-    }
+    if (value == null || value.isEmpty) return;
     try {
       await _api.put('/api/me', body: {'nickname': value});
       if (mounted) setState(() => nickname = value);
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('昵称更新失败')));
-      }
+      if (mounted) _showMessage('昵称更新失败');
     }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     final visiblePosts = section == 0
         ? ownPosts
-        : (section == 1 ? favoritePosts : likedPosts);
+        : section == 1
+            ? favoritePosts
+            : likedPosts;
+
     return Column(
       children: [
         const HomeTopBar(showTitle: false),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(0, 18, 0, 24),
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Column(
-                  children: [
-                    ProfileCard(
-                      nickname: loading ? '加载中…' : nickname,
-                      city: city,
-                      following: following,
-                      followers: followers,
-                      likes: likes,
-                      posts: postCount,
-                      activeDays: activeDays,
-                      avatarId: selectedAvatar,
-                      onAvatarTap: _pickAvatar,
-                      showEdit: true,
-                      onEdit: _editNickname,
-                      actions: null,
+          child: RefreshIndicator(
+            onRefresh: refreshFromServer,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ProfileCard(
+                        nickname: loading ? '加载中…' : (nickname.isEmpty ? 'Friend 用户' : nickname),
+                        city: city,
+                        following: following,
+                        followers: followers,
+                        likes: likes,
+                        posts: postCount,
+                        activeDays: activeDays,
+                        avatarId: selectedAvatar,
+                        onAvatarTap: _pickAvatar,
+                        showEdit: true,
+                        onEdit: _editNickname,
+                      ),
+                      const SizedBox(height: 20),
+                      _MineQuickActions(onTap: _showMessage),
+                      const SizedBox(height: 22),
+                      _SectionHeading(title: '我的内容', action: '查看全部'),
+                      const SizedBox(height: 12),
+                      SegmentedButton<int>(
+                        segments: const [
+                          ButtonSegment(value: 0, label: Text('动态')),
+                          ButtonSegment(value: 1, label: Text('收藏')),
+                          ButtonSegment(value: 2, label: Text('点赞')),
+                        ],
+                        selected: {section},
+                        onSelectionChanged: (selected) {
+                          HapticFeedback.selectionClick();
+                          setState(() => section = selected.first);
+                        },
+                        showSelectedIcon: false,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (visiblePosts.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: EmptyState(
+                      text: section == 0
+                          ? '还没有动态'
+                          : section == 1
+                              ? '还没有收藏'
+                              : '还没有点赞',
                     ),
-                    const SizedBox(height: 18),
-                    SegmentedButton<int>(
-                      segments: const [
-                        ButtonSegment(value: 0, label: Text('动态')),
-                        ButtonSegment(value: 1, label: Text('收藏')),
-                        ButtonSegment(value: 2, label: Text('点赞')),
-                      ],
-                      selected: {section},
-                      onSelectionChanged: (selected) {
-                        HapticFeedback.selectionClick();
-                        setState(() => section = selected.first);
-                      },
-                      showSelectedIcon: false,
+                  ),
+                ...visiblePosts.asMap().entries.expand(
+                  (entry) => <Widget>[
+                    PostCard(
+                      post: entry.value,
+                      onActionChanged: refreshFromServer,
+                      canDelete: section == 0,
+                      hideAuthor: true,
+                      onDeleted: () => _confirmDelete(entry.value),
                     ),
+                    if (entry.key < visiblePosts.length - 1) const Divider(height: 1),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              if (visiblePosts.isEmpty)
-                EmptyState(
-                  text: section == 0
-                      ? '还没有动态'
-                      : (section == 1 ? '还没有收藏' : '还没有点赞'),
-                ),
-              ...visiblePosts.asMap().entries.expand(
-                (entry) => [
-                  PostCard(
-                    post: entry.value,
-                    onActionChanged: refreshFromServer,
-                    canDelete: section == 0,
-                    hideAuthor: true,
-                    onDeleted: () => _confirmDelete(entry.value),
-                  ),
-                  if (entry.key < visiblePosts.length - 1)
-                    const Divider(height: 1),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _MineQuickActions extends StatelessWidget {
+  final ValueChanged<String> onTap;
+
+  const _MineQuickActions({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Expanded(
+          child: _MineAction(
+            icon: Icons.favorite_border,
+            label: '赞与收藏',
+            tint: const Color(0xffef6d78),
+            onTap: () => onTap('赞与收藏'),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _MineAction(
+            icon: Icons.shopping_bag_outlined,
+            label: '购物车',
+            tint: const Color(0xffe69a43),
+            onTap: () => onTap('购物车'),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _MineAction(
+            icon: Icons.history,
+            label: '浏览记录',
+            tint: const Color(0xff6f8fd5),
+            onTap: () => onTap('浏览记录'),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _MineAction(
+            icon: Icons.menu_book_outlined,
+            label: '创作中心',
+            tint: colorScheme.primary,
+            onTap: () => onTap('创作中心'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MineAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color tint;
+  final VoidCallback onTap;
+
+  const _MineAction({required this.icon, required this.label, required this.tint, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: tint.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: tint, size: 23),
+            ),
+            const SizedBox(height: 7),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeading extends StatelessWidget {
+  final String title;
+  final String action;
+
+  const _SectionHeading({required this.title, required this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        const Spacer(),
+        Text(action, style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+        const SizedBox(width: 3),
+        Icon(Icons.chevron_right, size: 17, color: colors.onSurfaceVariant),
       ],
     );
   }
