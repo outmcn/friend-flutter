@@ -212,7 +212,10 @@ class _ContactsPageState extends State<ContactsPage> {
               decoration: const InputDecoration(
                 hintText: '搜索用户',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(20)),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
           ),

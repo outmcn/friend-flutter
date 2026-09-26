@@ -125,8 +125,17 @@ class _FriendAppState extends State<FriendApp> {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: colors.surfaceContainerHighest,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.all(Radius.circular(20)),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(20)),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(20)),
         borderSide: BorderSide.none,
       ),
     ),
@@ -188,13 +197,19 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 42),
               TextField(
                 controller: user,
-                decoration: const InputDecoration(labelText: '账号'),
+                decoration: const InputDecoration(
+                  hintText: '账号',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: password,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: '密码'),
+                decoration: const InputDecoration(
+                  hintText: '密码',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
               ),
               if (error != null)
                 Padding(

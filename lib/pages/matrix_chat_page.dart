@@ -763,9 +763,12 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
                       minLines: 1,
                       maxLines: 4,
                       textInputAction: TextInputAction.send,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: '输入消息',
-                        border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                       onSubmitted: (_) => _send(),
                     ),

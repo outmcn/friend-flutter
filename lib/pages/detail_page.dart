@@ -829,7 +829,10 @@ class _DetailPageState extends State<DetailPage> {
                             ? '写评论…'
                             : '回复：${replyingTo!['nickname']}…',
                         fillColor: c.surfaceContainerHighest,
-                        constraints: const BoxConstraints(minHeight: 28),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 4,

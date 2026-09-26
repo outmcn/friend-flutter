@@ -72,7 +72,13 @@ class _ComposePageState extends State<ComposePage> {
               maxLines: 8,
               maxLength: 300,
               autofocus: true,
-              decoration: const InputDecoration(hintText: '分享你的想法…'),
+              decoration: const InputDecoration(
+                hintText: '分享你的想法…',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(20)),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
