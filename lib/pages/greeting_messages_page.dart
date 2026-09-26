@@ -36,7 +36,9 @@ class _GreetingMessagesPageState extends State<GreetingMessagesPage> {
       final id = peer == null
           ? null
           : int.tryParse(peer.split(':').first.replaceFirst('@friend_', ''));
-      if (id == null) continue;
+      if (id == null || !widget.session.isIncomingGreetingSummary(summary)) {
+        continue;
+      }
       try {
         final response = await ApiClient(
           token: widget.token,
@@ -82,10 +84,10 @@ class _GreetingMessagesPageState extends State<GreetingMessagesPage> {
                   trailing: item.unreadCount > 0
                       ? Badge(label: Text('${item.unreadCount}'))
                       : null,
-                  onTap: () {
+                  onTap: () async {
                     final room = widget.session.client.getRoomById(item.roomId);
                     if (room == null) return;
-                    Navigator.push<void>(
+                    await Navigator.push<void>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => MatrixChatPage(
@@ -95,6 +97,7 @@ class _GreetingMessagesPageState extends State<GreetingMessagesPage> {
                         ),
                       ),
                     );
+                    widget.session.markGreetingHandled(item.roomId);
                   },
                 );
               },

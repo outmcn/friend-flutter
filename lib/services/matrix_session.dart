@@ -35,6 +35,7 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, Future<Uint8List>> _attachmentByteLoads = {};
   final Map<String, MatrixRoomSummary> _roomSummaries = {};
   final Set<String> _deletedRooms = {};
+  final Set<String> _handledGreetingRooms = {};
   final Map<String, Timeline> _timelines = {};
   sqflite.Database? _cacheDatabase;
 
@@ -202,6 +203,22 @@ class MatrixSession extends ChangeNotifier {
       }
     }
     notifyListeners();
+  }
+
+  bool isGreetingRoom(Room room) {
+    final event = room.lastEvent;
+    if (event == null || _handledGreetingRooms.contains(room.id)) return false;
+    return event.senderId != client.userID;
+  }
+
+  void markGreetingHandled(String roomId) {
+    _handledGreetingRooms.add(roomId);
+    notifyListeners();
+  }
+
+  bool isIncomingGreetingSummary(MatrixRoomSummary summary) {
+    final room = client.getRoomById(summary.roomId);
+    return room != null && isGreetingRoom(room);
   }
 
   String _summaryPreview(Event event) {

@@ -32,6 +32,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   bool _loadingTitles = false;
   bool _greetingLoading = false;
   MatrixRoomViewData? _greetingEntry;
+  final Set<String> _greetingRoomIds = {};
 
   Future<void> _refreshReadState() async {
     await Future<void>.delayed(const Duration(milliseconds: 150));
@@ -308,6 +309,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
           ).get('/api/users/$id');
           final data = Map<String, dynamic>.from(response['data'] as Map);
           if (data['following'] != true || data['followedBy'] != true) {
+            _greetingRoomIds.add(item.roomId);
             first = MatrixRoomViewData(
               roomId: item.roomId,
               title: '打招呼信息',
