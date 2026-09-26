@@ -100,27 +100,23 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     final id = _peerFriendId;
     if (id == null || widget.token.isEmpty) return;
     try {
-      final cachedPeer = widget.session.cachedFriendProfile(id);
+      final profileResponse = await ApiClient(
+        token: widget.token,
+      ).get('/api/users/$id');
+      final profileData = Map<String, dynamic>.from(
+        profileResponse['data'] as Map,
+      );
+      final profile = Map<String, dynamic>.from(
+        (profileData['profile'] as Map?) ?? profileData,
+      )..['following'] = profileData['following'] == true;
       final cachedOwn = widget.session.cachedOwnProfile;
-      if (mounted && (cachedPeer != null || cachedOwn != null)) {
-        setState(() {
-          if (cachedPeer != null) peerProfile = cachedPeer;
-          if (cachedOwn != null) ownProfile = cachedOwn;
-        });
-      }
-      final profile =
-          cachedPeer ??
-          await widget.session.loadFriendProfile(
-            token: widget.token,
-            friendId: id,
-          );
       var own = cachedOwn;
       if (own == null) {
         final response = await ApiClient(token: widget.token).get('/api/me');
         own = Map<String, dynamic>.from(response['data'] as Map);
         widget.session.cacheOwnProfile(own);
       }
-      if (mounted && profile != null) {
+      if (mounted) {
         setState(() {
           peerProfile = profile;
           ownProfile = own;
