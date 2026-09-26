@@ -26,14 +26,8 @@ dependencies:
   provider: ^6.1.2
   sqflite: ^2.4.2
   flutter_dotenv: ^6.0.0
-  flutter_link_previewer: ^4.2.1
-  flutter_lorem: ^2.0.0
-  google_generative_ai: ^0.4.7
   http: ^1.6.0
   material_ui: ^0.0.1
-  pull_down_button: ^0.10.2
-  uuid: ^4.5.2
-  web_socket_channel: ^2.1.0
 
 dev_dependencies:
   flutter_test:
