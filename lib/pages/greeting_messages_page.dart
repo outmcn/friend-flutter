@@ -36,7 +36,7 @@ class _GreetingMessagesPageState extends State<GreetingMessagesPage> {
       final id = peer == null
           ? null
           : int.tryParse(peer.split(':').first.replaceFirst('@friend_', ''));
-      if (id == null || !widget.session.isIncomingGreetingSummary(summary)) {
+      if (room == null || id == null || !widget.session.isGreetingRoom(room)) {
         continue;
       }
       try {

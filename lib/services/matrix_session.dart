@@ -205,6 +205,11 @@ class MatrixSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool hasIncomingGreeting(Room room) {
+    final event = room.lastEvent;
+    return event != null && event.senderId != client.userID;
+  }
+
   bool isGreetingRoom(Room room) {
     final event = room.lastEvent;
     if (event == null || _handledGreetingRooms.contains(room.id)) return false;
