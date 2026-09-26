@@ -51,6 +51,7 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
   @override
   void initState() {
     super.initState();
+    unawaited(widget.session.restoreRoomChat(widget.room.id));
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
     });

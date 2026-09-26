@@ -165,7 +165,6 @@ class _ContactsPageState extends State<ContactsPage> {
         session.dispose();
         return;
       }
-      await session.restoreRoomChat(room.id);
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
