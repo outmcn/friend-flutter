@@ -261,8 +261,11 @@ class _FriendShellState extends State<FriendShell> {
       return contactsCache[key]!;
     }
     final path = query.isEmpty
-        ? '/api/users'
-        : Uri(path: '/api/users', queryParameters: {'q': query}).toString();
+        ? '/api/users?relation=mutual'
+        : Uri(
+            path: '/api/users',
+            queryParameters: {'q': query, 'relation': 'mutual'},
+          ).toString();
     final response = await _api.get(path);
     final data = response['data'];
     if (data is! List) throw const ApiException('用户数据格式无效', 200);
