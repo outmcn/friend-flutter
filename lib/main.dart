@@ -17,8 +17,6 @@ import 'widgets/discovery_top_bar.dart';
 import 'pages/compose_page.dart';
 import 'services/api_client.dart';
 import 'services/location_service.dart';
-import 'models/matrix_bridge_session.dart';
-import 'services/matrix_session.dart';
 
 const blue = Color(0xff4d8dff);
 
@@ -252,87 +250,11 @@ class _FriendShellState extends State<FriendShell> {
   final profileKey = GlobalKey<ProfilePageState>();
   late final ApiClient _api = ApiClient(token: widget.token);
   final _location = LocationService();
-  MatrixSession? matrixSession;
-  Future<MatrixSession?>? matrixSessionLoad;
-  String? matrixSessionError;
-  final Map<int, List<Map<String, dynamic>>> contactsCache = {};
-  int contactsCacheVersion = 0;
-  List<MatrixRoomSummary> cachedMessageSummaries = const [];
-  Future<void>? cachedMessageLoad;
-
-  Future<void> _loadMessageCache() async {
-    cachedMessageLoad ??= () async {
-      try {
-        cachedMessageSummaries = await MatrixSession.readCachedRoomSummaries();
-        if (mounted) setState(() {});
-      } catch (_) {}
-    }();
-    await cachedMessageLoad;
-  }
-
-  Future<List<Map<String, dynamic>>> _loadContacts(String query) async {
-    final key = query.hashCode;
-    if (query.isEmpty && contactsCache.containsKey(key)) {
-      return contactsCache[key]!;
-    }
-    final path = query.isEmpty
-        ? '/api/users?relation=mutual'
-        : Uri(
-            path: '/api/users',
-            queryParameters: {'q': query, 'relation': 'mutual'},
-          ).toString();
-    final response = await _api.get(path);
-    final data = response['data'];
-    if (data is! List) throw const ApiException('用户数据格式无效', 200);
-    final users = data.whereType<Map<String, dynamic>>().toList();
-    if (query.isEmpty) {
-      contactsCache[key] = users;
-      contactsCacheVersion++;
-      if (mounted) setState(() {});
-    }
-    return users;
-  }
-
-  Future<MatrixSession?> _getMatrixSession() async {
-    if (matrixSession != null) return matrixSession;
-    if (matrixSessionLoad != null) return matrixSessionLoad;
-    matrixSessionLoad = () async {
-      try {
-        final response = await _api.getMatrixSession();
-        final bridge = MatrixBridgeSession.fromJson(
-          Map<String, dynamic>.from(response['data'] as Map),
-        );
-        matrixSession = await MatrixSession.fromBridgeSession(bridge);
-        matrixSessionError = null;
-        if (mounted) setState(() {});
-      } catch (e) {
-        matrixSessionError = e.toString();
-        if (mounted) setState(() {});
-      } finally {
-        matrixSessionLoad = null;
-      }
-    }();
-    await matrixSessionLoad;
-    return matrixSession;
-  }
-
-  void _disposeMatrixSession() {
-    matrixSession?.dispose();
-    matrixSession = null;
-  }
-
-  @override
-  void dispose() {
-    _disposeMatrixSession();
-    super.dispose();
-  }
-
   Future<Position?> _currentPosition() => _location.currentPosition();
 
   @override
   void initState() {
     super.initState();
-    _loadMessageCache();
     _loadPosts();
     _loadCurrentPosition();
     _loadCurrentUser();
@@ -474,14 +396,7 @@ class _FriendShellState extends State<FriendShell> {
         loading: loadingPosts,
         error: discoveryError,
       ),
-      MessagePage(
-        token: widget.token,
-        sessionLoader: _getMatrixSession,
-        sessionError: matrixSessionError,
-        cachedSummaries: cachedMessageSummaries,
-        parentContacts: contactsCache[''.hashCode] ?? const [],
-        loadContacts: _loadContacts,
-      ),
+      MessagePage(token: widget.token),
       ProfilePage(key: profileKey, token: widget.token),
     ];
     return Scaffold(
