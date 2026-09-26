@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:matrix/matrix.dart';
 import '../models/matrix_room_view.dart';
+import '../services/api_client.dart';
 import '../services/matrix_session.dart';
 import '../widgets/post_card.dart';
 import 'matrix_chat_page.dart';
@@ -29,6 +30,8 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
   final Map<String, String> _titles = {};
   final Map<String, int> _avatars = {};
   bool _loadingTitles = false;
+  bool _greetingLoading = false;
+  MatrixRoomViewData? _greetingEntry;
 
   Future<void> _refreshReadState() async {
     await Future<void>.delayed(const Duration(milliseconds: 150));
@@ -158,6 +161,9 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
         _titles.length < widget.session.directRooms().length) {
       unawaited(_loadTitles());
     }
+    if (_greetingEntry == null && !_greetingLoading) {
+      unawaited(_loadGreetingEntry());
+    }
     final data = rooms;
     if (data.isEmpty) {
       final invites = widget.session.invitedRooms();
@@ -182,10 +188,32 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     }
     return ListView.separated(
       padding: const EdgeInsets.only(top: 4, bottom: 20),
-      itemCount: data.length,
+      itemCount: data.length + (_greetingEntry == null ? 0 : 1),
       separatorBuilder: (_, __) => const Divider(height: 1, indent: 80),
       itemBuilder: (context, index) {
-        final item = data[index];
+        if (_greetingEntry != null && index == 0) {
+          final item = _greetingEntry!;
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor: avatarColors[0],
+              child: const Icon(
+                Icons.waving_hand_outlined,
+                color: Colors.white,
+              ),
+            ),
+            title: Text(item.title),
+            subtitle: Text(
+              item.preview,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: item.unreadCount > 0
+                ? Badge(label: Text('${item.unreadCount}'))
+                : null,
+            onTap: _openGreetingMessages,
+          );
+        }
+        final item = data[_greetingEntry == null ? index : index - 1];
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onLongPress: () => _showRoomActions(item),
@@ -262,6 +290,42 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     );
   }
 
+  Future<void> _loadGreetingEntry() async {
+    if (_greetingLoading) return;
+    _greetingLoading = true;
+    MatrixRoomViewData? first;
+    try {
+      for (final item in rooms) {
+        final room = widget.session.client.getRoomById(item.roomId);
+        final peer = room?.directChatMatrixID;
+        final id = peer == null
+            ? null
+            : int.tryParse(peer.split(':').first.replaceFirst('@friend_', ''));
+        if (id == null) continue;
+        try {
+          final response = await ApiClient(
+            token: widget.token,
+          ).get('/api/users/$id');
+          final data = Map<String, dynamic>.from(response['data'] as Map);
+          if (data['following'] != true || data['followedBy'] != true) {
+            first = MatrixRoomViewData(
+              roomId: item.roomId,
+              title: '打招呼信息',
+              preview: item.preview,
+              timestamp: item.timestamp,
+              unreadCount: item.unreadCount,
+              avatarId: 0,
+            );
+            break;
+          }
+        } catch (_) {}
+      }
+    } finally {
+      _greetingLoading = false;
+      if (mounted) setState(() => _greetingEntry = first);
+    }
+  }
+
   Future<void> _openGreetingMessages() async {
     await Navigator.push<void>(
       context,
@@ -300,16 +364,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     final content = _body(context);
     if (widget.embedded) return content;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Matrix 消息'),
-        actions: [
-          TextButton.icon(
-            onPressed: _openGreetingMessages,
-            icon: const Icon(Icons.waving_hand_outlined),
-            label: const Text('打招呼'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Matrix 消息')),
       body: content,
     );
   }
