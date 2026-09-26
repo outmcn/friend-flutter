@@ -86,6 +86,10 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
     for (final event in timeline.events) {
       if (event.type != mx.EventTypes.Message || event.redacted) continue;
       _eventsById[event.eventId] = event;
+      if (event.messageType == mx.MessageTypes.Image &&
+          widget.session.cachedAttachmentUri(event.eventId) == null) {
+        unawaited(widget.session.loadAttachmentUri(event));
+      }
       messages.add(_toFlyerMessage(event));
     }
     messages.sort((a, b) {
@@ -105,6 +109,18 @@ class _MatrixChatPageState extends State<MatrixChatPage> {
       'matrixMessageType': event.messageType,
     };
     if (event.messageType == mx.MessageTypes.Image) {
+      final uri = widget.session.cachedAttachmentUri(event.eventId);
+      if (uri != null) {
+        return fc.Message.image(
+          id: event.eventId,
+          authorId: event.senderId,
+          replyToMessageId: replyId,
+          createdAt: event.originServerTs,
+          sentAt: event.originServerTs,
+          metadata: metadata,
+          source: uri.toString(),
+        );
+      }
       metadata['image'] = true;
     }
     return fc.Message.text(
