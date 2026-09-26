@@ -103,18 +103,24 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
                 ),
               )
               .toList()
-        : widget.session.directRooms().map((room) {
-            final event = room.lastEvent;
-            return MatrixRoomViewData(
-              roomId: room.id,
-              title: MatrixSession.sanitizeDisplayName(
-                room.getLocalizedDisplayname(),
-              ),
-              preview: _previewFor(event),
-              timestamp: event?.originServerTs,
-              unreadCount: room.notificationCount,
-            );
-          }).toList();
+        : widget.session
+              .directRooms()
+              .where((room) {
+                return !widget.session.isRoomChatDeleted(room.id);
+              })
+              .map((room) {
+                final event = room.lastEvent;
+                return MatrixRoomViewData(
+                  roomId: room.id,
+                  title: MatrixSession.sanitizeDisplayName(
+                    room.getLocalizedDisplayname(),
+                  ),
+                  preview: _previewFor(event),
+                  timestamp: event?.originServerTs,
+                  unreadCount: room.notificationCount,
+                );
+              })
+              .toList();
     return source..sort((a, b) {
       final at = a.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bt = b.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);

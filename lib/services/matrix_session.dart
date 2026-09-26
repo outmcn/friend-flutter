@@ -265,13 +265,17 @@ class MatrixSession extends ChangeNotifier {
   }
 
   Future<void> _persistRoomSummary(MatrixRoomSummary summary) async {
+    if (_deletedRooms.contains(summary.roomId)) return;
     await _openSummaryCache();
+    if (_deletedRooms.contains(summary.roomId)) return;
     await _cacheDatabase!.insert(
       'room_summary',
       summary.toMap(),
       conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
     );
   }
+
+  bool isRoomChatDeleted(String roomId) => _deletedRooms.contains(roomId);
 
   Future<void> deleteRoomChat(String roomId) async {
     _deletedRooms.add(roomId);
