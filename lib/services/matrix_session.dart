@@ -36,6 +36,7 @@ class MatrixSession extends ChangeNotifier {
   final Map<String, MatrixRoomSummary> _roomSummaries = {};
   final Set<String> _deletedRooms = {};
   final Set<String> _handledGreetingRooms = {};
+  final Map<String, DateTime> _handledGreetingTimes = {};
   final Map<String, Timeline> _timelines = {};
   sqflite.Database? _cacheDatabase;
 
@@ -89,6 +90,10 @@ class MatrixSession extends ChangeNotifier {
       'CREATE TABLE IF NOT EXISTS room_draft ('
       'room_id TEXT PRIMARY KEY, draft TEXT NOT NULL, '
       'updated_at INTEGER NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS greeting_handled ('
+      'room_id TEXT PRIMARY KEY, handled_at INTEGER NOT NULL)',
     );
     await db.execute(
       'CREATE TABLE IF NOT EXISTS friend_profile ('
@@ -156,6 +161,14 @@ class MatrixSession extends ChangeNotifier {
         avatarId: (row['avatar_id'] as int?) ?? 0,
       );
     }
+    final handled = await _cacheDatabase!.query('greeting_handled');
+    for (final row in handled) {
+      final roomId = row['room_id'] as String;
+      _handledGreetingRooms.add(roomId);
+      _handledGreetingTimes[roomId] = DateTime.fromMillisecondsSinceEpoch(
+        row['handled_at'] as int,
+      );
+    }
     final profiles = await _cacheDatabase!.query('friend_profile');
     for (final row in profiles) {
       final id = row['friend_id'] as int;
@@ -216,8 +229,19 @@ class MatrixSession extends ChangeNotifier {
     return event.senderId != client.userID;
   }
 
+  Future<void> _persistGreetingHandled(String roomId) async {
+    await _openSummaryCache();
+    final handledAt = DateTime.now();
+    await _cacheDatabase!.insert('greeting_handled', {
+      'room_id': roomId,
+      'handled_at': handledAt.millisecondsSinceEpoch,
+    }, conflictAlgorithm: sqflite.ConflictAlgorithm.replace);
+  }
+
   void markGreetingHandled(String roomId) {
     _handledGreetingRooms.add(roomId);
+    _handledGreetingTimes[roomId] = DateTime.now();
+    unawaited(_persistGreetingHandled(roomId));
     notifyListeners();
   }
 
@@ -301,6 +325,17 @@ class MatrixSession extends ChangeNotifier {
     await _openSummaryCache();
     await _cacheDatabase!.delete(
       'room_draft',
+      where: 'room_id = ?',
+      whereArgs: [roomId],
+    );
+  }
+
+  Future<void> clearGreetingHandled(String roomId) async {
+    _handledGreetingRooms.remove(roomId);
+    _handledGreetingTimes.remove(roomId);
+    await _openSummaryCache();
+    await _cacheDatabase!.delete(
+      'greeting_handled',
       where: 'room_id = ?',
       whereArgs: [roomId],
     );
