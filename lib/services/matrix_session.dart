@@ -60,7 +60,9 @@ class MatrixSession extends ChangeNotifier {
     );
     await _createCacheTables(db);
     final rows = await db.query('room_summary');
-    await db.close();
+    // Do not close this handle here. sqflite may share the same database
+    // connection with an active MatrixSession; closing it can invalidate the
+    // session's cache connection and cause database_closed in the chat page.
     return rows
         .map(
           (row) => MatrixRoomSummary(
