@@ -44,7 +44,9 @@ class _GreetingMessagesPageState extends State<GreetingMessagesPage> {
           token: widget.token,
         ).get('/api/users/$id');
         final data = Map<String, dynamic>.from(response['data'] as Map);
-        if (data['following'] != true || data['followedBy'] != true) {
+        if (data['following'] != true &&
+            data['followedBy'] != true &&
+            widget.session.isGreetingRoom(room)) {
           result.add(summary);
         }
       } catch (_) {}

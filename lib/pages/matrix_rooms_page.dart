@@ -45,6 +45,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     widget.session.refreshRoomSummaries();
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
+      unawaited(_loadGreetingEntry());
     });
     _loadTitles();
   }
@@ -166,7 +167,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
       unawaited(_loadGreetingEntry());
     }
     final data = rooms;
-    if (data.isEmpty) {
+    if (data.isEmpty && _greetingEntry == null) {
       final invites = widget.session.invitedRooms();
       return Center(
         child: Column(
@@ -296,6 +297,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     _greetingLoading = true;
     MatrixRoomViewData? first;
     try {
+      _greetingRoomIds.clear();
       for (final item in rooms) {
         final room = widget.session.client.getRoomById(item.roomId);
         final peer = room?.directChatMatrixID;
@@ -308,7 +310,10 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
             token: widget.token,
           ).get('/api/users/$id');
           final data = Map<String, dynamic>.from(response['data'] as Map);
-          if (data['following'] != true || data['followedBy'] != true) {
+          if (room == null) continue;
+          if (data['following'] != true &&
+              data['followedBy'] != true &&
+              widget.session.isGreetingRoom(room)) {
             _greetingRoomIds.add(item.roomId);
             first = MatrixRoomViewData(
               roomId: item.roomId,
