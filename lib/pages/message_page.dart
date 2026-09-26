@@ -41,7 +41,7 @@ class _MessagePageState extends State<MessagePage> {
       await dotenv.load(fileName: '.env', isOptional: true);
       await initializeDateFormatting();
       await Hive.initFlutter();
-      if (await Hive.boxExists('chat')) {
+      if (!Hive.isBoxOpen('chat')) {
         await Hive.openBox('chat');
       }
     } catch (e) {
