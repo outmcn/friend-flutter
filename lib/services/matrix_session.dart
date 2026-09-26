@@ -151,6 +151,7 @@ class MatrixSession extends ChangeNotifier {
         _deletedRooms.add(roomId);
         continue;
       }
+      _deletedRooms.remove(roomId);
       _roomSummaries[roomId] = MatrixRoomSummary(
         roomId: roomId,
         peerId: row['peer_id'] as String?,
@@ -276,6 +277,17 @@ class MatrixSession extends ChangeNotifier {
   }
 
   bool isRoomChatDeleted(String roomId) => _deletedRooms.contains(roomId);
+
+  Future<void> restoreRoomChat(String roomId) async {
+    _deletedRooms.remove(roomId);
+    await _openSummaryCache();
+    await _cacheDatabase!.update(
+      'room_summary',
+      {'deleted': 0},
+      where: 'room_id = ?',
+      whereArgs: [roomId],
+    );
+  }
 
   Future<void> deleteRoomChat(String roomId) async {
     _deletedRooms.add(roomId);
@@ -690,7 +702,9 @@ class MatrixSession extends ChangeNotifier {
   Future<void> sendText(Room room, String text) async {
     final value = text.trim();
     if (value.isEmpty) return;
+    await restoreRoomChat(room.id);
     await room.sendTextEvent(value);
+    refreshRoomSummaries();
   }
 
   Future<String> sendImage(
@@ -699,12 +713,15 @@ class MatrixSession extends ChangeNotifier {
     required String name,
     String? mimeType,
   }) async {
+    await restoreRoomChat(room.id);
     final image = MatrixImageFile(
       bytes: bytes,
       name: name,
       mimeType: mimeType ?? 'image/jpeg',
     );
-    return await room.sendFileEvent(image) ?? '';
+    final eventId = await room.sendFileEvent(image) ?? '';
+    refreshRoomSummaries();
+    return eventId;
   }
 
   Future<List<Event>> searchRoomEvents(Room room, String query) async {
@@ -715,7 +732,9 @@ class MatrixSession extends ChangeNotifier {
   Future<String> sendReply(Room room, Event event, String text) async {
     final value = text.trim();
     if (value.isEmpty) return '';
+    await restoreRoomChat(room.id);
     final eventId = await room.sendTextEvent(value, inReplyTo: event);
+    refreshRoomSummaries();
     return eventId ?? '';
   }
 

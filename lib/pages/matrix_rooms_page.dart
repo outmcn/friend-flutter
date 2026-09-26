@@ -45,6 +45,7 @@ class _MatrixRoomsPageState extends State<MatrixRoomsPage> {
     widget.session.refreshRoomSummaries();
     _updates = widget.session.updates.listen((_) {
       if (mounted) setState(() {});
+      unawaited(widget.session.loadCachedRoomSummaries());
       unawaited(_loadGreetingEntry());
     });
     _loadTitles();
