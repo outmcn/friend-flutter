@@ -97,7 +97,7 @@ class _MessagePageState extends State<MessagePage> {
           child: SafeArea(
             bottom: false,
             child: SizedBox(
-              height: 48,
+              height: 36,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Row(
@@ -135,7 +135,7 @@ class _MessagePageState extends State<MessagePage> {
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
                   child: Text(
                     '聊天',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
