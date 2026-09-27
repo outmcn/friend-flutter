@@ -13,7 +13,6 @@ class DiscoveryTopBar extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
   final VoidCallback onCompose;
-
   static const options = ['推荐', '附近', '关注'];
 
   @override
@@ -25,66 +24,68 @@ class DiscoveryTopBar extends StatelessWidget {
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '发现',
-                      style: TextStyle(
-                        color: colors.onSurface,
-                        fontSize: 28,
-                        height: 1.1,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
+              for (final option in options) ...[
+                Expanded(
+                  child: _FilterPill(
+                    label: option,
+                    selected: option == selected,
+                    onTap: () {
+                      if (option != selected) {
+                        HapticFeedback.selectionClick();
+                        onSelected(option);
+                      }
+                    },
                   ),
-                  OutlinedButton.icon(
-                    onPressed: onCompose,
-                    icon: const Icon(TIcons.edit, size: 18),
-                    label: const Text('发布'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(92, 40),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      shape: const StadiumBorder(),
-                      side: BorderSide(color: colors.outline),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              SegmentedButton<String>(
-                segments: [
-                  for (final option in options)
-                    ButtonSegment<String>(value: option, label: Text(option)),
-                ],
-                selected: {selected},
-                onSelectionChanged: (value) {
-                  final next = value.first;
-                  if (next != selected) {
-                    HapticFeedback.selectionClick();
-                    onSelected(next);
-                  }
-                },
-                showSelectedIcon: false,
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                  ),
-                  textStyle: const WidgetStatePropertyAll(
-                    TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
+                ),
+                if (option != options.last) const SizedBox(width: 8),
+              ],
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: onCompose,
+                icon: const Icon(TIcons.edit, size: 18),
+                label: const Text('发布'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(92, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: const StadiumBorder(),
+                  side: BorderSide(color: colors.outline),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        backgroundColor: selected ? colors.primary : colors.surface,
+        foregroundColor: selected ? colors.onPrimary : colors.onSurface,
+        side: BorderSide(color: selected ? colors.primary : colors.outline),
+        shape: const StadiumBorder(),
+      ),
+      child: Text(label),
     );
   }
 }
