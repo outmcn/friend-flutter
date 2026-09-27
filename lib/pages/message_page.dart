@@ -135,64 +135,6 @@ class _MessagePageState extends State<MessagePage> {
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 18, 16, 10),
-                  child: Text(
-                    '联系人',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                SizedBox(
-                  height: 94,
-                  child: _loading && _following.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
-                      : _error != null && _following.isEmpty
-                      ? Center(
-                          child: Text(
-                            '加载失败',
-                            style: TextStyle(color: colors.onSurfaceVariant),
-                          ),
-                        )
-                      : _following.isEmpty
-                      ? Center(
-                          child: Text(
-                            '关注的人会显示在这里',
-                            style: TextStyle(color: colors.onSurfaceVariant),
-                          ),
-                        )
-                      : ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _following.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 16),
-                          itemBuilder: (context, index) {
-                            final user = _following[index];
-                            return InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () => _openProfile(user),
-                              child: SizedBox(
-                                width: 62,
-                                child: Column(
-                                  children: [
-                                    _avatar(user, radius: 25),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      _name(user),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: colors.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-                const Padding(
                   padding: EdgeInsets.fromLTRB(16, 18, 16, 8),
                   child: Text(
                     '聊天',
