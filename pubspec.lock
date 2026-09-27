@@ -137,6 +137,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.2"
+  easy_refresh:
+    dependency: transitive
+    description:
+      name: easy_refresh
+      sha256: "513a5dc82c044f8a9c9a3d600b3d5d3256070575bfd8761940533d8e209ba79b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.5.1"
   fake_async:
     dependency: transitive
     description:
@@ -238,6 +246,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.34"
+  flutter_slidable:
+    dependency: transitive
+    description:
+      name: flutter_slidable
+      sha256: a857de7ea701f276fd6a6c4c67ae885b60729a3449e42766bb0e655171042801
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.2"
   flutter_staggered_grid_view:
     dependency: "direct main"
     description:
@@ -396,18 +412,18 @@ packages:
     dependency: "direct main"
     description:
       name: image_picker
-      sha256: "91c025426c2881c551100bce834e201c835a170151545f58d17da5180ca7d9ac"
+      sha256: "021834d9c0c3de46bf0fe40341fa07168407f694d9b2bb18d532dc1261867f7a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.2"
+    version: "1.1.2"
   image_picker_android:
     dependency: transitive
     description:
       name: image_picker_android
-      sha256: d5b3e1774af29c9ab00103afb0d4614070f924d2e0057ac867ec98800114793f
+      sha256: "317a5d961cec5b34e777b9252393f2afbd23084aa6e60fcf601dcf6341b9ebeb"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.13+17"
+    version: "0.8.12+23"
   image_picker_for_web:
     dependency: transitive
     description:
@@ -576,6 +592,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
+  path_drawing:
+    dependency: transitive
+    description:
+      name: path_drawing
+      sha256: bbb1934c0cbb03091af082a6389ca2080345291ef07a5fa6d6e078ba8682f977
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
+  path_parsing:
+    dependency: transitive
+    description:
+      name: path_parsing
+      sha256: "883402936929eac138ee0a45da5b0f2c80f89913e6dc3bf77eb65b84b409c6ca"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   path_provider:
     dependency: "direct main"
     description:
@@ -829,6 +861,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.0"
+  tdesign_flutter:
+    dependency: "direct main"
+    description:
+      name: tdesign_flutter
+      sha256: a2e47e306c5cf159722f696ad97899a7481a4f200921bcc5897208fe049d4319
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0-alpha.1"
+  tdesign_flutter_adaptation:
+    dependency: transitive
+    description:
+      name: tdesign_flutter_adaptation
+      sha256: "707bbc52ec8b5872ea808500200f402007acf24c03a1cc823a3be2113c1d813a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.32.0"
+  tdesign_flutter_icons:
+    dependency: transitive
+    description:
+      name: tdesign_flutter_icons
+      sha256: "9bd2d92c20015e13615d33a254322a8adda62f62c08d5040cb7d4e12a49cb42e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.7"
   term_glyph:
     dependency: transitive
     description:

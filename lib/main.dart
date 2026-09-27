@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
@@ -402,32 +403,37 @@ class _FriendShellState extends State<FriendShell> {
     ];
     return Scaffold(
       body: IndexedStack(index: tab, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tab,
-        onDestinationSelected: (value) {
+      bottomNavigationBar: TTabBar(
+        variant: TTabBarVariant.iconText,
+        value: tab,
+        onChanged: (value) {
           HapticFeedback.selectionClick();
           setState(() => tab = value);
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: '主页',
+        navigationTabs: [
+          TTabBarItemConfig(
+            tabText: '主页',
+            selectedIcon: const Icon(TIcons.home_filled),
+            unselectedIcon: const Icon(TIcons.home),
+            onTap: () => setState(() => tab = 0),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: '发现',
+          TTabBarItemConfig(
+            tabText: '发现',
+            selectedIcon: const Icon(TIcons.explore_filled),
+            unselectedIcon: const Icon(TIcons.explore),
+            onTap: () => setState(() => tab = 1),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: '消息',
+          TTabBarItemConfig(
+            tabText: '消息',
+            selectedIcon: const Icon(TIcons.chat_bubble_filled),
+            unselectedIcon: const Icon(TIcons.chat_bubble),
+            onTap: () => setState(() => tab = 2),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: '我的',
+          TTabBarItemConfig(
+            tabText: '我的',
+            selectedIcon: const Icon(TIcons.personal_information_filled),
+            unselectedIcon: const Icon(TIcons.personal_information),
+            onTap: () => setState(() => tab = 3),
           ),
         ],
       ),
