@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart' show TIcons;
 
 class DiscoveryTopBar extends StatelessWidget {
   const DiscoveryTopBar({
@@ -41,13 +42,15 @@ class DiscoveryTopBar extends StatelessWidget {
                       ),
                     ),
                   ),
-                  IconButton.filledTonal(
+                  OutlinedButton.icon(
                     onPressed: onCompose,
-                    tooltip: '发布动态',
-                    icon: const Icon(Icons.edit_outlined, size: 20),
-                    constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
+                    icon: const Icon(TIcons.edit, size: 18),
+                    label: const Text('发布'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(92, 40),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: const StadiumBorder(),
+                      side: BorderSide(color: colors.outline),
                     ),
                   ),
                 ],
