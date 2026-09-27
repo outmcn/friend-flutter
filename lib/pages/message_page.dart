@@ -134,13 +134,6 @@ class _MessagePageState extends State<MessagePage> {
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Text(
-                    '聊天',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                ),
                 if (_loading && _following.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 42),
