@@ -135,7 +135,7 @@ class _MessagePageState extends State<MessagePage> {
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 18, 16, 8),
+                  padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: Text(
                     '聊天',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
