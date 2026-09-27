@@ -411,23 +411,23 @@ class _FriendShellState extends State<FriendShell> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(TIcons.home),
-            selectedIcon: Icon(TIcons.home_filled),
+            icon: Icon(TIcons.cd),
+            selectedIcon: Icon(TIcons.cd_filled),
             label: '主页',
           ),
           NavigationDestination(
-            icon: Icon(TIcons.explore),
-            selectedIcon: Icon(TIcons.explore_filled),
+            icon: Icon(TIcons.animation_1),
+            selectedIcon: Icon(TIcons.animation_1_filled),
             label: '发现',
           ),
           NavigationDestination(
-            icon: Icon(TIcons.chat_bubble),
-            selectedIcon: Icon(TIcons.chat_bubble_filled),
+            icon: Icon(TIcons.chat_bubble_1),
+            selectedIcon: Icon(TIcons.chat_bubble_1_filled),
             label: '消息',
           ),
           NavigationDestination(
-            icon: Icon(TIcons.personal_information),
-            selectedIcon: Icon(TIcons.personal_information_filled),
+            icon: Icon(TIcons.highlight_1),
+            selectedIcon: Icon(TIcons.highlight_1_filled),
             label: '我的',
           ),
         ],
