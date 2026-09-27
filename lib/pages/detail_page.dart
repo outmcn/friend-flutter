@@ -663,6 +663,46 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
+  Future<void> _showFullPostImage(BuildContext context, String imageUrl) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black,
+      builder: (_) => Dialog.fullscreen(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 4,
+                child: Center(
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.white70,
+                      size: 48,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.paddingOf(context).top + 8,
+              right: 12,
+              child: IconButton(
+                tooltip: '关闭图片',
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
@@ -736,71 +776,85 @@ class _DetailPageState extends State<DetailPage> {
               child: ListView(
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
                 children: [
-                  if (post.imageUrl != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: Image.network(
-                        post.imageUrl!,
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                      ),
-                    ),
-                  if (post.imageUrl != null) const SizedBox(height: 18),
-                  if (post.text.isNotEmpty)
-                    Text(
-                      post.text,
-                      style: TextStyle(
-                        fontSize: 20,
-                        height: 1.45,
-                        color: c.onSurface,
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () =>
-                        setState(() => showExactPostTime = !showExactPostTime),
-                    child: Row(
-                      children: [
-                        Text(
-                          showExactPostTime
-                              ? _exactTime(post.time)
-                              : _relativeTime(post.time),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: c.onSurfaceVariant,
-                          ),
+                  if (post.imageUrl?.trim().isNotEmpty == true)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: GestureDetector(
+                        onTap: () =>
+                            _showFullPostImage(context, post.imageUrl!),
+                        child: Image.network(
+                          post.imageUrl!,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                         ),
-                        if (post.city.isNotEmpty) ...[
-                          const SizedBox(width: 8),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (post.text.trim().isNotEmpty)
                           Text(
-                            post.city,
+                            post.text,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: c.onSurfaceVariant,
+                              fontSize: 17,
+                              height: 1.55,
+                              color: c.onSurface,
                             ),
                           ),
-                        ],
+                        if (post.text.trim().isNotEmpty)
+                          const SizedBox(height: 14),
+                        GestureDetector(
+                          onTap: () => setState(
+                            () => showExactPostTime = !showExactPostTime,
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                showExactPostTime
+                                    ? _exactTime(post.time)
+                                    : _relativeTime(post.time),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: c.onSurfaceVariant,
+                                ),
+                              ),
+                              if (post.city.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  post.city,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: c.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Divider(color: c.outlineVariant),
+                        const SizedBox(height: 4),
+                        Text(
+                          '共${comments.length}条评论',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: c.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (comments.isEmpty)
+                          EmptyState(text: '还没有评论')
+                        else
+                          ..._buildCommentWidgets(context, c),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Divider(color: c.outlineVariant),
-                  const SizedBox(height: 8),
-                  Text(
-                    '共${comments.length}条评论',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: c.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (comments.isEmpty)
-                    EmptyState(text: '还没有评论')
-                  else
-                    ..._buildCommentWidgets(context, c),
                 ],
               ),
             ),
