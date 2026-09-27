@@ -72,7 +72,9 @@ class ProfilePageState extends State<ProfilePage> {
   Future<void> _loadAvatar() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
-      setState(() => selectedAvatar = prefs.getInt('friend.selected.avatar') ?? 0);
+      setState(
+        () => selectedAvatar = prefs.getInt('friend.selected.avatar') ?? 0,
+      );
     }
   }
 
@@ -83,17 +85,19 @@ class ProfilePageState extends State<ProfilePage> {
       if (body['ok'] == true && data is Map<String, dynamic> && mounted) {
         final profile = data['profile'] as Map<String, dynamic>;
         setState(() {
-          nickname = (profile['nickname']?.toString().trim().isNotEmpty == true
-                  ? profile['nickname']
-                  : profile['username'])
-              .toString();
+          nickname =
+              (profile['nickname']?.toString().trim().isNotEmpty == true
+                      ? profile['nickname']
+                      : profile['username'])
+                  .toString();
           following = (profile['following'] as num?)?.toInt() ?? 0;
           followers = (profile['followers'] as num?)?.toInt() ?? 0;
           likes = (profile['likes'] as num?)?.toInt() ?? 0;
           postCount = (profile['posts'] as num?)?.toInt() ?? 0;
           activeDays = (profile['activeDays'] as num?)?.toInt() ?? 0;
           city = profile['city']?.toString() ?? city;
-          selectedAvatar = (profile['avatarId'] as num?)?.toInt() ?? selectedAvatar;
+          selectedAvatar =
+              (profile['avatarId'] as num?)?.toInt() ?? selectedAvatar;
           ownPosts = _posts(data['posts']);
           favoritePosts = _posts(data['favorited']);
           likedPosts = _posts(data['liked']);
@@ -118,8 +122,14 @@ class ProfilePageState extends State<ProfilePage> {
         title: const Text('删除动态'),
         content: const Text('确定要删除这条动态吗？删除后无法恢复。'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('删除')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
         ],
       ),
     );
@@ -174,17 +184,17 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   Color _avatarColor(int index) => <Color>[
-        const Color(0xff376bd6),
-        const Color(0xff7c4dff),
-        const Color(0xffe64a75),
-        const Color(0xff00897b),
-        const Color(0xff3949ab),
-        const Color(0xff43a047),
-        const Color(0xfffb8c00),
-        const Color(0xff8e24aa),
-        const Color(0xff039be5),
-        const Color(0xff546e7a),
-      ][index];
+    const Color(0xff376bd6),
+    const Color(0xff7c4dff),
+    const Color(0xffe64a75),
+    const Color(0xff00897b),
+    const Color(0xff3949ab),
+    const Color(0xff43a047),
+    const Color(0xfffb8c00),
+    const Color(0xff8e24aa),
+    const Color(0xff039be5),
+    const Color(0xff546e7a),
+  ][index];
 
   Future<void> _editNickname() async {
     final controller = TextEditingController(text: nickname);
@@ -199,7 +209,10 @@ class ProfilePageState extends State<ProfilePage> {
           decoration: const InputDecoration(hintText: '输入新的名字'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: const Text('保存'),
@@ -218,7 +231,9 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -226,8 +241,8 @@ class ProfilePageState extends State<ProfilePage> {
     final visiblePosts = section == 0
         ? ownPosts
         : section == 1
-            ? favoritePosts
-            : likedPosts;
+        ? favoritePosts
+        : likedPosts;
 
     return Column(
       children: [
@@ -244,7 +259,9 @@ class ProfilePageState extends State<ProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ProfileCard(
-                        nickname: loading ? '加载中…' : (nickname.isEmpty ? 'Friend 用户' : nickname),
+                        nickname: loading
+                            ? '加载中…'
+                            : (nickname.isEmpty ? 'Friend 用户' : nickname),
                         city: city,
                         following: following,
                         followers: followers,
@@ -285,8 +302,8 @@ class ProfilePageState extends State<ProfilePage> {
                       text: section == 0
                           ? '还没有动态'
                           : section == 1
-                              ? '还没有收藏'
-                              : '还没有点赞',
+                          ? '还没有收藏'
+                          : '还没有点赞',
                     ),
                   ),
                 ...visiblePosts.asMap().entries.expand(
@@ -298,7 +315,8 @@ class ProfilePageState extends State<ProfilePage> {
                       hideAuthor: true,
                       onDeleted: () => _confirmDelete(entry.value),
                     ),
-                    if (entry.key < visiblePosts.length - 1) const Divider(height: 1),
+                    if (entry.key < visiblePosts.length - 1)
+                      const Divider(height: 1),
                   ],
                 ),
               ],
@@ -366,7 +384,12 @@ class _MineAction extends StatelessWidget {
   final Color tint;
   final VoidCallback onTap;
 
-  const _MineAction({required this.icon, required this.label, required this.tint, required this.onTap});
+  const _MineAction({
+    required this.icon,
+    required this.label,
+    required this.tint,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -389,8 +412,12 @@ class _MineAction extends StatelessWidget {
               child: Icon(icon, color: tint, size: 23),
             ),
             const SizedBox(height: 7),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant)),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
+            ),
           ],
         ),
       ),
@@ -409,9 +436,15 @@ class _SectionHeading extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
         const Spacer(),
-        Text(action, style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+        Text(
+          action,
+          style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+        ),
         const SizedBox(width: 3),
         Icon(Icons.chevron_right, size: 17, color: colors.onSurfaceVariant),
       ],
