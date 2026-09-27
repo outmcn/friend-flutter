@@ -702,10 +702,10 @@ class DiscoveryPage extends StatelessWidget {
             onRefresh: onRefresh,
             child: MasonryGridView.count(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(8, 10, 8, 22),
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 24),
               crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 14,
               itemCount: posts.isNotEmpty ? posts.length : 1,
               itemBuilder: (context, index) {
                 if (posts.isNotEmpty) {

@@ -23,35 +23,52 @@ class DiscoveryTopBar extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final option in options) ...[
-                Expanded(
-                  child: _FilterPill(
-                    label: option,
-                    selected: option == selected,
-                    onTap: () {
-                      if (option != selected) {
-                        HapticFeedback.selectionClick();
-                        onSelected(option);
-                      }
-                    },
+              Row(
+                children: [
+                  Text(
+                    '发现',
+                    style: TextStyle(
+                      color: colors.onSurface,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                    ),
                   ),
-                ),
-                if (option != options.last) const SizedBox(width: 8),
-              ],
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: onCompose,
-                icon: const Icon(TIcons.edit, size: 18),
-                label: const Text('发布'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(92, 40),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  shape: const StadiumBorder(),
-                  side: BorderSide(color: colors.outline),
-                ),
+                  const Spacer(),
+                  OutlinedButton.icon(
+                    onPressed: onCompose,
+                    icon: const Icon(TIcons.edit, size: 17),
+                    label: const Text('发布'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(88, 38),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: const StadiumBorder(),
+                      side: BorderSide(color: colors.outline),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  for (final option in options) ...[
+                    _FilterPill(
+                      label: option,
+                      selected: option == selected,
+                      onTap: () {
+                        if (option != selected) {
+                          HapticFeedback.selectionClick();
+                          onSelected(option);
+                        }
+                      },
+                    ),
+                    if (option != options.last) const SizedBox(width: 8),
+                  ],
+                ],
               ),
             ],
           ),
@@ -78,12 +95,13 @@ class _FilterPill extends StatelessWidget {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(0, 40),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        minimumSize: const Size(76, 36),
+        padding: const EdgeInsets.symmetric(horizontal: 15),
         backgroundColor: selected ? colors.primary : colors.surface,
         foregroundColor: selected ? colors.onPrimary : colors.onSurface,
         side: BorderSide(color: selected ? colors.primary : colors.outline),
         shape: const StadiumBorder(),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
       ),
       child: Text(label),
     );
