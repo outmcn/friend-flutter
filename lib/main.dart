@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
@@ -698,85 +699,44 @@ class DiscoveryPage extends StatelessWidget {
         Expanded(
           child: RefreshIndicator(
             onRefresh: onRefresh,
-            child: ListView(
+            child: MasonryGridView.count(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 22),
-              children: [
-                if (loading && posts.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 72),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                if (!loading && error != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.cloud_off_outlined,
-                          size: 36,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          error!,
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: onRefresh,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('重新加载'),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (!loading && error == null && posts.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome_outlined,
-                          size: 38,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          selectedFilter == '关注'
-                              ? '还没有关注的人发布动态'
-                              : selectedFilter == '附近'
-                              ? '附近暂无动态'
-                              : '暂无动态',
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (!loading && error == null)
-                  ...posts.asMap().entries.expand(
-                    (entry) => [
-                      PostCard(
-                        post: entry.value,
-                        token: token,
-                        onActionChanged: onActionChanged,
-                        currentLatitude: currentLatitude,
-                        currentLongitude: currentLongitude,
-                        currentUserId: currentUserId,
-                      ),
-                      if (entry.key < posts.length - 1)
-                        const Divider(height: 1),
-                    ],
-                  ),
-              ],
+              crossAxisCount: 2,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              itemCount: posts.isNotEmpty ? posts.length : 1,
+              itemBuilder: (context, index) {
+                if (posts.isNotEmpty) {
+                  return PostCard(
+                    post: posts[index],
+                    token: token,
+                    onActionChanged: onActionChanged,
+                    currentLatitude: currentLatitude,
+                    currentLongitude: currentLongitude,
+                    currentUserId: currentUserId,
+                  );
+                }
+                if (loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (error != null) {
+                  return _DiscoveryNotice(
+                    icon: Icons.cloud_off_outlined,
+                    message: error!,
+                    actionLabel: '重新加载',
+                    onAction: onRefresh,
+                  );
+                }
+                return _DiscoveryNotice(
+                  icon: Icons.auto_awesome_outlined,
+                  message: selectedFilter == '关注'
+                      ? '还没有关注的人发布动态'
+                      : selectedFilter == '附近'
+                      ? '附近暂无动态'
+                      : '暂无动态',
+                );
+              },
             ),
           ),
         ),
@@ -788,6 +748,46 @@ class DiscoveryPage extends StatelessWidget {
     await Navigator.push<void>(
       context,
       MaterialPageRoute(builder: (_) => ComposePage(onCreate: onCreate)),
+    );
+  }
+}
+
+class _DiscoveryNotice extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final String? actionLabel;
+  final Future<void> Function()? onAction;
+
+  const _DiscoveryNotice({
+    required this.icon,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 34, color: colors.onSurfaceVariant),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.onSurfaceVariant),
+            ),
+            if (actionLabel != null) ...[
+              const SizedBox(height: 10),
+              OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -101,6 +101,187 @@ class _PostCardState extends State<PostCard> {
     final c = Theme.of(context).colorScheme;
     final p = widget.post;
     final distance = _distanceLabel();
+
+    if (!widget.hideAuthor) {
+      return _buildDiscoveryCard(context, c, p, distance);
+    }
+
+    return _buildProfileRow(context, c, p, distance);
+  }
+
+  Widget _buildDiscoveryCard(
+    BuildContext context,
+    ColorScheme colors,
+    UiPost post,
+    String? distance,
+  ) {
+    final hasImage = post.imageUrl?.isNotEmpty == true;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 5, 6, 3),
+      child: Material(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: _openDetail,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasImage)
+                GestureDetector(
+                  onTap: () => _showFullImage(context, post.imageUrl!),
+                  child: Hero(
+                    tag: 'post-image-${post.id}',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 190,
+                        child: Image.network(
+                          post.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: colors.surfaceContainerHighest,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.broken_image_outlined,
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                _textCover(colors),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (post.text.trim().isNotEmpty)
+                      Text(
+                        post.text.trim(),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                    if (post.text.trim().isEmpty)
+                      Text(
+                        hasImage ? '图片动态' : '分享新鲜事',
+                        maxLines: 2,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 10,
+                          backgroundColor:
+                              avatarColors[post.authorAvatarId.clamp(0, 9)],
+                          child: Icon(
+                            avatarIcons[post.authorAvatarId.clamp(0, 9)],
+                            size: 11,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                post.author,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: colors.onSurfaceVariant,
+                                ),
+                              ),
+                              if (post.city.isNotEmpty || distance != null)
+                                Text(
+                                  [
+                                    post.city,
+                                    if (distance != null) distance,
+                                  ].join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: colors.onSurfaceVariant,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.favorite_border,
+                          size: 15,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${post.likes}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _relativeTime(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textCover(ColorScheme colors) => Container(
+    height: 190,
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [colors.primaryContainer, colors.secondaryContainer],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    alignment: Alignment.centerLeft,
+    child: Icon(
+      Icons.format_quote_rounded,
+      size: 32,
+      color: colors.onPrimaryContainer,
+    ),
+  );
+
+  Widget _buildProfileRow(
+    BuildContext context,
+    ColorScheme colors,
+    UiPost post,
+    String? distance,
+  ) {
     return ClipRect(
       child: Column(
         children: [
@@ -112,163 +293,49 @@ class _PostCardState extends State<PostCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (widget.hideAuthor)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            [
-                              _relativeTime(),
-                              if (distance != null) distance,
-                            ].join(' · '),
-                            style: TextStyle(
-                              color: c.onSurfaceVariant,
-                              fontSize: 12,
-                            ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          [
+                            _relativeTime(),
+                            if (distance != null) distance,
+                          ].join(' · '),
+                          style: TextStyle(
+                            color: colors.onSurfaceVariant,
+                            fontSize: 12,
                           ),
                         ),
-                      ],
-                    ),
-                  Visibility(
-                    visible: !widget.hideAuthor,
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 19,
-                          backgroundColor:
-                              avatarColors[p.authorAvatarId.clamp(0, 9)],
-                          child: Icon(
-                            avatarIcons[p.authorAvatarId.clamp(0, 9)],
-                            size: 21,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      p.author,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: c.onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                  if (p.city.isNotEmpty)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 6),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: c.primaryContainer,
-                                        borderRadius: BorderRadius.circular(7),
-                                      ),
-                                      child: Text(
-                                        p.city,
-                                        style: TextStyle(
-                                          color: c.onPrimaryContainer,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              Text(
-                                [
-                                  _relativeTime(),
-                                  if (distance != null) distance,
-                                ].join(' · '),
-                                style: TextStyle(
-                                  color: c.onSurfaceVariant,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
-                  if (p.text.trim().isNotEmpty)
+                  if (post.text.trim().isNotEmpty)
                     Text(
-                      p.text.trim(),
+                      post.text.trim(),
                       style: TextStyle(
                         fontSize: 18,
                         height: 1.35,
-                        color: c.onSurface,
+                        color: colors.onSurface,
                       ),
                     ),
-                  if (p.imageUrl?.isNotEmpty == true)
+                  if (post.imageUrl?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.only(top: 14),
-                      child: Hero(
-                        tag: 'post-image-${p.id}',
-                        child: GestureDetector(
-                          onTap: () => _showFullImage(context, p.imageUrl!),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.zero,
-                            child: SizedBox(
-                              height: 240,
-                              width: double.infinity,
-                              child: Image.network(
-                                p.imageUrl!,
-                                fit: BoxFit.cover,
-                              ),
+                      child: GestureDetector(
+                        onTap: () => _showFullImage(context, post.imageUrl!),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            height: 240,
+                            width: double.infinity,
+                            child: Image.network(
+                              post.imageUrl!,
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  if (p.text.isNotEmpty || p.imageUrl?.isNotEmpty == true)
-                    const SizedBox(height: 12),
-                  if (!widget.hideAuthor)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.favorite_border,
-                          size: 19,
-                          color: c.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${p.likes}',
-                          style: TextStyle(color: c.onSurfaceVariant),
-                        ),
-                        const SizedBox(width: 20),
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 18,
-                          color: c.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${p.comments}',
-                          style: TextStyle(color: c.onSurfaceVariant),
-                        ),
-                        const SizedBox(width: 20),
-                        Icon(
-                          Icons.bookmark_outline,
-                          size: 19,
-                          color: c.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${p.favorites}',
-                          style: TextStyle(color: c.onSurfaceVariant),
-                        ),
-                        const Spacer(),
-                        Icon(Icons.chevron_right, color: c.onSurfaceVariant),
-                      ],
                     ),
                   const SizedBox(height: 12),
                 ],
