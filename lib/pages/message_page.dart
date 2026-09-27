@@ -97,7 +97,7 @@ class _MessagePageState extends State<MessagePage> {
           child: SafeArea(
             bottom: false,
             child: SizedBox(
-              height: 36,
+              height: 32,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Row(
@@ -150,6 +150,11 @@ class _MessagePageState extends State<MessagePage> {
                 else
                   ..._following.map(
                     (user) => ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                      ),
+                      visualDensity: const VisualDensity(vertical: -2),
                       leading: _avatar(user),
                       title: Text(_name(user)),
                       subtitle: const Text('聊天服务暂未接入'),
