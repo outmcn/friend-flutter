@@ -117,7 +117,7 @@ class _PostCardState extends State<PostCard> {
   ) {
     final hasImage = post.imageUrl?.isNotEmpty == true;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 5, 6, 3),
+      padding: EdgeInsets.zero,
       child: Material(
         color: colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(14),
@@ -133,10 +133,12 @@ class _PostCardState extends State<PostCard> {
                   child: Hero(
                     tag: 'post-image-${post.id}',
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(14),
+                      ),
                       child: SizedBox(
                         width: double.infinity,
-                        height: 190,
+                        height: 170,
                         child: Image.network(
                           post.imageUrl!,
                           fit: BoxFit.cover,
@@ -259,7 +261,7 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget _textCover(ColorScheme colors) => Container(
-    height: 190,
+    height: 150,
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
       gradient: LinearGradient(
