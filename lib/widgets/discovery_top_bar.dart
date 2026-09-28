@@ -39,16 +39,13 @@ class DiscoveryTopBar extends StatelessWidget {
                 ),
                 if (option != options.last) const SizedBox(width: 8),
               ],
-              const SizedBox(width: 8),
-              OutlinedButton(
+              const Spacer(),
+              IconButton(
                 onPressed: onCompose,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(42, 36),
-                  padding: EdgeInsets.zero,
-                  shape: const StadiumBorder(),
-                  side: BorderSide(color: colors.outline),
-                ),
-                child: const Icon(TIcons.add_circle, size: 20),
+                tooltip: '发布动态',
+                icon: const Icon(TIcons.add_circle, size: 24),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               ),
             ],
           ),
