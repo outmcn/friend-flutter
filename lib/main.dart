@@ -510,88 +510,196 @@ class _FriendShellState extends State<FriendShell> {
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
     return SafeArea(
       child: ListView(
         primary: false,
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
         children: [
-          Text(
-            'Friend',
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              color: c.onSurface,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '找到真实的交流',
-            style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
-          ),
-          const SizedBox(height: 28),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => Navigator.push(
+          _profileHeader(context, c),
+          const SizedBox(height: 18),
+          _section(
+            context,
+            c,
+            children: [
+              _menuItem(
                 context,
-                MaterialPageRoute(builder: (_) => const GamePage()),
+                c,
+                icon: Icons.sports_esports_outlined,
+                title: '进入游戏',
+                subtitle: '和朋友一起玩游戏',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GamePage()),
+                ),
               ),
-              borderRadius: BorderRadius.circular(26),
-              child: _hero(context),
-            ),
+              _menuItem(
+                context,
+                c,
+                icon: Icons.bookmark_border,
+                title: '收藏',
+                onTap: () => _showUnavailable(context, '收藏'),
+              ),
+              _menuItem(
+                context,
+                c,
+                icon: Icons.photo_library_outlined,
+                title: '相册',
+                onTap: () => _showUnavailable(context, '相册'),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
           const SizedBox(height: 12),
+          _section(
+            context,
+            c,
+            children: [
+              _menuItem(
+                context,
+                c,
+                icon: Icons.account_balance_wallet_outlined,
+                title: '卡包',
+                onTap: () => _showUnavailable(context, '卡包'),
+              ),
+              _menuItem(
+                context,
+                c,
+                icon: Icons.emoji_emotions_outlined,
+                title: '表情',
+                onTap: () => _showUnavailable(context, '表情'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _section(
+            context,
+            c,
+            children: [
+              _menuItem(
+                context,
+                c,
+                icon: Icons.settings_outlined,
+                title: '设置',
+                onTap: () => _showUnavailable(context, '设置'),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _hero(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: LinearGradient(
-          colors: [c.primaryContainer, c.surfaceContainerHighest],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: c.primary.withValues(alpha: .28)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: c.primary,
-            child: Icon(Icons.sports_esports, size: 34, color: c.onPrimary),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '进入游戏',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: c.onSurface,
-                  ),
+  Widget _profileHeader(BuildContext context, ColorScheme c) {
+    return Material(
+      color: c.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showUnavailable(context, '个人信息'),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 16, 10, 16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 31,
+                backgroundColor: c.primary,
+                child: Icon(Icons.person, size: 34, color: c.onPrimary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Friend',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: c.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '找到真实的交流',
+                      style: TextStyle(fontSize: 13, color: c.onSurfaceVariant),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 5),
-                Text('和朋友一起玩游戏', style: TextStyle(color: c.onSurfaceVariant)),
-              ],
-            ),
+              ),
+              IconButton(
+                tooltip: '二维码',
+                onPressed: () => _showUnavailable(context, '二维码'),
+                icon: const Icon(Icons.qr_code_2),
+              ),
+              Icon(Icons.chevron_right, color: c.onSurfaceVariant),
+            ],
           ),
-          Icon(Icons.arrow_forward_ios, size: 16, color: c.onSurfaceVariant),
-        ],
+        ),
       ),
     );
+  }
+
+  Widget _section(
+    BuildContext context,
+    ColorScheme c, {
+    required List<Widget> children,
+  }) {
+    return Material(
+      color: c.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+
+  Widget _menuItem(
+    BuildContext context,
+    ColorScheme c, {
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Icon(icon, size: 23, color: c.onSurfaceVariant),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(fontSize: 16, color: c.onSurface),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 12, color: c.onSurfaceVariant),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 20, color: c.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUnavailable(BuildContext context, String name) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$name功能尚未接入')));
   }
 }
 
