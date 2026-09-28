@@ -510,89 +510,390 @@ class _FriendShellState extends State<FriendShell> {
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: ListView(
-        primary: false,
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-        children: [
-          Text(
-            'Friend',
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              color: c.onSurface,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '找到真实的交流',
-            style: TextStyle(color: c.onSurfaceVariant, fontSize: 14),
-          ),
-          const SizedBox(height: 28),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GamePage()),
-              ),
-              borderRadius: BorderRadius.circular(26),
-              child: _hero(context),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const SizedBox(height: 12),
-        ],
-      ),
+
+  void _openGame(BuildContext context) {
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const GamePage()),
     );
   }
 
-  Widget _hero(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: LinearGradient(
-          colors: [c.primaryContainer, c.surfaceContainerHighest],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: c.primary.withValues(alpha: .28)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: c.primary,
-            child: Icon(Icons.sports_esports, size: 34, color: c.onPrimary),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '进入游戏',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: c.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text('和朋友一起玩游戏', style: TextStyle(color: c.onSurfaceVariant)),
-              ],
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xff111111),
+      child: SafeArea(
+        child: ListView(
+          primary: false,
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+          children: [
+            const Text(
+              'Friend',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          Icon(Icons.arrow_forward_ios, size: 16, color: c.onSurfaceVariant),
-        ],
+            const SizedBox(height: 5),
+            Text(
+              '找到真实的交流',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.62),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 22),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final gap = 12.0;
+                final leftWidth = (constraints.maxWidth - gap) * 0.49;
+                final rightWidth = constraints.maxWidth - gap - leftWidth;
+                final rightTopHeight = leftWidth * 0.52;
+                final rightBottomHeight = leftWidth * 0.30;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: leftWidth,
+                      height: leftWidth * 0.92,
+                      child: _IrregularHomeCard(
+                        clipper: const _PlayScriptClipper(),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xffb6f5f2), Color(0xff89ddeb)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        onTap: () => _openGame(context),
+                        child: const _PlayScriptContent(),
+                      ),
+                    ),
+                    SizedBox(width: gap),
+                    SizedBox(
+                      width: rightWidth,
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: rightTopHeight,
+                            child: _IrregularHomeCard(
+                              clipper: const _HostScriptClipper(),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xfff7b5ea), Color(0xffeca8e9)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              onTap: () => _openGame(context),
+                              child: const _HostScriptContent(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: rightBottomHeight,
+                            child: _IrregularHomeCard(
+                              clipper: const _ReasoningClipper(),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xffd5f58a), Color(0xfff4f77b)],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              onTap: () => _openGame(context),
+                              child: const _ReasoningContent(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _IrregularHomeCard extends StatelessWidget {
+  const _IrregularHomeCard({
+    required this.clipper,
+    required this.gradient,
+    required this.child,
+    required this.onTap,
+  });
+
+  final CustomClipper<Path> clipper;
+  final Gradient gradient;
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipPath(
+      clipper: clipper,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: DecoratedBox(
+            decoration: BoxDecoration(gradient: gradient),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlayScriptContent extends StatelessWidget {
+  const _PlayScriptContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        const Positioned(
+          left: 18,
+          top: 28,
+          child: Text(
+            '玩剧本',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        const Positioned(
+          left: 18,
+          top: 68,
+          child: Text(
+            '拨开迷雾  寻找真相',
+            style: TextStyle(
+              color: Color(0xff5d9195),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Positioned(
+          left: 18,
+          bottom: 25,
+          child: Container(
+            width: 112,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: const Text(
+              'GO',
+              style: TextStyle(
+                color: Color(0xffeaf36e),
+                fontSize: 28,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
+        const Positioned(
+          right: -8,
+          bottom: -8,
+          child: Text('🤖', style: TextStyle(fontSize: 128)),
+        ),
+      ],
+    );
+  }
+}
+
+class _HostScriptContent extends StatelessWidget {
+  const _HostScriptContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          left: 12,
+          top: -10,
+          child: Transform.rotate(
+            angle: -0.06,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xffd927e5),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                child: Text(
+                  '首局特惠',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const Positioned(
+          left: 18,
+          top: 48,
+          child: Text(
+            '主持带本',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        const Positioned(
+          left: 18,
+          top: 82,
+          child: Text(
+            '18周等候中',
+            style: TextStyle(
+              color: Color(0xff997398),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const Positioned(
+          right: -8,
+          bottom: -10,
+          child: Text('🧑‍🎤', style: TextStyle(fontSize: 92)),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReasoningContent extends StatelessWidget {
+  const _ReasoningContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: const [
+        Positioned(
+          left: 18,
+          top: 22,
+          child: Text(
+            '三分钟推理',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        Positioned(
+          right: -4,
+          top: -18,
+          child: Text('😮', style: TextStyle(fontSize: 76)),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlayScriptClipper extends CustomClipper<Path> {
+  const _PlayScriptClipper();
+
+  @override
+  Path getClip(Size size) {
+    return Path()
+      ..moveTo(28, 0)
+      ..quadraticBezierTo(size.width * .35, 10, size.width * .58, 0)
+      ..quadraticBezierTo(size.width * .84, -7, size.width, 24)
+      ..lineTo(size.width, size.height - 28)
+      ..quadraticBezierTo(
+        size.width * .88,
+        size.height + 8,
+        size.width * .62,
+        size.height - 2,
+      )
+      ..quadraticBezierTo(
+        size.width * .27,
+        size.height + 9,
+        22,
+        size.height - 2,
+      )
+      ..quadraticBezierTo(-8, size.height * .7, 0, 28)
+      ..quadraticBezierTo(7, 4, 28, 0)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _PlayScriptClipper oldClipper) => false;
+}
+
+class _HostScriptClipper extends CustomClipper<Path> {
+  const _HostScriptClipper();
+
+  @override
+  Path getClip(Size size) {
+    return Path()
+      ..moveTo(24, 0)
+      ..quadraticBezierTo(size.width * .55, 8, size.width - 24, 0)
+      ..quadraticBezierTo(size.width + 8, 12, size.width, 30)
+      ..lineTo(size.width, size.height - 24)
+      ..quadraticBezierTo(
+        size.width * .82,
+        size.height + 6,
+        size.width * .52,
+        size.height - 1,
+      )
+      ..quadraticBezierTo(size.width * .2, size.height + 5, 0, size.height - 26)
+      ..lineTo(0, 28)
+      ..quadraticBezierTo(2, 5, 24, 0)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _HostScriptClipper oldClipper) => false;
+}
+
+class _ReasoningClipper extends CustomClipper<Path> {
+  const _ReasoningClipper();
+
+  @override
+  Path getClip(Size size) {
+    return Path()
+      ..moveTo(22, 0)
+      ..quadraticBezierTo(size.width * .5, 7, size.width - 25, 0)
+      ..quadraticBezierTo(
+        size.width + 6,
+        size.height * .25,
+        size.width,
+        size.height - 20,
+      )
+      ..quadraticBezierTo(
+        size.width * .76,
+        size.height + 5,
+        size.width * .42,
+        size.height,
+      )
+      ..quadraticBezierTo(
+        size.width * .12,
+        size.height + 4,
+        0,
+        size.height - 22,
+      )
+      ..quadraticBezierTo(-5, size.height * .45, 22, 0)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _ReasoningClipper oldClipper) => false;
 }
 
 class HomeTopBar extends StatelessWidget {
