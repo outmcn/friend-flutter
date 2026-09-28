@@ -22,7 +22,7 @@ class DiscoveryTopBar extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+          padding: const EdgeInsets.fromLTRB(16, 1, 16, 3),
           child: Row(
             children: [
               for (final option in options) ...[
@@ -44,7 +44,7 @@ class DiscoveryTopBar extends StatelessWidget {
                 tooltip: '发布动态',
                 icon: const Icon(Icons.loupe_outlined, size: 24),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 34, minHeight: 32),
+                constraints: const BoxConstraints(minWidth: 30, minHeight: 28),
               ),
             ],
           ),
@@ -71,13 +71,13 @@ class _FilterPill extends StatelessWidget {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(68, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        minimumSize: const Size(62, 28),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         backgroundColor: selected ? colors.primary : colors.surface,
         foregroundColor: selected ? colors.onPrimary : colors.onSurface,
         side: BorderSide(color: selected ? colors.primary : colors.outline),
         shape: const StadiumBorder(),
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
       ),
       child: Text(label),
     );
