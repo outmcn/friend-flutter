@@ -251,44 +251,90 @@ class ProfilePageState extends State<ProfilePage> {
           child: RefreshIndicator(
             onRefresh: refreshFromServer,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ProfileCard(
-                        nickname: loading
-                            ? '加载中…'
-                            : (nickname.isEmpty ? 'Friend 用户' : nickname),
-                        city: city,
-                        following: following,
-                        followers: followers,
-                        likes: likes,
-                        posts: postCount,
-                        activeDays: activeDays,
-                        avatarId: selectedAvatar,
-                        onAvatarTap: _pickAvatar,
-                        showEdit: true,
-                        onEdit: _editNickname,
-                      ),
-                      const SizedBox(height: 18),
-                      SegmentedButton<int>(
-                        segments: const [
-                          ButtonSegment(value: 0, label: Text('动态')),
-                          ButtonSegment(value: 1, label: Text('收藏')),
-                          ButtonSegment(value: 2, label: Text('点赞')),
-                        ],
-                        selected: {section},
-                        onSelectionChanged: (selected) {
-                          HapticFeedback.selectionClick();
-                          setState(() => section = selected.first);
-                        },
-                        showSelectedIcon: false,
-                      ),
-                    ],
+                ProfileCard(
+                  nickname: loading
+                      ? '加载中…'
+                      : (nickname.isEmpty ? 'Friend 用户' : nickname),
+                  city: city,
+                  following: following,
+                  followers: followers,
+                  likes: likes,
+                  posts: postCount,
+                  activeDays: activeDays,
+                  avatarId: selectedAvatar,
+                  onAvatarTap: _pickAvatar,
+                  showEdit: true,
+                  onEdit: _editNickname,
+                ),
+                const SizedBox(height: 14),
+                _profileMenuSection(context, [
+                  _profileMenuItem(
+                    context,
+                    Icons.bookmark_border,
+                    '收藏',
+                    () => _showNotReady('收藏'),
                   ),
+                  _profileMenuItem(
+                    context,
+                    Icons.photo_library_outlined,
+                    '相册',
+                    () => _showNotReady('相册'),
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                _profileMenuSection(context, [
+                  _profileMenuItem(
+                    context,
+                    Icons.sports_esports_outlined,
+                    '好友游戏',
+                    () => _showNotReady('好友游戏'),
+                  ),
+                  _profileMenuItem(
+                    context,
+                    Icons.account_balance_wallet_outlined,
+                    '卡包',
+                    () => _showNotReady('卡包'),
+                  ),
+                  _profileMenuItem(
+                    context,
+                    Icons.emoji_emotions_outlined,
+                    '表情',
+                    () => _showNotReady('表情'),
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                _profileMenuSection(context, [
+                  _profileMenuItem(
+                    context,
+                    Icons.settings_outlined,
+                    '设置',
+                    () => _showNotReady('设置'),
+                  ),
+                ]),
+                const SizedBox(height: 20),
+                Text(
+                  '我的动态',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 0, label: Text('动态')),
+                    ButtonSegment(value: 1, label: Text('收藏')),
+                    ButtonSegment(value: 2, label: Text('点赞')),
+                  ],
+                  selected: {section},
+                  onSelectionChanged: (selected) {
+                    HapticFeedback.selectionClick();
+                    setState(() => section = selected.first);
+                  },
+                  showSelectedIcon: false,
                 ),
                 const SizedBox(height: 12),
                 if (visiblePosts.isEmpty)
@@ -321,5 +367,49 @@ class ProfilePageState extends State<ProfilePage> {
         ),
       ],
     );
+  }
+
+  Widget _profileMenuSection(BuildContext context, List<Widget> children) {
+    final c = Theme.of(context).colorScheme;
+    return Material(
+      color: c.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+
+  Widget _profileMenuItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+  ) {
+    final c = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Icon(icon, size: 23, color: c.onSurfaceVariant),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(fontSize: 16, color: c.onSurface),
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 20, color: c.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNotReady(String name) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$name功能尚未接入')));
   }
 }
