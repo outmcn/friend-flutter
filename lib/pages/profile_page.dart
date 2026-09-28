@@ -273,11 +273,7 @@ class ProfilePageState extends State<ProfilePage> {
                         showEdit: true,
                         onEdit: _editNickname,
                       ),
-                      const SizedBox(height: 20),
-                      _MineQuickActions(onTap: _showMessage),
-                      const SizedBox(height: 22),
-                      _SectionHeading(title: '我的内容', action: '查看全部'),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 18),
                       SegmentedButton<int>(
                         segments: const [
                           ButtonSegment(value: 0, label: Text('动态')),
@@ -323,130 +319,6 @@ class ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _MineQuickActions extends StatelessWidget {
-  final ValueChanged<String> onTap;
-
-  const _MineQuickActions({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Expanded(
-          child: _MineAction(
-            icon: Icons.favorite_border,
-            label: '赞与收藏',
-            tint: const Color(0xffef6d78),
-            onTap: () => onTap('赞与收藏'),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _MineAction(
-            icon: Icons.shopping_bag_outlined,
-            label: '购物车',
-            tint: const Color(0xffe69a43),
-            onTap: () => onTap('购物车'),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _MineAction(
-            icon: Icons.history,
-            label: '浏览记录',
-            tint: const Color(0xff6f8fd5),
-            onTap: () => onTap('浏览记录'),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _MineAction(
-            icon: Icons.menu_book_outlined,
-            label: '创作中心',
-            tint: colorScheme.primary,
-            onTap: () => onTap('创作中心'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MineAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color tint;
-  final VoidCallback onTap;
-
-  const _MineAction({
-    required this.icon,
-    required this.label,
-    required this.tint,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: tint.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: tint, size: 23),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeading extends StatelessWidget {
-  final String title;
-  final String action;
-
-  const _SectionHeading({required this.title, required this.action});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-        ),
-        const Spacer(),
-        Text(
-          action,
-          style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
-        ),
-        const SizedBox(width: 3),
-        Icon(Icons.chevron_right, size: 17, color: colors.onSurfaceVariant),
       ],
     );
   }
