@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart' show TIcons;
@@ -691,8 +692,8 @@ class HomeTopBar extends StatelessWidget {
   }
 }
 
-class _DiscoveryAppBarPill extends StatelessWidget {
-  const _DiscoveryAppBarPill({
+class _DiscoveryCupertinoPill extends StatelessWidget {
+  const _DiscoveryCupertinoPill({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -704,19 +705,20 @@ class _DiscoveryAppBarPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return OutlinedButton(
+    return CupertinoButton(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      minimumSize: Size.zero,
       onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(62, 28),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        backgroundColor: selected ? colors.primary : colors.surface,
-        foregroundColor: selected ? colors.onPrimary : colors.onSurface,
-        side: BorderSide(color: selected ? colors.primary : colors.outline),
-        shape: const StadiumBorder(),
-        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+      color: selected ? CupertinoColors.activeBlue : null,
+      borderRadius: BorderRadius.circular(999),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: selected ? CupertinoColors.white : CupertinoColors.label,
+        ),
       ),
-      child: Text(label),
     );
   }
 }
@@ -752,13 +754,13 @@ class DiscoveryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        AppBar(
-          toolbarHeight: 44,
+        CupertinoNavigationBar(
           automaticallyImplyLeading: false,
-          title: Row(
+          middle: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               for (final option in DiscoveryTopBar.options) ...[
-                _DiscoveryAppBarPill(
+                _DiscoveryCupertinoPill(
                   label: option,
                   selected: option == selectedFilter,
                   onTap: () {
@@ -769,17 +771,15 @@ class DiscoveryPage extends StatelessWidget {
                   },
                 ),
                 if (option != DiscoveryTopBar.options.last)
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
               ],
             ],
           ),
-          actions: [
-            IconButton(
-              onPressed: () => _compose(context),
-              tooltip: '发布动态',
-              icon: const Icon(Icons.loupe_outlined, size: 24),
-            ),
-          ],
+          trailing: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => _compose(context),
+            child: const Icon(Icons.loupe_outlined, size: 22),
+          ),
         ),
         Expanded(
           child: RefreshIndicator(

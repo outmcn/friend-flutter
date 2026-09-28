@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../services/api_client.dart';
 import 'other_profile_page.dart';
@@ -91,17 +92,14 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   Widget _header(ColorScheme colors) {
-    return AppBar(
-      toolbarHeight: 44,
+    return CupertinoNavigationBar(
       automaticallyImplyLeading: false,
-      title: const Text('消息'),
-      actions: [
-        IconButton(
-          onPressed: _loadUsers,
-          tooltip: '刷新',
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
+      middle: const Text('消息'),
+      trailing: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: _loadUsers,
+        child: const Icon(CupertinoIcons.refresh, size: 22),
+      ),
     );
   }
 
