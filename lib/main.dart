@@ -416,8 +416,8 @@ class _FriendShellState extends State<FriendShell> {
             label: '主页',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bubble_chart_outlined),
-            selectedIcon: Icon(Icons.bubble_chart),
+            icon: Icon(Icons.motion_photos_on_outlined),
+            selectedIcon: Icon(Icons.motion_photos_on),
             label: '发现',
           ),
           NavigationDestination(
