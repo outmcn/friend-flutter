@@ -122,34 +122,29 @@ class _PostCardState extends State<PostCard> {
         color: colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: _openDetail,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (hasImage)
-                GestureDetector(
-                  onTap: () => _showFullImage(context, post.imageUrl!),
-                  child: Hero(
-                    tag: 'post-image-${post.id}',
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(14),
-                      ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 170,
-                        child: Image.network(
-                          post.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: colors.surfaceContainerHighest,
-                            alignment: Alignment.center,
-                            child: Icon(
-                              Icons.broken_image_outlined,
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 170,
+                    child: Image.network(
+                      post.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: colors.surfaceContainerHighest,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: colors.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -284,13 +279,13 @@ class _PostCardState extends State<PostCard> {
     UiPost post,
     String? distance,
   ) {
-    return ClipRect(
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: _openDetail,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _openDetail,
+      child: ClipRect(
+        child: Column(
+          children: [
+            Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,17 +319,14 @@ class _PostCardState extends State<PostCard> {
                   if (post.imageUrl?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.only(top: 14),
-                      child: GestureDetector(
-                        onTap: () => _showFullImage(context, post.imageUrl!),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SizedBox(
-                            height: 240,
-                            width: double.infinity,
-                            child: Image.network(
-                              post.imageUrl!,
-                              fit: BoxFit.cover,
-                            ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          height: 240,
+                          width: double.infinity,
+                          child: Image.network(
+                            post.imageUrl!,
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
@@ -343,29 +335,9 @@ class _PostCardState extends State<PostCard> {
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-
-  void _showFullImage(BuildContext context, String url) => showDialog<void>(
-    context: context,
-    barrierColor: Colors.black87,
-    builder: (_) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Hero(
-          tag: 'post-image-${widget.post.id}',
-          child: InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 4,
-            child: Image.network(url, fit: BoxFit.contain),
-          ),
-        ),
-      ),
-    ),
-  );
 }
