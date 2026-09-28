@@ -416,23 +416,47 @@ class _FriendShellState extends State<FriendShell> {
           },
           destinations: const [
             NavigationDestination(
-              icon: Icon(TIcons.cd),
-              selectedIcon: Icon(TIcons.cd_filled),
+              icon: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Icon(TIcons.cd),
+              ),
+              selectedIcon: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Icon(TIcons.cd_filled),
+              ),
               label: '主页',
             ),
             NavigationDestination(
-              icon: Icon(TIcons.dart_board),
-              selectedIcon: Icon(TIcons.dart_board_filled),
+              icon: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Icon(TIcons.dart_board),
+              ),
+              selectedIcon: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Icon(TIcons.dart_board_filled),
+              ),
               label: '发现',
             ),
             NavigationDestination(
-              icon: Icon(TIcons.chat_bubble_1),
-              selectedIcon: Icon(TIcons.chat_bubble_1_filled),
+              icon: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Icon(TIcons.chat_bubble_1),
+              ),
+              selectedIcon: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Icon(TIcons.chat_bubble_1_filled),
+              ),
               label: '消息',
             ),
             NavigationDestination(
-              icon: Icon(TIcons.highlight_1),
-              selectedIcon: Icon(TIcons.highlight_1_filled),
+              icon: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Icon(TIcons.highlight_1),
+              ),
+              selectedIcon: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Icon(TIcons.highlight_1_filled),
+              ),
               label: '我的',
             ),
           ],
