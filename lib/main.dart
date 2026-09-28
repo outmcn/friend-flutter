@@ -111,9 +111,9 @@ class _FriendAppState extends State<FriendApp> {
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: colors.surfaceContainer,
       indicatorColor: colors.primaryContainer,
-      height: 60,
-      labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 11)),
-      labelPadding: const EdgeInsets.only(top: 4, bottom: 5),
+      height: 50,
+      labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 10)),
+      labelPadding: const EdgeInsets.only(top: 0, bottom: 0),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -405,7 +405,7 @@ class _FriendShellState extends State<FriendShell> {
       body: IndexedStack(index: tab, children: pages),
       bottomNavigationBar: NavigationBarTheme(
         data: const NavigationBarThemeData(
-          height: 60,
+          height: 50,
           labelPadding: EdgeInsets.only(top: 1),
         ),
         child: NavigationBar(
