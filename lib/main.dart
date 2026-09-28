@@ -752,11 +752,14 @@ class DiscoveryPage extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        CupertinoNavigationBar(
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          toolbarHeight: 44,
           automaticallyImplyLeading: false,
-          middle: Row(
+          title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final option in DiscoveryTopBar.options) ...[
@@ -775,55 +778,49 @@ class DiscoveryPage extends StatelessWidget {
               ],
             ],
           ),
-          trailing: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => _compose(context),
-            child: const Icon(Icons.loupe_outlined, size: 22),
-          ),
+          actions: [
+            IconButton(
+              onPressed: () => _compose(context),
+              icon: const Icon(Icons.loupe_outlined, size: 22),
+            ),
+          ],
         ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: onRefresh,
-            child: MasonryGridView.count(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(12, 14, 12, 24),
-              crossAxisCount: 2,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              itemCount: posts.isNotEmpty ? posts.length : 1,
-              itemBuilder: (context, index) {
-                if (posts.isNotEmpty) {
-                  return PostCard(
+        CupertinoSliverRefreshControl(onRefresh: onRefresh),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(12, 14, 12, 24),
+          sliver: posts.isNotEmpty
+              ? SliverMasonryGrid.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childCount: posts.length,
+                  itemBuilder: (context, index) => PostCard(
                     post: posts[index],
                     token: token,
                     onActionChanged: onActionChanged,
                     currentLatitude: currentLatitude,
                     currentLongitude: currentLongitude,
                     currentUserId: currentUserId,
-                  );
-                }
-                if (loading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (error != null) {
-                  return _DiscoveryNotice(
-                    icon: Icons.cloud_off_outlined,
-                    message: error!,
-                    actionLabel: '重新加载',
-                    onAction: onRefresh,
-                  );
-                }
-                return _DiscoveryNotice(
-                  icon: Icons.auto_awesome_outlined,
-                  message: selectedFilter == '关注'
-                      ? '还没有关注的人发布动态'
-                      : selectedFilter == '附近'
-                      ? '附近暂无动态'
-                      : '暂无动态',
-                );
-              },
-            ),
-          ),
+                  ),
+                )
+              : SliverToBoxAdapter(
+                  child: loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _DiscoveryNotice(
+                          icon: error != null
+                              ? Icons.cloud_off_outlined
+                              : Icons.auto_awesome_outlined,
+                          message:
+                              error ??
+                              (selectedFilter == '关注'
+                                  ? '还没有关注的人发布动态'
+                                  : selectedFilter == '附近'
+                                  ? '附近暂无动态'
+                                  : '暂无动态'),
+                          actionLabel: error != null ? '重新加载' : null,
+                          onAction: error != null ? onRefresh : null,
+                        ),
+                ),
         ),
       ],
     );
