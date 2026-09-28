@@ -721,7 +721,7 @@ class _DiscoveryTextTab extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: selected ? colors.primary : colors.onSurfaceVariant,
-                  fontSize: 14,
+                  fontSize: 20,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   height: 1.15,
                 ),
