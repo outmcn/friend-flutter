@@ -24,51 +24,31 @@ class DiscoveryTopBar extends StatelessWidget {
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Text(
-                    '发现',
-                    style: TextStyle(
-                      color: colors.onSurface,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const Spacer(),
-                  OutlinedButton.icon(
-                    onPressed: onCompose,
-                    icon: const Icon(TIcons.edit, size: 17),
-                    label: const Text('发布'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(88, 38),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      shape: const StadiumBorder(),
-                      side: BorderSide(color: colors.outline),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  for (final option in options) ...[
-                    _FilterPill(
-                      label: option,
-                      selected: option == selected,
-                      onTap: () {
-                        if (option != selected) {
-                          HapticFeedback.selectionClick();
-                          onSelected(option);
-                        }
-                      },
-                    ),
-                    if (option != options.last) const SizedBox(width: 8),
-                  ],
-                ],
+              for (final option in options) ...[
+                _FilterPill(
+                  label: option,
+                  selected: option == selected,
+                  onTap: () {
+                    if (option != selected) {
+                      HapticFeedback.selectionClick();
+                      onSelected(option);
+                    }
+                  },
+                ),
+                if (option != options.last) const SizedBox(width: 8),
+              ],
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: onCompose,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(42, 36),
+                  padding: EdgeInsets.zero,
+                  shape: const StadiumBorder(),
+                  side: BorderSide(color: colors.outline),
+                ),
+                child: const Icon(TIcons.add_circle, size: 20),
               ),
             ],
           ),
