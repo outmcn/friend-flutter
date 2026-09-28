@@ -403,63 +403,45 @@ class _FriendShellState extends State<FriendShell> {
     ];
     return Scaffold(
       body: IndexedStack(index: tab, children: pages),
-      bottomNavigationBar: NavigationBarTheme(
-        data: const NavigationBarThemeData(
-          height: 54,
-          labelPadding: EdgeInsets.only(top: 8, bottom: 0),
-        ),
-        child: NavigationBar(
-          selectedIndex: tab,
-          onDestinationSelected: (value) {
-            HapticFeedback.selectionClick();
-            setState(() => tab = value);
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(TIcons.cd),
-              ),
-              selectedIcon: Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(TIcons.cd_filled),
-              ),
-              label: '主页',
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Material(
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          child: SizedBox(
+            height: 54,
+            child: Row(
+              children: [
+                _FriendBottomTab(
+                  icon: TIcons.cd,
+                  selectedIcon: TIcons.cd_filled,
+                  label: '主页',
+                  selected: tab == 0,
+                  onTap: () => setState(() => tab = 0),
+                ),
+                _FriendBottomTab(
+                  icon: TIcons.dart_board,
+                  selectedIcon: TIcons.dart_board_filled,
+                  label: '发现',
+                  selected: tab == 1,
+                  onTap: () => setState(() => tab = 1),
+                ),
+                _FriendBottomTab(
+                  icon: TIcons.chat_bubble_1,
+                  selectedIcon: TIcons.chat_bubble_1_filled,
+                  label: '消息',
+                  selected: tab == 2,
+                  onTap: () => setState(() => tab = 2),
+                ),
+                _FriendBottomTab(
+                  icon: TIcons.highlight_1,
+                  selectedIcon: TIcons.highlight_1_filled,
+                  label: '我的',
+                  selected: tab == 3,
+                  onTap: () => setState(() => tab = 3),
+                ),
+              ],
             ),
-            NavigationDestination(
-              icon: Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(TIcons.dart_board),
-              ),
-              selectedIcon: Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(TIcons.dart_board_filled),
-              ),
-              label: '发现',
-            ),
-            NavigationDestination(
-              icon: Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(TIcons.chat_bubble_1),
-              ),
-              selectedIcon: Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(TIcons.chat_bubble_1_filled),
-              ),
-              label: '消息',
-            ),
-            NavigationDestination(
-              icon: Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(TIcons.highlight_1),
-              ),
-              selectedIcon: Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(TIcons.highlight_1_filled),
-              ),
-              label: '我的',
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -505,6 +487,61 @@ class _FriendShellState extends State<FriendShell> {
         );
       }
     }
+  }
+}
+
+class _FriendBottomTab extends StatelessWidget {
+  const _FriendBottomTab({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Center(
+          child: SizedBox(
+            height: 42,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  selected ? selectedIcon : icon,
+                  size: 22,
+                  color: selected ? colors.onSurface : colors.onSurfaceVariant,
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    height: 1,
+                    color: selected
+                        ? colors.onSurface
+                        : colors.onSurfaceVariant,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
