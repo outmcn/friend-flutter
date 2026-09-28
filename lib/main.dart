@@ -705,19 +705,42 @@ class _DiscoveryTextTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        minimumSize: Size.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        foregroundColor: selected ? colors.primary : colors.onSurfaceVariant,
-        textStyle: TextStyle(
-          fontSize: 14,
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(7, 4, 7, 5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? colors.primary : colors.onSurfaceVariant,
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  height: 1.15,
+                ),
+              ),
+              const SizedBox(height: 3),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                height: 2,
+                width: selected ? 18 : 0,
+                decoration: BoxDecoration(
+                  color: colors.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      child: Text(label),
     );
   }
 }
@@ -770,7 +793,7 @@ class DiscoveryPage extends StatelessWidget {
                   },
                 ),
                 if (option != DiscoveryTopBar.options.last)
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
               ],
             ],
           ),
