@@ -91,42 +91,17 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   Widget _header(ColorScheme colors) {
-    return Material(
-      color: colors.surface,
-      child: SafeArea(
-        top: true,
-        bottom: false,
-        child: SizedBox(
-          height: 44,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Text(
-                  '消息',
-                  style: TextStyle(
-                    color: colors.onSurface,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: _loadUsers,
-                  tooltip: '刷新',
-                  icon: const Icon(Icons.refresh),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 36,
-                    height: 36,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            ),
-          ),
+    return AppBar(
+      toolbarHeight: 44,
+      automaticallyImplyLeading: false,
+      title: const Text('消息'),
+      actions: [
+        IconButton(
+          onPressed: _loadUsers,
+          tooltip: '刷新',
+          icon: const Icon(Icons.refresh),
         ),
-      ),
+      ],
     );
   }
 

@@ -691,6 +691,36 @@ class HomeTopBar extends StatelessWidget {
   }
 }
 
+class _DiscoveryAppBarPill extends StatelessWidget {
+  const _DiscoveryAppBarPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(62, 28),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        backgroundColor: selected ? colors.primary : colors.surface,
+        foregroundColor: selected ? colors.onPrimary : colors.onSurface,
+        side: BorderSide(color: selected ? colors.primary : colors.outline),
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+      ),
+      child: Text(label),
+    );
+  }
+}
+
 class DiscoveryPage extends StatelessWidget {
   final List<UiPost> posts;
   final String token;
@@ -722,10 +752,34 @@ class DiscoveryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        DiscoveryTopBar(
-          selected: selectedFilter,
-          onSelected: onFilterChanged,
-          onCompose: () => _compose(context),
+        AppBar(
+          toolbarHeight: 44,
+          automaticallyImplyLeading: false,
+          title: Row(
+            children: [
+              for (final option in DiscoveryTopBar.options) ...[
+                _DiscoveryAppBarPill(
+                  label: option,
+                  selected: option == selectedFilter,
+                  onTap: () {
+                    if (option != selectedFilter) {
+                      HapticFeedback.selectionClick();
+                      onFilterChanged(option);
+                    }
+                  },
+                ),
+                if (option != DiscoveryTopBar.options.last)
+                  const SizedBox(width: 8),
+              ],
+            ],
+          ),
+          actions: [
+            IconButton(
+              onPressed: () => _compose(context),
+              tooltip: '发布动态',
+              icon: const Icon(Icons.loupe_outlined, size: 24),
+            ),
+          ],
         ),
         Expanded(
           child: RefreshIndicator(
