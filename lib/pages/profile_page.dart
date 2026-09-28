@@ -272,15 +272,21 @@ class ProfilePageState extends State<ProfilePage> {
                 _profileMenuSection(context, [
                   _profileMenuItem(
                     context,
-                    Icons.bookmark_border,
-                    '收藏',
-                    () => _showNotReady('收藏'),
+                    Icons.dynamic_feed_outlined,
+                    '动态',
+                    () => _showSection(0),
                   ),
                   _profileMenuItem(
                     context,
-                    Icons.photo_library_outlined,
-                    '相册',
-                    () => _showNotReady('相册'),
+                    Icons.bookmark_border,
+                    '收藏',
+                    () => _showSection(1),
+                  ),
+                  _profileMenuItem(
+                    context,
+                    Icons.thumb_up_alt_outlined,
+                    '点赞',
+                    () => _showSection(2),
                   ),
                 ]),
                 const SizedBox(height: 12),
@@ -315,7 +321,11 @@ class ProfilePageState extends State<ProfilePage> {
                 ]),
                 const SizedBox(height: 20),
                 Text(
-                  '我的动态',
+                  section == 0
+                      ? '我的动态'
+                      : section == 1
+                      ? '我的收藏'
+                      : '我的点赞',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -405,6 +415,11 @@ class ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+  }
+
+  void _showSection(int nextSection) {
+    HapticFeedback.selectionClick();
+    setState(() => section = nextSection);
   }
 
   void _showNotReady(String name) {
