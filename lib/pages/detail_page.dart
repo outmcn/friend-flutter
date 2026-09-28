@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart' show TIcons;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
@@ -710,6 +711,7 @@ class _DetailPageState extends State<DetailPage> {
     final isOwnPost = post.authorId != 0 && post.authorId == currentUserId;
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 40,
         titleSpacing: 0,
         title: Align(
           alignment: Alignment.centerLeft,
@@ -762,7 +764,7 @@ class _DetailPageState extends State<DetailPage> {
             onPressed: _showShareSheet,
             padding: const EdgeInsets.only(left: 2, right: 16),
             constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-            icon: const Icon(Icons.ios_share),
+            icon: const Icon(TIcons.share_1),
             tooltip: '分享',
           ),
         ],
