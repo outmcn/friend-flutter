@@ -135,7 +135,7 @@ class _PostCardState extends State<PostCard> {
                   ),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 170,
+                    height: 240,
                     child: Image.network(
                       post.imageUrl!,
                       fit: BoxFit.cover,
