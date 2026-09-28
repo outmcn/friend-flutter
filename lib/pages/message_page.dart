@@ -92,7 +92,7 @@ class _MessagePageState extends State<MessagePage> {
 
   Widget _header(ColorScheme colors) {
     return AppBar(
-      toolbarHeight: 44,
+      toolbarHeight: 40,
       automaticallyImplyLeading: false,
       title: const Text('消息'),
       actions: [

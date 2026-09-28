@@ -753,7 +753,7 @@ class DiscoveryPage extends StatelessWidget {
     return Column(
       children: [
         AppBar(
-          toolbarHeight: 44,
+          toolbarHeight: 40,
           automaticallyImplyLeading: false,
           title: Row(
             children: [
