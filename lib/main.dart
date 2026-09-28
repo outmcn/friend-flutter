@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart' show TIcons;
@@ -692,8 +691,8 @@ class HomeTopBar extends StatelessWidget {
   }
 }
 
-class _DiscoveryCupertinoPill extends StatelessWidget {
-  const _DiscoveryCupertinoPill({
+class _DiscoveryAppBarPill extends StatelessWidget {
+  const _DiscoveryAppBarPill({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -705,20 +704,19 @@ class _DiscoveryCupertinoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      minimumSize: Size.zero,
+    final colors = Theme.of(context).colorScheme;
+    return OutlinedButton(
       onPressed: onTap,
-      color: selected ? CupertinoColors.activeBlue : null,
-      borderRadius: BorderRadius.circular(999),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: selected ? CupertinoColors.white : CupertinoColors.label,
-        ),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(62, 28),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        backgroundColor: selected ? colors.primary : colors.surface,
+        foregroundColor: selected ? colors.onPrimary : colors.onSurface,
+        side: BorderSide(color: selected ? colors.primary : colors.outline),
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
       ),
+      child: Text(label),
     );
   }
 }
@@ -752,18 +750,15 @@ class DiscoveryPage extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverAppBar(
-          pinned: true,
+    return Column(
+      children: [
+        AppBar(
           toolbarHeight: 44,
           automaticallyImplyLeading: false,
           title: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               for (final option in DiscoveryTopBar.options) ...[
-                _DiscoveryCupertinoPill(
+                _DiscoveryAppBarPill(
                   label: option,
                   selected: option == selectedFilter,
                   onTap: () {
@@ -774,53 +769,61 @@ class DiscoveryPage extends StatelessWidget {
                   },
                 ),
                 if (option != DiscoveryTopBar.options.last)
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
               ],
             ],
           ),
           actions: [
             IconButton(
               onPressed: () => _compose(context),
-              icon: const Icon(Icons.loupe_outlined, size: 22),
+              tooltip: '发布动态',
+              icon: const Icon(Icons.loupe_outlined, size: 24),
             ),
           ],
         ),
-        CupertinoSliverRefreshControl(onRefresh: onRefresh),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12, 14, 12, 24),
-          sliver: posts.isNotEmpty
-              ? SliverMasonryGrid.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childCount: posts.length,
-                  itemBuilder: (context, index) => PostCard(
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: onRefresh,
+            child: MasonryGridView.count(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 24),
+              crossAxisCount: 2,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 14,
+              itemCount: posts.isNotEmpty ? posts.length : 1,
+              itemBuilder: (context, index) {
+                if (posts.isNotEmpty) {
+                  return PostCard(
                     post: posts[index],
                     token: token,
                     onActionChanged: onActionChanged,
                     currentLatitude: currentLatitude,
                     currentLongitude: currentLongitude,
                     currentUserId: currentUserId,
-                  ),
-                )
-              : SliverToBoxAdapter(
-                  child: loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _DiscoveryNotice(
-                          icon: error != null
-                              ? Icons.cloud_off_outlined
-                              : Icons.auto_awesome_outlined,
-                          message:
-                              error ??
-                              (selectedFilter == '关注'
-                                  ? '还没有关注的人发布动态'
-                                  : selectedFilter == '附近'
-                                  ? '附近暂无动态'
-                                  : '暂无动态'),
-                          actionLabel: error != null ? '重新加载' : null,
-                          onAction: error != null ? onRefresh : null,
-                        ),
-                ),
+                  );
+                }
+                if (loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (error != null) {
+                  return _DiscoveryNotice(
+                    icon: Icons.cloud_off_outlined,
+                    message: error!,
+                    actionLabel: '重新加载',
+                    onAction: onRefresh,
+                  );
+                }
+                return _DiscoveryNotice(
+                  icon: Icons.auto_awesome_outlined,
+                  message: selectedFilter == '关注'
+                      ? '还没有关注的人发布动态'
+                      : selectedFilter == '附近'
+                      ? '附近暂无动态'
+                      : '暂无动态',
+                );
+              },
+            ),
+          ),
         ),
       ],
     );

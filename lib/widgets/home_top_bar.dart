@@ -1,67 +1,47 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class HomeTopBar extends StatelessWidget {
-  final VoidCallback? onQrCode;
-  final VoidCallback? onSettings;
-  final List<Widget> trailingActions;
   final bool showTitle;
-  final bool showDefaultActions;
-
-  const HomeTopBar({
-    super.key,
-    this.onQrCode,
-    this.onSettings,
-    this.trailingActions = const [],
-    this.showTitle = true,
-    this.showDefaultActions = true,
-  });
+  const HomeTopBar({super.key, this.showTitle = true});
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoNavigationBar(
+    return AppBar(
+      toolbarHeight: 48,
+      title: showTitle ? const Text('主页') : null,
       automaticallyImplyLeading: false,
-      middle: showTitle ? const Text('主页') : null,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (showDefaultActions)
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed:
-                  onQrCode ??
-                  () => showCupertinoDialog<void>(
-                    context: context,
-                    builder: (_) => const CupertinoAlertDialog(
-                      title: Text('二维码'),
-                      content: Padding(
-                        padding: EdgeInsets.only(top: 16),
-                        child: Icon(CupertinoIcons.qrcode, size: 190),
-                      ),
-                    ),
-                  ),
-              child: const Icon(CupertinoIcons.qrcode, size: 22),
+      actions: [
+        IconButton(
+          onPressed: () => showDialog<void>(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('二维码'),
+              content: const SizedBox(
+                width: 220,
+                height: 220,
+                child: Center(child: Icon(Icons.qr_code_2, size: 190)),
+              ),
             ),
-          if (showDefaultActions)
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed:
-                  onSettings ??
-                  () => showCupertinoModalPopup<void>(
-                    context: context,
-                    builder: (_) => CupertinoActionSheet(
-                      title: const Text('设置'),
-                      message: const Text('设置功能正在完善'),
-                      cancelButton: CupertinoActionSheetAction(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('取消'),
-                      ),
-                    ),
-                  ),
-              child: const Icon(CupertinoIcons.gear, size: 22),
+          ),
+          tooltip: '二维码',
+          icon: const Icon(Icons.qr_code_2_outlined),
+        ),
+        IconButton(
+          onPressed: () => showModalBottomSheet<void>(
+            context: context,
+            showDragHandle: true,
+            builder: (_) => const SafeArea(
+              child: ListTile(
+                leading: Icon(Icons.settings_outlined),
+                title: Text('设置'),
+                subtitle: Text('设置功能正在完善'),
+              ),
             ),
-          ...trailingActions,
-        ],
-      ),
+          ),
+          tooltip: '设置',
+          icon: const Icon(Icons.settings_outlined),
+        ),
+      ],
     );
   }
 }

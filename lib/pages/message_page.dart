@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 
 import '../services/api_client.dart';
 import 'other_profile_page.dart';
@@ -91,40 +90,46 @@ class _MessagePageState extends State<MessagePage> {
     );
   }
 
-  Widget _header(ColorScheme colors) => const SizedBox.shrink();
+  Widget _header(ColorScheme colors) {
+    return AppBar(
+      toolbarHeight: 44,
+      automaticallyImplyLeading: false,
+      title: const Text('消息'),
+      actions: [
+        IconButton(
+          onPressed: _loadUsers,
+          tooltip: '刷新',
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+    );
+  }
 
   Widget _body(ColorScheme colors) {
-    final children = <Widget>[];
-    if (_loading && _users.isEmpty) {
-      children.add(
-        const Padding(
-          padding: EdgeInsets.only(top: 24),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    } else if (_error != null && _users.isEmpty) {
-      children.add(
-        _StateMessage(message: '加载失败，请重试', action: '重试', onPressed: _loadUsers),
-      );
-    } else if (_users.isEmpty) {
-      children.add(const _StateMessage(message: '聊天服务尚未接入'));
-    } else {
-      children.addAll(_users.map((user) => _conversationRow(user, colors)));
-    }
     return Expanded(
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          const SliverAppBar(
-            pinned: true,
-            toolbarHeight: 44,
-            automaticallyImplyLeading: false,
-            title: Text('消息'),
-            actions: [Icon(CupertinoIcons.refresh)],
-          ),
-          CupertinoSliverRefreshControl(onRefresh: _loadUsers),
-          SliverList(delegate: SliverChildListDelegate(children)),
-        ],
+      child: RefreshIndicator(
+        onRefresh: _loadUsers,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            if (_loading && _users.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_error != null && _users.isEmpty)
+              _StateMessage(
+                message: '加载失败，请重试',
+                action: '重试',
+                onPressed: _loadUsers,
+              )
+            else if (_users.isEmpty)
+              const _StateMessage(message: '聊天服务尚未接入')
+            else
+              ..._users.map((user) => _conversationRow(user, colors)),
+          ],
+        ),
       ),
     );
   }
