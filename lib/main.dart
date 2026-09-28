@@ -403,34 +403,40 @@ class _FriendShellState extends State<FriendShell> {
     ];
     return Scaffold(
       body: IndexedStack(index: tab, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tab,
-        onDestinationSelected: (value) {
-          HapticFeedback.selectionClick();
-          setState(() => tab = value);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(TIcons.cd),
-            selectedIcon: Icon(TIcons.cd_filled),
-            label: '主页',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.motion_photos_on_outlined),
-            selectedIcon: Icon(Icons.motion_photos_on),
-            label: '发现',
-          ),
-          NavigationDestination(
-            icon: Icon(TIcons.chat_bubble_1),
-            selectedIcon: Icon(TIcons.chat_bubble_1_filled),
-            label: '消息',
-          ),
-          NavigationDestination(
-            icon: Icon(TIcons.highlight_1),
-            selectedIcon: Icon(TIcons.highlight_1_filled),
-            label: '我的',
-          ),
-        ],
+      bottomNavigationBar: NavigationBarTheme(
+        data: const NavigationBarThemeData(
+          height: 60,
+          labelPadding: EdgeInsets.only(top: 1),
+        ),
+        child: NavigationBar(
+          selectedIndex: tab,
+          onDestinationSelected: (value) {
+            HapticFeedback.selectionClick();
+            setState(() => tab = value);
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(TIcons.cd),
+              selectedIcon: Icon(TIcons.cd_filled),
+              label: '主页',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.motion_photos_on_outlined),
+              selectedIcon: Icon(Icons.motion_photos_on),
+              label: '发现',
+            ),
+            NavigationDestination(
+              icon: Icon(TIcons.chat_bubble_1),
+              selectedIcon: Icon(TIcons.chat_bubble_1_filled),
+              label: '消息',
+            ),
+            NavigationDestination(
+              icon: Icon(TIcons.highlight_1),
+              selectedIcon: Icon(TIcons.highlight_1_filled),
+              label: '我的',
+            ),
+          ],
+        ),
       ),
     );
   }
