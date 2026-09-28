@@ -44,6 +44,7 @@ class _ComposePageState extends State<ComposePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 40,
         title: const Text('发一条'),
         actions: [
           Padding(

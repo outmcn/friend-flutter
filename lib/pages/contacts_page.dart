@@ -58,6 +58,7 @@ class _ContactsPageState extends State<ContactsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
+      toolbarHeight: 40,
       title: const Text('通讯录'),
       actions: [
         IconButton(onPressed: () {}, icon: const Icon(Icons.block_outlined)),

@@ -139,6 +139,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     final c = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 40,
         title: Text(widget.isSelf ? '我的主页' : 'Ta的主页'),
         actions: [
           if (!widget.isSelf)
@@ -325,7 +326,7 @@ class ChatPlaceholderPage extends StatelessWidget {
   const ChatPlaceholderPage({super.key, required this.name});
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text('与$name私聊')),
+    appBar: AppBar(toolbarHeight: 40, title: Text('与$name私聊')),
     body: const Center(child: Text('私聊功能尚未接入后端')),
   );
 }

@@ -6,7 +6,7 @@ class GamePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('游戏')),
+      appBar: AppBar(toolbarHeight: 40, title: const Text('游戏')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -164,7 +164,7 @@ class _GomokuPageState extends State<GomokuPage> {
         ? '黑棋回合'
         : '白棋回合';
     return Scaffold(
-      appBar: AppBar(title: const Text('五子棋')),
+      appBar: AppBar(toolbarHeight: 40, title: const Text('五子棋')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

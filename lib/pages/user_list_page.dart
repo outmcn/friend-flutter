@@ -137,7 +137,7 @@ class _UserListPageState extends State<UserListPage> {
     return widget.embedded
         ? content
         : Scaffold(
-            appBar: AppBar(title: Text(widget.title)),
+            appBar: AppBar(toolbarHeight: 40, title: Text(widget.title)),
             body: content,
           );
   }
