@@ -709,9 +709,9 @@ class _DiscoveryTextTab extends StatelessWidget {
       button: true,
       selected: selected,
       label: label,
-      child: InkWell(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(7, 4, 7, 5),
           child: Column(
