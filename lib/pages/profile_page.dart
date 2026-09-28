@@ -5,10 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ui_post.dart';
 import '../services/api_client.dart';
 import '../services/location_service.dart';
-import '../widgets/empty_state.dart';
 import '../widgets/home_top_bar.dart';
-import '../widgets/post_card.dart';
 import '../widgets/profile_card.dart';
+import 'profile_content_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
@@ -29,7 +28,6 @@ class ProfilePageState extends State<ProfilePage> {
   int selectedAvatar = 0;
   String city = '';
   bool loading = true;
-  int section = 0;
   List<UiPost> ownPosts = [];
   List<UiPost> favoritePosts = [];
   List<UiPost> likedPosts = [];
@@ -114,36 +112,6 @@ class ProfilePageState extends State<ProfilePage> {
   List<UiPost> _posts(dynamic value) => value is List
       ? value.whereType<Map<String, dynamic>>().map(UiPost.fromJson).toList()
       : <UiPost>[];
-
-  Future<void> _confirmDelete(UiPost post) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除动态'),
-        content: const Text('确定要删除这条动态吗？删除后无法恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await _deletePost(post);
-  }
-
-  Future<void> _deletePost(UiPost post) async {
-    try {
-      await _api.delete('/api/posts/${post.id}');
-      await refreshFromServer();
-    } catch (_) {
-      if (mounted) _showMessage('删除失败');
-    }
-  }
 
   Future<void> _pickAvatar() async {
     final chosen = await showDialog<int>(
@@ -238,12 +206,6 @@ class ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final visiblePosts = section == 0
-        ? ownPosts
-        : section == 1
-        ? favoritePosts
-        : likedPosts;
-
     return Column(
       children: [
         const HomeTopBar(showTitle: false),
@@ -274,19 +236,19 @@ class ProfilePageState extends State<ProfilePage> {
                     context,
                     Icons.dynamic_feed_outlined,
                     '动态',
-                    () => _showSection(0),
+                    () => _openContentPage(0),
                   ),
                   _profileMenuItem(
                     context,
                     Icons.bookmark_border,
                     '收藏',
-                    () => _showSection(1),
+                    () => _openContentPage(1),
                   ),
                   _profileMenuItem(
                     context,
                     Icons.thumb_up_alt_outlined,
                     '点赞',
-                    () => _showSection(2),
+                    () => _openContentPage(2),
                   ),
                 ]),
                 const SizedBox(height: 12),
@@ -319,58 +281,7 @@ class ProfilePageState extends State<ProfilePage> {
                     () => _showNotReady('设置'),
                   ),
                 ]),
-                const SizedBox(height: 20),
-                Text(
-                  section == 0
-                      ? '我的动态'
-                      : section == 1
-                      ? '我的收藏'
-                      : '我的点赞',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 0, label: Text('动态')),
-                    ButtonSegment(value: 1, label: Text('收藏')),
-                    ButtonSegment(value: 2, label: Text('点赞')),
-                  ],
-                  selected: {section},
-                  onSelectionChanged: (selected) {
-                    HapticFeedback.selectionClick();
-                    setState(() => section = selected.first);
-                  },
-                  showSelectedIcon: false,
-                ),
                 const SizedBox(height: 12),
-                if (visiblePosts.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: EmptyState(
-                      text: section == 0
-                          ? '还没有动态'
-                          : section == 1
-                          ? '还没有收藏'
-                          : '还没有点赞',
-                    ),
-                  ),
-                ...visiblePosts.asMap().entries.expand(
-                  (entry) => <Widget>[
-                    PostCard(
-                      post: entry.value,
-                      onActionChanged: refreshFromServer,
-                      canDelete: section == 0,
-                      hideAuthor: true,
-                      onDeleted: () => _confirmDelete(entry.value),
-                    ),
-                    if (entry.key < visiblePosts.length - 1)
-                      const Divider(height: 1),
-                  ],
-                ),
               ],
             ),
           ),
@@ -417,9 +328,28 @@ class ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showSection(int nextSection) {
+  Future<void> _openContentPage(int nextSection) async {
     HapticFeedback.selectionClick();
-    setState(() => section = nextSection);
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileContentPage(
+          title: nextSection == 0
+              ? '我的动态'
+              : nextSection == 1
+              ? '我的收藏'
+              : '我的点赞',
+          posts: nextSection == 0
+              ? ownPosts
+              : nextSection == 1
+              ? favoritePosts
+              : likedPosts,
+          canDelete: nextSection == 0,
+          onDeleted: refreshFromServer,
+        ),
+      ),
+    );
+    if (mounted) await refreshFromServer();
   }
 
   void _showNotReady(String name) {
