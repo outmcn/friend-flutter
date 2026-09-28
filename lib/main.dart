@@ -691,8 +691,8 @@ class HomeTopBar extends StatelessWidget {
   }
 }
 
-class _DiscoveryAppBarPill extends StatelessWidget {
-  const _DiscoveryAppBarPill({
+class _DiscoveryTextTab extends StatelessWidget {
+  const _DiscoveryTextTab({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -705,16 +705,17 @@ class _DiscoveryAppBarPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return OutlinedButton(
+    return TextButton(
       onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(62, 28),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        backgroundColor: selected ? colors.primary : colors.surface,
-        foregroundColor: selected ? colors.onPrimary : colors.onSurface,
-        side: BorderSide(color: selected ? colors.primary : colors.outline),
-        shape: const StadiumBorder(),
-        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+      style: TextButton.styleFrom(
+        minimumSize: Size.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        foregroundColor: selected ? colors.primary : colors.onSurfaceVariant,
+        textStyle: TextStyle(
+          fontSize: 14,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+        ),
       ),
       child: Text(label),
     );
@@ -758,7 +759,7 @@ class DiscoveryPage extends StatelessWidget {
           title: Row(
             children: [
               for (final option in DiscoveryTopBar.options) ...[
-                _DiscoveryAppBarPill(
+                _DiscoveryTextTab(
                   label: option,
                   selected: option == selectedFilter,
                   onTap: () {
