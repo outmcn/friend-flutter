@@ -13,7 +13,7 @@ void main() {
 
   testWidgets('home game entry opens Gomoku', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: HomePage()));
-    await tester.tap(find.text('玩剧本'));
+    await tester.tapAt(const Offset(100, 180));
     await tester.pumpAndSettle();
     expect(find.text('五子棋'), findsOneWidget);
     await tester.tap(find.text('五子棋'));

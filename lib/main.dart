@@ -559,13 +559,8 @@ class HomePage extends StatelessWidget {
                       height: leftWidth * 0.92,
                       child: _IrregularHomeCard(
                         clipper: const _PlayScriptClipper(),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xffb6f5f2), Color(0xff89ddeb)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: const Color(0xff9fe8e9),
                         onTap: () => _openGame(context),
-                        child: const _PlayScriptContent(),
                       ),
                     ),
                     SizedBox(width: gap),
@@ -577,13 +572,8 @@ class HomePage extends StatelessWidget {
                             height: rightTopHeight,
                             child: _IrregularHomeCard(
                               clipper: const _HostScriptClipper(),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xfff7b5ea), Color(0xffeca8e9)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: const Color(0xffedb0e8),
                               onTap: () => _openGame(context),
-                              child: const _HostScriptContent(),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -591,13 +581,8 @@ class HomePage extends StatelessWidget {
                             height: rightBottomHeight,
                             child: _IrregularHomeCard(
                               clipper: const _ReasoningClipper(),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xffd5f58a), Color(0xfff4f77b)],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
+                              color: const Color(0xffe5f58a),
                               onTap: () => _openGame(context),
-                              child: const _ReasoningContent(),
                             ),
                           ),
                         ],
@@ -617,14 +602,12 @@ class HomePage extends StatelessWidget {
 class _IrregularHomeCard extends StatelessWidget {
   const _IrregularHomeCard({
     required this.clipper,
-    required this.gradient,
-    required this.child,
+    required this.color,
     required this.onTap,
   });
 
   final CustomClipper<Path> clipper;
-  final Gradient gradient;
-  final Widget child;
+  final Color color;
   final VoidCallback onTap;
 
   @override
@@ -632,268 +615,63 @@ class _IrregularHomeCard extends StatelessWidget {
     return ClipPath(
       clipper: clipper,
       child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: DecoratedBox(
-            decoration: BoxDecoration(gradient: gradient),
-            child: child,
-          ),
-        ),
+        color: color,
+        child: InkWell(onTap: onTap),
       ),
     );
   }
 }
 
-class _PlayScriptContent extends StatelessWidget {
-  const _PlayScriptContent();
+class _FolderClipper extends CustomClipper<Path> {
+  const _FolderClipper({required this.tabWidth, required this.tabHeight});
 
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        const Positioned(
-          left: 18,
-          top: 28,
-          child: Text(
-            '玩剧本',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        const Positioned(
-          left: 18,
-          top: 68,
-          child: Text(
-            '拨开迷雾  寻找真相',
-            style: TextStyle(
-              color: Color(0xff5d9195),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Positioned(
-          left: 18,
-          bottom: 25,
-          child: Container(
-            width: 112,
-            height: 52,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: const Text(
-              'GO',
-              style: TextStyle(
-                color: Color(0xffeaf36e),
-                fontSize: 28,
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ),
-        const Positioned(
-          right: -8,
-          bottom: -8,
-          child: Text('🤖', style: TextStyle(fontSize: 128)),
-        ),
-      ],
-    );
-  }
-}
-
-class _HostScriptContent extends StatelessWidget {
-  const _HostScriptContent();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned(
-          left: 12,
-          top: -10,
-          child: Transform.rotate(
-            angle: -0.06,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: const Color(0xffd927e5),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                child: Text(
-                  '首局特惠',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const Positioned(
-          left: 18,
-          top: 48,
-          child: Text(
-            '主持带本',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        const Positioned(
-          left: 18,
-          top: 82,
-          child: Text(
-            '18周等候中',
-            style: TextStyle(
-              color: Color(0xff997398),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const Positioned(
-          right: -8,
-          bottom: -10,
-          child: Text('🧑‍🎤', style: TextStyle(fontSize: 92)),
-        ),
-      ],
-    );
-  }
-}
-
-class _ReasoningContent extends StatelessWidget {
-  const _ReasoningContent();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: const [
-        Positioned(
-          left: 18,
-          top: 22,
-          child: Text(
-            '三分钟推理',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        Positioned(
-          right: -4,
-          top: -18,
-          child: Text('😮', style: TextStyle(fontSize: 76)),
-        ),
-      ],
-    );
-  }
-}
-
-class _PlayScriptClipper extends CustomClipper<Path> {
-  const _PlayScriptClipper();
+  final double tabWidth;
+  final double tabHeight;
 
   @override
   Path getClip(Size size) {
-    return Path()
-      ..moveTo(28, 0)
-      ..quadraticBezierTo(size.width * .35, 10, size.width * .58, 0)
-      ..quadraticBezierTo(size.width * .84, -7, size.width, 24)
-      ..lineTo(size.width, size.height - 28)
+    final tabEnd = 20 + tabWidth;
+    final path = Path()
+      ..moveTo(22, 0)
+      ..lineTo(tabEnd - 12, 0)
+      ..quadraticBezierTo(tabEnd - 2, 0, tabEnd + 6, tabHeight)
+      ..lineTo(size.width - 26, tabHeight)
       ..quadraticBezierTo(
-        size.width * .88,
-        size.height + 8,
-        size.width * .62,
-        size.height - 2,
+        size.width - 5,
+        tabHeight,
+        size.width - 1,
+        tabHeight + 22,
       )
+      ..lineTo(size.width - 1, size.height - 24)
       ..quadraticBezierTo(
-        size.width * .27,
-        size.height + 9,
-        22,
+        size.width - 3,
         size.height - 2,
-      )
-      ..quadraticBezierTo(-8, size.height * .7, 0, 28)
-      ..quadraticBezierTo(7, 4, 28, 0)
-      ..close();
-  }
-
-  @override
-  bool shouldReclip(covariant _PlayScriptClipper oldClipper) => false;
-}
-
-class _HostScriptClipper extends CustomClipper<Path> {
-  const _HostScriptClipper();
-
-  @override
-  Path getClip(Size size) {
-    return Path()
-      ..moveTo(24, 0)
-      ..quadraticBezierTo(size.width * .55, 8, size.width - 24, 0)
-      ..quadraticBezierTo(size.width + 8, 12, size.width, 30)
-      ..lineTo(size.width, size.height - 24)
-      ..quadraticBezierTo(
-        size.width * .82,
-        size.height + 6,
-        size.width * .52,
+        size.width - 28,
         size.height - 1,
       )
-      ..quadraticBezierTo(size.width * .2, size.height + 5, 0, size.height - 26)
-      ..lineTo(0, 28)
-      ..quadraticBezierTo(2, 5, 24, 0)
+      ..lineTo(28, size.height - 1)
+      ..quadraticBezierTo(2, size.height - 2, 0, size.height - 28)
+      ..lineTo(0, 27)
+      ..quadraticBezierTo(2, 4, 22, 0)
       ..close();
+    return path;
   }
 
   @override
-  bool shouldReclip(covariant _HostScriptClipper oldClipper) => false;
+  bool shouldReclip(covariant _FolderClipper oldClipper) =>
+      oldClipper.tabWidth != tabWidth || oldClipper.tabHeight != tabHeight;
 }
 
-class _ReasoningClipper extends CustomClipper<Path> {
-  const _ReasoningClipper();
+class _PlayScriptClipper extends _FolderClipper {
+  const _PlayScriptClipper() : super(tabWidth: 88, tabHeight: 18);
+}
 
-  @override
-  Path getClip(Size size) {
-    return Path()
-      ..moveTo(22, 0)
-      ..quadraticBezierTo(size.width * .5, 7, size.width - 25, 0)
-      ..quadraticBezierTo(
-        size.width + 6,
-        size.height * .25,
-        size.width,
-        size.height - 20,
-      )
-      ..quadraticBezierTo(
-        size.width * .76,
-        size.height + 5,
-        size.width * .42,
-        size.height,
-      )
-      ..quadraticBezierTo(
-        size.width * .12,
-        size.height + 4,
-        0,
-        size.height - 22,
-      )
-      ..quadraticBezierTo(-5, size.height * .45, 22, 0)
-      ..close();
-  }
+class _HostScriptClipper extends _FolderClipper {
+  const _HostScriptClipper() : super(tabWidth: 74, tabHeight: 16);
+}
 
-  @override
-  bool shouldReclip(covariant _ReasoningClipper oldClipper) => false;
+class _ReasoningClipper extends _FolderClipper {
+  const _ReasoningClipper() : super(tabWidth: 64, tabHeight: 15);
 }
 
 class HomeTopBar extends StatelessWidget {
