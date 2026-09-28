@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart' show TIcons;
 
 class DiscoveryTopBar extends StatelessWidget {
   const DiscoveryTopBar({
@@ -43,7 +42,7 @@ class DiscoveryTopBar extends StatelessWidget {
               IconButton(
                 onPressed: onCompose,
                 tooltip: '发布动态',
-                icon: const Icon(TIcons.add_circle, size: 24),
+                icon: const Icon(Icons.loupe_outlined, size: 24),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               ),
