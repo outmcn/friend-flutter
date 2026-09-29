@@ -20,7 +20,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Analyze
-        run: dart analyze
+        run: |
+          dart analyze 2>&1 | tee /tmp/dd-analyze.log
+          ! grep -qE '^error |^warning ' /tmp/dd-analyze.log
       - name: Test
         run: flutter test
       - name: Build unsigned iOS app
