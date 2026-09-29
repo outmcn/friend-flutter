@@ -1170,8 +1170,7 @@ class DiscoverPage extends StatelessWidget {
             IconButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => const RecommendationFeedPage()),
+                MaterialPageRoute(builder: (_) => const CreatePostPage()),
               ),
               icon: const Icon(Icons.add_circle_outline),
             ),
