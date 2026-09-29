@@ -247,9 +247,8 @@ class LoginPage extends StatelessWidget {
             ),
             _PrimaryAuthButton(
               label: '登录',
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const DDShell()),
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('手机号验证码登录接口尚未接入')),
               ),
             ),
           ],
