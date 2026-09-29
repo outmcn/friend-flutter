@@ -7,6 +7,7 @@ import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import 'post_service.dart';
@@ -1350,7 +1351,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
     if (bytes.length > 8 * 1024 * 1024) {
       throw Exception('图片不能超过 8MB');
     }
-    return 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    final decoded = img.decodeImage(bytes);
+    final resized = decoded == null
+        ? null
+        : (decoded.width > 1600
+            ? img.copyResize(decoded, width: 1600)
+            : decoded);
+    final compressed =
+        resized == null ? bytes : img.encodeJpg(resized, quality: 82);
+    return 'data:image/jpeg;base64,${base64Encode(compressed)}';
   }
 
   void _clearImage() => setState(() {
@@ -2434,16 +2443,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  Future<String?> _avatarDataUrl() async {
+    if (image == null) return null;
+    final bytes = await image!.readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    final resized =
+        decoded == null ? null : img.copyResize(decoded, width: 512);
+    final compressed =
+        resized == null ? bytes : img.encodeJpg(resized, quality: 86);
+    return 'data:image/jpeg;base64,${base64Encode(compressed)}';
+  }
+
   Future<void> save() async {
     try {
       setState(() => saving = true);
       final p = await SharedPreferences.getInstance();
       final token = p.getString('dd.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
-      String? avatar;
-      if (image != null)
-        avatar =
-            'data:image/jpeg;base64,${base64Encode(await image!.readAsBytes())}';
+      final avatar = await _avatarDataUrl();
       await service.updateMe(
           token: token,
           nickname: nickname.text.trim(),
