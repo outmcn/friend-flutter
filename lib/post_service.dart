@@ -56,15 +56,18 @@ class DDPost {
 class DDComment {
   const DDComment(
       {required this.id,
+      required this.parentId,
       required this.nickname,
       required this.content,
       required this.createdAt});
   final int id;
+  final int? parentId;
   final String nickname;
   final String content;
   final String createdAt;
   factory DDComment.fromJson(Map<String, dynamic> json) => DDComment(
         id: (json['id'] as num?)?.toInt() ?? 0,
+        parentId: (json['parentId'] as num?)?.toInt(),
         nickname: '${json['nickname'] ?? '用户'}',
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
@@ -245,14 +248,18 @@ class DDPostService {
   Future<void> createComment(
       {required String token,
       required int postId,
-      required String content}) async {
+      required String content,
+      int? parentId}) async {
     final response = await _client.post(
       _base.resolve('/api/posts/$postId/comments'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json'
       },
-      body: jsonEncode({'content': content}),
+      body: jsonEncode({
+        'content': content,
+        if (parentId != null) 'parentId': parentId,
+      }),
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 ||

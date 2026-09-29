@@ -1581,6 +1581,7 @@ class DynamicDetailPage extends StatefulWidget {
 class _DynamicDetailPageState extends State<DynamicDetailPage> {
   final DDPostService service = DDPostService();
   final commentController = TextEditingController();
+  DDComment? replyingTo;
   DDPost? post;
   List<DDComment> comments = const [];
   bool loading = true;
@@ -1638,14 +1639,69 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     if (value.isEmpty) return;
     try {
       await service.createComment(
-          token: await token(), postId: widget.postId, content: value);
+        token: await token(),
+        postId: widget.postId,
+        content: value,
+        parentId: replyingTo?.id,
+      );
       commentController.clear();
+      if (mounted) setState(() => replyingTo = null);
       await load();
     } catch (e) {
       if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
     }
   }
+
+  List<Widget> _buildCommentTree(List<DDComment> source) {
+    final roots = source.where((c) => c.parentId == null).toList();
+    final children = <int, List<DDComment>>{};
+    for (final c in source.where((c) => c.parentId != null)) {
+      children.putIfAbsent(c.parentId!, () => []).add(c);
+    }
+    final result = <Widget>[];
+    for (final root in roots) {
+      result.add(_commentTile(root));
+      final replies = children[root.id] ?? const <DDComment>[];
+      if (replies.isNotEmpty) {
+        result.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 42),
+            child: Column(
+              children: replies.map(_commentTile).toList(),
+            ),
+          ),
+        );
+      }
+    }
+    return result;
+  }
+
+  Widget _commentTile(DDComment comment) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const CircleAvatar(
+          child: Icon(Icons.person_outline, size: 18),
+        ),
+        title: Text(
+          comment.nickname,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(comment.content),
+            const SizedBox(height: 3),
+            TextButton(
+              onPressed: () => setState(() => replyingTo = comment),
+              child: const Text('回复'),
+            ),
+          ],
+        ),
+        trailing: Text(
+          comment.createdAt,
+          style: const TextStyle(fontSize: 11),
+        ),
+      );
 
   Future<void> _toggleLike() async {
     try {
@@ -1823,16 +1879,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                             title: '暂无评论',
                             subtitle: '成为第一个评论的人')
                       else
-                        ...comments.map((c) => ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const CircleAvatar(
-                                child: Icon(Icons.person_outline, size: 18)),
-                            title: Text(c.nickname,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w700)),
-                            subtitle: Text(c.content),
-                            trailing: Text(c.createdAt,
-                                style: const TextStyle(fontSize: 11)))),
+                        ..._buildCommentTree(comments),
                     ],
                   ]),
             ),
@@ -1845,7 +1892,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                   controller: commentController,
                   decoration: InputDecoration(
                     filled: true,
-                    hintText: '写下你的评论…',
+                    hintText: replyingTo == null
+                        ? '写下你的评论…'
+                        : '回复 ${replyingTo!.nickname}…',
                     suffixIcon: IconButton(
                       onPressed: deleting ? null : submitComment,
                       icon: const Icon(Icons.send),
