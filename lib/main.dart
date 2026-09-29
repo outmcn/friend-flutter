@@ -947,11 +947,7 @@ class _DDHomePageState extends State<DDHomePage> {
                     onOpen: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ContentDetailPage(
-                          title: '动态详情',
-                          video: false,
-                          postId: post.id,
-                        ),
+                        builder: (_) => DynamicDetailPage(postId: post.id),
                       ),
                     ),
                   ),
