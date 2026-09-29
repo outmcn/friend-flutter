@@ -172,6 +172,25 @@ class DDPostService {
     return list.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
   }
 
+  Future<Map<String, dynamic>> _decodeResponse(
+      http.Response response, String fallback) async {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('$fallback（${response.statusCode}）');
+    }
+    if (response.body.trim().isEmpty) {
+      throw Exception('$fallback：服务器返回空响应');
+    }
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('响应不是 JSON 对象');
+      }
+      return decoded;
+    } on FormatException catch (e) {
+      throw Exception('$fallback：响应格式错误（${e.message}）');
+    }
+  }
+
   Future<int> createPost(
       {required String token,
       required String content,
@@ -188,10 +207,8 @@ class DDPostService {
       },
       body: jsonEncode(body),
     );
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        decoded['ok'] != true) {
+    final decoded = await _decodeResponse(response, '发布动态失败');
+    if (decoded['ok'] != true) {
       throw Exception('${decoded['message'] ?? '发布动态失败'}');
     }
     final data = decoded['data'];
