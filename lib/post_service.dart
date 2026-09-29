@@ -42,6 +42,24 @@ class DDPost {
       );
 }
 
+class DDComment {
+  const DDComment(
+      {required this.id,
+      required this.nickname,
+      required this.content,
+      required this.createdAt});
+  final int id;
+  final String nickname;
+  final String content;
+  final String createdAt;
+  factory DDComment.fromJson(Map<String, dynamic> json) => DDComment(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        nickname: '${json['nickname'] ?? '用户'}',
+        content: '${json['content'] ?? ''}',
+        createdAt: '${json['createdAt'] ?? ''}',
+      );
+}
+
 class DDPostService {
   DDPostService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -71,21 +89,91 @@ class DDPostService {
     return token;
   }
 
-  Future<List<DDPost>> fetchPosts(String token) async {
+  Future<List<DDPost>> fetchPosts(String token) =>
+      _fetchList(token, '/api/posts');
+  Future<List<DDPost>> fetchMyPosts(String token) =>
+      _fetchList(token, '/api/me/posts');
+
+  Future<List<DDPost>> _fetchList(String token, String path) async {
     final response = await _client.get(
-      _base.resolve('/api/posts'),
+      _base.resolve(path),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('帖子加载失败（${response.statusCode}）');
+      throw Exception('动态加载失败（${response.statusCode}）');
     }
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     final data = decoded['data'];
     final list = data is List
         ? data
         : (data is Map<String, dynamic> ? data['posts'] : null);
-    if (list is! List) throw Exception('帖子数据格式错误');
+    if (list is! List) throw Exception('动态数据格式错误');
     return list.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+  }
+
+  Future<int> createPost(
+      {required String token,
+      required String content,
+      String? imageDataUrl}) async {
+    final body = <String, dynamic>{'content': content};
+    if (imageDataUrl != null && imageDataUrl.isNotEmpty) {
+      body['image'] = imageDataUrl;
+    }
+    final response = await _client.post(
+      _base.resolve('/api/posts'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json'
+      },
+      body: jsonEncode(body),
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '发布动态失败'}');
+    }
+    final data = decoded['data'];
+    return data is Map<String, dynamic>
+        ? (data['id'] as num?)?.toInt() ?? 0
+        : 0;
+  }
+
+  Future<List<DDComment>> fetchComments(String token, int postId) async {
+    final response = await _client.get(
+      _base.resolve('/api/posts/$postId/comments'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('评论加载失败');
+    }
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decoded['data'];
+    if (data is! List) throw Exception('评论数据格式错误');
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(DDComment.fromJson)
+        .toList();
+  }
+
+  Future<void> createComment(
+      {required String token,
+      required int postId,
+      required String content}) async {
+    final response = await _client.post(
+      _base.resolve('/api/posts/$postId/comments'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json'
+      },
+      body: jsonEncode({'content': content}),
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '评论发布失败'}');
+    }
   }
 
   Future<void> toggleLike(String token, int postId) =>

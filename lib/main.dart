@@ -910,10 +910,13 @@ class _DDHomePageState extends State<DDHomePage> {
               ),
             const SizedBox(height: 16),
             _HomeQuickActions(
-              onCreatePost: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreatePostPage()),
-              ),
+              onCreatePost: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreatePostPage()),
+                );
+                if (mounted) _loadPosts();
+              },
             ),
           ],
         ),
@@ -1014,7 +1017,7 @@ class _DynamicPostCard extends StatelessWidget {
 class _HomeQuickActions extends StatelessWidget {
   const _HomeQuickActions({required this.onCreatePost});
 
-  final VoidCallback onCreatePost;
+  final Future<void> Function() onCreatePost;
 
   @override
   Widget build(BuildContext context) {
@@ -1024,7 +1027,7 @@ class _HomeQuickActions extends StatelessWidget {
           child: _QuickAction(
             icon: Icons.add_box_outlined,
             label: '创建动态',
-            onTap: onCreatePost,
+            onTap: () => onCreatePost(),
           ),
         ),
         const SizedBox(width: 10),
@@ -1252,6 +1255,16 @@ class _CreatePostPageState extends State<CreatePostPage> {
   String? mediaType;
   String visibility = '所有人可见';
   bool publishing = false;
+  final TextEditingController _content = TextEditingController();
+  final DDPostService _service = DDPostService();
+  String? error;
+
+  @override
+  void dispose() {
+    _content.dispose();
+    _service.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -1266,10 +1279,38 @@ class _CreatePostPageState extends State<CreatePostPage> {
               onPressed: publishing
                   ? null
                   : () async {
-                      setState(() => publishing = true);
-                      await Future<void>.delayed(
-                          const Duration(milliseconds: 350));
-                      if (mounted) setState(() => publishing = false);
+                      final prefs = await SharedPreferences.getInstance();
+                      final token = prefs.getString('dd.auth.token') ?? '';
+                      if (token.isEmpty) {
+                        setState(() => error = '请先登录后发布动态');
+                        return;
+                      }
+                      if (_content.text.trim().isEmpty && mediaType == null) {
+                        setState(() => error = '请输入动态内容或选择图片');
+                        return;
+                      }
+                      setState(() {
+                        publishing = true;
+                        error = null;
+                      });
+                      try {
+                        await _service.createPost(
+                          token: token,
+                          content: _content.text.trim(),
+                        );
+                        if (mounted) {
+                          Navigator.pop(context, true);
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          setState(
+                            () => error =
+                                e.toString().replaceFirst('Exception: ', ''),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => publishing = false);
+                      }
                     },
               child: Text(publishing ? '发布中…' : '发布'),
             ),
@@ -1278,13 +1319,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
         body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            const TextField(
+            TextField(
+              controller: _content,
               maxLines: 7,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: '分享此刻的想法…',
                 alignLabelWithHint: true,
               ),
             ),
+            if (error != null) ...[
+              const SizedBox(height: 8),
+              Text(error!, style: const TextStyle(color: Colors.orange)),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [
