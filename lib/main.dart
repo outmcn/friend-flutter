@@ -908,6 +908,16 @@ class _DDHomePageState extends State<DDHomePage> {
                       await _postService.toggleFavorite(token, post.id);
                       await _loadPosts();
                     },
+                    onOpen: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ContentDetailPage(
+                          title: '动态详情',
+                          video: false,
+                          postId: post.id,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -929,11 +939,16 @@ class _DDHomePageState extends State<DDHomePage> {
 }
 
 class _DynamicPostCard extends StatelessWidget {
-  const _DynamicPostCard(
-      {required this.post, required this.onLike, required this.onFavorite});
+  const _DynamicPostCard({
+    required this.post,
+    required this.onLike,
+    required this.onFavorite,
+    required this.onOpen,
+  });
   final DDPost post;
   final VoidCallback onLike;
   final VoidCallback onFavorite;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -1008,6 +1023,11 @@ class _DynamicPostCard extends StatelessWidget {
                         ? Icons.bookmark
                         : Icons.bookmark_border),
                     label: Text('${post.favorites}'),
+                  ),
+                  TextButton.icon(
+                    onPressed: onOpen,
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('详情'),
                   ),
                 ],
               ),
@@ -1546,12 +1566,14 @@ class ContentDetailPage extends StatelessWidget {
     required this.video,
     this.authorName = '推荐用户',
     this.authorAsset = 'assets/figma/profile-portrait-2.jpg',
+    this.postId,
   });
 
   final String title;
   final bool video;
   final String authorName;
   final String authorAsset;
+  final int? postId;
 
   @override
   Widget build(BuildContext context) => Scaffold(
