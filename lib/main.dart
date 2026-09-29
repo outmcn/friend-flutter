@@ -1585,6 +1585,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   List<DDComment> comments = const [];
   bool loading = true;
   bool deleting = false;
+  bool followLoading = false;
   String? error;
   int? currentUserId;
   bool get isOwner => post?.userId != null && currentUserId == post!.userId;
@@ -1663,6 +1664,21 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     } catch (e) {
       if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (isOwner || post?.userId == null || followLoading) return;
+    try {
+      setState(() => followLoading = true);
+      await service.toggleFollow(await token(), post!.userId!);
+      await load();
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => followLoading = false);
     }
   }
 
@@ -1753,6 +1769,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                       color: Theme.of(context).hintColor,
                                       fontSize: 12))
                             ])),
+                        if (!isOwner)
+                          OutlinedButton(
+                            onPressed: followLoading ? null : _toggleFollow,
+                            child: Text(followLoading
+                                ? '处理中…'
+                                : (item.following ? '已关注' : '关注')),
+                          ),
                         IconButton(
                             onPressed: () {},
                             icon: const Icon(Icons.ios_share_outlined)),
