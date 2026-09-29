@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:image_picker/image_picker.dart';
 
 import 'post_service.dart';
 
@@ -1253,6 +1257,7 @@ class CreatePostPage extends StatefulWidget {
 
 class _CreatePostPageState extends State<CreatePostPage> {
   String? mediaType;
+  XFile? selectedImage;
   String visibility = '所有人可见';
   bool publishing = false;
   final TextEditingController _content = TextEditingController();
@@ -1264,6 +1269,25 @@ class _CreatePostPageState extends State<CreatePostPage> {
     _content.dispose();
     _service.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (image != null && mounted) {
+      setState(() {
+        selectedImage = image;
+        mediaType = '图片';
+      });
+    }
+  }
+
+  Future<String?> _imageDataUrl() async {
+    if (selectedImage == null) return null;
+    final bytes = await selectedImage!.readAsBytes();
+    return 'data:image/jpeg;base64,${base64Encode(bytes)}';
   }
 
   @override
@@ -1297,6 +1321,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         await _service.createPost(
                           token: token,
                           content: _content.text.trim(),
+                          imageDataUrl: await _imageDataUrl(),
                         );
                         if (mounted) {
                           Navigator.pop(context, true);
@@ -1336,8 +1361,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
               children: [
                 _MediaAction(
                   icon: Icons.photo_outlined,
-                  label: mediaType == '图片' ? '已选图片' : '图片',
-                  onTap: () => setState(() => mediaType = '图片'),
+                  label: selectedImage != null ? '已选图片' : '图片',
+                  onTap: _pickImage,
                 ),
                 _MediaAction(
                   icon: Icons.videocam_outlined,
@@ -1351,7 +1376,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            if (selectedImage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text('已选择图片：${selectedImage!.name}'),
+              ),
             const Text('可见范围', style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             ListTile(
@@ -1721,9 +1750,11 @@ class OtherProfilePage extends StatefulWidget {
     super.key,
     this.name = '推荐用户',
     this.avatarAsset = 'assets/figma/profile-portrait-2.jpg',
+    this.userId,
   });
   final String name;
   final String avatarAsset;
+  final int? userId;
   @override
   State<OtherProfilePage> createState() => _OtherProfilePageState();
 }
@@ -1731,6 +1762,40 @@ class OtherProfilePage extends StatefulWidget {
 class _OtherProfilePageState extends State<OtherProfilePage> {
   bool followed = false;
   bool privateChatOpened = false;
+  final DDPostService _service = DDPostService();
+  bool loading = false;
+  String? error;
+
+  @override
+  void dispose() {
+    _service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleFollow() async {
+    if (widget.userId == null) {
+      setState(() => followed = !followed);
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('dd.auth.token') ?? '';
+    if (token.isEmpty) {
+      setState(() => error = '请先登录');
+      return;
+    }
+    setState(() => loading = true);
+    try {
+      await _service.toggleFollow(token, widget.userId!);
+      if (mounted) setState(() => followed = !followed);
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -1745,6 +1810,12 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
+            if (error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child:
+                    Text(error!, style: const TextStyle(color: Colors.orange)),
+              ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1771,9 +1842,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                         children: [
                           Expanded(
                             child: FilledButton(
-                              onPressed: () =>
-                                  setState(() => followed = !followed),
-                              child: Text(followed ? '已关注' : '关注'),
+                              onPressed: loading ? null : _toggleFollow,
+                              child: Text(
+                                  loading ? '处理中…' : (followed ? '已关注' : '关注')),
                             ),
                           ),
                           const SizedBox(width: 8),

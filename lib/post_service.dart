@@ -176,8 +176,61 @@ class DDPostService {
     }
   }
 
+  Future<void> toggleFollow(String token, int userId) async {
+    final response = await _client.post(
+      _base.resolve('/api/users/$userId/follow'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '关注操作失败'}');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchMe(String token) =>
+      _fetchObject(token, '/api/me');
+
+  Future<Map<String, dynamic>> updateMe(
+      {required String token, String? nickname, String? city}) async {
+    final response = await _client.put(
+      _base.resolve('/api/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json'
+      },
+      body: jsonEncode({
+        if (nickname != null) 'nickname': nickname,
+        if (city != null) 'city': city
+      }),
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '资料保存失败'}');
+    }
+    return (decoded['data'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> _fetchObject(String token, String path) async {
+    final response = await _client
+        .get(_base.resolve(path), headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '资料加载失败'}');
+    }
+    return (decoded['data'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
+  }
+
   Future<void> toggleLike(String token, int postId) =>
       _postAction(token, postId, 'like');
+
   Future<void> toggleFavorite(String token, int postId) =>
       _postAction(token, postId, 'favorite');
 
