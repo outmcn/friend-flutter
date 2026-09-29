@@ -889,7 +889,13 @@ class _DDHomePageState extends State<DDHomePage> {
       body: RefreshIndicator(
         onRefresh: _loadPosts,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(
+            18,
+            4,
+            18,
+            24 + MediaQuery.of(context).padding.bottom + 88,
+          ),
           children: [
             const _SectionTitle(title: '主播推荐', action: '查看全部'),
             SizedBox(
