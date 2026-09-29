@@ -869,7 +869,7 @@ class _DDHomePageState extends State<DDHomePage> {
               onTap: _loadPosts,
             ),
             if (_loading)
-              const _PageLoadState(title: '动态加载中', subtitle: '正在读取最新帖子')
+              const _PageLoadState(title: '动态加载中', subtitle: '正在读取最新动态')
             else if (_error != null)
               _PageErrorState(
                   title: '动态加载失败', subtitle: _error!, onRetry: _loadPosts)
@@ -877,7 +877,7 @@ class _DDHomePageState extends State<DDHomePage> {
               const _EmptyStateCard(
                 icon: Icons.article_outlined,
                 title: '暂无动态',
-                subtitle: '登录后即可查看服务器中的帖子',
+                subtitle: '登录后即可查看服务器中的动态',
               )
             else
               ..._posts.map(
@@ -1023,7 +1023,7 @@ class _HomeQuickActions extends StatelessWidget {
         Expanded(
           child: _QuickAction(
             icon: Icons.add_box_outlined,
-            label: '创建帖子',
+            label: '创建动态',
             onTap: onCreatePost,
           ),
         ),
@@ -1099,7 +1099,7 @@ class _RecommendationPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _ContentPreviewCard(
-        title: '为你推荐视频',
+        title: '为你推荐动态',
         subtitle: '点击查看完整内容',
         icon: Icons.play_circle_outline,
         onTap: onTap,
@@ -1203,7 +1203,7 @@ class DiscoverPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      const ContentDetailPage(title: '推荐视频', video: true),
+                      const ContentDetailPage(title: '推荐动态', video: true),
                 ),
               ),
             ),
@@ -1260,7 +1260,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.close),
           ),
-          title: const Text('发布帖子'),
+          title: const Text('发布动态'),
           actions: [
             TextButton(
               onPressed: publishing
@@ -1338,7 +1338,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             const SizedBox(height: 18),
             _ContentPreviewCard(
               title: '添加话题',
-              subtitle: '让更多人发现你的帖子',
+              subtitle: '让更多人发现你的动态',
               icon: Icons.tag,
             ),
           ],
@@ -1749,19 +1749,19 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _Stat(value: '12', label: '帖子'),
+                _Stat(value: '12', label: '动态'),
                 _Stat(value: '128', label: '关注'),
                 _Stat(value: '2.4K', label: '粉丝'),
               ],
             ),
             const SizedBox(height: 24),
-            const _SectionTitle(title: 'Ta的帖子', action: '全部'),
+            const _SectionTitle(title: 'Ta的动态', action: '全部'),
             _FeaturePostCard(
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      const ContentDetailPage(title: 'Ta的帖子', video: false),
+                      const ContentDetailPage(title: 'Ta的动态', video: false),
                 ),
               ),
             ),
@@ -1840,7 +1840,7 @@ class DDProfilePage extends StatelessWidget {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _Stat(value: '0', label: '帖子'),
+              _Stat(value: '0', label: '动态'),
               _Stat(value: '0', label: '关注'),
               _Stat(value: '0', label: '粉丝'),
             ],
@@ -1856,7 +1856,7 @@ class DDProfilePage extends StatelessWidget {
           ),
           _ProfileAction(
             icon: Icons.article_outlined,
-            title: '我的帖子',
+            title: '我的动态',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const MyPostsPage()),
@@ -1969,7 +1969,7 @@ class MyPostsPage extends StatelessWidget {
   const MyPostsPage({super.key});
   @override
   Widget build(BuildContext context) =>
-      _SimpleListPage(title: '我的帖子', items: const ['暂无帖子', '创建你的第一条动态']);
+      _SimpleListPage(title: '我的动态', items: const ['暂无动态', '创建你的第一条动态']);
 }
 
 class EditProfilePage extends StatelessWidget {
@@ -2180,26 +2180,26 @@ class RecommendationFeedPage extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           children: [
             const _ContentPreviewCard(
-              title: '推荐内容 01',
+              title: '推荐动态 01',
               subtitle: '静态推荐内容',
               icon: Icons.auto_awesome,
               imageAsset: 'assets/figma/post-thumbnail-4.jpg',
             ),
             const _ContentPreviewCard(
-              title: '推荐内容 02',
+              title: '推荐动态 02',
               subtitle: '更多生活方式分享',
               icon: Icons.photo_outlined,
               imageAsset: 'assets/figma/post-thumbnail-5.jpg',
             ),
             _ContentPreviewCard(
-              title: '完整视频帖子',
+              title: '完整视频动态',
               subtitle: '点击查看详情',
               icon: Icons.play_circle_outline,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      const ContentDetailPage(title: '完整视频帖子', video: true),
+                      const ContentDetailPage(title: '完整视频动态', video: true),
                 ),
               ),
             ),
