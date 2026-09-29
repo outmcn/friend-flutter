@@ -1068,6 +1068,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final DDPostService service = DDPostService();
   List<DDPost> posts = const [];
   bool loading = true;
+  bool _refreshing = false;
   String? error;
   @override
   void initState() {
@@ -1081,11 +1082,16 @@ class _DiscoverPageState extends State<DiscoverPage> {
     super.dispose();
   }
 
-  Future<void> load() async {
-    setState(() {
-      loading = true;
-      error = null;
-    });
+  Future<void> load({bool fromRefresh = false}) async {
+    if (fromRefresh) {
+      if (_refreshing) return;
+      _refreshing = true;
+    } else {
+      setState(() {
+        loading = true;
+        error = null;
+      });
+    }
     try {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
@@ -1095,7 +1101,14 @@ class _DiscoverPageState extends State<DiscoverPage> {
       if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          _refreshing = false;
+        });
+      } else {
+        _refreshing = false;
+      }
     }
   }
 
@@ -1108,7 +1121,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               icon: const Icon(Icons.add_circle_outline))
         ]),
         body: RefreshIndicator(
-            onRefresh: load,
+            onRefresh: () => load(fromRefresh: true),
             child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
