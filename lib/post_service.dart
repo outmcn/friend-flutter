@@ -251,6 +251,9 @@ class DDPostService {
     await prefs.remove('dd.auth.token');
   }
 
+  Future<Map<String, dynamic>> fetchUserProfile(String token, int userId) =>
+      _fetchObject(token, '/api/users/$userId');
+
   Future<Map<String, dynamic>> fetchMe(String token) =>
       _fetchObject(token, '/api/me');
 

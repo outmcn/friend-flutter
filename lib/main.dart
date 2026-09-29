@@ -1509,8 +1509,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       items = await service.fetchNotifications(token);
       await service.markNotificationsRead(token);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1652,7 +1653,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Future<String> token() async {
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getString('dd.auth.token') ?? '';
-    if (value.isEmpty) throw Exception('请先登录');
+    if (value.isEmpty) {
+      throw Exception('请先登录');
+    }
     return value;
   }
 
@@ -1669,8 +1672,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       comments = await service.fetchComments(t, widget.postId);
       if (post == null) throw Exception('动态不存在');
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1685,8 +1689,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       commentController.clear();
       await load();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
     }
   }
 
@@ -1971,33 +1976,45 @@ class OtherProfilePage extends StatefulWidget {
 }
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
-  bool followed = false;
-  bool privateChatOpened = false;
-  final DDPostService _service = DDPostService();
-  bool loading = false;
+  final DDPostService service = DDPostService();
+  Map<String, dynamic>? profile;
+  List<DDPost> posts = const [];
+  bool loading = true;
+  bool actionLoading = false;
   String? error;
 
   @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
   void dispose() {
-    _service.dispose();
+    service.dispose();
     super.dispose();
   }
 
-  Future<void> _toggleFollow() async {
-    if (widget.userId == null) {
-      setState(() => followed = !followed);
-      return;
-    }
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('dd.auth.token') ?? '';
-    if (token.isEmpty) {
-      setState(() => error = '请先登录');
-      return;
-    }
-    setState(() => loading = true);
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
-      await _service.toggleFollow(token, widget.userId!);
-      if (mounted) setState(() => followed = !followed);
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) {
+        throw Exception('请先登录');
+      }
+      if (widget.userId == null) {
+        throw Exception('用户信息不存在');
+      }
+      final data = await service.fetchUserProfile(token, widget.userId!);
+      profile = (data['profile'] as Map?)?.cast<String, dynamic>() ?? data;
+      final raw = data['posts'];
+      posts = raw is List
+          ? raw.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList()
+          : const [];
     } catch (e) {
       if (mounted) {
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
@@ -2007,101 +2024,90 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
+  Future<void> toggleFollow() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty || widget.userId == null) throw Exception('请先登录');
+      setState(() => actionLoading = true);
+      await service.toggleFollow(token, widget.userId!);
+      await load();
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => actionLoading = false);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Ta的主页'),
-          actions: [
-            IconButton(
-              onPressed: () => _showProfileMenu(context),
-              icon: _tdIcon('more'),
-            ),
-          ],
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(18),
-          children: [
-            if (error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child:
-                    Text(error!, style: const TextStyle(color: Colors.orange)),
-              ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 42,
-                  backgroundImage: AssetImage(widget.avatarAsset),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    final p = profile;
+    final following = p?['following'] == true;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ta的主页'), actions: [
+        IconButton(
+            onPressed: () => _showProfileMenu(context), icon: _tdIcon('more'))
+      ]),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: ListView(padding: const EdgeInsets.all(18), children: [
+                if (error != null)
+                  _PageErrorState(
+                      title: '主页加载失败', subtitle: error!, onRetry: load),
+                Row(children: [
+                  CircleAvatar(
+                      radius: 42,
+                      backgroundImage: AssetImage(widget.avatarAsset)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text('${p?['nickname'] ?? widget.name}',
+                            style: const TextStyle(
+                                fontSize: 22, fontWeight: FontWeight.w800)),
+                        Text('${p?['city'] ?? ''}'),
+                        const SizedBox(height: 10),
+                        FilledButton(
+                            onPressed: actionLoading ? null : toggleFollow,
+                            child: Text(actionLoading
+                                ? '处理中…'
+                                : (following ? '已关注' : '关注')))
+                      ]))
+                ]),
+                const SizedBox(height: 24),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      Text(
-                        widget.name,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text('分享生活，认识更多有趣的人。'),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: loading ? null : _toggleFollow,
-                              child: Text(
-                                  loading ? '处理中…' : (followed ? '已关注' : '关注')),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () =>
-                                  setState(() => privateChatOpened = true),
-                              child: Text(privateChatOpened ? '私聊中' : '私聊'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                      _Stat(
+                          value: '${p?['posts'] ?? posts.length}', label: '动态'),
+                      _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
+                      _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝')
+                    ]),
+                const SizedBox(height: 24),
+                if (posts.isEmpty)
+                  const _EmptyStateCard(
+                      icon: Icons.article_outlined,
+                      title: '暂无动态',
+                      subtitle: 'Ta 还没有发布动态')
+                else
+                  ...posts.map((post) => _DynamicPostCard(
+                      post: post,
+                      onLike: () {},
+                      onFavorite: () {},
+                      onOpen: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  DynamicDetailPage(postId: post.id))))),
+              ]),
             ),
-            const SizedBox(height: 24),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _Stat(value: '12', label: '动态'),
-                _Stat(value: '128', label: '关注'),
-                _Stat(value: '2.4K', label: '粉丝'),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const _SectionTitle(title: 'Ta的动态', action: '全部'),
-            _FeaturePostCard(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const ContentDetailPage(title: 'Ta的动态', video: false),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const _ContentPreviewCard(
-              title: '生活记录',
-              subtitle: '刚刚发布',
-              icon: Icons.photo_outlined,
-            ),
-          ],
-        ),
-      );
+    );
+  }
 
   void _showProfileMenu(BuildContext context) => showModalBottomSheet<void>(
         context: context,
