@@ -1751,27 +1751,22 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
-  Future<void> _report() async {
+  Future<void> _openReportPage() async {
     if (isOwner) return;
-    final reason = await showModalBottomSheet<String>(
-        context: context,
-        builder: (_) => SafeArea(
-            child: Wrap(
-                children: ['广告或垃圾信息', '不当内容', '其他']
-                    .map((item) => ListTile(
-                        title: Text(item),
-                        onTap: () => Navigator.pop(context, item)))
-                    .toList())));
-    if (reason == null) return;
-    try {
-      await service.reportPost(
-          token: await token(), postId: widget.postId, reason: reason);
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('举报已提交')));
-    } catch (e) {
-      if (mounted)
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    final submitted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReportPostPage(
+          postId: widget.postId,
+          service: service,
+          token: token,
+        ),
+      ),
+    );
+    if (submitted == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('举报已提交')),
+      );
     }
   }
 
@@ -1779,17 +1774,22 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Widget build(BuildContext context) {
     final item = post;
     return Scaffold(
-      appBar: AppBar(title: const Text('动态详情'), actions: [
-        if (item != null)
-          PopupMenuButton<String>(
-              onSelected: (value) => value == 'delete' ? _delete() : _report(),
-              itemBuilder: (_) => [
-                    if (isOwner)
-                      const PopupMenuItem(value: 'delete', child: Text('删除动态')),
-                    if (!isOwner)
-                      const PopupMenuItem(value: 'report', child: Text('举报动态')),
-                  ]),
-      ]),
+      appBar: AppBar(
+        title: const Text('动态详情'),
+        actions: [
+          if (item != null && !isOwner)
+            TextButton(
+              onPressed: _openReportPage,
+              child: const Text('举报'),
+            ),
+          if (item != null && isOwner)
+            IconButton(
+              onPressed: deleting ? null : _delete,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: '删除动态',
+            ),
+        ],
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -1968,6 +1968,82 @@ class _DetailAction extends StatelessWidget {
               Text(label),
             ],
           ),
+        ),
+      );
+}
+
+class ReportPostPage extends StatefulWidget {
+  const ReportPostPage({
+    super.key,
+    required this.postId,
+    required this.service,
+    required this.token,
+  });
+  final int postId;
+  final DDPostService service;
+  final Future<String> Function() token;
+
+  @override
+  State<ReportPostPage> createState() => _ReportPostPageState();
+}
+
+class _ReportPostPageState extends State<ReportPostPage> {
+  String? reason;
+  bool submitting = false;
+  String? error;
+
+  Future<void> submit() async {
+    if (reason == null || submitting) return;
+    try {
+      setState(() {
+        submitting = true;
+        error = null;
+      });
+      await widget.service.reportPost(
+        token: await widget.token(),
+        postId: widget.postId,
+        reason: reason!,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          submitting = false;
+          error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('举报动态')),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            const Text(
+              '请选择举报原因',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            ...['广告或垃圾信息', '不当内容', '其他'].map(
+              (item) => RadioListTile<String>(
+                value: item,
+                groupValue: reason,
+                title: Text(item),
+                onChanged: submitting
+                    ? null
+                    : (value) => setState(() => reason = value),
+              ),
+            ),
+            if (error != null)
+              Text(error!, style: const TextStyle(color: Colors.orange)),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: reason == null || submitting ? null : submit,
+              child: Text(submitting ? '提交中…' : '提交举报'),
+            ),
+          ],
         ),
       );
 }
