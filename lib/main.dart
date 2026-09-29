@@ -1559,6 +1559,134 @@ class _StatePreviewCard extends StatelessWidget {
       );
 }
 
+class DynamicDetailPage extends StatefulWidget {
+  const DynamicDetailPage({super.key, required this.postId});
+  final int postId;
+  @override
+  State<DynamicDetailPage> createState() => _DynamicDetailPageState();
+}
+
+class _DynamicDetailPageState extends State<DynamicDetailPage> {
+  final DDPostService service = DDPostService();
+  final commentController = TextEditingController();
+  DDPost? post;
+  List<DDComment> comments = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    commentController.dispose();
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<String> token() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('dd.auth.token') ?? '';
+    if (value.isEmpty) throw Exception('请先登录');
+    return value;
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final t = await token();
+      final list = await service.fetchPosts(t);
+      final matches = list.where((item) => item.id == widget.postId).toList();
+      post = matches.isEmpty ? null : matches.first;
+      comments = await service.fetchComments(t, widget.postId);
+      if (post == null) throw Exception('动态不存在');
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> submitComment() async {
+    final value = commentController.text.trim();
+    if (value.isEmpty) return;
+    try {
+      await service.createComment(
+          token: await token(), postId: widget.postId, content: value);
+      commentController.clear();
+      await load();
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('动态详情')),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: load,
+                child: ListView(padding: const EdgeInsets.all(18), children: [
+                  if (error != null)
+                    _PageErrorState(
+                        title: '加载失败', subtitle: error!, onRetry: load),
+                  if (post != null) ...[
+                    if (post!.imageUrl != null && post!.imageUrl!.isNotEmpty)
+                      ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Image.network(post!.imageUrl!,
+                              height: 260,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const SizedBox(
+                                  height: 260,
+                                  child: Center(child: Text('图片加载失败'))))),
+                    const SizedBox(height: 16),
+                    Text(post!.nickname,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w800)),
+                    Text(post!.createdAt),
+                    const SizedBox(height: 12),
+                    Text(post!.content,
+                        style: const TextStyle(fontSize: 17, height: 1.45)),
+                    const SizedBox(height: 16),
+                    Text('点赞 ${post!.likes}    收藏 ${post!.favorites}'),
+                    const SizedBox(height: 22),
+                    const Text('评论',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w800)),
+                    if (comments.isEmpty)
+                      const _EmptyStateCard(
+                          icon: Icons.chat_bubble_outline,
+                          title: '暂无评论',
+                          subtitle: '成为第一个评论的人')
+                    else
+                      ...comments.map((item) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(item.nickname),
+                          subtitle: Text(item.content),
+                          trailing: Text(item.createdAt))),
+                    TextField(
+                        controller: commentController,
+                        decoration: InputDecoration(
+                            hintText: '写下评论',
+                            suffixIcon: IconButton(
+                                onPressed: submitComment,
+                                icon: const Icon(Icons.send)))),
+                  ],
+                ]),
+              ),
+      );
+}
+
 class ContentDetailPage extends StatelessWidget {
   const ContentDetailPage({
     super.key,
