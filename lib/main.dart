@@ -1177,7 +1177,13 @@ class DiscoverPage extends StatelessWidget {
           ],
         ),
         body: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(
+            18,
+            8,
+            18,
+            28 + MediaQuery.of(context).padding.bottom + 88,
+          ),
           children: [
             const TextField(
               decoration: InputDecoration(
