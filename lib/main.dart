@@ -6,11 +6,30 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import 'post_service.dart';
+
+String formatDDTime(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final value = parsed.toUtc().add(const Duration(hours: 8));
+  final now = DateTime.now().toUtc().add(const Duration(hours: 8));
+  final difference = now.difference(value);
+  if (difference.isNegative || difference.inMinutes < 1) return '刚刚';
+  if (difference.inMinutes < 60) return '${difference.inMinutes}分钟前';
+  if (difference.inHours < 24) return '${difference.inHours}小时前';
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(value.year, value.month, value.day);
+  if (today.difference(day).inDays == 1) {
+    return '昨天 ${_two(value.hour)}:${_two(value.minute)}';
+  }
+  if (value.year == now.year) return '${value.month}月${value.day}日';
+  return '${value.year}年${value.month}月${value.day}日';
+}
+
+String _two(int value) => value.toString().padLeft(2, '0');
 
 void main() => runApp(const DDApp());
 
@@ -915,7 +934,7 @@ class _DynamicPostCard extends StatelessWidget {
                         Text(post.nickname,
                             style:
                                 const TextStyle(fontWeight: FontWeight.w700)),
-                        Text(post.createdAt,
+                        Text(formatDDTime(post.createdAt),
                             style: Theme.of(context).textTheme.bodySmall),
                       ],
                     ),
@@ -1492,7 +1511,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     title: Text(item.nickname == null
                         ? item.content
                         : '${item.nickname} ${item.content}'),
-                    subtitle: Text(item.createdAt))),
+                    subtitle: Text(formatDDTime(item.createdAt)))),
             ])),
       );
 }
@@ -1698,7 +1717,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           ],
         ),
         trailing: Text(
-          comment.createdAt,
+          formatDDTime(comment.createdAt),
           style: const TextStyle(fontSize: 11),
         ),
       );
@@ -1826,7 +1845,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                       fontWeight: FontWeight.w800,
                                       fontSize: 17)),
                               const SizedBox(height: 4),
-                              Text(item.createdAt,
+                              Text(formatDDTime(item.createdAt),
                                   style: TextStyle(
                                       color: Theme.of(context).hintColor,
                                       fontSize: 12))
