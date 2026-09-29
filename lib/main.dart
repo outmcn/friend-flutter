@@ -1673,6 +1673,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   bool loading = true;
   String? error;
   bool deleting = false;
+  bool get isOwner =>
+      post?.userId != null &&
+      currentUserId != null &&
+      post!.userId == currentUserId;
+  int? currentUserId;
 
   @override
   void initState() {
@@ -1703,6 +1708,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     });
     try {
       final t = await token();
+      final me = await service.fetchMe(t);
+      currentUserId = (me['id'] as num?)?.toInt();
       final list = await service.fetchPosts(t);
       final matches = list.where((item) => item.id == widget.postId).toList();
       post = matches.isEmpty ? null : matches.first;
@@ -1746,6 +1753,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   }
 
   Future<void> _report() async {
+    if (isOwner) return;
     final reason = await showModalBottomSheet<String>(
         context: context,
         builder: (_) => SafeArea(
@@ -1773,14 +1781,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         appBar: AppBar(title: const Text('动态详情'), actions: [
           if (!loading && post != null)
             PopupMenuButton<String>(
-                onSelected: (value) =>
-                    value == 'delete' ? _delete() : _report(),
-                itemBuilder: (_) => [
-                      const PopupMenuItem(value: 'report', child: Text('举报动态')),
-                      PopupMenuItem(
-                          value: 'delete',
-                          child: Text(deleting ? '删除中…' : '删除动态'))
-                    ])
+              onSelected: (value) => value == 'delete' ? _delete() : _report(),
+              itemBuilder: (_) => [
+                if (isOwner)
+                  const PopupMenuItem(value: 'delete', child: Text('删除动态')),
+                if (!isOwner)
+                  const PopupMenuItem(value: 'report', child: Text('举报动态')),
+              ],
+            ),
         ]),
         body: loading
             ? const Center(child: CircularProgressIndicator())

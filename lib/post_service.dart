@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class DDPost {
   const DDPost({
     required this.id,
+    required this.userId,
     required this.content,
     required this.createdAt,
     required this.nickname,
@@ -18,6 +19,7 @@ class DDPost {
   });
 
   final int id;
+  final int? userId;
   final String content;
   final String createdAt;
   final String nickname;
@@ -30,6 +32,7 @@ class DDPost {
 
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
         id: (json['id'] as num?)?.toInt() ?? 0,
+        userId: (json['userId'] as num?)?.toInt(),
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? json['created_at'] ?? ''}',
         nickname: '${json['nickname'] ?? json['username'] ?? '用户'}',
