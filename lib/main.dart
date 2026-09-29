@@ -2377,33 +2377,117 @@ class MyPostsPage extends StatelessWidget {
       _SimpleListPage(title: '我的动态', items: const ['暂无动态', '创建你的第一条动态']);
 }
 
-class EditProfilePage extends StatelessWidget {
+class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
   @override
+  State<EditProfilePage> createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State<EditProfilePage> {
+  final service = DDPostService();
+  final nickname = TextEditingController();
+  final city = TextEditingController();
+  XFile? image;
+  bool loading = true;
+  bool saving = false;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    nickname.dispose();
+    city.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      final token = p.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final data = await service.fetchMe(token);
+      nickname.text = '${data['nickname'] ?? ''}';
+      city.text = '${data['city'] ?? ''}';
+    } catch (e) {
+      if (mounted) error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> pickAvatar() async {
+    try {
+      final value = await ImagePicker()
+          .pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (value != null && mounted)
+        setState(() {
+          image = value;
+          error = null;
+        });
+    } catch (e) {
+      if (mounted) setState(() => error = '头像选择失败：$e');
+    }
+  }
+
+  Future<void> save() async {
+    try {
+      setState(() => saving = true);
+      final p = await SharedPreferences.getInstance();
+      final token = p.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      String? avatar;
+      if (image != null)
+        avatar =
+            'data:image/jpeg;base64,${base64Encode(await image!.readAsBytes())}';
+      await service.updateMe(
+          token: token,
+          nickname: nickname.text.trim(),
+          city: city.text.trim(),
+          avatar: avatar);
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('编辑资料'),
-          actions: [TextButton(onPressed: () {}, child: const Text('保存'))],
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(18),
-          children: const [
-            Center(
-              child: CircleAvatar(
-                radius: 44,
-                child: Icon(Icons.add_a_photo_outlined, size: 30),
-              ),
-            ),
-            SizedBox(height: 22),
-            TextField(decoration: InputDecoration(labelText: '昵称')),
-            SizedBox(height: 14),
-            TextField(decoration: InputDecoration(labelText: '个人简介')),
-            SizedBox(height: 14),
-            TextField(decoration: InputDecoration(labelText: '城市')),
-            SizedBox(height: 14),
-            TextField(decoration: InputDecoration(labelText: '兴趣标签')),
-          ],
-        ),
+        appBar: AppBar(title: const Text('编辑资料'), actions: [
+          TextButton(
+              onPressed: loading || saving ? null : save,
+              child: Text(saving ? '保存中…' : '保存'))
+        ]),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(padding: const EdgeInsets.all(18), children: [
+                GestureDetector(
+                    onTap: pickAvatar,
+                    child: CircleAvatar(
+                        radius: 48,
+                        backgroundImage:
+                            image == null ? null : FileImage(File(image!.path)),
+                        child: image == null
+                            ? const Icon(Icons.add_a_photo_outlined, size: 30)
+                            : null)),
+                const SizedBox(height: 22),
+                if (error != null)
+                  Text(error!, style: const TextStyle(color: Colors.orange)),
+                TextField(
+                    controller: nickname,
+                    decoration: const InputDecoration(labelText: '昵称')),
+                const SizedBox(height: 14),
+                TextField(
+                    controller: city,
+                    decoration: const InputDecoration(labelText: '城市')),
+              ]),
       );
 }
 

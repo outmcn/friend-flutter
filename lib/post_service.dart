@@ -267,7 +267,10 @@ class DDPostService {
       _fetchObject(token, '/api/me');
 
   Future<Map<String, dynamic>> updateMe(
-      {required String token, String? nickname, String? city}) async {
+      {required String token,
+      String? nickname,
+      String? city,
+      String? avatar}) async {
     final response = await _client.put(
       _base.resolve('/api/me'),
       headers: {
@@ -276,7 +279,8 @@ class DDPostService {
       },
       body: jsonEncode({
         if (nickname != null) 'nickname': nickname,
-        if (city != null) 'city': city
+        if (city != null) 'city': city,
+        if (avatar != null) 'avatar': avatar
       }),
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
