@@ -1782,6 +1782,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
               onPressed: _openReportPage,
               child: const Text('举报'),
             ),
+          if (item != null)
+            IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.ios_share_outlined),
+              tooltip: '分享',
+            ),
           if (item != null && isOwner)
             IconButton(
               onPressed: deleting ? null : _delete,
@@ -1832,9 +1838,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                 ? '处理中…'
                                 : (item.following ? '已关注' : '关注')),
                           ),
-                        IconButton(
-                            onPressed: () {},
-                            icon: const Icon(Icons.ios_share_outlined)),
                       ]),
                       const SizedBox(height: 18),
                       if (item.content.trim().isNotEmpty)
