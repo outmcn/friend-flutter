@@ -1158,19 +1158,6 @@ class _TrendPreviewCard extends StatelessWidget {
       );
 }
 
-class _RecommendationPreviewCard extends StatelessWidget {
-  const _RecommendationPreviewCard({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => _ContentPreviewCard(
-        title: '为你推荐动态',
-        subtitle: '点击查看完整内容',
-        icon: Icons.play_circle_outline,
-        onTap: onTap,
-      );
-}
-
 class DiscoverPage extends StatelessWidget {
   const DiscoverPage({super.key});
 
@@ -1242,18 +1229,10 @@ class DiscoverPage extends StatelessWidget {
             const SizedBox(height: 18),
             const _PageLoadState(title: '推荐内容加载中', subtitle: '这是静态加载状态预览'),
             const _PageErrorState(title: '推荐内容加载失败', subtitle: '网络异常时可点击重试'),
-            _ContentPreviewCard(
-              title: '为你推荐',
-              subtitle: '发现更多有趣内容',
+            const _EmptyStateCard(
               icon: Icons.auto_awesome,
-              imageAsset: 'assets/figma/post-thumbnail-4.jpg',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const ContentDetailPage(title: '为你推荐', video: true),
-                ),
-              ),
+              title: '推荐动态',
+              subtitle: '登录后显示真实推荐动态',
             ),
             const SizedBox(height: 12),
             _TrendPreviewCard(
@@ -1263,14 +1242,10 @@ class DiscoverPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _RecommendationPreviewCard(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const ContentDetailPage(title: '推荐动态', video: true),
-                ),
-              ),
+            const _EmptyStateCard(
+              icon: Icons.play_circle_outline,
+              title: '推荐动态',
+              subtitle: '登录后显示真实推荐动态',
             ),
           ],
         ),
@@ -1854,213 +1829,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                   ],
                 ]),
               ),
-      );
-}
-
-class ContentDetailPage extends StatelessWidget {
-  const ContentDetailPage({
-    super.key,
-    required this.title,
-    required this.video,
-    this.authorName = '推荐用户',
-    this.authorAsset = 'assets/figma/profile-portrait-2.jpg',
-    this.postId,
-  });
-
-  final String title;
-  final bool video;
-  final String authorName;
-  final String authorAsset;
-  final int? postId;
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              SizedBox(
-                height: 52,
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: _tdIcon('back'),
-                    ),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    IconButton(onPressed: () {}, icon: _tdIcon('bookmark')),
-                    IconButton(
-                      onPressed: () => _showShare(context),
-                      icon: _tdIcon('share'),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 28),
-                  children: [
-                    _SafeAssetImage(
-                      asset: video
-                          ? 'assets/figma/post-thumbnail-1.jpg'
-                          : 'assets/figma/post-thumbnail-2.jpg',
-                      height: 260,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    Center(
-                      child: Icon(
-                        video ? Icons.play_circle_fill : Icons.image_outlined,
-                        size: 76,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => OtherProfilePage(
-                            name: authorName,
-                            avatarAsset: authorAsset,
-                          ),
-                        ),
-                      ),
-                      leading: _SafeAvatar(asset: authorAsset),
-                      title: Text(
-                        authorName,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      subtitle: const Text('刚刚发布'),
-                      trailing: const OutlinedButton(
-                        onPressed: null,
-                        child: Text('关注'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      '分享生活中的有趣瞬间，发现更多真实内容。',
-                      style: TextStyle(fontSize: 17, height: 1.45),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _DetailAction(icon: 'heart', label: '点赞', onTap: () {}),
-                        _DetailAction(
-                            icon: 'comment', label: '评论', onTap: () {}),
-                        _DetailAction(
-                            icon: 'bookmark', label: '收藏', onTap: () {}),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    const _StatePreviewCard(
-                      title: '暂无更多评论',
-                      subtitle: '成为第一个评论的人',
-                      icon: Icons.chat_bubble_outline,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '评论',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 12),
-                    const _CommentPreview(),
-                    const _CommentPreview(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-
-  void _showShare(BuildContext context) => showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (_) => SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: _tdIcon('link'),
-                title: const Text('复制链接'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('链接已复制')));
-                },
-              ),
-              ListTile(
-                leading: _tdIcon('message'),
-                title: const Text('分享给好友'),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: _tdIcon('more'),
-                title: const Text('更多分享方式'),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
-class _DetailAction extends StatefulWidget {
-  const _DetailAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-  final String icon;
-  final String label;
-  final VoidCallback onTap;
-  @override
-  State<_DetailAction> createState() => _DetailActionState();
-}
-
-class _DetailActionState extends State<_DetailAction> {
-  bool active = false;
-  @override
-  Widget build(BuildContext context) => TextButton.icon(
-        onPressed: () {
-          setState(() => active = !active);
-          widget.onTap();
-        },
-        icon: _tdIcon(
-          active && widget.icon == 'heart'
-              ? 'red-heart'
-              : active && widget.icon == 'bookmark'
-                  ? 'bookmark-filled'
-                  : widget.icon,
-        ),
-        label: Text(active ? '已${widget.label}' : widget.label),
-      );
-}
-
-class _CommentPreview extends StatelessWidget {
-  const _CommentPreview();
-  @override
-  Widget build(BuildContext context) => ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          child: const Icon(Icons.person, color: Colors.white),
-        ),
-        title:
-            const Text('用户评论', style: TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: const Text('这条内容很有意思，期待更多分享。'),
       );
 }
 
@@ -2699,17 +2467,10 @@ class RecommendationFeedPage extends StatelessWidget {
               icon: Icons.photo_outlined,
               imageAsset: 'assets/figma/post-thumbnail-5.jpg',
             ),
-            _ContentPreviewCard(
-              title: '完整视频动态',
-              subtitle: '点击查看详情',
+            const _EmptyStateCard(
               icon: Icons.play_circle_outline,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const ContentDetailPage(title: '完整视频动态', video: true),
-                ),
-              ),
+              title: '推荐动态',
+              subtitle: '登录后显示真实推荐动态',
             ),
           ],
         ),
