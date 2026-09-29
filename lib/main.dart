@@ -749,8 +749,8 @@ class _DDShellState extends State<DDShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const DiscoverPage(),
       const DDHomePage(),
+      const DiscoverPage(),
       const NotificationsPage(),
       const DDProfilePage(),
     ];
@@ -881,9 +881,9 @@ class _DDHomePageState extends State<DDHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('首页', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('首页'),
         actions: [
-          IconButton(onPressed: _loadPosts, icon: _tdIcon('search')),
+          IconButton(onPressed: () {}, icon: _tdIcon('search')),
         ],
       ),
       body: RefreshIndicator(
