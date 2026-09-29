@@ -1584,13 +1584,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   DDPost? post;
   List<DDComment> comments = const [];
   bool loading = true;
-  String? error;
   bool deleting = false;
-  bool get isOwner =>
-      post?.userId != null &&
-      currentUserId != null &&
-      post!.userId == currentUserId;
+  String? error;
   int? currentUserId;
+  bool get isOwner => post?.userId != null && currentUserId == post!.userId;
 
   @override
   void initState() {
@@ -1606,15 +1603,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   }
 
   Future<String> token() async {
-    final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString('dd.auth.token') ?? '';
-    if (value.isEmpty) {
-      throw Exception('请先登录');
-    }
+    final p = await SharedPreferences.getInstance();
+    final value = p.getString('dd.auth.token') ?? '';
+    if (value.isEmpty) throw Exception('请先登录');
     return value;
   }
 
   Future<void> load() async {
+    if (!mounted) return;
     setState(() {
       loading = true;
       error = null;
@@ -1629,9 +1625,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       comments = await service.fetchComments(t, widget.postId);
       if (post == null) throw Exception('动态不存在');
     } catch (e) {
-      if (mounted) {
+      if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1646,9 +1641,28 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       commentController.clear();
       await load();
     } catch (e) {
-      if (mounted) {
+      if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    try {
+      await service.toggleLike(await token(), widget.postId);
+      await load();
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    try {
+      await service.toggleFavorite(await token(), widget.postId);
+      await load();
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -1690,72 +1704,199 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('动态详情'), actions: [
-          if (!loading && post != null)
-            PopupMenuButton<String>(
+  Widget build(BuildContext context) {
+    final item = post;
+    return Scaffold(
+      appBar: AppBar(title: const Text('动态详情'), actions: [
+        if (item != null)
+          PopupMenuButton<String>(
               onSelected: (value) => value == 'delete' ? _delete() : _report(),
               itemBuilder: (_) => [
-                if (isOwner)
-                  const PopupMenuItem(value: 'delete', child: Text('删除动态')),
-                if (!isOwner)
-                  const PopupMenuItem(value: 'report', child: Text('举报动态')),
+                    if (isOwner)
+                      const PopupMenuItem(value: 'delete', child: Text('删除动态')),
+                    if (!isOwner)
+                      const PopupMenuItem(value: 'report', child: Text('举报动态')),
+                  ]),
+      ]),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                  children: [
+                    if (error != null)
+                      _PageErrorState(
+                          title: '加载失败', subtitle: error!, onRetry: load),
+                    if (item != null) ...[
+                      Row(children: [
+                        CircleAvatar(
+                            radius: 24,
+                            backgroundImage: item.avatar.isEmpty
+                                ? null
+                                : NetworkImage(item.avatar),
+                            child: item.avatar.isEmpty
+                                ? const Icon(Icons.person_outline)
+                                : null),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text(item.nickname,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 17)),
+                              const SizedBox(height: 4),
+                              Text(item.createdAt,
+                                  style: TextStyle(
+                                      color: Theme.of(context).hintColor,
+                                      fontSize: 12))
+                            ])),
+                        IconButton(
+                            onPressed: () {},
+                            icon: const Icon(Icons.ios_share_outlined)),
+                      ]),
+                      const SizedBox(height: 18),
+                      if (item.content.trim().isNotEmpty)
+                        Text(item.content,
+                            style: const TextStyle(fontSize: 18, height: 1.5)),
+                      if (item.imageUrl != null &&
+                          item.imageUrl!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _PostImageHolder(url: item.imageUrl!)
+                      ],
+                      const SizedBox(height: 18),
+                      Row(children: [
+                        _DetailAction(
+                            icon: item.liked
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            label: '${item.likes}',
+                            active: item.liked,
+                            onTap: _toggleLike),
+                        const SizedBox(width: 24),
+                        _DetailAction(
+                            icon: Icons.chat_bubble_outline,
+                            label: '${comments.length}',
+                            onTap: () {}),
+                        const SizedBox(width: 24),
+                        _DetailAction(
+                            icon: item.favorited
+                                ? Icons.bookmark
+                                : Icons.bookmark_border,
+                            label: '${item.favorites}',
+                            active: item.favorited,
+                            onTap: _toggleFavorite),
+                      ]),
+                      const Divider(height: 32),
+                      const Text('评论',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 8),
+                      if (comments.isEmpty)
+                        const _EmptyStateCard(
+                            icon: Icons.chat_bubble_outline,
+                            title: '暂无评论',
+                            subtitle: '成为第一个评论的人')
+                      else
+                        ...comments.map((c) => ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const CircleAvatar(
+                                child: Icon(Icons.person_outline, size: 18)),
+                            title: Text(c.nickname,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700)),
+                            subtitle: Text(c.content),
+                            trailing: Text(c.createdAt,
+                                style: const TextStyle(fontSize: 11)))),
+                    ],
+                  ]),
+            ),
+      bottomNavigationBar: item == null || loading
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: TextField(
+                  controller: commentController,
+                  decoration: InputDecoration(
+                    filled: true,
+                    hintText: '写下你的评论…',
+                    suffixIcon: IconButton(
+                      onPressed: deleting ? null : submitComment,
+                      icon: const Icon(Icons.send),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+class _PostImageHolder extends StatelessWidget {
+  const _PostImageHolder({required this.url});
+  final String url;
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.network(
+          url,
+          width: double.infinity,
+          fit: BoxFit.contain,
+          loadingBuilder: (_, child, progress) => progress == null
+              ? child
+              : const SizedBox(
+                  height: 260,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+          errorBuilder: (_, __, ___) => Container(
+            height: 220,
+            color: Colors.black12,
+            alignment: Alignment.center,
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.broken_image_outlined, size: 42),
+                SizedBox(height: 8),
+                Text('图片加载失败'),
               ],
             ),
-        ]),
-        body: loading
-            ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: load,
-                child: ListView(padding: const EdgeInsets.all(18), children: [
-                  if (error != null)
-                    _PageErrorState(
-                        title: '加载失败', subtitle: error!, onRetry: load),
-                  if (post != null) ...[
-                    if (post!.imageUrl != null && post!.imageUrl!.isNotEmpty)
-                      ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
-                          child: Image.network(post!.imageUrl!,
-                              height: 260,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const SizedBox(
-                                  height: 260,
-                                  child: Center(child: Text('图片加载失败'))))),
-                    const SizedBox(height: 16),
-                    Text(post!.nickname,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w800)),
-                    Text(post!.createdAt),
-                    const SizedBox(height: 12),
-                    Text(post!.content,
-                        style: const TextStyle(fontSize: 17, height: 1.45)),
-                    const SizedBox(height: 16),
-                    Text('点赞 ${post!.likes}    收藏 ${post!.favorites}'),
-                    const SizedBox(height: 22),
-                    const Text('评论',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w800)),
-                    if (comments.isEmpty)
-                      const _EmptyStateCard(
-                          icon: Icons.chat_bubble_outline,
-                          title: '暂无评论',
-                          subtitle: '成为第一个评论的人')
-                    else
-                      ...comments.map((item) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(item.nickname),
-                          subtitle: Text(item.content),
-                          trailing: Text(item.createdAt))),
-                    TextField(
-                        controller: commentController,
-                        decoration: InputDecoration(
-                            hintText: '写下评论',
-                            suffixIcon: IconButton(
-                                onPressed: submitComment,
-                                icon: const Icon(Icons.send)))),
-                  ],
-                ]),
-              ),
+          ),
+        ),
+      );
+}
+
+class _DetailAction extends StatelessWidget {
+  const _DetailAction(
+      {required this.icon,
+      required this.label,
+      required this.onTap,
+      this.active = false});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: active ? Colors.pinkAccent : null),
+              const SizedBox(width: 5),
+              Text(label),
+            ],
+          ),
+        ),
       );
 }
 

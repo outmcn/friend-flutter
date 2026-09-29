@@ -41,7 +41,9 @@ class DDPost {
         favorites: (json['favorites'] as num?)?.toInt() ?? 0,
         liked: json['liked'] == true,
         favorited: json['favorited'] == true,
-        imageUrl: (json['imageURL'] ?? json['image_url'])?.toString(),
+        imageUrl: DDPostService.mediaUrl(
+          (json['imageURL'] ?? json['image_url'] ?? json['image'])?.toString(),
+        ),
       );
 }
 
