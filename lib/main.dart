@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -1325,23 +1326,36 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
   Future<void> _pickImage() async {
-    final image = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
-    if (image != null && mounted) {
-      setState(() {
-        selectedImage = image;
-        mediaType = '图片';
-      });
+    try {
+      final image = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image != null && mounted) {
+        setState(() {
+          selectedImage = image;
+          mediaType = '图片';
+          error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '图片选择失败：$e');
     }
   }
 
   Future<String?> _imageDataUrl() async {
     if (selectedImage == null) return null;
     final bytes = await selectedImage!.readAsBytes();
+    if (bytes.length > 8 * 1024 * 1024) {
+      throw Exception('图片不能超过 8MB');
+    }
     return 'data:image/jpeg;base64,${base64Encode(bytes)}';
   }
+
+  void _clearImage() => setState(() {
+        selectedImage = null;
+        if (mediaType == '图片') mediaType = null;
+      });
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -1381,10 +1395,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         }
                       } catch (e) {
                         if (mounted) {
-                          setState(
-                            () => error =
-                                e.toString().replaceFirst('Exception: ', ''),
-                          );
+                          setState(() {
+                            publishing = false;
+                            error =
+                                e.toString().replaceFirst('Exception: ', '');
+                          });
                         }
                       } finally {
                         if (mounted) setState(() => publishing = false);
@@ -1432,7 +1447,27 @@ class _CreatePostPageState extends State<CreatePostPage> {
             if (selectedImage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
-                child: Text('已选择图片：${selectedImage!.name}'),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(
+                        File(selectedImage!.path),
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: IconButton.filled(
+                        onPressed: _clearImage,
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             const Text('可见范围', style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
