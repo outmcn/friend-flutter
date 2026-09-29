@@ -1,23 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:friend_app/main.dart';
-import 'package:friend_app/pages/game_page.dart';
+import 'package:dd/main.dart';
 
 void main() {
-  testWidgets('Friend login UI renders', (tester) async {
-    await tester.pumpWidget(const FriendApp());
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(find.text('Friend'), findsOneWidget);
-    expect(find.text('登录'), findsOneWidget);
+  testWidgets('DD onboarding UI renders', (tester) async {
+    await tester.pumpWidget(const DDApp());
+    expect(find.text('DD'), findsOneWidget);
+    expect(find.text('开始使用'), findsOneWidget);
   });
 
-  testWidgets('home game entry opens Gomoku', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: HomePage()));
-    await tester.tapAt(const Offset(100, 180));
+  testWidgets('DD auth flow opens home shell', (tester) async {
+    await tester.pumpWidget(const DDApp());
+    await tester.tap(find.text('开始使用'));
     await tester.pumpAndSettle();
-    expect(find.text('五子棋'), findsOneWidget);
-    await tester.tap(find.text('五子棋'));
+    await tester.tap(find.widgetWithText(FilledButton, '登录'));
     await tester.pumpAndSettle();
-    expect(find.byType(GomokuPage), findsOneWidget);
+    expect(find.text('首页'), findsWidgets);
+    expect(find.text('发现'), findsOneWidget);
+    expect(find.text('我的'), findsOneWidget);
   });
 }
