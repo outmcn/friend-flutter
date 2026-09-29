@@ -13,6 +13,7 @@ class DDPost {
     required this.avatar,
     required this.likes,
     required this.favorites,
+    required this.comments,
     required this.liked,
     required this.favorited,
     this.imageUrl,
@@ -26,6 +27,7 @@ class DDPost {
   final String avatar;
   final int likes;
   final int favorites;
+  final int comments;
   final bool liked;
   final bool favorited;
   final String? imageUrl;
@@ -39,6 +41,7 @@ class DDPost {
         avatar: DDPostService.mediaUrl(json['avatar']?.toString()),
         likes: (json['likes'] as num?)?.toInt() ?? 0,
         favorites: (json['favorites'] as num?)?.toInt() ?? 0,
+        comments: (json['comments'] as num?)?.toInt() ?? 0,
         liked: json['liked'] == true,
         favorited: json['favorited'] == true,
         imageUrl: DDPostService.mediaUrl(
