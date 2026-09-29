@@ -1474,48 +1474,76 @@ class _CreatePostPageState extends State<CreatePostPage> {
       );
 }
 
-class NotificationsPage extends StatelessWidget {
+class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
+  @override
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<NotificationsPage> {
+  final DDPostService service = DDPostService();
+  List<DDNotification> items = const [];
+  bool loading = true;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      items = await service.fetchNotifications(token);
+      await service.markNotificationsRead(token);
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title:
-              const Text('通知', style: TextStyle(fontWeight: FontWeight.w800)),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(18),
-          children: const [
-            _NotificationRow(
-              icon: Icons.favorite,
-              title: '点赞通知',
-              subtitle: '还没有新的点赞',
-            ),
-            _NotificationRow(
-              icon: Icons.chat_bubble_outline,
-              title: '评论通知',
-              subtitle: '还没有新的评论',
-            ),
-            _NotificationRow(
-              icon: Icons.person_add_alt_1,
-              title: '关注通知',
-              subtitle: '还没有新的关注',
-            ),
-            _NotificationRow(
-              icon: Icons.campaign_outlined,
-              title: '系统通知',
-              subtitle: '暂无系统通知',
-            ),
-            SizedBox(height: 18),
-            _PageLoadState(title: '通知加载中', subtitle: '这是静态加载状态预览'),
-            _PageErrorState(title: '通知加载失败', subtitle: '网络异常时可点击重试'),
-            _EmptyStateCard(
-              icon: Icons.notifications_none,
-              title: '暂无更多通知',
-              subtitle: '新的互动会显示在这里',
-            ),
-          ],
-        ),
+        appBar: AppBar(title: const Text('通知')),
+        body: RefreshIndicator(
+            onRefresh: load,
+            child: ListView(padding: const EdgeInsets.all(18), children: [
+              if (loading)
+                const _PageLoadState(title: '通知加载中', subtitle: '正在读取真实通知'),
+              if (!loading && error != null)
+                _PageErrorState(
+                    title: '通知加载失败', subtitle: error!, onRetry: load),
+              if (!loading && error == null && items.isEmpty)
+                const _EmptyStateCard(
+                    icon: Icons.notifications_none,
+                    title: '暂无通知',
+                    subtitle: '新的点赞、评论和关注会显示在这里'),
+              if (!loading && error == null)
+                ...items.map((item) => ListTile(
+                    leading: Icon(item.type == 'comment'
+                        ? Icons.comment
+                        : item.type == 'follow'
+                            ? Icons.person_add
+                            : Icons.favorite),
+                    title: Text(item.nickname == null
+                        ? item.content
+                        : '${item.nickname} ${item.content}'),
+                    subtitle: Text(item.createdAt))),
+            ])),
       );
 }
 

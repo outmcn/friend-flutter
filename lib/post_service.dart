@@ -60,6 +60,30 @@ class DDComment {
       );
 }
 
+class DDNotification {
+  const DDNotification(
+      {required this.id,
+      required this.type,
+      required this.content,
+      required this.createdAt,
+      this.nickname,
+      this.read = false});
+  final int id;
+  final String type;
+  final String content;
+  final String createdAt;
+  final String? nickname;
+  final bool read;
+  factory DDNotification.fromJson(Map<String, dynamic> json) => DDNotification(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        type: '${json['type'] ?? ''}',
+        content: '${json['content'] ?? ''}',
+        createdAt: '${json['createdAt'] ?? ''}',
+        nickname: json['nickname']?.toString(),
+        read: json['read'] == true,
+      );
+}
+
 class DDPostService {
   DDPostService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -87,6 +111,34 @@ class DDPostService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('dd.auth.token', token);
     return token;
+  }
+
+  Future<List<DDNotification>> fetchNotifications(String token) async {
+    final response = await _client.get(_base.resolve('/api/notifications'),
+        headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '通知加载失败'}');
+    }
+    final data = decoded['data'];
+    if (data is! List) {
+      throw Exception('通知数据格式错误');
+    }
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(DDNotification.fromJson)
+        .toList();
+  }
+
+  Future<void> markNotificationsRead(String token) async {
+    final response = await _client.post(
+        _base.resolve('/api/notifications/read'),
+        headers: {'Authorization': 'Bearer $token'});
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('通知已读失败');
+    }
   }
 
   Future<List<DDPost>> fetchPosts(String token) =>
