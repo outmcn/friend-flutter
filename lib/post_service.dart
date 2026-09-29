@@ -1,0 +1,107 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class DDPost {
+  const DDPost({
+    required this.id,
+    required this.content,
+    required this.createdAt,
+    required this.nickname,
+    required this.avatar,
+    required this.likes,
+    required this.favorites,
+    required this.liked,
+    required this.favorited,
+    this.imageUrl,
+  });
+
+  final int id;
+  final String content;
+  final String createdAt;
+  final String nickname;
+  final String avatar;
+  final int likes;
+  final int favorites;
+  final bool liked;
+  final bool favorited;
+  final String? imageUrl;
+
+  factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        content: '${json['content'] ?? ''}',
+        createdAt: '${json['createdAt'] ?? json['created_at'] ?? ''}',
+        nickname: '${json['nickname'] ?? json['username'] ?? '用户'}',
+        avatar: '${json['avatar'] ?? ''}',
+        likes: (json['likes'] as num?)?.toInt() ?? 0,
+        favorites: (json['favorites'] as num?)?.toInt() ?? 0,
+        liked: json['liked'] == true,
+        favorited: json['favorited'] == true,
+        imageUrl: (json['imageURL'] ?? json['image_url'])?.toString(),
+      );
+}
+
+class DDPostService {
+  DDPostService({http.Client? client}) : _client = client ?? http.Client();
+
+  static final Uri _base = Uri.parse('https://friend.outmcn.net/api');
+  final http.Client _client;
+
+  Future<String> login(
+      {required String username, required String password}) async {
+    final response = await _client.post(
+      _base.resolve('/api/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'username': username, 'password': password}),
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '登录失败'}');
+    }
+    final data = decoded['data'];
+    if (data is! Map<String, dynamic> || data['token'] is! String) {
+      throw Exception('登录响应格式错误');
+    }
+    final token = data['token'] as String;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('dd.auth.token', token);
+    return token;
+  }
+
+  Future<List<DDPost>> fetchPosts(String token) async {
+    final response = await _client.get(
+      _base.resolve('/api/posts'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('帖子加载失败（${response.statusCode}）');
+    }
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decoded['data'];
+    final list = data is List
+        ? data
+        : (data is Map<String, dynamic> ? data['posts'] : null);
+    if (list is! List) throw Exception('帖子数据格式错误');
+    return list.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+  }
+
+  Future<void> toggleLike(String token, int postId) =>
+      _postAction(token, postId, 'like');
+  Future<void> toggleFavorite(String token, int postId) =>
+      _postAction(token, postId, 'favorite');
+
+  Future<void> _postAction(String token, int postId, String action) async {
+    final response = await _client.post(
+      _base.resolve('/api/posts/$postId/$action'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('操作失败（${response.statusCode}）');
+    }
+  }
+
+  void dispose() => _client.close();
+}

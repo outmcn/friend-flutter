@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'post_service.dart';
+
 void main() => runApp(const DDApp());
 
 class DDApp extends StatelessWidget {
@@ -249,21 +253,80 @@ class LoginPage extends StatelessWidget {
       );
 }
 
-class PasswordLoginPage extends StatelessWidget {
+class PasswordLoginPage extends StatefulWidget {
   const PasswordLoginPage({super.key});
+  @override
+  State<PasswordLoginPage> createState() => _PasswordLoginPageState();
+}
+
+class _PasswordLoginPageState extends State<PasswordLoginPage> {
+  final _username = TextEditingController();
+  final _password = TextEditingController();
+  final _service = DDPostService();
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _username.dispose();
+    _password.dispose();
+    _service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (_username.text.trim().isEmpty || _password.text.isEmpty) {
+      setState(() => _error = '请输入手机号和密码');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await _service.login(
+        username: _username.text.trim(),
+        password: _password.text,
+      );
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DDShell()),
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AuthScaffold(
         title: '密码登录',
         subtitle: '使用手机号和密码登录 DD',
         child: Column(
           children: [
-            const _AuthField(label: '手机号码', icon: Icons.phone_outlined),
+            _AuthFieldController(
+                label: '手机号码',
+                icon: Icons.phone_outlined,
+                controller: _username),
             const SizedBox(height: 14),
-            const _AuthField(
-              label: '密码',
-              icon: Icons.lock_outline,
-              obscureText: true,
-            ),
+            _AuthFieldController(
+                label: '密码',
+                icon: Icons.lock_outline,
+                obscureText: true,
+                controller: _password),
+            if (_error != null) ...[
+              const SizedBox(height: 10),
+              Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(_error!,
+                      style: const TextStyle(color: Colors.orange))),
+            ],
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
@@ -275,18 +338,31 @@ class PasswordLoginPage extends StatelessWidget {
               ),
             ),
             _PrimaryAuthButton(
-              label: '登录',
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const DDShell()),
-              ),
-            ),
+                label: _loading ? '登录中…' : '登录',
+                onTap: _loading ? () {} : _login),
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('返回验证码登录'),
-            ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text('返回验证码登录')),
           ],
         ),
+      );
+}
+
+class _AuthFieldController extends StatelessWidget {
+  const _AuthFieldController(
+      {required this.label,
+      required this.icon,
+      required this.controller,
+      this.obscureText = false});
+  final String label;
+  final IconData icon;
+  final TextEditingController controller;
+  final bool obscureText;
+  @override
+  Widget build(BuildContext context) => TextField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
       );
 }
 
@@ -695,81 +771,244 @@ class _PageLoadState extends StatelessWidget {
 }
 
 class _PageErrorState extends StatelessWidget {
-  const _PageErrorState({required this.title, required this.subtitle});
+  const _PageErrorState(
+      {required this.title, required this.subtitle, this.onRetry});
   final String title;
   final String subtitle;
+  final VoidCallback? onRetry;
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
           leading: const Icon(Icons.cloud_off_outlined),
           title: Text(title),
           subtitle: Text(subtitle),
-          trailing: TextButton(onPressed: () {}, child: const Text('重试')),
+          trailing: TextButton(onPressed: onRetry, child: const Text('重试')),
         ),
       );
 }
 
-class DDHomePage extends StatelessWidget {
+class DDHomePage extends StatefulWidget {
   const DDHomePage({super.key});
+
+  @override
+  State<DDHomePage> createState() => _DDHomePageState();
+}
+
+class _DDHomePageState extends State<DDHomePage> {
+  final DDPostService _postService = DDPostService();
+  List<DDPost> _posts = const [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPosts();
+  }
+
+  @override
+  void dispose() {
+    _postService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadPosts() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance().timeout(
+        const Duration(seconds: 1),
+      );
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) {
+        throw Exception('登录后加载动态');
+      }
+      final posts = await _postService.fetchPosts(token);
+      if (mounted) setState(() => _posts = posts);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('首页', style: TextStyle(fontWeight: FontWeight.w800)),
-        actions: [IconButton(onPressed: () {}, icon: _tdIcon('search'))],
+        actions: [
+          IconButton(onPressed: _loadPosts, icon: _tdIcon('search')),
+        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
-        children: [
-          const _SectionTitle(title: '主播推荐', action: '查看全部'),
-          SizedBox(
-            height: 114,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: 5,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, index) => _CreatorChip(index: index),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _SectionTitle(
-            title: '首页推荐',
-            action: '更多',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecommendationFeedPage()),
-            ),
-          ),
-          _FeaturePostCard(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const ContentDetailPage(
-                  title: '首页推荐',
-                  video: false,
-                  authorName: '推荐用户',
-                  authorAsset: 'assets/figma/profile-portrait-2.jpg',
-                ),
+      body: RefreshIndicator(
+        onRefresh: _loadPosts,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
+          children: [
+            const _SectionTitle(title: '主播推荐', action: '查看全部'),
+            SizedBox(
+              height: 114,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: 5,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, index) => _CreatorChip(index: index),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          const _SectionTitle(title: '为你推荐', action: '刷新'),
-          const _RecommendationRow(),
-          const _RecommendationRow(),
-          const SizedBox(height: 18),
-          _HomeQuickActions(
-            onCreatePost: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CreatePostPage()),
+            const SizedBox(height: 10),
+            _SectionTitle(
+              title: '动态',
+              action: '刷新',
+              onTap: _loadPosts,
             ),
-          ),
-          const SizedBox(height: 18),
-          const _ScrollStateCard(),
-        ],
+            if (_loading)
+              const _PageLoadState(title: '动态加载中', subtitle: '正在读取最新帖子')
+            else if (_error != null)
+              _PageErrorState(
+                  title: '动态加载失败', subtitle: _error!, onRetry: _loadPosts)
+            else if (_posts.isEmpty)
+              const _EmptyStateCard(
+                icon: Icons.article_outlined,
+                title: '暂无动态',
+                subtitle: '登录后即可查看服务器中的帖子',
+              )
+            else
+              ..._posts.map(
+                (post) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _DynamicPostCard(
+                    post: post,
+                    onLike: () async {
+                      final prefs =
+                          await SharedPreferences.getInstance().timeout(
+                        const Duration(seconds: 1),
+                      );
+                      final token = prefs.getString('dd.auth.token') ?? '';
+                      if (token.isEmpty) return;
+                      await _postService.toggleLike(token, post.id);
+                      await _loadPosts();
+                    },
+                    onFavorite: () async {
+                      final prefs =
+                          await SharedPreferences.getInstance().timeout(
+                        const Duration(seconds: 1),
+                      );
+                      final token = prefs.getString('dd.auth.token') ?? '';
+                      if (token.isEmpty) return;
+                      await _postService.toggleFavorite(token, post.id);
+                      await _loadPosts();
+                    },
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            _HomeQuickActions(
+              onCreatePost: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreatePostPage()),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _DynamicPostCard extends StatelessWidget {
+  const _DynamicPostCard(
+      {required this.post, required this.onLike, required this.onFavorite});
+  final DDPost post;
+  final VoidCallback onLike;
+  final VoidCallback onFavorite;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage:
+                        post.avatar.isEmpty ? null : NetworkImage(post.avatar),
+                    child: post.avatar.isEmpty
+                        ? const Icon(Icons.person_outline)
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(post.nickname,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                        Text(post.createdAt,
+                            style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.more_horiz),
+                ],
+              ),
+              if (post.content.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(post.content,
+                    style: const TextStyle(fontSize: 16, height: 1.4)),
+              ],
+              if (post.imageUrl != null &&
+                  post.imageUrl!.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    post.imageUrl!,
+                    width: double.infinity,
+                    height: 220,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: onLike,
+                    icon: Icon(
+                        post.liked ? Icons.favorite : Icons.favorite_border),
+                    label: Text('${post.likes}'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('评论'),
+                  ),
+                  TextButton.icon(
+                    onPressed: onFavorite,
+                    icon: Icon(post.favorited
+                        ? Icons.bookmark
+                        : Icons.bookmark_border),
+                    label: Text('${post.favorites}'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _HomeQuickActions extends StatelessWidget {
@@ -829,6 +1068,7 @@ class _QuickAction extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _ScrollStateCard extends StatelessWidget {
   const _ScrollStateCard();
 
@@ -2107,6 +2347,8 @@ class _FeaturePostCard extends StatelessWidget {
       );
 }
 
+// Kept for the reference-detail routes.
+// ignore: unused_element
 class _RecommendationRow extends StatelessWidget {
   const _RecommendationRow();
   @override
