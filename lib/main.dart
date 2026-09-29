@@ -826,154 +826,54 @@ class _PageErrorState extends StatelessWidget {
       );
 }
 
-class DDHomePage extends StatefulWidget {
+class DDHomePage extends StatelessWidget {
   const DDHomePage({super.key});
 
   @override
-  State<DDHomePage> createState() => _DDHomePageState();
-}
-
-class _DDHomePageState extends State<DDHomePage> {
-  final DDPostService _postService = DDPostService();
-  List<DDPost> _posts = const [];
-  bool _loading = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPosts();
-  }
-
-  @override
-  void dispose() {
-    _postService.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadPosts() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final prefs = await SharedPreferences.getInstance().timeout(
-        const Duration(seconds: 1),
-      );
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) {
-        throw Exception('登录后加载动态');
-      }
-      final posts = await _postService.fetchPosts(token);
-      if (mounted) setState(() => _posts = posts);
-    } catch (error) {
-      if (mounted) {
-        setState(
-          () => _error = error.toString().replaceFirst('Exception: ', ''),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('首页'),
-        actions: [
-          IconButton(onPressed: () {}, icon: _tdIcon('search')),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadPosts,
-        child: ListView(
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('首页'),
+          actions: [IconButton(onPressed: () {}, icon: _tdIcon('search'))],
+        ),
+        body: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(
             18,
-            4,
+            8,
             18,
-            24 + MediaQuery.of(context).padding.bottom + 88,
+            28 + MediaQuery.of(context).padding.bottom + 88,
           ),
           children: [
-            const _SectionTitle(title: '主播推荐', action: '查看全部'),
-            SizedBox(
-              height: 114,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: 5,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (_, index) => _CreatorChip(index: index),
+            _DiscoverTile(
+              icon: Icons.local_fire_department,
+              title: '热门话题',
+              subtitle: '看看大家正在讨论什么',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TopicPage()),
               ),
             ),
-            const SizedBox(height: 10),
-            _SectionTitle(
-              title: '动态',
-              action: '刷新',
-              onTap: _loadPosts,
-            ),
-            if (_loading)
-              const _PageLoadState(title: '动态加载中', subtitle: '正在读取最新动态')
-            else if (_error != null)
-              _PageErrorState(
-                  title: '动态加载失败', subtitle: _error!, onRetry: _loadPosts)
-            else if (_posts.isEmpty)
-              const _EmptyStateCard(
-                icon: Icons.article_outlined,
-                title: '暂无动态',
-                subtitle: '登录后即可查看服务器中的动态',
-              )
-            else
-              ..._posts.map(
-                (post) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _DynamicPostCard(
-                    post: post,
-                    onLike: () async {
-                      final prefs =
-                          await SharedPreferences.getInstance().timeout(
-                        const Duration(seconds: 1),
-                      );
-                      final token = prefs.getString('dd.auth.token') ?? '';
-                      if (token.isEmpty) return;
-                      await _postService.toggleLike(token, post.id);
-                      await _loadPosts();
-                    },
-                    onFavorite: () async {
-                      final prefs =
-                          await SharedPreferences.getInstance().timeout(
-                        const Duration(seconds: 1),
-                      );
-                      final token = prefs.getString('dd.auth.token') ?? '';
-                      if (token.isEmpty) return;
-                      await _postService.toggleFavorite(token, post.id);
-                      await _loadPosts();
-                    },
-                    onOpen: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DynamicDetailPage(postId: post.id),
-                      ),
-                    ),
-                  ),
-                ),
+            _DiscoverTile(
+              icon: Icons.event_available,
+              title: '活动中心',
+              subtitle: '参加线上线下有趣活动',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EventsPage()),
               ),
-            const SizedBox(height: 16),
-            _HomeQuickActions(
-              onCreatePost: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CreatePostPage()),
-                );
-                if (mounted) _loadPosts();
-              },
+            ),
+            _DiscoverTile(
+              icon: Icons.trending_up,
+              title: '趋势榜单',
+              subtitle: '本周最受关注的内容',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TrendsPage()),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
+      );
 }
 
 class _DynamicPostCard extends StatelessWidget {
@@ -1214,37 +1114,54 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 padding: EdgeInsets.fromLTRB(
                     18, 8, 18, 28 + MediaQuery.of(context).padding.bottom + 88),
                 children: [
-                  const TextField(
-                      decoration: InputDecoration(
-                          prefixIcon: Icon(Icons.search),
-                          hintText: '搜索动态、话题和用户')),
+                  _HomeQuickActions(
+                    onCreatePost: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CreatePostPage(),
+                        ),
+                      );
+                      if (mounted) load();
+                    },
+                  ),
                   const SizedBox(height: 18),
-                  _DiscoverTile(
-                      icon: Icons.local_fire_department,
-                      title: '热门话题',
-                      subtitle: '看看大家正在讨论什么',
-                      onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const TopicPage()))),
-                  _DiscoverTile(
-                      icon: Icons.event_available,
-                      title: '活动中心',
-                      subtitle: '参加线上线下有趣活动',
-                      onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const EventsPage()))),
-                  _DiscoverTile(
-                      icon: Icons.trending_up,
-                      title: '趋势榜单',
-                      subtitle: '本周最受关注的内容',
-                      onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const TrendsPage()))),
-                  const SizedBox(height: 18),
-                  const SizedBox(height: 18),
+                  const _SectionTitle(title: '动态', action: '刷新'),
+                  if (loading)
+                    const _PageLoadState(
+                      title: '动态加载中',
+                      subtitle: '正在读取发现内容',
+                    ),
+                  if (!loading && error != null)
+                    _PageErrorState(
+                      title: '发现加载失败',
+                      subtitle: error!,
+                      onRetry: load,
+                    ),
+                  if (!loading && error == null && posts.isEmpty)
+                    const _EmptyStateCard(
+                      icon: Icons.article_outlined,
+                      title: '暂无动态',
+                      subtitle: '暂时没有可发现的真实动态',
+                    ),
+                  if (!loading && error == null)
+                    ...posts.map(
+                      (post) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _DynamicPostCard(
+                          post: post,
+                          onLike: () {},
+                          onFavorite: () {},
+                          onOpen: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  DynamicDetailPage(postId: post.id),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ])),
       );
 }
