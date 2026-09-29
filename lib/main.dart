@@ -997,8 +997,9 @@ class _DynamicPostCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundImage:
-                        post.avatar.isEmpty ? null : NetworkImage(post.avatar),
+                    backgroundImage: post.avatar.isEmpty
+                        ? null
+                        : NetworkImage(DDPostService.mediaUrl(post.avatar)),
                     child: post.avatar.isEmpty
                         ? const Icon(Icons.person_outline)
                         : null,
@@ -1671,6 +1672,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   List<DDComment> comments = const [];
   bool loading = true;
   String? error;
+  bool deleting = false;
 
   @override
   void initState() {
@@ -1730,9 +1732,56 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
+  Future<void> _delete() async {
+    try {
+      setState(() => deleting = true);
+      await service.deletePost(await token(), widget.postId);
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => deleting = false);
+    }
+  }
+
+  Future<void> _report() async {
+    final reason = await showModalBottomSheet<String>(
+        context: context,
+        builder: (_) => SafeArea(
+            child: Wrap(
+                children: ['广告或垃圾信息', '不当内容', '其他']
+                    .map((item) => ListTile(
+                        title: Text(item),
+                        onTap: () => Navigator.pop(context, item)))
+                    .toList())));
+    if (reason == null) return;
+    try {
+      await service.reportPost(
+          token: await token(), postId: widget.postId, reason: reason);
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('举报已提交')));
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('动态详情')),
+        appBar: AppBar(title: const Text('动态详情'), actions: [
+          if (!loading && post != null)
+            PopupMenuButton<String>(
+                onSelected: (value) =>
+                    value == 'delete' ? _delete() : _report(),
+                itemBuilder: (_) => [
+                      const PopupMenuItem(value: 'report', child: Text('举报动态')),
+                      PopupMenuItem(
+                          value: 'delete',
+                          child: Text(deleting ? '删除中…' : '删除动态'))
+                    ])
+        ]),
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(

@@ -33,7 +33,7 @@ class DDPost {
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? json['created_at'] ?? ''}',
         nickname: '${json['nickname'] ?? json['username'] ?? '用户'}',
-        avatar: '${json['avatar'] ?? ''}',
+        avatar: DDPostService.mediaUrl(json['avatar']?.toString()),
         likes: (json['likes'] as num?)?.toInt() ?? 0,
         favorites: (json['favorites'] as num?)?.toInt() ?? 0,
         liked: json['liked'] == true,
@@ -89,6 +89,12 @@ class DDPostService {
 
   static final Uri _base = Uri.parse('https://friend.outmcn.net/api');
   final http.Client _client;
+  static String mediaUrl(String? value) {
+    final raw = (value ?? '').trim();
+    if (raw.isEmpty) return '';
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    return 'https://friend.outmcn.net${raw.startsWith('/') ? raw : '/$raw'}';
+  }
 
   Future<String> login(
       {required String username, required String password}) async {
@@ -291,6 +297,36 @@ class DDPostService {
     }
     return (decoded['data'] as Map?)?.cast<String, dynamic>() ??
         <String, dynamic>{};
+  }
+
+  Future<void> deletePost(String token, int postId) async {
+    final response = await _client.delete(_base.resolve('/api/posts/$postId'),
+        headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '删除动态失败'}');
+    }
+  }
+
+  Future<void> reportPost(
+      {required String token,
+      required int postId,
+      required String reason}) async {
+    final response = await _client.post(
+        _base.resolve('/api/posts/$postId/report'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'reason': reason}));
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '举报动态失败'}');
+    }
   }
 
   Future<void> toggleLike(String token, int postId) =>
