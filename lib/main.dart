@@ -53,8 +53,42 @@ class DDApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const OnboardingPage(),
+      home: const AuthGate(),
     );
+  }
+}
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool loading = true;
+  bool signedIn = false;
+  @override
+  void initState() {
+    super.initState();
+    _restore();
+  }
+
+  Future<void> _restore() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('dd.auth.token') ?? '';
+    if (mounted) {
+      setState(() {
+        signedIn = token.isNotEmpty;
+        loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return signedIn ? const DDShell() : const OnboardingPage();
   }
 }
 

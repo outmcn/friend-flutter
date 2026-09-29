@@ -189,6 +189,16 @@ class DDPostService {
     }
   }
 
+  Future<void> logout(String token) async {
+    final response = await _client.post(_base.resolve('/api/auth/logout'),
+        headers: {'Authorization': 'Bearer $token'});
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('退出登录失败');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('dd.auth.token');
+  }
+
   Future<Map<String, dynamic>> fetchMe(String token) =>
       _fetchObject(token, '/api/me');
 
