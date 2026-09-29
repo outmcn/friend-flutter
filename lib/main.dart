@@ -2089,114 +2089,93 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       );
 }
 
-class DDProfilePage extends StatelessWidget {
+class DDProfilePage extends StatefulWidget {
   const DDProfilePage({super.key});
   @override
+  State<DDProfilePage> createState() => _DDProfilePageState();
+}
+
+class _DDProfilePageState extends State<DDProfilePage> {
+  final DDPostService service = DDPostService();
+  Map<String, dynamic>? profile;
+  bool loading = true;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      final t = p.getString('dd.auth.token') ?? '';
+      if (t.isEmpty) throw Exception('请先登录');
+      profile = await service.fetchMe(t);
+    } catch (e) {
+      if (mounted) error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final p = profile;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('我的', style: TextStyle(fontWeight: FontWeight.w800)),
-        actions: [
+        appBar: AppBar(title: const Text('我的'), actions: [
           IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
-            icon: _tdIcon('more'),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          const Row(
-            children: [
-              CircleAvatar(
-                radius: 38,
-                backgroundImage: AssetImage(
-                  'assets/figma/profile-portrait-3.jpg',
-                ),
-              ),
-              SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'DD 用户',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text('这是我的个人介绍'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _Stat(value: '0', label: '动态'),
-              _Stat(value: '0', label: '关注'),
-              _Stat(value: '0', label: '粉丝'),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _ProfileAction(
-            icon: Icons.edit_outlined,
-            title: '编辑资料',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const EditProfilePage()),
-            ),
-          ),
-          _ProfileAction(
-            icon: Icons.article_outlined,
-            title: '我的动态',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MyPostsPage()),
-            ),
-          ),
-          _ProfileAction(
-            icon: Icons.manage_accounts_outlined,
-            title: '账户设置',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
-          ),
-          _ProfileAction(
-            icon: Icons.swap_horiz,
-            title: '切换账户',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AccountSwitchPage()),
-            ),
-          ),
-          _ProfileAction(
-            icon: Icons.qr_code_2,
-            title: '我的二维码',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MyQrCodePage()),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CreatePostPage()),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('发帖'),
-      ),
-    );
+              onPressed: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SettingsPage())),
+              icon: _tdIcon('more'))
+        ]),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(padding: const EdgeInsets.all(18), children: [
+                if (error != null)
+                  Text(error!, style: const TextStyle(color: Colors.orange)),
+                Row(children: [
+                  const CircleAvatar(
+                      radius: 38,
+                      backgroundImage:
+                          AssetImage('assets/figma/profile-portrait-3.jpg')),
+                  const SizedBox(width: 14),
+                  Expanded(
+                      child: Text('${p?['nickname'] ?? 'DD 用户'}',
+                          style: const TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.w800)))
+                ]),
+                const SizedBox(height: 24),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _Stat(value: '${p?['posts'] ?? 0}', label: '动态'),
+                      _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
+                      _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝')
+                    ]),
+                const SizedBox(height: 24),
+                _ProfileAction(
+                    icon: Icons.edit_outlined,
+                    title: '编辑资料',
+                    onTap: () async {
+                      await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const EditProfilePage()));
+                      if (mounted) load();
+                    }),
+                _ProfileAction(
+                    icon: Icons.article_outlined,
+                    title: '我的动态',
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const MyPostsPage())))
+              ]));
   }
 }
 
