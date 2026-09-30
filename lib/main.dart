@@ -2487,20 +2487,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   _PageErrorState(
                       title: '主页加载失败', subtitle: error!, onRetry: load),
                 Row(children: [
-                  CircleAvatar(
-                    radius: 42,
-                    backgroundImage: (p?['avatar']?.toString() ?? '')
-                            .trim()
-                            .isEmpty
-                        ? null
-                        : NetworkImage(
-                            DDPostService.mediaUrl(p?['avatar']?.toString()),
-                          ),
-                    child: (p?['avatar']?.toString() ?? '').trim().isEmpty
-                        ? const Icon(Icons.person_outline, size: 34)
-                        : null,
-                  ),
-                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2513,14 +2499,36 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                           ),
                         ),
                         Text('${p?['city'] ?? ''}'),
+                        Text('在线 ${p?['activeDays'] ?? 0} 天'),
                       ],
                     ),
                   ),
-                  FilledButton(
-                    onPressed: actionLoading || following ? null : toggleFollow,
-                    child: Text(
-                      actionLoading ? '处理中…' : (following ? '私聊' : '关注'),
-                    ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 42,
+                        backgroundImage:
+                            (p?['avatar']?.toString() ?? '').trim().isEmpty
+                                ? null
+                                : NetworkImage(
+                                    DDPostService.mediaUrl(
+                                      p?['avatar']?.toString(),
+                                    ),
+                                  ),
+                        child: (p?['avatar']?.toString() ?? '').trim().isEmpty
+                            ? const Icon(Icons.person_outline, size: 34)
+                            : null,
+                      ),
+                      const SizedBox(height: 8),
+                      FilledButton(
+                        onPressed:
+                            actionLoading || following ? null : toggleFollow,
+                        child: Text(
+                          actionLoading ? '处理中…' : (following ? '私聊' : '关注'),
+                        ),
+                      ),
+                    ],
                   ),
                 ]),
                 const SizedBox(height: 24),
