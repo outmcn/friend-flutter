@@ -903,11 +903,6 @@ class HomePage extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(
               16, 8, 16, 28 + MediaQuery.of(context).padding.bottom + 88),
           children: [
-            const Text('晚上好，去遇见有趣的人吧',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text('发现身边正在等待连接的人', style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 20),
             _HomeVoiceMatch(
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const VoiceMatchPage()))),
@@ -923,26 +918,14 @@ class HomePage extends StatelessWidget {
                       builder: (_) => const GameCompanionPlazaPage())),
             ),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                  child: _HomeMiniCard(
-                icon: Icons.videocam_outlined,
-                title: '视频匹配',
-                subtitle: '面对面聊更真实',
-                meta: '1,236 人在线',
-                onTap: () => _unavailable(context, '视频匹配'),
-              )),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: _HomeMiniCard(
-                icon: Icons.sports_esports_outlined,
-                title: '游戏代练',
-                subtitle: '专业上分与代打服务',
-                meta: '3,105 位代练',
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const GamePlayPage())),
-              )),
-            ]),
+            _HomeMiniCard(
+              icon: Icons.sports_esports_outlined,
+              title: '游戏代练',
+              subtitle: '专业上分与代打服务',
+              meta: '3,105 位代练',
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const GamePlayPage())),
+            ),
             const SizedBox(height: 22),
             Row(children: [
               _HomeQuickAction(
