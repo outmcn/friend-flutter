@@ -897,6 +897,7 @@ class _DynamicPostCard extends StatelessWidget {
     required this.onOpen,
     this.onComment,
     this.onFollow,
+    this.authorNavigation = true,
   });
   final DDPost post;
   final VoidCallback onLike;
@@ -904,6 +905,7 @@ class _DynamicPostCard extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback? onComment;
   final VoidCallback? onFollow;
+  final bool authorNavigation;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -916,7 +918,7 @@ class _DynamicPostCard extends StatelessWidget {
               Row(
                 children: [
                   InkWell(
-                    onTap: post.userId == null
+                    onTap: !authorNavigation || post.userId == null
                         ? null
                         : () => Navigator.push(
                               context,
@@ -944,7 +946,7 @@ class _DynamicPostCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         InkWell(
-                          onTap: post.userId == null
+                          onTap: !authorNavigation || post.userId == null
                               ? null
                               : () => Navigator.push(
                                     context,
@@ -2458,6 +2460,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 else
                   ...posts.map((post) => _DynamicPostCard(
                       post: post,
+                      authorNavigation: false,
                       onLike: () {},
                       onFavorite: () {},
                       onOpen: () => Navigator.push(
@@ -3049,15 +3052,7 @@ class _CreatorChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OtherProfilePage(
-              name: '创作者 ${index + 1}',
-              avatarAsset: _images[index % _images.length],
-            ),
-          ),
-        ),
+        onTap: null,
         child: SizedBox(
           width: 76,
           child: Column(
