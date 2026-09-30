@@ -169,6 +169,21 @@ class DDPostService {
 
   Future<List<DDPost>> fetchPosts(String token) =>
       _fetchList(token, '/api/posts');
+  Future<DDPost> fetchPost(String token, int postId) async {
+    final response = await _client.get(
+      _base.resolve('/api/posts/$postId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('动态加载失败（${response.statusCode}）');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['data'] is! Map) {
+      throw Exception('动态数据格式错误');
+    }
+    return DDPost.fromJson((decoded['data'] as Map).cast<String, dynamic>());
+  }
+
   Future<List<DDPost>> fetchMyPosts(String token) =>
       _fetchList(token, '/api/me/posts');
   Future<List<DDPost>> fetchLikedPosts(String token) =>

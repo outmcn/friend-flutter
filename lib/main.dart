@@ -1751,9 +1751,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       final t = await token();
       final me = await service.fetchMe(t);
       currentUserId = (me['id'] as num?)?.toInt();
-      final list = await service.fetchPosts(t);
-      final matches = list.where((item) => item.id == widget.postId).toList();
-      post = matches.isEmpty ? null : matches.first;
+      post = await service.fetchPost(t, widget.postId);
       comments = await service.fetchComments(t, widget.postId);
       if (post == null) throw Exception('动态不存在');
     } catch (e) {
