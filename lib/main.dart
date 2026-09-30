@@ -4026,8 +4026,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
           : targetTab == 1
               ? await service.fetchMyPosts(t)
               : targetTab == 2
-                  ? await service.fetchLikedPosts(t)
-                  : await service.fetchFavoritedPosts(t);
+                  ? await service.fetchFavoritedPosts(t)
+                  : await service.fetchLikedPosts(t);
       if (!mounted) return;
       setState(() {
         profile = loadedProfile;
@@ -4172,7 +4172,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   _MyProfileVoiceCard(name: '${p?['nickname'] ?? '我'}的声音名片'),
                   const SizedBox(height: 14),
                   Row(
-                    children: ['置顶', '动态', '喜欢', '收藏']
+                    children: ['置顶', '动态', '收藏', '喜欢']
                         .asMap()
                         .entries
                         .map((entry) => Expanded(
@@ -4237,8 +4237,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                           : selectedTab == 1
                               ? '动态'
                               : selectedTab == 2
-                                  ? '喜欢'
-                                  : '收藏',
+                                  ? '收藏'
+                                  : '喜欢',
                     ),
                 ],
               ),
