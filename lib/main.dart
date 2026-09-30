@@ -2382,6 +2382,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool loading = true;
   bool actionLoading = false;
   bool isFollowing = false;
+  bool isProfileLiked = false;
+  int profileLikes = 0;
   String? error;
 
   @override
@@ -2418,6 +2420,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       final followingState = data['following'] == true;
       profile = loadedProfile;
       isFollowing = followingState;
+      isProfileLiked = data['liked'] == true;
+      profileLikes = (loadedProfile['likes'] as num?)?.toInt() ?? 0;
       final raw = data['posts'];
       posts = raw is List
           ? raw.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList()
@@ -2440,9 +2444,26 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       await service.toggleFollow(token, widget.userId!);
       await load();
     } catch (e) {
-      if (mounted) {
+      if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
+    } finally {
+      if (mounted) setState(() => actionLoading = false);
+    }
+  }
+
+  Future<void> toggleProfileLike() async {
+    if (widget.userId == null || isProfileLiked) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      setState(() => actionLoading = true);
+      final response = await service.toggleProfileLike(token, widget.userId!);
+      isProfileLiked = response['liked'] == true;
+      profileLikes = (response['likes'] as num?)?.toInt() ?? profileLikes;
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => actionLoading = false);
     }
@@ -2509,7 +2530,27 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       _Stat(
                           value: '${p?['posts'] ?? posts.length}', label: '动态'),
                       _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
-                      _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝')
+                      _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝'),
+                      InkWell(
+                        onTap: isProfileLiked ? null : toggleProfileLike,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Column(
+                            children: [
+                              Icon(
+                                isProfileLiked
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color:
+                                    isProfileLiked ? Colors.pinkAccent : null,
+                              ),
+                              Text('$profileLikes'),
+                              const Text('赞'),
+                            ],
+                          ),
+                        ),
+                      ),
                     ]),
                 const SizedBox(height: 24),
                 if (posts.isEmpty)

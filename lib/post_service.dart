@@ -309,6 +309,21 @@ class DDPostService {
     }
   }
 
+  Future<Map<String, dynamic>> toggleProfileLike(
+      String token, int userId) async {
+    final response = await _client.post(
+      _base.resolve('/api/users/$userId/like'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '点赞失败'}');
+    }
+    return (decoded['data'] as Map?)?.cast<String, dynamic>() ?? {};
+  }
+
   Future<void> toggleFollow(String token, int userId) async {
     final response = await _client.post(
       _base.resolve('/api/users/$userId/follow'),
