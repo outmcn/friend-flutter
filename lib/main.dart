@@ -859,12 +859,12 @@ class HomePage extends StatelessWidget {
           ),
           children: [
             _DiscoverTile(
-              icon: Icons.local_fire_department,
-              title: '热门话题',
-              subtitle: '看看大家正在讨论什么',
+              icon: Icons.sports_esports_outlined,
+              title: '游戏陪玩',
+              subtitle: '寻找一起开黑的游戏伙伴',
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const TopicPage()),
+                MaterialPageRoute(builder: (_) => const GamePlayPage()),
               ),
             ),
             _DiscoverTile(
@@ -3048,12 +3048,19 @@ class MyQrCodePage extends StatelessWidget {
       );
 }
 
-class TopicPage extends StatelessWidget {
-  const TopicPage({super.key});
+class GamePlayPage extends StatelessWidget {
+  const GamePlayPage({super.key});
+
   @override
-  Widget build(BuildContext context) => _SimpleListPage(
-        title: '热门话题',
-        items: const ['周末去哪儿', '电影分享', '城市漫步', '新朋友', '美食探店'],
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('游戏陪玩')),
+        body: const Center(
+          child: _EmptyStateCard(
+            icon: Icons.sports_esports_outlined,
+            title: '游戏陪玩暂未接入',
+            subtitle: '陪玩匹配和服务功能将在后续开放',
+          ),
+        ),
       );
 }
 
