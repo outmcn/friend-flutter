@@ -3022,25 +3022,24 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   }
 
   List<Widget> _buildCommentTree(List<DDComment> source) {
-    final roots = source.where((c) => c.parentId == null).toList();
     final repliesByParent = <int, List<DDComment>>{};
     for (final comment in source.where((c) => c.parentId != null)) {
       repliesByParent.putIfAbsent(comment.parentId!, () => []).add(comment);
     }
     final result = <Widget>[];
-    for (final root in roots) {
-      result.add(_commentTile(root));
-      final replies = repliesByParent[root.id] ?? const <DDComment>[];
-      if (replies.isNotEmpty) {
-        result.add(
-          Padding(
-            padding: const EdgeInsets.only(left: 42),
-            child: Column(
-              children: replies.map(_commentTile).toList(),
-            ),
-          ),
-        );
+
+    void append(DDComment comment, int depth) {
+      result.add(Padding(
+        padding: EdgeInsets.only(left: depth * 42.0),
+        child: _commentTile(comment),
+      ));
+      for (final reply in repliesByParent[comment.id] ?? const <DDComment>[]) {
+        append(reply, depth + 1);
       }
+    }
+
+    for (final root in source.where((c) => c.parentId == null)) {
+      append(root, 0);
     }
     return result;
   }
@@ -3120,7 +3119,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   }
 
   Widget _commentTile(DDComment comment) => InkWell(
-        onTap: () => setState(() => replyingTo = comment),
+        onTap: () {
+          setState(() => replyingTo = comment);
+          FocusScope.of(context).requestFocus(commentFocusNode);
+        },
         onLongPress: () => _commentMenu(comment),
         child: ListTile(
           contentPadding: EdgeInsets.zero,
@@ -3141,22 +3143,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
               child: Icon(Icons.person_outline, size: 18),
             ),
           ),
-          title: InkWell(
-            onTap: comment.userId == null
-                ? null
-                : () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => OtherProfilePage(
-                          userId: comment.userId,
-                          name: comment.nickname,
-                        ),
-                      ),
-                    ),
-            child: Text(
-              comment.nickname,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+          title: Text(
+            comment.nickname,
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           subtitle: Text(comment.content),
           trailing: Text(
