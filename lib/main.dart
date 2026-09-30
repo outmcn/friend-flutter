@@ -3437,95 +3437,135 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: load,
-              child: ListView(padding: const EdgeInsets.all(18), children: [
-                if (error != null)
-                  _PageErrorState(
-                      title: '主页加载失败', subtitle: error!, onRetry: load),
-                Row(children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${p?['nickname'] ?? widget.name}',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 108),
+                children: [
+                  if (error != null)
+                    _PageErrorState(
+                        title: '主页加载失败', subtitle: error!, onRetry: load),
+                  Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: OutlinedButton.icon(
+                              onPressed: actionLoading || isProfileLiked
+                                  ? null
+                                  : toggleProfileLike,
+                              icon: Icon(isProfileLiked
+                                  ? Icons.favorite
+                                  : Icons.favorite_border),
+                              label: Text('$profileLikes'),
+                            ),
                           ),
-                        ),
-                        Text('${p?['city'] ?? ''}'),
-                        Text('在线 ${p?['activeDays'] ?? 0} 天'),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircleAvatar(
-                        radius: 42,
-                        backgroundImage:
-                            (p?['avatar']?.toString() ?? '').trim().isEmpty
-                                ? null
-                                : NetworkImage(
-                                    DDPostService.mediaUrl(
-                                      p?['avatar']?.toString(),
-                                    ),
+                          Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Stack(children: [
+                                  CircleAvatar(
+                                    radius: 42,
+                                    backgroundImage:
+                                        (p?['avatar']?.toString() ?? '')
+                                                .trim()
+                                                .isEmpty
+                                            ? null
+                                            : NetworkImage(
+                                                DDPostService.mediaUrl(
+                                                    p?['avatar']?.toString())),
+                                    child: (p?['avatar']?.toString() ?? '')
+                                            .trim()
+                                            .isEmpty
+                                        ? const Icon(Icons.person_outline,
+                                            size: 34)
+                                        : null,
                                   ),
-                        child: (p?['avatar']?.toString() ?? '').trim().isEmpty
-                            ? const Icon(Icons.person_outline, size: 34)
-                            : null,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ]),
-                const SizedBox(height: 24),
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _Stat(
-                          value: '${p?['posts'] ?? posts.length}', label: '动态'),
-                      _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
-                      _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝'),
-                      InkWell(
-                        onTap: isProfileLiked ? null : toggleProfileLike,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Column(
+                                  const Positioned(
+                                    right: 1,
+                                    bottom: 2,
+                                    child: _OnlineDot(),
+                                  ),
+                                ]),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                    child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(children: [
+                                      Flexible(
+                                          child: Text(
+                                              '${p?['nickname'] ?? widget.name}',
+                                              style: const TextStyle(
+                                                  fontSize: 22,
+                                                  fontWeight:
+                                                      FontWeight.w800))),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.verified,
+                                          size: 17, color: Colors.lightBlue),
+                                    ]),
+                                    const SizedBox(height: 6),
+                                    Wrap(spacing: 6, runSpacing: 6, children: [
+                                      _ProfileTag(
+                                          text: '${p?['city'] ?? '未知地区'}'),
+                                      _ProfileTag(
+                                          text:
+                                              '在线 ${p?['activeDays'] ?? 0} 天'),
+                                    ]),
+                                    const SizedBox(height: 10),
+                                    Text('喜欢分享日常，也期待遇见聊得来的人。',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall),
+                                  ],
+                                )),
+                              ]),
+                          const Divider(height: 30),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              Icon(
-                                isProfileLiked
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color:
-                                    isProfileLiked ? Colors.pinkAccent : null,
-                              ),
-                              Text('$profileLikes'),
-                              const Text('赞'),
+                              _Stat(
+                                  value: '${p?['following'] ?? 0}',
+                                  label: '关注'),
+                              _Stat(
+                                  value: '${p?['followers'] ?? 0}',
+                                  label: '粉丝'),
+                              _Stat(value: '$profileLikes', label: '获赞'),
                             ],
                           ),
-                        ),
+                        ],
                       ),
-                    ]),
-                const SizedBox(height: 24),
-                if (posts.isEmpty)
-                  const _EmptyStateCard(
-                      icon: Icons.article_outlined,
-                      title: '暂无动态',
-                      subtitle: 'Ta 还没有发布动态')
-                else
-                  ...posts.map((post) => _DynamicPostCard(
-                      post: post,
-                      authorNavigation: false,
-                      onLike: () {},
-                      onFavorite: () {},
-                      onOpen: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  DynamicDetailPage(postId: post.id))))),
-              ]),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _OtherProfileVoiceCard(
+                      name: '${p?['nickname'] ?? widget.name}的声音名片'),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24, bottom: 10),
+                    child: Text('Ta的动态',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w800)),
+                  ),
+                  if (posts.isEmpty)
+                    const _EmptyStateCard(
+                        icon: Icons.article_outlined,
+                        title: '暂无动态',
+                        subtitle: 'Ta 还没有发布动态')
+                  else
+                    ...posts.map((post) => _DynamicPostCard(
+                        post: post,
+                        authorNavigation: false,
+                        onLike: () {},
+                        onFavorite: () {},
+                        onOpen: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    DynamicDetailPage(postId: post.id))))),
+                ],
+              ),
             ),
     );
   }
@@ -3945,6 +3985,24 @@ class _ProfileEmptyTab extends StatelessWidget {
             const SizedBox(height: 10),
             Text('暂无$label内容'),
           ]),
+        ),
+      );
+}
+
+class _OtherProfileVoiceCard extends StatelessWidget {
+  const _OtherProfileVoiceCard({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: const Icon(Icons.play_arrow, color: Colors.white),
+          ),
+          title: Text(name),
+          subtitle: const Text('声音名片 · UI 演示，未接入真实语音'),
+          trailing: const Text('00:16'),
         ),
       );
 }
