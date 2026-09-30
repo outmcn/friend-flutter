@@ -4328,51 +4328,62 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   const SizedBox(height: 18),
                   _MyProfileVoiceCard(name: '${p?['nickname'] ?? '我'}的声音名片'),
                   const SizedBox(height: 14),
-                  Row(
-                    children: ['置顶', '动态', '收藏', '喜欢']
-                        .asMap()
-                        .entries
-                        .map((entry) => Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => load(tab: entry.key),
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(entry.value,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            color: selectedTab == entry.key
-                                                ? Theme.of(context)
-                                                    .colorScheme
-                                                    .primary
-                                                : null,
-                                          )),
-                                      const SizedBox(height: 7),
-                                      AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 160),
-                                        curve: Curves.easeOutCubic,
-                                        width:
-                                            selectedTab == entry.key ? 24 : 0,
-                                        height: 3,
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          borderRadius:
-                                              BorderRadius.circular(99),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.symmetric(
+                        horizontal: BorderSide(
+                          color: Theme.of(context)
+                              .dividerColor
+                              .withValues(alpha: .7),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: ['置顶', '动态', '收藏', '喜欢']
+                          .asMap()
+                          .entries
+                          .map((entry) => Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => load(tab: entry.key),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(entry.value,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              color: selectedTab == entry.key
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                  : null,
+                                            )),
+                                        const SizedBox(height: 7),
+                                        AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 160),
+                                          curve: Curves.easeOutCubic,
+                                          width:
+                                              selectedTab == entry.key ? 24 : 0,
+                                          height: 3,
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            borderRadius:
+                                                BorderRadius.circular(99),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ))
-                        .toList(),
+                              ))
+                          .toList(),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   if (error != null)
