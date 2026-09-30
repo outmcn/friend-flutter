@@ -923,9 +923,9 @@ class HomePage extends StatelessWidget {
               Expanded(
                   child: _HomeMiniCard(
                 icon: Icons.sports_esports_outlined,
-                title: '游戏陪玩',
-                subtitle: '开黑上分不孤单',
-                meta: '3,105 位陪玩',
+                title: '游戏代练',
+                subtitle: '专业上分与代打服务',
+                meta: '3,105 位代练',
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const GamePlayPage())),
               )),
@@ -3825,7 +3825,7 @@ class _GamePlayPageState extends State<GamePlayPage> {
   int typeIndex = 0;
   int sortIndex = 0;
   final games = const ['王者荣耀', '英雄联盟', '和平精英', '永劫无间', '原神'];
-  final types = const ['全部', '代练上分', '陪玩开黑', '教学指导', '代打排位'];
+  final types = const ['全部', '代练上分', '代打排位', '教学指导', '账号托管'];
   final services = const [
     GameService(
         name: '小鹿',
@@ -3846,7 +3846,7 @@ class _GamePlayPageState extends State<GamePlayPage> {
         orders: '3,481',
         rating: '4.8',
         icon: Icons.military_tech_outlined,
-        tags: ['陪玩开黑', '耐心教学', '秒回']),
+        tags: ['代打上分', '耐心教学', '秒回']),
     GameService(
         name: '柚子',
         rank: '巅峰赛 2300',
@@ -3866,7 +3866,7 @@ class _GamePlayPageState extends State<GamePlayPage> {
         orders: '5,337',
         rating: '4.9',
         icon: Icons.groups_outlined,
-        tags: ['五排开黑', '稳定车队', '娱乐陪玩'],
+        tags: ['五排代打', '稳定车队', '账号托管'],
         online: false),
   ];
 
@@ -4018,7 +4018,7 @@ class GameTrainerProfilePage extends StatelessWidget {
                   title: service.service,
                   price: service.price),
               _GameProfileServiceRow(
-                  game: service.game, title: '陪玩开黑 · 语音指挥', price: '49'),
+                  game: service.game, title: '代打排位 · 实时进度', price: '49'),
               _GameProfileServiceRow(
                   game: service.game, title: '教学复盘 · 技术指导', price: '88'),
               const SizedBox(height: 18),
