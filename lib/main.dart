@@ -1229,8 +1229,36 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _DynamicPostCard(
                           post: post,
-                          onLike: () {},
-                          onFavorite: () {},
+                          onLike: () async {
+                            try {
+                              final p = await SharedPreferences.getInstance();
+                              final t = p.getString('dd.auth.token') ?? '';
+                              if (t.isEmpty) throw Exception('请先登录');
+                              await service.toggleLike(t, post.id);
+                              await load();
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() => error = e
+                                    .toString()
+                                    .replaceFirst('Exception: ', ''));
+                              }
+                            }
+                          },
+                          onFavorite: () async {
+                            try {
+                              final p = await SharedPreferences.getInstance();
+                              final t = p.getString('dd.auth.token') ?? '';
+                              if (t.isEmpty) throw Exception('请先登录');
+                              await service.toggleFavorite(t, post.id);
+                              await load();
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() => error = e
+                                    .toString()
+                                    .replaceFirst('Exception: ', ''));
+                              }
+                            }
+                          },
                           onOpen: () => Navigator.push(
                             context,
                             MaterialPageRoute(
