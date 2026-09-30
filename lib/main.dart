@@ -790,9 +790,9 @@ class _DDShellState extends State<DDShell> {
             label: '发现',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications_none),
-            selectedIcon: Icon(Icons.notifications),
-            label: '通知',
+            icon: Icon(Icons.chat_bubble_outline),
+            selectedIcon: Icon(Icons.chat_bubble),
+            label: '聊天',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
