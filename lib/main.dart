@@ -2507,7 +2507,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           child: Wrap(
             children: [
               ListTile(leading: _FigmaIcon('link'), title: Text('分享主页')),
-              ListTile(leading: _FigmaIcon('more'), title: Text('举报用户')),
+              ListTile(
+                leading: const Icon(Icons.report_gmailerrorred_outlined),
+                title: const Text('举报用户'),
+              ),
             ],
           ),
         ),
