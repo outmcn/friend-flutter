@@ -1000,7 +1000,7 @@ class _DynamicPostCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.chat_bubble_outline),
-                    label: Text('评论 ${post.comments}'),
+                    label: Text('${post.comments}'),
                   ),
                   TextButton.icon(
                     onPressed: onFavorite,
