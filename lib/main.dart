@@ -1051,60 +1051,72 @@ class HomePage extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(
               16, 8, 16, 28 + MediaQuery.of(context).padding.bottom + 88),
           children: [
-            _HomeFolderCard(
-              icon: Icons.mic_none,
-              title: '语音匹配',
-              subtitle: '说句话，遇见懂你的人',
-              meta: '正在寻找声音伙伴',
-              tabLabel: 'VOICE',
-              colors: const [Color(0xff6e4fe0), Color(0xffd46bc8)],
-              tabAlignment: Alignment.topLeft,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(30),
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(14),
-              ),
-              onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const VoiceMatchPage())),
-            ),
-            const SizedBox(height: 12),
-            _HomeFolderCard(
-              icon: Icons.sports_esports_outlined,
-              title: '游戏陪玩',
-              subtitle: '开黑交友不孤单',
-              meta: '1,236 位陪玩',
-              tabLabel: 'PLAY',
-              colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
-              tabAlignment: Alignment.topRight,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(12),
-                bottomLeft: Radius.circular(14),
-                bottomRight: Radius.circular(30),
-              ),
-              onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const GameCompanionPlazaPage())),
-            ),
-            const SizedBox(height: 12),
-            _HomeFolderCard(
-              icon: Icons.auto_awesome,
-              title: '缘分匹配',
-              subtitle: '遇见聊得来的人',
-              meta: '正在寻找默契伙伴',
-              tabLabel: 'FATE',
-              colors: const [Color(0xffff9a5a), Color(0xffff5f8f)],
-              tabAlignment: Alignment.topLeft,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(30),
-                bottomLeft: Radius.circular(18),
-                bottomRight: Radius.circular(34),
-              ),
-              onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const FateMatchPage())),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: 11,
+                  child: _HomeFolderCard(
+                    icon: Icons.sports_esports_outlined,
+                    title: '游戏陪玩',
+                    subtitle: '开黑交友不孤单',
+                    meta: '1,236 位陪玩',
+                    tabLabel: 'PLAY',
+                    colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
+                    tabAlignment: Alignment.topRight,
+                    borderRadius: BorderRadius.circular(28),
+                    height: 250,
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const GameCompanionPlazaPage())),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 9,
+                  child: Column(
+                    children: [
+                      _HomeFolderCard(
+                        icon: Icons.mic_none,
+                        title: '语音匹配',
+                        subtitle: '说句话，遇见懂你的人',
+                        meta: '正在寻找声音伙伴',
+                        tabLabel: 'VOICE',
+                        colors: const [Color(0xff6e4fe0), Color(0xffd46bc8)],
+                        tabAlignment: Alignment.topLeft,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(26),
+                          bottomLeft: Radius.circular(22),
+                          bottomRight: Radius.circular(12),
+                        ),
+                        height: 119,
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const VoiceMatchPage())),
+                      ),
+                      const SizedBox(height: 12),
+                      _HomeFolderCard(
+                        icon: Icons.auto_awesome,
+                        title: '缘分匹配',
+                        subtitle: '遇见聊得来的人',
+                        meta: '正在寻找默契伙伴',
+                        tabLabel: 'FATE',
+                        colors: const [Color(0xffff9a5a), Color(0xffff5f8f)],
+                        tabAlignment: Alignment.topLeft,
+                        borderRadius: BorderRadius.circular(22),
+                        height: 119,
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const FateMatchPage())),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 22),
             const _HomeSectionTitle(title: '热门玩法'),
@@ -2004,6 +2016,7 @@ class _HomeFolderCard extends StatelessWidget {
     required this.colors,
     required this.tabAlignment,
     required this.borderRadius,
+    this.height = 132,
     required this.onTap,
   });
   final IconData icon;
@@ -2014,6 +2027,7 @@ class _HomeFolderCard extends StatelessWidget {
   final List<Color> colors;
   final Alignment tabAlignment;
   final BorderRadius borderRadius;
+  final double height;
   final VoidCallback onTap;
 
   @override
@@ -2024,7 +2038,7 @@ class _HomeFolderCard extends StatelessWidget {
             onTap: onTap,
             borderRadius: borderRadius,
             child: Ink(
-              height: 132,
+              height: height,
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(colors: colors),
