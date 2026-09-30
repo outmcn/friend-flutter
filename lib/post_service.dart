@@ -169,6 +169,11 @@ class DDPostService {
 
   Future<List<DDPost>> fetchPosts(String token) =>
       _fetchList(token, '/api/posts');
+  Future<List<DDPost>> fetchNearbyPosts(String token) =>
+      _fetchList(token, '/api/posts/nearby');
+  Future<List<DDPost>> fetchFollowingPosts(String token) =>
+      _fetchList(token, '/api/posts/following');
+
   Future<DDPost> fetchPost(String token, int postId) async {
     final response = await _client.get(
       _base.resolve('/api/posts/$postId'),

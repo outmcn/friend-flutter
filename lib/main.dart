@@ -1289,6 +1289,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
   List<DDPost> posts = const [];
   bool loading = true;
   bool _refreshing = false;
+  int selectedTab = 0;
+  bool tabLoading = false;
   String? error;
   @override
   void initState() {
@@ -1302,11 +1304,20 @@ class _DiscoverPageState extends State<DiscoverPage> {
     super.dispose();
   }
 
-  Future<void> load({bool fromRefresh = false}) async {
+  Future<void> load({bool fromRefresh = false, int? tab}) async {
+    final targetTab = tab ?? selectedTab;
+    final switchingTab = tab != null && !fromRefresh && !loading;
+    if (switchingTab) {
+      setState(() {
+        selectedTab = targetTab;
+        tabLoading = true;
+        error = null;
+      });
+    }
     if (fromRefresh) {
       if (_refreshing) return;
       _refreshing = true;
-    } else {
+    } else if (!switchingTab) {
       setState(() {
         loading = true;
         error = null;
@@ -1317,7 +1328,17 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
       await syncCachedLocation(service, t);
-      posts = await service.fetchPosts(t);
+      final loaded = targetTab == 0
+          ? await service.fetchPosts(t)
+          : targetTab == 1
+              ? await service.fetchNearbyPosts(t)
+              : await service.fetchFollowingPosts(t);
+      if (mounted) {
+        setState(() {
+          posts = loaded;
+          selectedTab = targetTab;
+        });
+      }
     } catch (e) {
       if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
@@ -1325,6 +1346,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       if (mounted) {
         setState(() {
           loading = false;
+          tabLoading = false;
           _refreshing = false;
         });
       } else {
@@ -1336,7 +1358,43 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('发现'),
+          titleSpacing: 16,
+          title: Row(
+            children: ['推荐', '附近', '关注']
+                .asMap()
+                .entries
+                .map((entry) => GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => load(tab: entry.key),
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.only(right: 20, top: 9, bottom: 6),
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
+                          Text(entry.value,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: selectedTab == entry.key
+                                    ? null
+                                    : Theme.of(context).hintColor,
+                              )),
+                          const SizedBox(height: 5),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            curve: Curves.easeOutCubic,
+                            width: selectedTab == entry.key ? 24 : 0,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ))
+                .toList(),
+          ),
           actions: [
             IconButton(
               onPressed: () => Navigator.push(
@@ -1379,13 +1437,30 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       subtitle: error!,
                       onRetry: load,
                     ),
-                  if (!loading && error == null && posts.isEmpty)
-                    const _EmptyStateCard(
-                      icon: Icons.article_outlined,
-                      title: '暂无动态',
-                      subtitle: '暂时没有可发现的真实动态',
+                  if (tabLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 36),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (!loading && error == null && posts.isEmpty)
+                    _EmptyStateCard(
+                      icon: selectedTab == 1
+                          ? Icons.location_off_outlined
+                          : selectedTab == 2
+                              ? Icons.person_outline
+                              : Icons.article_outlined,
+                      title: selectedTab == 1
+                          ? '暂无附近动态'
+                          : selectedTab == 2
+                              ? '暂无关注动态'
+                              : '暂无动态',
+                      subtitle: selectedTab == 1
+                          ? '授权定位并等待附近用户发布动态'
+                          : selectedTab == 2
+                              ? '关注用户后，他们的动态会显示在这里'
+                              : '暂时没有可发现的真实动态',
                     ),
-                  if (!loading && error == null)
+                  if (!loading && !tabLoading && error == null)
                     ...posts.map(
                       (post) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
