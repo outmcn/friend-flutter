@@ -2722,14 +2722,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 label: const Text('编辑'),
                               ),
                             ]),
-                            const SizedBox(height: 5),
-                            Row(children: [
-                              const Icon(Icons.location_on_outlined, size: 15),
-                              const SizedBox(width: 3),
-                              Text(
-                                  'IP 属地：${p?['city'] ?? p?['location'] ?? '暂未设置'}',
-                                  style: Theme.of(context).textTheme.bodySmall),
-                            ]),
                             const SizedBox(height: 9),
                             Wrap(spacing: 7, runSpacing: 7, children: [
                               _ProfileTag(text: 'DD见习生'),
