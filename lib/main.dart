@@ -19,8 +19,10 @@ String _formatExactPostTime(String raw) {
   if (parsed == null) return raw;
   final value = parsed.toUtc().add(const Duration(hours: 8));
   String two(int value) => value.toString().padLeft(2, '0');
+  final period = value.hour < 12 ? '上午' : '下午';
+  final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
   return '${value.year}-${two(value.month)}-${two(value.day)} '
-      '${two(value.hour)}:${two(value.minute)}';
+      '$period ${two(hour)}:${two(value.minute)}';
 }
 
 String formatDDTime(String raw) {
@@ -4464,44 +4466,63 @@ class _MyListCard extends StatelessWidget {
   final DDPost post;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (post.imageUrl?.trim().isNotEmpty == true)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: Image.network(
-                  DDPostService.mediaUrl(post.imageUrl),
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+  Widget build(BuildContext context) => InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DynamicDetailPage(postId: post.id),
+          ),
+        ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (post.imageUrl?.trim().isNotEmpty == true)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.network(
+                    DDPostService.mediaUrl(post.imageUrl),
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
                 ),
+              if (post.videoUrl?.trim().isNotEmpty == true)
+                _NetworkVideoPreview(url: post.videoUrl!),
+              if (post.content.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(post.content,
+                      style: const TextStyle(fontSize: 16, height: 1.4)),
+                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _formatExactPostTime(post.createdAt),
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .55),
+                    ),
+                  ),
+                  Text(
+                    '浏览 ${post.views}',
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .55),
+                    ),
+                  ),
+                ],
               ),
-            if (post.videoUrl?.trim().isNotEmpty == true)
-              _NetworkVideoPreview(url: post.videoUrl!),
-            if (post.content.trim().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(post.content,
-                    style: const TextStyle(fontSize: 16, height: 1.4)),
-              ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _formatExactPostTime(post.createdAt),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                Text(
-                  '浏览 ${post.views}',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ],
-            ),
-            const Divider(height: 20),
-          ],
+              const Divider(height: 20),
+            ],
+          ),
         ),
       );
 }
