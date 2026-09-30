@@ -1119,7 +1119,6 @@ class HomePage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 22),
-            const _HomeSectionTitle(title: '热门玩法'),
             _HomeCartoonCard(
               icon: Icons.menu_book_outlined,
               title: '玩剧本',
