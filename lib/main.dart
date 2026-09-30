@@ -1184,6 +1184,7 @@ class _DynamicPostCard extends StatelessWidget {
     this.onFollow,
     this.onDelete,
     this.authorNavigation = true,
+    this.listMode = false,
   });
   final DDPost post;
   final VoidCallback onLike;
@@ -1193,12 +1194,14 @@ class _DynamicPostCard extends StatelessWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onDelete;
   final bool authorNavigation;
-
+  final bool listMode;
   @override
   Widget build(BuildContext context) => Card(
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: listMode
+              ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
+              : const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1673,6 +1676,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _DynamicPostCard(
                           post: post,
+                          listMode: true,
                           onLike: () async {
                             try {
                               final p = await SharedPreferences.getInstance();
