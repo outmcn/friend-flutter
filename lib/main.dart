@@ -1036,233 +1036,151 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('首页'),
-          actions: [
-            IconButton(
-              tooltip: '通知',
-              onPressed: () => _unavailable(context, '通知中心'),
-              icon: const Icon(Icons.notifications_none),
-            ),
-          ],
-        ),
-        body: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(
-              16, 8, 16, 28 + MediaQuery.of(context).padding.bottom + 88),
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  flex: 11,
-                  child: _HomeFolderCard(
-                    icon: Icons.sports_esports_outlined,
-                    title: '游戏陪玩',
-                    subtitle: '开黑交友不孤单',
-                    meta: '1,236 位陪玩',
-                    tabLabel: 'PLAY',
-                    colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
-                    tabAlignment: Alignment.topRight,
-                    borderRadius: BorderRadius.circular(28),
-                    height: 250,
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const GameCompanionPlazaPage())),
+        body: SafeArea(
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(
+                16, 8, 16, 28 + MediaQuery.of(context).padding.bottom + 88),
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 11,
+                    child: _HomeFolderCard(
+                      icon: Icons.sports_esports_outlined,
+                      title: '游戏陪玩',
+                      subtitle: '开黑交友不孤单',
+                      meta: '1,236 位陪玩',
+                      tabLabel: 'PLAY',
+                      colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
+                      tabAlignment: Alignment.topRight,
+                      borderRadius: BorderRadius.circular(28),
+                      height: 250,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const GameCompanionPlazaPage())),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 9,
-                  child: Column(
-                    children: [
-                      _HomeFolderCard(
-                        icon: Icons.mic_none,
-                        title: '语音匹配',
-                        subtitle: '说句话，遇见懂你的人',
-                        meta: '正在寻找声音伙伴',
-                        tabLabel: 'VOICE',
-                        colors: const [Color(0xff6e4fe0), Color(0xffd46bc8)],
-                        tabAlignment: Alignment.topLeft,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(26),
-                          bottomLeft: Radius.circular(22),
-                          bottomRight: Radius.circular(12),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 9,
+                    child: Column(
+                      children: [
+                        _HomeFolderCard(
+                          icon: Icons.mic_none,
+                          title: '语音匹配',
+                          subtitle: '说句话，遇见懂你的人',
+                          meta: '正在寻找声音伙伴',
+                          tabLabel: 'VOICE',
+                          colors: const [Color(0xff6e4fe0), Color(0xffd46bc8)],
+                          tabAlignment: Alignment.topLeft,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(26),
+                            bottomLeft: Radius.circular(22),
+                            bottomRight: Radius.circular(12),
+                          ),
+                          height: 119,
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const VoiceMatchPage())),
                         ),
-                        height: 119,
-                        onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const VoiceMatchPage())),
-                      ),
-                      const SizedBox(height: 12),
-                      _HomeFolderCard(
-                        icon: Icons.auto_awesome,
-                        title: '缘分匹配',
-                        subtitle: '遇见聊得来的人',
-                        meta: '正在寻找默契伙伴',
-                        tabLabel: 'FATE',
-                        colors: const [Color(0xffff9a5a), Color(0xffff5f8f)],
-                        tabAlignment: Alignment.topLeft,
-                        borderRadius: BorderRadius.circular(22),
-                        height: 119,
-                        onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const FateMatchPage())),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        _HomeFolderCard(
+                          icon: Icons.auto_awesome,
+                          title: '缘分匹配',
+                          subtitle: '遇见聊得来的人',
+                          meta: '正在寻找默契伙伴',
+                          tabLabel: 'FATE',
+                          colors: const [Color(0xffff9a5a), Color(0xffff5f8f)],
+                          tabAlignment: Alignment.topLeft,
+                          borderRadius: BorderRadius.circular(22),
+                          height: 119,
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const FateMatchPage())),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
-            _HomeCartoonCard(
-              icon: Icons.menu_book_outlined,
-              title: '玩剧本',
-              subtitle: '拨开迷雾，寻找真相',
-              badge: 'GO',
-              colors: const [Color(0xff352b62), Color(0xff8b4e9f)],
-              onTap: () => _unavailable(context, '玩剧本'),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _HomeCartoonCard(
-                    icon: Icons.groups_2_outlined,
-                    title: '真人带本',
-                    subtitle: '52 局等待中',
-                    badge: 'LIVE',
-                    colors: const [Color(0xff5a315b), Color(0xffd46b82)],
-                    onTap: () => _unavailable(context, '真人带本'),
+                ],
+              ),
+              const SizedBox(height: 22),
+              _HomeCartoonCard(
+                icon: Icons.menu_book_outlined,
+                title: '玩剧本',
+                subtitle: '拨开迷雾，寻找真相',
+                badge: 'GO',
+                colors: const [Color(0xff352b62), Color(0xff8b4e9f)],
+                onTap: () => _unavailable(context, '玩剧本'),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.groups_2_outlined,
+                      title: '真人带本',
+                      subtitle: '52 局等待中',
+                      badge: 'LIVE',
+                      colors: const [Color(0xff5a315b), Color(0xffd46b82)],
+                      onTap: () => _unavailable(context, '真人带本'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _HomeCartoonCard(
-                    icon: Icons.smart_toy_outlined,
-                    title: 'AI剧本杀',
-                    subtitle: '随时开局',
-                    badge: 'AI',
-                    colors: const [Color(0xff164b68), Color(0xff3c9fa9)],
-                    onTap: () => _unavailable(context, 'AI剧本杀'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.smart_toy_outlined,
+                      title: 'AI剧本杀',
+                      subtitle: '随时开局',
+                      badge: 'AI',
+                      colors: const [Color(0xff164b68), Color(0xff3c9fa9)],
+                      onTap: () => _unavailable(context, 'AI剧本杀'),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _HomeCartoonCard(
-                    icon: Icons.mic_external_on_outlined,
-                    title: '嗨歌抢唱',
-                    subtitle: '轮到你开唱',
-                    badge: 'NEW',
-                    colors: const [Color(0xff713b42), Color(0xffe38d57)],
-                    onTap: () => _unavailable(context, '嗨歌抢唱'),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.mic_external_on_outlined,
+                      title: '嗨歌抢唱',
+                      subtitle: '轮到你开唱',
+                      badge: 'NEW',
+                      colors: const [Color(0xff713b42), Color(0xffe38d57)],
+                      onTap: () => _unavailable(context, '嗨歌抢唱'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _HomeCartoonCard(
-                    icon: Icons.casino_outlined,
-                    title: '骗子酒馆',
-                    subtitle: '猜猜谁在说谎',
-                    badge: 'NEW',
-                    colors: const [Color(0xff254d72), Color(0xff63a5c5)],
-                    onTap: () => _unavailable(context, '骗子酒馆'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.casino_outlined,
+                      title: '骗子酒馆',
+                      subtitle: '猜猜谁在说谎',
+                      badge: 'NEW',
+                      colors: const [Color(0xff254d72), Color(0xff63a5c5)],
+                      onTap: () => _unavailable(context, '骗子酒馆'),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _HomeCartoonCard(
-              icon: Icons.flight_takeoff_outlined,
-              title: '飞行棋',
-              subtitle: '轻松玩一局',
-              badge: 'PLAY',
-              colors: const [Color(0xff2c5d3a), Color(0xff83bc67)],
-              onTap: () => _unavailable(context, '飞行棋'),
-            ),
-            const SizedBox(height: 22),
-            Row(children: [
-              _HomeQuickAction(
-                  icon: Icons.forum_outlined,
-                  label: '闪聊',
-                  onTap: () => _unavailable(context, '闪聊')),
-              _HomeQuickAction(
-                  icon: Icons.mic_none_outlined,
-                  label: '语音房',
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const VoiceRoomPage()))),
-              _HomeQuickAction(
-                  icon: Icons.music_note_outlined,
-                  label: '一起听',
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ListenTogetherPage()))),
-              _HomeQuickAction(
-                  icon: Icons.casino_outlined,
-                  label: '缘分签',
-                  onTap: () => _unavailable(context, '缘分签')),
-            ]),
-            const _HomeSectionTitle(title: '语音派对房', live: true),
-            SizedBox(
-              height: 154,
-              child:
-                  ListView(scrollDirection: Axis.horizontal, children: const [
-                _HomePartyCard(
-                    icon: Icons.music_note,
-                    tag: '音乐',
-                    title: '深夜电台 · 一起听',
-                    info: '128 人 · 房主 苏念'),
-                _HomePartyCard(
-                    icon: Icons.favorite_outline,
-                    tag: '交友',
-                    title: '深夜情感热线',
-                    info: '256 人 · 房主 温小满'),
-                _HomePartyCard(
-                    icon: Icons.sports_esports,
-                    tag: '开黑',
-                    title: '王者荣耀 · 组队',
-                    info: '89 人 · 房主 小鹿'),
-              ]),
-            ),
-            const _HomeSectionTitle(title: '兴趣圈子'),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.38,
-              children: const [
-                _HomeCircleCard(
-                    icon: Icons.camera_alt_outlined,
-                    title: '摄影交流圈',
-                    meta: '12.8 万人 · +128 新帖'),
-                _HomeCircleCard(
-                    icon: Icons.hiking_outlined,
-                    title: '周末去哪儿',
-                    meta: '8.6 万人 · +56 新帖'),
-                _HomeCircleCard(
-                    icon: Icons.restaurant_outlined,
-                    title: '深夜食堂',
-                    meta: '6.2 万人 · +34 新帖'),
-                _HomeCircleCard(
-                    icon: Icons.headphones_outlined,
-                    title: '一起听歌',
-                    meta: '4.5 万人 · +21 新帖'),
-              ],
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 22),
+              _HomeCartoonCard(
+                icon: Icons.flight_takeoff_outlined,
+                title: '飞行棋',
+                subtitle: '轻松玩一局',
+                badge: 'PLAY',
+                colors: const [Color(0xff2c5d3a), Color(0xff83bc67)],
+                onTap: () => _unavailable(context, '飞行棋'),
+              ),
+            ],
+          ),
         ),
       );
 }
