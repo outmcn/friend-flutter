@@ -903,26 +903,58 @@ class HomePage extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(
               16, 8, 16, 28 + MediaQuery.of(context).padding.bottom + 88),
           children: [
-            _HomeVoiceMatch(
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const VoiceMatchPage()))),
+            _HomeFolderCard(
+              icon: Icons.mic_none,
+              title: '语音匹配',
+              subtitle: '说句话，遇见懂你的人',
+              meta: '正在寻找声音伙伴',
+              tabLabel: 'VOICE',
+              colors: const [Color(0xff6e4fe0), Color(0xffd46bc8)],
+              tabAlignment: Alignment.topLeft,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(30),
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(14),
+              ),
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const VoiceMatchPage())),
+            ),
             const SizedBox(height: 12),
-            _HomeMiniCard(
+            _HomeFolderCard(
               icon: Icons.sports_esports_outlined,
               title: '游戏陪玩',
               subtitle: '开黑交友不孤单',
               meta: '1,236 位陪玩',
+              tabLabel: 'PLAY',
+              colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
+              tabAlignment: Alignment.topRight,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(12),
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(30),
+              ),
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) => const GameCompanionPlazaPage())),
             ),
             const SizedBox(height: 12),
-            _HomeMiniCard(
+            _HomeFolderCard(
               icon: Icons.sports_esports_outlined,
               title: '游戏代练',
               subtitle: '专业上分与代打服务',
               meta: '3,105 位代练',
+              tabLabel: 'RANK',
+              colors: const [Color(0xff2b6fd8), Color(0xff7c5ce8)],
+              tabAlignment: Alignment.topLeft,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(30),
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(34),
+              ),
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const GamePlayPage())),
             ),
@@ -1462,6 +1494,96 @@ class _HomeVoiceMatch extends StatelessWidget {
             ),
           ]),
         ),
+      );
+}
+
+class _HomeFolderCard extends StatelessWidget {
+  const _HomeFolderCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.meta,
+    required this.tabLabel,
+    required this.colors,
+    required this.tabAlignment,
+    required this.borderRadius,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String meta;
+  final String tabLabel;
+  final List<Color> colors;
+  final Alignment tabAlignment;
+  final BorderRadius borderRadius;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 13),
+        child: Stack(clipBehavior: Clip.none, children: [
+          InkWell(
+            onTap: onTap,
+            borderRadius: borderRadius,
+            child: Ink(
+              height: 132,
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: colors),
+                borderRadius: borderRadius,
+                boxShadow: [
+                  BoxShadow(
+                      color: colors.last.withValues(alpha: .26),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8))
+                ],
+              ),
+              child: Row(children: [
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(title,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 4),
+                      Text(subtitle,
+                          style: const TextStyle(color: Colors.white70)),
+                      const Spacer(),
+                      Text(meta,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 11)),
+                    ])),
+                Container(
+                    width: 58,
+                    height: 58,
+                    decoration: const BoxDecoration(
+                        color: Colors.white24, shape: BoxShape.circle),
+                    child: Icon(icon, color: Colors.white, size: 29)),
+              ]),
+            ),
+          ),
+          Align(
+            alignment: tabAlignment,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                  color: colors.first.withValues(alpha: .94),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(12))),
+              child: Text(tabLabel,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2)),
+            ),
+          ),
+        ]),
       );
 }
 
