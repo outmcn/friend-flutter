@@ -268,7 +268,6 @@ class DDPostService {
       {required String token,
       required String content,
       String? imageDataUrl,
-      String? videoDataUrl,
       String visibility = 'public',
       double? latitude,
       double? longitude}) async {
@@ -279,9 +278,6 @@ class DDPostService {
     }
     if (imageDataUrl != null && imageDataUrl.isNotEmpty) {
       body['image'] = imageDataUrl;
-    }
-    if (videoDataUrl != null && videoDataUrl.isNotEmpty) {
-      body['video'] = videoDataUrl;
     }
     body['visibility'] = visibility;
     final response = await _client.post(
