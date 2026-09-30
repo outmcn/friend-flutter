@@ -1701,51 +1701,25 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
   List<Widget> _buildCommentTree(List<DDComment> source) {
     final roots = source.where((c) => c.parentId == null).toList();
-    final children = <int, List<DDComment>>{};
-    for (final c in source.where((c) => c.parentId != null)) {
-      children.putIfAbsent(c.parentId!, () => []).add(c);
-    }
-    final result = <Widget>[];
-    for (final root in roots) {
-      result.add(_commentTile(root));
-      final replies = children[root.id] ?? const <DDComment>[];
-      if (replies.isNotEmpty) {
-        result.add(
-          Padding(
-            padding: const EdgeInsets.only(left: 42),
-            child: Column(
-              children: replies.map(_commentTile).toList(),
-            ),
-          ),
-        );
-      }
-    }
-    return result;
+    return roots.map(_commentTile).toList();
   }
 
-  Widget _commentTile(DDComment comment) => ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: const CircleAvatar(
-          child: Icon(Icons.person_outline, size: 18),
-        ),
-        title: Text(
-          comment.nickname,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(comment.content),
-            const SizedBox(height: 3),
-            TextButton(
-              onPressed: () => setState(() => replyingTo = comment),
-              child: const Text('回复'),
-            ),
-          ],
-        ),
-        trailing: Text(
-          formatDDTime(comment.createdAt),
-          style: const TextStyle(fontSize: 11),
+  Widget _commentTile(DDComment comment) => InkWell(
+        onTap: () => setState(() => replyingTo = comment),
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const CircleAvatar(
+            child: Icon(Icons.person_outline, size: 18),
+          ),
+          title: Text(
+            comment.nickname,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text(comment.content),
+          trailing: Text(
+            formatDDTime(comment.createdAt),
+            style: const TextStyle(fontSize: 11),
+          ),
         ),
       );
 
@@ -1824,14 +1798,15 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         title: const Text('动态详情'),
         actions: [
           if (item != null && !isOwner)
-            TextButton(
+            IconButton(
               onPressed: _openReportPage,
-              child: const Text('举报'),
+              icon: const Icon(TIcons.share_1),
+              tooltip: '举报',
             ),
           if (item != null)
             IconButton(
               onPressed: () {},
-              icon: const Icon(Icons.ios_share_outlined),
+              icon: const Icon(TIcons.share_1),
               tooltip: '分享',
             ),
           if (item != null && isOwner)
