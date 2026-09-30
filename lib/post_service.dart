@@ -230,8 +230,14 @@ class DDPostService {
   Future<int> createPost(
       {required String token,
       required String content,
-      String? imageDataUrl}) async {
+      String? imageDataUrl,
+      double? latitude,
+      double? longitude}) async {
     final body = <String, dynamic>{'content': content};
+    if (latitude != null && longitude != null) {
+      body['latitude'] = latitude;
+      body['longitude'] = longitude;
+    }
     if (imageDataUrl != null && imageDataUrl.isNotEmpty) {
       body['image'] = imageDataUrl;
     }
@@ -397,6 +403,21 @@ class DDPostService {
     }
     return (decoded['data'] as Map?)?.cast<String, dynamic>() ??
         <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> updateLocation(
+      {required String token,
+      required double latitude,
+      required double longitude}) async {
+    final response = await _client.put(
+      _base.resolve('/api/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'latitude': latitude, 'longitude': longitude}),
+    );
+    return _decodeResponse(response, '定位更新失败');
   }
 
   Future<Map<String, dynamic>> _fetchObject(String token, String path) async {

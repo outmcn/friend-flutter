@@ -9,6 +9,7 @@ import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'post_service.dart';
 
@@ -1327,6 +1328,12 @@ class _DiscoverTile extends StatelessWidget {
       );
 }
 
+class _PostLocation {
+  const _PostLocation(this.latitude, this.longitude);
+  final double latitude;
+  final double longitude;
+}
+
 class CreatePostPage extends StatefulWidget {
   const CreatePostPage({super.key});
   @override
@@ -1384,6 +1391,48 @@ class _CreatePostPageState extends State<CreatePostPage> {
     return 'data:image/jpeg;base64,${base64Encode(compressed)}';
   }
 
+  Future<_PostLocation?> _locationForPost(String token) async {
+    const cacheAge = Duration(hours: 1);
+    final prefs = await SharedPreferences.getInstance();
+    final cachedAt = prefs.getInt('dd.location.cachedAt');
+    final cachedLatitude = prefs.getDouble('dd.location.latitude');
+    final cachedLongitude = prefs.getDouble('dd.location.longitude');
+    final now = DateTime.now().millisecondsSinceEpoch;
+    double? latitude;
+    double? longitude;
+    if (cachedAt != null &&
+        now - cachedAt < cacheAge.inMilliseconds &&
+        cachedLatitude != null &&
+        cachedLongitude != null) {
+      latitude = cachedLatitude;
+      longitude = cachedLongitude;
+    } else {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return null;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+      final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium);
+      latitude = position.latitude;
+      longitude = position.longitude;
+      await prefs.setDouble('dd.location.latitude', latitude);
+      await prefs.setDouble('dd.location.longitude', longitude);
+      await prefs.setInt('dd.location.cachedAt', now);
+    }
+    await _service.updateLocation(
+      token: token,
+      latitude: latitude,
+      longitude: longitude,
+    );
+    return _PostLocation(latitude, longitude);
+  }
+
   void _clearImage() => setState(() {
         selectedImage = null;
         if (mediaType == '图片') mediaType = null;
@@ -1417,10 +1466,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         error = null;
                       });
                       try {
+                        final location = await _locationForPost(token);
                         await _service.createPost(
                           token: token,
                           content: _content.text.trim(),
                           imageDataUrl: await _imageDataUrl(),
+                          latitude: location?.latitude,
+                          longitude: location?.longitude,
                         );
                         if (mounted) {
                           Navigator.pop(context, true);
