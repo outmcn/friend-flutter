@@ -2474,10 +2474,31 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     final p = profile;
     final following = isFollowing;
     return Scaffold(
-      appBar: AppBar(title: const Text('Ta的主页'), actions: [
-        IconButton(
-            onPressed: () => _showProfileMenu(context), icon: _tdIcon('more'))
-      ]),
+      appBar: AppBar(
+        title: const Text('Ta的主页'),
+        actions: [
+          IconButton(
+            onPressed: () => _showProfileMenu(context),
+            icon: _tdIcon('more'),
+          ),
+        ],
+      ),
+      bottomNavigationBar: loading
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: actionLoading || following ? null : toggleFollow,
+                    child: Text(
+                      actionLoading ? '处理中…' : (following ? '私聊' : '关注'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -2521,13 +2542,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                             : null,
                       ),
                       const SizedBox(height: 8),
-                      FilledButton(
-                        onPressed:
-                            actionLoading || following ? null : toggleFollow,
-                        child: Text(
-                          actionLoading ? '处理中…' : (following ? '私聊' : '关注'),
-                        ),
-                      ),
                     ],
                   ),
                 ]),
