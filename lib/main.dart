@@ -26,6 +26,44 @@ String formatDDTime(String raw) {
   return '${value.year}年${value.month}月${value.day}日';
 }
 
+Future<void> syncCachedLocation(DDPostService service, String token) async {
+  const cacheAge = Duration(hours: 1);
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final cachedAt = prefs.getInt('dd.location.cachedAt');
+    var latitude = prefs.getDouble('dd.location.latitude');
+    var longitude = prefs.getDouble('dd.location.longitude');
+    final cacheValid = cachedAt != null &&
+        now - cachedAt < cacheAge.inMilliseconds &&
+        latitude != null &&
+        longitude != null;
+    if (!cacheValid) {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) return;
+      final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium);
+      latitude = position.latitude;
+      longitude = position.longitude;
+      await prefs.setDouble('dd.location.latitude', latitude);
+      await prefs.setDouble('dd.location.longitude', longitude);
+      await prefs.setInt('dd.location.cachedAt', now);
+    }
+    await service.updateLocation(
+      token: token,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  } catch (_) {
+    // Location is optional; feeds remain available without it.
+  }
+}
+
 void main() => runApp(const DDApp());
 
 class DDApp extends StatelessWidget {
@@ -898,6 +936,7 @@ class _DynamicPostCard extends StatelessWidget {
     required this.onOpen,
     this.onComment,
     this.onFollow,
+    this.onDelete,
     this.authorNavigation = true,
   });
   final DDPost post;
@@ -906,6 +945,7 @@ class _DynamicPostCard extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback? onComment;
   final VoidCallback? onFollow;
+  final VoidCallback? onDelete;
   final bool authorNavigation;
 
   @override
@@ -979,7 +1019,13 @@ class _DynamicPostCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (onFollow != null && post.userId != null)
+                  if (onDelete != null)
+                    IconButton(
+                      tooltip: '删除动态',
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                    )
+                  else if (onFollow != null && post.userId != null)
                     OutlinedButton(
                       onPressed: post.following ? null : onFollow,
                       child: Text(post.following ? '私聊' : '关注'),
@@ -1161,6 +1207,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
+      await syncCachedLocation(service, t);
       posts = await service.fetchPosts(t);
     } catch (e) {
       if (mounted)
@@ -2733,6 +2780,42 @@ class _DDProfilePageState extends State<DDProfilePage> {
     }
   }
 
+  Future<void> _deletePostFromProfile(DDPost post) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('确认删除这条动态？删除后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      await service.deletePost(token, post.id);
+      await load(tab: 0);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('动态已删除')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -2886,6 +2969,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   else
                     _MyPostWaterfall(
                       posts: posts,
+                      onDelete:
+                          selectedTab == 0 ? _deletePostFromProfile : null,
                       emptyLabel: selectedTab == 0
                           ? '动态'
                           : selectedTab == 1
@@ -2900,9 +2985,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
 }
 
 class _MyPostWaterfall extends StatelessWidget {
-  const _MyPostWaterfall({required this.posts, required this.emptyLabel});
+  const _MyPostWaterfall({
+    required this.posts,
+    required this.emptyLabel,
+    this.onDelete,
+  });
   final List<DDPost> posts;
   final String emptyLabel;
+  final ValueChanged<DDPost>? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -2914,8 +3004,9 @@ class _MyPostWaterfall extends StatelessWidget {
     }
     Widget column(List<DDPost> items) => Expanded(
           child: Column(
-            children:
-                items.map((post) => _MyWaterfallCard(post: post)).toList(),
+            children: items
+                .map((post) => _MyWaterfallCard(post: post, onDelete: onDelete))
+                .toList(),
           ),
         );
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -2927,8 +3018,9 @@ class _MyPostWaterfall extends StatelessWidget {
 }
 
 class _MyWaterfallCard extends StatelessWidget {
-  const _MyWaterfallCard({required this.post});
+  const _MyWaterfallCard({required this.post, this.onDelete});
   final DDPost post;
+  final ValueChanged<DDPost>? onDelete;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -2971,6 +3063,16 @@ class _MyWaterfallCard extends StatelessWidget {
                           maxLines: 4, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 8),
                       Row(children: [
+                        if (onDelete != null) ...[
+                          IconButton(
+                            tooltip: '删除动态',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () => onDelete!(post),
+                            icon: const Icon(Icons.delete_outline, size: 17),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
                         Icon(
                             post.liked
                                 ? Icons.thumb_up
@@ -3124,6 +3226,43 @@ class _MyPostsPageState extends State<MyPostsPage> {
     }
   }
 
+  Future<void> _deletePost(DDPost post) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('确认删除这条动态？删除后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final token =
+          (await SharedPreferences.getInstance()).getString('dd.auth.token') ??
+              '';
+      if (token.isEmpty) throw Exception('请先登录');
+      await service.deletePost(token, post.id);
+      await load();
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('动态已删除')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('我的动态')),
@@ -3159,6 +3298,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
                           child: _DynamicPostCard(
                             post: post,
                             authorNavigation: false,
+                            onDelete: () => _deletePost(post),
                             onLike: () async {
                               final token =
                                   (await SharedPreferences.getInstance())
