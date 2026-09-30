@@ -2653,53 +2653,110 @@ class _DDProfilePageState extends State<DDProfilePage> {
   Widget build(BuildContext context) {
     final p = profile;
     return Scaffold(
-        appBar: AppBar(title: const Text('我的'), actions: [
-          IconButton(
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SettingsPage())),
-              icon: _tdIcon('more'))
-        ]),
-        body: loading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(padding: const EdgeInsets.all(18), children: [
-                if (error != null)
-                  Text(error!, style: const TextStyle(color: Colors.orange)),
-                Row(children: [
-                  const CircleAvatar(
-                      radius: 38,
-                      backgroundImage:
-                          AssetImage('assets/figma/profile-portrait-3.jpg')),
-                  const SizedBox(width: 14),
-                  Expanded(
-                      child: Text('${p?['nickname'] ?? 'DD 用户'}',
-                          style: const TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.w800)))
-                ]),
-                const SizedBox(height: 24),
-                Row(
+      appBar: AppBar(title: const Text('我的'), actions: [
+        IconButton(
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const SettingsPage())),
+            icon: _tdIcon('more'))
+      ]),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                children: [
+                  if (error != null)
+                    _PageErrorState(
+                      title: '资料加载失败',
+                      subtitle: error!,
+                      onRetry: load,
+                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 38,
+                        backgroundImage: (p?['avatar']?.toString() ?? '')
+                                .trim()
+                                .isNotEmpty
+                            ? NetworkImage(
+                                DDPostService.mediaUrl(p!['avatar'].toString()))
+                            : null,
+                        child: (p?['avatar']?.toString() ?? '').trim().isEmpty
+                            ? const Icon(Icons.person, size: 36)
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${p?['nickname'] ?? 'DD 用户'}',
+                                style: const TextStyle(
+                                    fontSize: 22, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 4),
+                            Text(
+                                'IP属地 ${p?['city'] ?? p?['location'] ?? '暂未设置'}',
+                                style: Theme.of(context).textTheme.bodySmall),
+                            const SizedBox(height: 9),
+                            Wrap(spacing: 7, runSpacing: 7, children: [
+                              _ProfileTag(text: 'DD见习生'),
+                              _ProfileTag(text: '在线 ${p?['days'] ?? 0} 天'),
+                              _ProfileTag(text: '${p?['city'] ?? '未知地区'}'),
+                            ]),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _Stat(value: '${p?['posts'] ?? 0}', label: '动态'),
                       _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
-                      _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝')
-                    ]),
-                const SizedBox(height: 24),
-                _ProfileAction(
-                    icon: Icons.edit_outlined,
-                    title: '编辑资料',
-                    onTap: () async {
+                      _Stat(value: '${p?['followers'] ?? 0}', label: '被关注'),
+                      _Stat(value: '${p?['visits'] ?? 0}', label: '看过我'),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _ProfileShortcuts(
+                    onEdit: () async {
                       await Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (_) => const EditProfilePage()));
                       if (mounted) load();
-                    }),
-                _ProfileAction(
-                    icon: Icons.article_outlined,
-                    title: '我的动态',
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const MyPostsPage())))
-              ]));
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Row(children: [
+                    Text('瞬间 ${p?['posts'] ?? 0}',
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w800)),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const MyPostsPage())),
+                      icon: const Icon(Icons.article_outlined, size: 18),
+                      label: const Text('我的动态'),
+                    ),
+                  ]),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+                  _ProfileAction(
+                    icon: Icons.bookmark_border,
+                    title: '我的收藏',
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('收藏功能暂未接入'))),
+                  ),
+                ],
+              ),
+            ),
+    );
   }
 }
 
@@ -3389,6 +3446,67 @@ class _MediaAction extends StatelessWidget {
           ],
         ),
       );
+}
+
+class _ProfileTag extends StatelessWidget {
+  const _ProfileTag({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Text(text, style: Theme.of(context).textTheme.labelSmall),
+      );
+}
+
+class _ProfileShortcuts extends StatelessWidget {
+  const _ProfileShortcuts({required this.onEdit});
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = <Map<String, dynamic>>[
+      {'icon': Icons.account_balance_wallet_outlined, 'label': 'DD币中心'},
+      {'icon': Icons.auto_awesome_outlined, 'label': '超级会员'},
+      {'icon': Icons.storefront_outlined, 'label': '个性商城'},
+      {'icon': Icons.sports_esports_outlined, 'label': '娱乐中心'},
+      {'icon': Icons.collections_bookmark_outlined, 'label': '数字藏馆'},
+    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: entries
+            .map((entry) => Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: entry['label'] == '个性商城'
+                        ? onEdit
+                        : () => ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${entry['label']}暂未接入'))),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(entry['icon'] as IconData, size: 23),
+                        const SizedBox(height: 6),
+                        Text(entry['label'] as String,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelSmall),
+                      ]),
+                    ),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
 }
 
 class _Stat extends StatelessWidget {
