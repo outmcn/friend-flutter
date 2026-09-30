@@ -2716,8 +2716,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
-                      _Stat(value: '${p?['followers'] ?? 0}', label: '被关注'),
-                      _Stat(value: '${p?['visits'] ?? 0}', label: '看过我'),
+                      _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝'),
+                      _Stat(value: '${p?['likes'] ?? 0}', label: '点赞'),
                     ],
                   ),
                   const SizedBox(height: 20),
