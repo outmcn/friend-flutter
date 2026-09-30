@@ -1160,12 +1160,31 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('发现'), actions: [
-          IconButton(
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const CreatePostPage())),
-              icon: const Icon(Icons.add_circle_outline))
-        ]),
+        appBar: AppBar(
+          title: const Text('发现'),
+          actions: [
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationsPage(),
+                ),
+              ),
+              icon: const Icon(Icons.notifications_none),
+              tooltip: '通知中心',
+            ),
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CreatePostPage(),
+                ),
+              ),
+              icon: const Icon(Icons.add_circle_outline),
+              tooltip: '创建动态',
+            ),
+          ],
+        ),
         body: RefreshIndicator(
             onRefresh: () => load(fromRefresh: true),
             child: ListView(
@@ -1173,19 +1192,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 padding: EdgeInsets.fromLTRB(
                     18, 8, 18, 28 + MediaQuery.of(context).padding.bottom + 88),
                 children: [
-                  _HomeQuickActions(
-                    onCreatePost: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CreatePostPage(),
-                        ),
-                      );
-                      if (mounted) load();
-                    },
-                  ),
                   const SizedBox(height: 18),
-                  const _SectionTitle(title: '动态', action: '刷新'),
                   if (loading)
                     const _PageLoadState(
                       title: '动态加载中',
