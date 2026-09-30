@@ -1249,7 +1249,8 @@ class _DynamicPostCard extends StatelessWidget {
                             style:
                                 const TextStyle(fontWeight: FontWeight.w700)),
                       ),
-                      if (post.distanceKm != null) ...[
+                      if (post.distanceKm != null &&
+                          post.distanceKm! <= 100) ...[
                         const SizedBox(width: 7),
                         _DistanceBadge(distanceKm: post.distanceKm!),
                       ],
@@ -6076,7 +6077,7 @@ class _DistanceBadge extends StatelessWidget {
           borderRadius: BorderRadius.circular(99),
         ),
         child: Text(
-          '${distanceKm.toStringAsFixed(1)} km',
+          '${distanceKm.toStringAsFixed(2)} km',
           style: Theme.of(context).textTheme.labelSmall,
         ),
       );
