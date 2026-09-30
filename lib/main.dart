@@ -2703,7 +2703,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                             const SizedBox(height: 9),
                             Wrap(spacing: 7, runSpacing: 7, children: [
                               _ProfileTag(text: 'DD见习生'),
-                              _ProfileTag(text: '在线 ${p?['days'] ?? 0} 天'),
+                              _ProfileTag(
+                                  text: '在线 ${p?['activeDays'] ?? 0} 天'),
                               _ProfileTag(text: '${p?['city'] ?? '未知地区'}'),
                             ]),
                           ],
