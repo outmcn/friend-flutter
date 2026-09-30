@@ -1888,8 +1888,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           if (item != null && !isOwner)
             IconButton(
               onPressed: _openReportPage,
-              icon: const Icon(TIcons.share_1),
-              tooltip: '举报',
+              icon: const Icon(Icons.report_gmailerrorred_outlined),
             ),
           if (item != null)
             IconButton(
