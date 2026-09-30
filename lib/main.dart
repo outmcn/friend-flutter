@@ -2138,7 +2138,7 @@ class OtherProfilePage extends StatefulWidget {
     this.userId,
   });
   final String name;
-  final String avatarAsset;
+  final String? avatarAsset;
   final int? userId;
   @override
   State<OtherProfilePage> createState() => _OtherProfilePageState();
@@ -2229,8 +2229,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       title: '主页加载失败', subtitle: error!, onRetry: load),
                 Row(children: [
                   CircleAvatar(
-                      radius: 42,
-                      backgroundImage: AssetImage(widget.avatarAsset)),
+                    radius: 42,
+                    backgroundImage: (p?['avatar']?.toString() ?? '')
+                            .trim()
+                            .isEmpty
+                        ? null
+                        : NetworkImage(
+                            DDPostService.mediaUrl(p?['avatar']?.toString()),
+                          ),
+                    child: (p?['avatar']?.toString() ?? '').trim().isEmpty
+                        ? const Icon(Icons.person_outline, size: 34)
+                        : null,
+                  ),
                   const SizedBox(width: 14),
                   Expanded(
                       child: Column(
