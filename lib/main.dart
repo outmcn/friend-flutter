@@ -1332,7 +1332,7 @@ class _DynamicPostCard extends StatelessWidget {
               onTap: onOpen,
               borderRadius: BorderRadius.circular(16),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 300),
+                constraints: const BoxConstraints(maxHeight: 500),
                 child: Image.network(
                   post.imageUrl!,
                   width: double.infinity,
@@ -3947,6 +3947,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   else
                     ...posts.map((post) => _DynamicPostCard(
                         post: post,
+                        listMode: true,
                         authorNavigation: false,
                         onLike: () {},
                         onFavorite: () {},
@@ -4220,7 +4221,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else
-                    _MyPostWaterfall(
+                    _MyPostList(
                       posts: posts,
                       emptyLabel: selectedTab == 0
                           ? '置顶'
@@ -4253,6 +4254,23 @@ class _MyProfileVoiceCard extends StatelessWidget {
           trailing: const Text('00:16'),
         ),
       );
+}
+
+class _MyPostList extends StatelessWidget {
+  const _MyPostList({
+    required this.posts,
+    required this.emptyLabel,
+  });
+  final List<DDPost> posts;
+  final String emptyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    if (posts.isEmpty) return _ProfileEmptyTab(label: emptyLabel);
+    return Column(
+      children: posts.map((post) => _MyListCard(post: post)).toList(),
+    );
+  }
 }
 
 class _MyPostWaterfall extends StatelessWidget {
@@ -4324,11 +4342,14 @@ class _MyListCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 8),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Image.network(
-                      DDPostService.mediaUrl(post.imageUrl),
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 500),
+                      child: Image.network(
+                        DDPostService.mediaUrl(post.imageUrl),
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 ),
