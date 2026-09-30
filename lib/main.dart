@@ -1196,154 +1196,167 @@ class _DynamicPostCard extends StatelessWidget {
   final bool authorNavigation;
   final bool listMode;
   @override
-  Widget build(BuildContext context) => Card(
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: listMode
-              ? const EdgeInsets.fromLTRB(14, 12, 14, 10)
-              : const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  InkWell(
-                    onTap: !authorNavigation || post.userId == null
-                        ? null
-                        : () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => OtherProfilePage(
-                                  userId: post.userId,
-                                  name: post.nickname,
-                                ),
-                              ),
-                            ),
-                    borderRadius: BorderRadius.circular(24),
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundImage: post.avatar.isEmpty
-                          ? null
-                          : NetworkImage(DDPostService.mediaUrl(post.avatar)),
-                      child: post.avatar.isEmpty
-                          ? const Icon(Icons.person_outline)
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            InkWell(
-                              onTap: !authorNavigation || post.userId == null
-                                  ? null
-                                  : () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => OtherProfilePage(
-                                            userId: post.userId,
-                                            name: post.nickname,
-                                          ),
-                                        ),
-                                      ),
-                              child: Text(post.nickname,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w700)),
-                            ),
-                            if (post.distanceKm != null) ...[
-                              const SizedBox(width: 7),
-                              _DistanceBadge(distanceKm: post.distanceKm!),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          formatDDTime(post.createdAt),
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: .52),
+  Widget build(BuildContext context) {
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            InkWell(
+              onTap: !authorNavigation || post.userId == null
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OtherProfilePage(
+                            userId: post.userId,
+                            name: post.nickname,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  if (onDelete != null)
-                    IconButton(
-                      tooltip: '删除动态',
-                      onPressed: onDelete,
-                      icon: const Icon(Icons.delete_outline),
-                    )
-                  else if (onFollow != null && post.userId != null)
-                    OutlinedButton(
-                      onPressed: post.following ? null : onFollow,
-                      child: Text(post.following ? '私聊' : '关注'),
-                    ),
-                ],
+                      ),
+              borderRadius: BorderRadius.circular(24),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: post.avatar.isEmpty
+                    ? null
+                    : NetworkImage(DDPostService.mediaUrl(post.avatar)),
+                child: post.avatar.isEmpty
+                    ? const Icon(Icons.person_outline)
+                    : null,
               ),
-              if (post.content.trim().isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(post.content,
-                    style: const TextStyle(fontSize: 16, height: 1.4)),
-              ],
-              if (post.imageUrl != null &&
-                  post.imageUrl!.trim().isNotEmpty) ...[
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: Image.network(
-                      post.imageUrl!,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ),
-                ),
-              ],
-              if (post.videoUrl != null &&
-                  post.videoUrl!.trim().isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _NetworkVideoPreview(url: post.videoUrl!),
-              ],
-              const SizedBox(height: 6),
-              Row(
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextButton.icon(
-                    onPressed: onLike,
-                    icon: Icon(
-                        post.liked ? Icons.thumb_up : Icons.thumb_up_outlined),
-                    label: Text('${post.likes}'),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      InkWell(
+                        onTap: !authorNavigation || post.userId == null
+                            ? null
+                            : () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => OtherProfilePage(
+                                      userId: post.userId,
+                                      name: post.nickname,
+                                    ),
+                                  ),
+                                ),
+                        child: Text(post.nickname,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                      if (post.distanceKm != null) ...[
+                        const SizedBox(width: 7),
+                        _DistanceBadge(distanceKm: post.distanceKm!),
+                      ],
+                    ],
                   ),
-                  TextButton.icon(
-                    onPressed: onComment ?? onOpen,
-                    icon: const Icon(Icons.chat_bubble_outline),
-                    label: Text('${post.comments}'),
-                  ),
-                  TextButton.icon(
-                    onPressed: onFavorite,
-                    icon: Icon(post.favorited
-                        ? Icons.bookmark
-                        : Icons.bookmark_border),
-                    label: Text('${post.favorites}'),
-                  ),
-                  TextButton.icon(
-                    onPressed: onOpen,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('详情'),
+                  const SizedBox(height: 3),
+                  Text(
+                    formatDDTime(post.createdAt),
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .52),
+                    ),
                   ),
                 ],
               ),
-            ],
+            ),
+            if (onDelete != null)
+              IconButton(
+                tooltip: '删除动态',
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline),
+              )
+            else if (onFollow != null && post.userId != null)
+              OutlinedButton(
+                onPressed: post.following ? null : onFollow,
+                child: Text(post.following ? '私聊' : '关注'),
+              ),
+          ],
+        ),
+        if (post.content.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(post.content, style: const TextStyle(fontSize: 16, height: 1.4)),
+        ],
+        if (post.imageUrl != null && post.imageUrl!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: Image.network(
+                post.imageUrl!,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
           ),
+        ],
+        if (post.videoUrl != null && post.videoUrl!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _NetworkVideoPreview(url: post.videoUrl!),
+        ],
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: onLike,
+              icon: Icon(post.liked ? Icons.thumb_up : Icons.thumb_up_outlined),
+              label: Text('${post.likes}'),
+            ),
+            TextButton.icon(
+              onPressed: onComment ?? onOpen,
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: Text('${post.comments}'),
+            ),
+            TextButton.icon(
+              onPressed: onFavorite,
+              icon:
+                  Icon(post.favorited ? Icons.bookmark : Icons.bookmark_border),
+              label: Text('${post.favorites}'),
+            ),
+            TextButton.icon(
+              onPressed: onOpen,
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('详情'),
+            ),
+          ],
+        ),
+      ],
+    );
+    if (!listMode) {
+      return Card(
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: content,
         ),
       );
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          content,
+          const SizedBox(height: 10),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Theme.of(context).dividerColor.withValues(alpha: .5),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _NetworkVideoPreview extends StatefulWidget {
