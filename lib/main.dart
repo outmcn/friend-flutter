@@ -2757,7 +2757,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         .asMap()
                         .entries
                         .map((entry) => Expanded(
-                              child: InkWell(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
                                 onTap: () => load(tab: entry.key),
                                 child: Padding(
                                   padding:
@@ -2775,9 +2776,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                                   : null,
                                             )),
                                         const SizedBox(height: 7),
-                                        AnimatedContainer(
-                                          duration:
-                                              const Duration(milliseconds: 160),
+                                        Container(
                                           width:
                                               selectedTab == entry.key ? 24 : 0,
                                           height: 3,
