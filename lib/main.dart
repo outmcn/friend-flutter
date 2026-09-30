@@ -901,11 +901,13 @@ class _DynamicPostCard extends StatelessWidget {
     required this.onLike,
     required this.onFavorite,
     required this.onOpen,
+    this.onFollow,
   });
   final DDPost post;
   final VoidCallback onLike;
   final VoidCallback onFavorite;
   final VoidCallback onOpen;
+  final VoidCallback? onFollow;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -963,10 +965,19 @@ class _DynamicPostCard extends StatelessWidget {
                         ),
                         Text(formatDDTime(post.createdAt),
                             style: Theme.of(context).textTheme.bodySmall),
+                        if (post.distanceKm != null)
+                          Text(
+                            '${post.distanceKm!.toStringAsFixed(1)} km',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.more_horiz),
+                  if (onFollow != null && post.userId != null)
+                    OutlinedButton(
+                      onPressed: onFollow,
+                      child: Text(post.following ? '取消关注' : '关注'),
+                    ),
                 ],
               ),
               if (post.content.trim().isNotEmpty) ...[
@@ -1225,6 +1236,16 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                   DynamicDetailPage(postId: post.id),
                             ),
                           ),
+                          onFollow: post.userId == null
+                              ? null
+                              : () async {
+                                  final p =
+                                      await SharedPreferences.getInstance();
+                                  final t = p.getString('dd.auth.token') ?? '';
+                                  if (t.isEmpty) return;
+                                  await service.toggleFollow(t, post.userId!);
+                                  await load();
+                                },
                         ),
                       ),
                     ),
