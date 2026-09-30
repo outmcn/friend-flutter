@@ -901,12 +901,14 @@ class _DynamicPostCard extends StatelessWidget {
     required this.onLike,
     required this.onFavorite,
     required this.onOpen,
+    this.onComment,
     this.onFollow,
   });
   final DDPost post;
   final VoidCallback onLike;
   final VoidCallback onFavorite;
   final VoidCallback onOpen;
+  final VoidCallback? onComment;
   final VoidCallback? onFollow;
 
   @override
@@ -1009,7 +1011,7 @@ class _DynamicPostCard extends StatelessWidget {
                     label: Text('${post.likes}'),
                   ),
                   TextButton.icon(
-                    onPressed: () {},
+                    onPressed: onComment ?? onOpen,
                     icon: const Icon(Icons.chat_bubble_outline),
                     label: Text('${post.comments}'),
                   ),
@@ -1234,6 +1236,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
                             MaterialPageRoute(
                               builder: (_) =>
                                   DynamicDetailPage(postId: post.id),
+                            ),
+                          ),
+                          onComment: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DynamicDetailPage(
+                                postId: post.id,
+                                focusComment: true,
+                              ),
                             ),
                           ),
                           onFollow: post.userId == null
@@ -1646,8 +1657,13 @@ class _StatePreviewCard extends StatelessWidget {
 }
 
 class DynamicDetailPage extends StatefulWidget {
-  const DynamicDetailPage({super.key, required this.postId});
+  const DynamicDetailPage({
+    super.key,
+    required this.postId,
+    this.focusComment = false,
+  });
   final int postId;
+  final bool focusComment;
   @override
   State<DynamicDetailPage> createState() => _DynamicDetailPageState();
 }
@@ -1655,6 +1671,7 @@ class DynamicDetailPage extends StatefulWidget {
 class _DynamicDetailPageState extends State<DynamicDetailPage> {
   final DDPostService service = DDPostService();
   final commentController = TextEditingController();
+  final commentFocusNode = FocusNode();
   DDComment? replyingTo;
   DDPost? post;
   List<DDComment> comments = const [];
@@ -1669,10 +1686,16 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   void initState() {
     super.initState();
     load();
+    if (widget.focusComment) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) FocusScope.of(context).requestFocus(commentFocusNode);
+      });
+    }
   }
 
   @override
   void dispose() {
+    commentFocusNode.dispose();
     commentController.dispose();
     service.dispose();
     super.dispose();
@@ -1972,6 +1995,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: TextField(
                   controller: commentController,
+                  focusNode: commentFocusNode,
                   decoration: InputDecoration(
                     filled: true,
                     hintText: replyingTo == null
