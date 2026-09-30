@@ -1883,24 +1883,62 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     final item = post;
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 56,
+        automaticallyImplyLeading: true,
         title: const Text('动态详情'),
         actions: [
           if (item != null && !isOwner)
-            IconButton(
-              onPressed: _openReportPage,
-              icon: const Icon(Icons.report_gmailerrorred_outlined),
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  ),
+                  onPressed: _openReportPage,
+                  icon: const Icon(Icons.report_gmailerrorred_outlined),
+                ),
+              ),
             ),
           if (item != null)
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(TIcons.share_1),
-              tooltip: '分享',
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  ),
+                  onPressed: () {},
+                  icon: const Icon(TIcons.share_1),
+                  tooltip: '分享',
+                ),
+              ),
             ),
           if (item != null && isOwner)
-            IconButton(
-              onPressed: deleting ? null : _delete,
-              icon: const Icon(Icons.delete_outline),
-              tooltip: '删除动态',
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  ),
+                  onPressed: deleting ? null : _delete,
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: '删除动态',
+                ),
+              ),
             ),
         ],
       ),
