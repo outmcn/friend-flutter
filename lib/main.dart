@@ -768,9 +768,9 @@ class _DDShellState extends State<DDShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const DDHomePage(),
+      const HomePage(),
       const DiscoverPage(),
-      const NotificationsPage(),
+      const ChatPage(),
       const DDProfilePage(),
     ];
     return Scaffold(
@@ -845,8 +845,8 @@ class _PageErrorState extends StatelessWidget {
       );
 }
 
-class DDHomePage extends StatelessWidget {
-  const DDHomePage({super.key});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -1056,7 +1056,7 @@ class _HomeQuickActions extends StatelessWidget {
             label: '通知中心',
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const NotificationsPage()),
+              MaterialPageRoute(builder: (_) => const ChatPage()),
             ),
           ),
         ),
@@ -1178,7 +1178,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const NotificationsPage(),
+                  builder: (_) => const ChatPage(),
                 ),
               ),
               icon: const Icon(Icons.notifications_none),
@@ -1497,13 +1497,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
       );
 }
 
-class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key});
+class ChatPage extends StatefulWidget {
+  const ChatPage({super.key});
   @override
-  State<NotificationsPage> createState() => _NotificationsPageState();
+  State<ChatPage> createState() => _ChatPageState();
 }
 
-class _NotificationsPageState extends State<NotificationsPage> {
+class _ChatPageState extends State<ChatPage> {
   final DDPostService service = DDPostService();
   List<DDNotification> items = const [];
   bool loading = true;
