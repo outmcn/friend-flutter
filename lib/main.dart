@@ -2732,7 +2732,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   ),
                   const SizedBox(height: 24),
                   Row(children: [
-                    Text('瞬间 ${p?['posts'] ?? 0}',
+                    Text('动态 ${p?['posts'] ?? 0}',
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w800)),
                     const Spacer(),
