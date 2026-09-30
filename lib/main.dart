@@ -2349,7 +2349,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         throw Exception('用户信息不存在');
       }
       final data = await service.fetchUserProfile(token, widget.userId!);
-      profile = (data['profile'] as Map?)?.cast<String, dynamic>() ?? data;
+      final rawProfile = data['profile'];
+      final loadedProfile = rawProfile is Map
+          ? rawProfile.cast<String, dynamic>()
+          : <String, dynamic>{...data};
+      loadedProfile['following'] =
+          data['following'] == true || loadedProfile['following'] == true;
+      profile = loadedProfile;
       final raw = data['posts'];
       posts = raw is List
           ? raw.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList()
