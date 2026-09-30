@@ -83,11 +83,6 @@ class DDApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         scaffoldBackgroundColor: const Color(0xfff7f5fb),
-        listTileTheme: const ListTileThemeData(
-          dense: true,
-          minVerticalPadding: 0,
-          contentPadding: EdgeInsets.zero,
-        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: const Color(0xffefedf4),
@@ -120,11 +115,6 @@ class DDApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xffa77bff),
           brightness: Brightness.dark,
-        ),
-        listTileTheme: const ListTileThemeData(
-          dense: true,
-          minVerticalPadding: 0,
-          contentPadding: EdgeInsets.zero,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
