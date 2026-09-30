@@ -945,21 +945,35 @@ class _DynamicPostCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        InkWell(
-                          onTap: !authorNavigation || post.userId == null
-                              ? null
-                              : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => OtherProfilePage(
-                                        userId: post.userId,
-                                        name: post.nickname,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InkWell(
+                              onTap: !authorNavigation || post.userId == null
+                                  ? null
+                                  : () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => OtherProfilePage(
+                                            userId: post.userId,
+                                            name: post.nickname,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                          child: Text(post.nickname,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w700)),
+                              child: Text(post.nickname,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                            if (post.distanceKm != null) ...[
+                              const SizedBox(width: 7),
+                              _DistanceBadge(distanceKm: post.distanceKm!),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          formatDDTime(post.createdAt),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -990,22 +1004,6 @@ class _DynamicPostCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Text(
-                    formatDDTime(post.createdAt),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (post.distanceKm != null) ...[
-                    const SizedBox(width: 10),
-                    Text(
-                      '${post.distanceKm!.toStringAsFixed(1)} km',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ],
-              ),
               const SizedBox(height: 6),
               Row(
                 children: [
@@ -3642,6 +3640,24 @@ class _MediaAction extends StatelessWidget {
             IconButton.filledTonal(onPressed: onTap, icon: Icon(icon)),
             Text(label),
           ],
+        ),
+      );
+}
+
+class _DistanceBadge extends StatelessWidget {
+  const _DistanceBadge({required this.distanceKm});
+  final double distanceKm;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Text(
+          '${distanceKm.toStringAsFixed(1)} km',
+          style: Theme.of(context).textTheme.labelSmall,
         ),
       );
 }
