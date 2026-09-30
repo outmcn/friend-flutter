@@ -2776,7 +2776,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                                   : null,
                                             )),
                                         const SizedBox(height: 7),
-                                        Container(
+                                        AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 160),
+                                          curve: Curves.easeOutCubic,
                                           width:
                                               selectedTab == entry.key ? 24 : 0,
                                           height: 3,
