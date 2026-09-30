@@ -67,45 +67,15 @@ Future<void> syncCachedLocation(DDPostService service, String token) async {
 
 void main() => runApp(const DDApp());
 
-class DDApp extends StatefulWidget {
+class DDApp extends StatelessWidget {
   const DDApp({super.key});
-
-  @override
-  State<DDApp> createState() => _DDAppState();
-}
-
-class _DDAppState extends State<DDApp> {
-  static _DDAppState? current;
-  ThemeMode themeMode = ThemeMode.dark;
-
-  @override
-  void initState() {
-    super.initState();
-    current = this;
-    _restoreTheme();
-  }
-
-  Future<void> _restoreTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() => themeMode = prefs.getBool('dd.theme.light') == true
-          ? ThemeMode.light
-          : ThemeMode.dark);
-    }
-  }
-
-  Future<void> setTheme(ThemeMode mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('dd.theme.light', mode == ThemeMode.light);
-    if (mounted) setState(() => themeMode = mode);
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'DD',
-      themeMode: themeMode,
+      themeMode: ThemeMode.system,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -5733,15 +5703,6 @@ class SettingsPage extends StatelessWidget {
                   );
                 }
               },
-            ),
-            ListTile(
-              leading: const Icon(Icons.light_mode_outlined),
-              title: const Text('白天模式'),
-              trailing: Switch(
-                value: Theme.of(context).brightness == Brightness.light,
-                onChanged: (value) => _DDAppState.current
-                    ?.setTheme(value ? ThemeMode.light : ThemeMode.dark),
-              ),
             ),
             const _SettingsGroup(title: '其他', items: ['清理缓存', '关于 DD', '退出登录']),
           ],
