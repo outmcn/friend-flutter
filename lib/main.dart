@@ -4340,14 +4340,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   _MyProfileVoiceCard(name: '${p?['nickname'] ?? '我'}的声音名片'),
                   const SizedBox(height: 14),
                   Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      border: Border.symmetric(
-                        horizontal: BorderSide(
-                          color: Theme.of(context)
-                              .dividerColor
-                              .withValues(alpha: .7),
-                        ),
-                      ),
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Row(
                       children: ['置顶', '动态', '收藏', '喜欢']
@@ -4357,39 +4355,27 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () => load(tab: entry.key),
-                                  child: Padding(
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 160),
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 10),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(entry.value,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w800,
-                                              color: selectedTab == entry.key
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .primary
-                                                  : null,
-                                            )),
-                                        const SizedBox(height: 7),
-                                        AnimatedContainer(
-                                          duration:
-                                              const Duration(milliseconds: 160),
-                                          curve: Curves.easeOutCubic,
-                                          width:
-                                              selectedTab == entry.key ? 24 : 0,
-                                          height: 3,
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                            borderRadius:
-                                                BorderRadius.circular(99),
-                                          ),
-                                        ),
-                                      ],
+                                        vertical: 8, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: selectedTab == entry.key
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
+                                    child: Text(entry.value,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          color: selectedTab == entry.key
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary
+                                              : null,
+                                        )),
                                   ),
                                 ),
                               ))
@@ -4479,24 +4465,6 @@ class _MyListCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (post.imageUrl?.trim().isNotEmpty == true)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.network(
-                    DDPostService.mediaUrl(post.imageUrl),
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-              if (post.videoUrl?.trim().isNotEmpty == true)
-                _NetworkVideoPreview(url: post.videoUrl!),
-              if (post.content.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(post.content,
-                      style: const TextStyle(fontSize: 16, height: 1.4)),
-                ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -4520,6 +4488,30 @@ class _MyListCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (post.content.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(post.content,
+                      style: const TextStyle(fontSize: 16, height: 1.4)),
+                ),
+              if (post.imageUrl?.trim().isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.network(
+                      DDPostService.mediaUrl(post.imageUrl),
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              if (post.videoUrl?.trim().isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: _NetworkVideoPreview(url: post.videoUrl!),
+                ),
               const Divider(height: 20),
             ],
           ),
