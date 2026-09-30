@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:video_player/video_player.dart';
 
 import 'post_service.dart';
 
@@ -1268,6 +1269,11 @@ class _DynamicPostCard extends StatelessWidget {
                   ),
                 ),
               ],
+              if (post.videoUrl != null &&
+                  post.videoUrl!.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _NetworkVideoPreview(url: post.videoUrl!),
+              ],
               const SizedBox(height: 6),
               Row(
                 children: [
@@ -1300,6 +1306,66 @@ class _DynamicPostCard extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _NetworkVideoPreview extends StatefulWidget {
+  const _NetworkVideoPreview({required this.url});
+  final String url;
+
+  @override
+  State<_NetworkVideoPreview> createState() => _NetworkVideoPreviewState();
+}
+
+class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
+  late final VideoPlayerController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
+      ..initialize().then((_) {
+        if (mounted) setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!controller.value.isInitialized) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          AspectRatio(
+            aspectRatio: controller.value.aspectRatio,
+            child: VideoPlayer(controller),
+          ),
+          IconButton.filled(
+            onPressed: () {
+              setState(() {
+                controller.value.isPlaying
+                    ? controller.pause()
+                    : controller.play();
+              });
+            },
+            icon: Icon(
+                controller.value.isPlaying ? Icons.pause : Icons.play_arrow),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _HomeQuickActions extends StatelessWidget {
@@ -1974,6 +2040,7 @@ class CreatePostPage extends StatefulWidget {
 class _CreatePostPageState extends State<CreatePostPage> {
   String? mediaType;
   XFile? selectedImage;
+  XFile? selectedVideo;
   String visibility = '所有人可见';
   bool publishing = false;
   final TextEditingController _content = TextEditingController();
@@ -2005,6 +2072,21 @@ class _CreatePostPageState extends State<CreatePostPage> {
     }
   }
 
+  Future<void> _pickVideo() async {
+    try {
+      final video = await ImagePicker().pickVideo(source: ImageSource.gallery);
+      if (video != null && mounted) {
+        setState(() {
+          selectedVideo = video;
+          mediaType = '视频';
+          error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '视频选择失败：$e');
+    }
+  }
+
   Future<String?> _imageDataUrl() async {
     if (selectedImage == null) return null;
     final bytes = await selectedImage!.readAsBytes();
@@ -2020,6 +2102,17 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final compressed =
         resized == null ? bytes : img.encodeJpg(resized, quality: 82);
     return 'data:image/jpeg;base64,${base64Encode(compressed)}';
+  }
+
+  Future<String?> _videoDataUrl() async {
+    if (selectedVideo == null) return null;
+    final bytes = await selectedVideo!.readAsBytes();
+    if (bytes.length > 50 * 1024 * 1024) {
+      throw Exception('视频不能超过 50MB');
+    }
+    final path = selectedVideo!.path.toLowerCase();
+    final mime = path.endsWith('.mov') ? 'video/quicktime' : 'video/mp4';
+    return 'data:$mime;base64,${base64Encode(bytes)}';
   }
 
   Future<_PostLocation?> _locationForPost(String token) async {
@@ -2088,8 +2181,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         setState(() => error = '请先登录后发布动态');
                         return;
                       }
-                      if (_content.text.trim().isEmpty && mediaType == null) {
-                        setState(() => error = '请输入动态内容或选择图片');
+                      if (_content.text.trim().isEmpty &&
+                          selectedImage == null &&
+                          selectedVideo == null) {
+                        setState(() => error = '请输入动态内容或选择图片/视频');
                         return;
                       }
                       setState(() {
@@ -2102,6 +2197,12 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           token: token,
                           content: _content.text.trim(),
                           imageDataUrl: await _imageDataUrl(),
+                          videoDataUrl: await _videoDataUrl(),
+                          visibility: visibility == '仅好友可见'
+                              ? 'friends'
+                              : visibility == '仅自己可见'
+                                  ? 'private'
+                                  : 'public',
                           latitude: location?.latitude,
                           longitude: location?.longitude,
                         );
@@ -2130,6 +2231,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
             TextField(
               controller: _content,
               maxLines: 7,
+              maxLength: 500,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 hintText: '分享此刻的想法…',
                 alignLabelWithHint: true,
@@ -2150,12 +2253,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 _MediaAction(
                   icon: Icons.videocam_outlined,
                   label: mediaType == '视频' ? '已选视频' : '视频',
-                  onTap: () => setState(() => mediaType = '视频'),
-                ),
-                _MediaAction(
-                  icon: Icons.tag,
-                  label: mediaType == '话题' ? '已选话题' : '话题',
-                  onTap: () => setState(() => mediaType = '话题'),
+                  onTap: _pickVideo,
                 ),
               ],
             ),
@@ -2184,7 +2282,17 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   ],
                 ),
               ),
-            const Text('可见范围', style: TextStyle(fontWeight: FontWeight.w700)),
+            if (selectedVideo != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: _VideoDraftPreview(
+                  file: selectedVideo!,
+                  onClear: () => setState(() {
+                    selectedVideo = null;
+                    if (mediaType == '视频') mediaType = null;
+                  }),
+                ),
+              ),
             const SizedBox(height: 8),
             ListTile(
               leading: _iconFor(Icons.public),
@@ -2195,7 +2303,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 builder: (_) => SafeArea(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: ['所有人可见', '仅关注者可见', '仅自己可见']
+                    children: ['所有人可见', '仅好友可见', '仅自己可见']
                         .map(
                           (item) => ListTile(
                             title: Text(item),
@@ -2213,11 +2321,72 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 18),
-            _ContentPreviewCard(
-              title: '添加话题',
-              subtitle: '让更多人发现你的动态',
-              icon: Icons.tag,
+          ],
+        ),
+      );
+}
+
+class _VideoDraftPreview extends StatefulWidget {
+  const _VideoDraftPreview({required this.file, required this.onClear});
+  final XFile file;
+  final VoidCallback onClear;
+
+  @override
+  State<_VideoDraftPreview> createState() => _VideoDraftPreviewState();
+}
+
+class _VideoDraftPreviewState extends State<_VideoDraftPreview> {
+  late final VideoPlayerController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = VideoPlayerController.file(File(widget.file.path))
+      ..initialize().then((_) {
+        if (mounted) setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (controller.value.isInitialized)
+              AspectRatio(
+                aspectRatio: controller.value.aspectRatio,
+                child: VideoPlayer(controller),
+              )
+            else
+              const SizedBox(
+                height: 180,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            IconButton.filled(
+              onPressed: () {
+                setState(() {
+                  controller.value.isPlaying
+                      ? controller.pause()
+                      : controller.play();
+                });
+              },
+              icon: Icon(
+                  controller.value.isPlaying ? Icons.pause : Icons.play_arrow),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton.filled(
+                onPressed: widget.onClear,
+                icon: const Icon(Icons.close),
+              ),
             ),
           ],
         ),
@@ -3180,6 +3349,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                           item.imageUrl!.trim().isNotEmpty) ...[
                         const SizedBox(height: 16),
                         _PostImageHolder(url: item.imageUrl!)
+                      ],
+                      if (item.videoUrl != null &&
+                          item.videoUrl!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _NetworkVideoPreview(url: item.videoUrl!),
                       ],
                       const SizedBox(height: 18),
                       Row(children: [

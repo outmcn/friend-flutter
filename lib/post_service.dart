@@ -19,6 +19,7 @@ class DDPost {
     required this.liked,
     required this.favorited,
     this.imageUrl,
+    this.videoUrl,
   });
 
   final int id;
@@ -35,6 +36,7 @@ class DDPost {
   final bool liked;
   final bool favorited;
   final String? imageUrl;
+  final String? videoUrl;
 
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
         id: (json['id'] as num?)?.toInt() ?? 0,
@@ -52,6 +54,9 @@ class DDPost {
         favorited: json['favorited'] == true,
         imageUrl: DDPostService.mediaUrl(
           (json['imageURL'] ?? json['image_url'] ?? json['image'])?.toString(),
+        ),
+        videoUrl: DDPostService.mediaUrl(
+          (json['videoURL'] ?? json['video_url'] ?? json['video'])?.toString(),
         ),
       );
 }
@@ -236,6 +241,8 @@ class DDPostService {
       {required String token,
       required String content,
       String? imageDataUrl,
+      String? videoDataUrl,
+      String visibility = 'public',
       double? latitude,
       double? longitude}) async {
     final body = <String, dynamic>{'content': content};
@@ -246,6 +253,10 @@ class DDPostService {
     if (imageDataUrl != null && imageDataUrl.isNotEmpty) {
       body['image'] = imageDataUrl;
     }
+    if (videoDataUrl != null && videoDataUrl.isNotEmpty) {
+      body['video'] = videoDataUrl;
+    }
+    body['visibility'] = visibility;
     final response = await _client.post(
       _base.resolve('/api/posts'),
       headers: {
