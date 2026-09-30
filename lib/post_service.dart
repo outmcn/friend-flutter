@@ -171,6 +171,10 @@ class DDPostService {
       _fetchList(token, '/api/posts');
   Future<List<DDPost>> fetchMyPosts(String token) =>
       _fetchList(token, '/api/me/posts');
+  Future<List<DDPost>> fetchLikedPosts(String token) =>
+      _fetchList(token, '/api/me/liked');
+  Future<List<DDPost>> fetchFavoritedPosts(String token) =>
+      _fetchList(token, '/api/me/favorited');
 
   Future<List<DDPost>> _fetchList(String token, String path) async {
     final response = await _client.get(

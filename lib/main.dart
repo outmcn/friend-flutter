@@ -2622,6 +2622,8 @@ class DDProfilePage extends StatefulWidget {
 class _DDProfilePageState extends State<DDProfilePage> {
   final DDPostService service = DDPostService();
   Map<String, dynamic>? profile;
+  List<DDPost> posts = [];
+  int selectedTab = 0;
   bool loading = true;
   String? error;
   @override
@@ -2636,12 +2638,19 @@ class _DDProfilePageState extends State<DDProfilePage> {
     super.dispose();
   }
 
-  Future<void> load() async {
+  Future<void> load({int? tab}) async {
+    final targetTab = tab ?? selectedTab;
     try {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('请先登录');
       profile = await service.fetchMe(t);
+      posts = targetTab == 0
+          ? await service.fetchMyPosts(t)
+          : targetTab == 1
+              ? await service.fetchLikedPosts(t)
+              : await service.fetchFavoritedPosts(t);
+      selectedTab = targetTab;
     } catch (e) {
       if (mounted) error = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -2677,7 +2686,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CircleAvatar(
-                        radius: 38,
+                        radius: 36,
                         backgroundImage: (p?['avatar']?.toString() ?? '')
                                 .trim()
                                 .isNotEmpty
@@ -2685,21 +2694,42 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 DDPostService.mediaUrl(p!['avatar'].toString()))
                             : null,
                         child: (p?['avatar']?.toString() ?? '').trim().isEmpty
-                            ? const Icon(Icons.person, size: 36)
+                            ? const Icon(Icons.person, size: 34)
                             : null,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 13),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${p?['nickname'] ?? 'DD 用户'}',
-                                style: const TextStyle(
-                                    fontSize: 22, fontWeight: FontWeight.w800)),
-                            const SizedBox(height: 4),
-                            Text(
-                                'IP属地 ${p?['city'] ?? p?['location'] ?? '暂未设置'}',
-                                style: Theme.of(context).textTheme.bodySmall),
+                            Row(children: [
+                              Expanded(
+                                child: Text('${p?['nickname'] ?? 'DD 用户'}',
+                                    style: const TextStyle(
+                                        fontSize: 23,
+                                        fontWeight: FontWeight.w800)),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: () async {
+                                  await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) =>
+                                              const EditProfilePage()));
+                                  if (mounted) load();
+                                },
+                                icon: const Icon(Icons.edit_outlined, size: 16),
+                                label: const Text('编辑'),
+                              ),
+                            ]),
+                            const SizedBox(height: 5),
+                            Row(children: [
+                              const Icon(Icons.location_on_outlined, size: 15),
+                              const SizedBox(width: 3),
+                              Text(
+                                  'IP 属地：${p?['city'] ?? p?['location'] ?? '暂未设置'}',
+                                  style: Theme.of(context).textTheme.bodySmall),
+                            ]),
                             const SizedBox(height: 9),
                             Wrap(spacing: 7, runSpacing: 7, children: [
                               _ProfileTag(text: 'DD见习生'),
@@ -2712,53 +2742,187 @@ class _DDProfilePageState extends State<DDProfilePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
-                      _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝'),
-                      _Stat(value: '${p?['likes'] ?? 0}', label: '点赞'),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _ProfileShortcuts(
-                    onEdit: () async {
-                      await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const EditProfilePage()));
-                      if (mounted) load();
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  Row(children: [
-                    Text('动态 ${p?['posts'] ?? 0}',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w800)),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const MyPostsPage())),
-                      icon: const Icon(Icons.article_outlined, size: 18),
-                      label: const Text('我的动态'),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(18),
                     ),
-                  ]),
-                  const Divider(height: 1),
-                  const SizedBox(height: 16),
-                  _ProfileAction(
-                    icon: Icons.bookmark_border,
-                    title: '我的收藏',
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('收藏功能暂未接入'))),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
+                        _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝'),
+                        _Stat(value: '${p?['likes'] ?? 0}', label: '获赞'),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 22),
+                  Row(
+                    children: ['动态', '喜欢', '收藏']
+                        .asMap()
+                        .entries
+                        .map((entry) => Expanded(
+                              child: InkWell(
+                                onTap: () => load(tab: entry.key),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                  child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(entry.value,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              color: selectedTab == entry.key
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                  : null,
+                                            )),
+                                        const SizedBox(height: 7),
+                                        AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 160),
+                                          width:
+                                              selectedTab == entry.key ? 24 : 0,
+                                          height: 3,
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            borderRadius:
+                                                BorderRadius.circular(99),
+                                          ),
+                                        ),
+                                      ]),
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 10),
+                  if (selectedTab == 0)
+                    _MyPostWaterfall(posts: posts)
+                  else
+                    _ProfileEmptyTab(label: selectedTab == 1 ? '喜欢' : '收藏'),
                 ],
               ),
             ),
     );
   }
+}
+
+class _MyPostWaterfall extends StatelessWidget {
+  const _MyPostWaterfall({required this.posts});
+  final List<DDPost> posts;
+
+  @override
+  Widget build(BuildContext context) {
+    if (posts.isEmpty) return const _ProfileEmptyTab(label: '动态');
+    final left = <DDPost>[];
+    final right = <DDPost>[];
+    for (var i = 0; i < posts.length; i++) {
+      (i.isEven ? left : right).add(posts[i]);
+    }
+    Widget column(List<DDPost> items) => Expanded(
+          child: Column(
+            children:
+                items.map((post) => _MyWaterfallCard(post: post)).toList(),
+          ),
+        );
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      column(left),
+      const SizedBox(width: 10),
+      column(right),
+    ]);
+  }
+}
+
+class _MyWaterfallCard extends StatelessWidget {
+  const _MyWaterfallCard({required this.post});
+  final DDPost post;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => DynamicDetailPage(postId: post.id)),
+          ),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (post.imageUrl?.trim().isNotEmpty == true)
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: Image.network(
+                    DDPostService.mediaUrl(post.imageUrl),
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox(
+                      height: 112,
+                      child: Center(
+                          child: Icon(Icons.image_not_supported_outlined)),
+                    ),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(post.content.isEmpty ? '分享了一条动态' : post.content,
+                          maxLines: 4, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 8),
+                      Row(children: [
+                        Icon(
+                            post.liked
+                                ? Icons.thumb_up
+                                : Icons.thumb_up_outlined,
+                            size: 15),
+                        const SizedBox(width: 3),
+                        Text('${post.likes}',
+                            style: Theme.of(context).textTheme.labelSmall),
+                        const SizedBox(width: 10),
+                        const Icon(Icons.chat_bubble_outline, size: 15),
+                        const SizedBox(width: 3),
+                        Text('${post.comments}',
+                            style: Theme.of(context).textTheme.labelSmall),
+                      ]),
+                    ]),
+              ),
+            ]),
+          ),
+        ),
+      );
+}
+
+class _ProfileEmptyTab extends StatelessWidget {
+  const _ProfileEmptyTab({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 46),
+        child: Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.inbox_outlined, size: 38),
+            const SizedBox(height: 10),
+            Text('暂无$label内容'),
+          ]),
+        ),
+      );
 }
 
 class MyQrCodePage extends StatelessWidget {
