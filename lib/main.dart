@@ -881,47 +881,122 @@ class _PageErrorState extends StatelessWidget {
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  void _unavailable(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('$feature暂未接入')));
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('首页'),
-          actions: [IconButton(onPressed: () {}, icon: _tdIcon('search'))],
+          actions: [
+            IconButton(
+              tooltip: '通知',
+              onPressed: () => _unavailable(context, '通知中心'),
+              icon: const Icon(Icons.notifications_none),
+            ),
+          ],
         ),
         body: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(
-            18,
-            8,
-            18,
-            28 + MediaQuery.of(context).padding.bottom + 88,
-          ),
+              16, 8, 16, 28 + MediaQuery.of(context).padding.bottom + 88),
           children: [
-            _DiscoverTile(
-              icon: Icons.sports_esports_outlined,
-              title: '游戏陪玩',
-              subtitle: '寻找一起开黑的游戏伙伴',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GamePlayPage()),
-              ),
+            const Text('晚上好，去遇见有趣的人吧',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text('发现身边正在等待连接的人', style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 20),
+            _HomeVoiceMatch(onTap: () => _unavailable(context, '语音匹配')),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                  child: _HomeMiniCard(
+                icon: Icons.videocam_outlined,
+                title: '视频匹配',
+                subtitle: '面对面聊更真实',
+                meta: '1,236 人在线',
+                onTap: () => _unavailable(context, '视频匹配'),
+              )),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: _HomeMiniCard(
+                icon: Icons.sports_esports_outlined,
+                title: '游戏陪玩',
+                subtitle: '开黑上分不孤单',
+                meta: '3,105 位陪玩',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const GamePlayPage())),
+              )),
+            ]),
+            const SizedBox(height: 22),
+            Row(children: [
+              _HomeQuickAction(
+                  icon: Icons.forum_outlined,
+                  label: '闪聊',
+                  onTap: () => _unavailable(context, '闪聊')),
+              _HomeQuickAction(
+                  icon: Icons.mic_none_outlined,
+                  label: '语音房',
+                  onTap: () => _unavailable(context, '语音房')),
+              _HomeQuickAction(
+                  icon: Icons.music_note_outlined,
+                  label: '一起听',
+                  onTap: () => _unavailable(context, '一起听')),
+              _HomeQuickAction(
+                  icon: Icons.casino_outlined,
+                  label: '缘分签',
+                  onTap: () => _unavailable(context, '缘分签')),
+            ]),
+            const _HomeSectionTitle(title: '语音派对房', live: true),
+            SizedBox(
+              height: 154,
+              child:
+                  ListView(scrollDirection: Axis.horizontal, children: const [
+                _HomePartyCard(
+                    icon: Icons.music_note,
+                    tag: '音乐',
+                    title: '深夜电台 · 一起听',
+                    info: '128 人 · 房主 苏念'),
+                _HomePartyCard(
+                    icon: Icons.favorite_outline,
+                    tag: '交友',
+                    title: '深夜情感热线',
+                    info: '256 人 · 房主 温小满'),
+                _HomePartyCard(
+                    icon: Icons.sports_esports,
+                    tag: '开黑',
+                    title: '王者荣耀 · 组队',
+                    info: '89 人 · 房主 小鹿'),
+              ]),
             ),
-            _DiscoverTile(
-              icon: Icons.event_available,
-              title: '活动中心',
-              subtitle: '参加线上线下有趣活动',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const EventsPage()),
-              ),
-            ),
-            _DiscoverTile(
-              icon: Icons.trending_up,
-              title: '趋势榜单',
-              subtitle: '本周最受关注的内容',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TrendsPage()),
-              ),
+            const _HomeSectionTitle(title: '兴趣圈子'),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.38,
+              children: const [
+                _HomeCircleCard(
+                    icon: Icons.camera_alt_outlined,
+                    title: '摄影交流圈',
+                    meta: '12.8 万人 · +128 新帖'),
+                _HomeCircleCard(
+                    icon: Icons.hiking_outlined,
+                    title: '周末去哪儿',
+                    meta: '8.6 万人 · +56 新帖'),
+                _HomeCircleCard(
+                    icon: Icons.restaurant_outlined,
+                    title: '深夜食堂',
+                    meta: '6.2 万人 · +34 新帖'),
+                _HomeCircleCard(
+                    icon: Icons.headphones_outlined,
+                    title: '一起听歌',
+                    meta: '4.5 万人 · +21 新帖'),
+              ],
             ),
           ],
         ),
@@ -1342,6 +1417,210 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       ),
                     ),
                 ])),
+      );
+}
+
+class _HomeVoiceMatch extends StatelessWidget {
+  const _HomeVoiceMatch({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(26),
+        child: Ink(
+          height: 172,
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xff6e4fe0), Color(0xffd46bc8)],
+            ),
+            borderRadius: BorderRadius.circular(26),
+          ),
+          child: Row(children: [
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('语音匹配',
+                      style:
+                          TextStyle(fontSize: 23, fontWeight: FontWeight.w800)),
+                  SizedBox(height: 7),
+                  Text('说句话，遇见懂你的人'),
+                ],
+              ),
+            ),
+            Container(
+              width: 58,
+              height: 58,
+              decoration: const BoxDecoration(
+                  color: Colors.white24, shape: BoxShape.circle),
+              child: const Icon(Icons.mic_none, color: Colors.white, size: 29),
+            ),
+          ]),
+        ),
+      );
+}
+
+class _HomeMiniCard extends StatelessWidget {
+  const _HomeMiniCard(
+      {required this.icon,
+      required this.title,
+      required this.subtitle,
+      required this.meta,
+      required this.onTap});
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String meta;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          height: 128,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            const Spacer(),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 3),
+            Text(subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 4),
+            Text(meta, style: Theme.of(context).textTheme.labelSmall),
+          ]),
+        ),
+      );
+}
+
+class _HomeQuickAction extends StatelessWidget {
+  const _HomeQuickAction(
+      {required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Column(children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(icon),
+            ),
+            const SizedBox(height: 7),
+            Text(label, style: Theme.of(context).textTheme.labelSmall),
+          ]),
+        ),
+      );
+}
+
+class _HomeSectionTitle extends StatelessWidget {
+  const _HomeSectionTitle({required this.title, this.live = false});
+  final String title;
+  final bool live;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 26, bottom: 13),
+        child: Row(children: [
+          if (live) ...[
+            const Icon(Icons.radio_button_checked,
+                color: Color(0xff2fd57e), size: 15),
+            const SizedBox(width: 7),
+          ],
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const Spacer(),
+          Text('全部',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          const Icon(Icons.chevron_right, size: 17),
+        ]),
+      );
+}
+
+class _HomePartyCard extends StatelessWidget {
+  const _HomePartyCard(
+      {required this.icon,
+      required this.tag,
+      required this.title,
+      required this.info});
+  final IconData icon;
+  final String tag;
+  final String title;
+  final String info;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 210,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [
+            Theme.of(context).colorScheme.primaryContainer,
+            Theme.of(context).colorScheme.secondaryContainer,
+          ]),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(icon, size: 16),
+            const SizedBox(width: 5),
+            Text(tag),
+            const Spacer(),
+            const Icon(Icons.circle, size: 8, color: Color(0xff2fd57e))
+          ]),
+          const Spacer(),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text(info, style: Theme.of(context).textTheme.labelSmall),
+        ]),
+      );
+}
+
+class _HomeCircleCard extends StatelessWidget {
+  const _HomeCircleCard(
+      {required this.icon, required this.title, required this.meta});
+  final IconData icon;
+  final String title;
+  final String meta;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: Theme.of(context).colorScheme.primary),
+          const Spacer(),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(meta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall),
+        ]),
       );
 }
 
