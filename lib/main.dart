@@ -20,16 +20,9 @@ String formatDDTime(String raw) {
   if (difference.isNegative || difference.inMinutes < 1) return '刚刚';
   if (difference.inMinutes < 60) return '${difference.inMinutes}分钟前';
   if (difference.inHours < 24) return '${difference.inHours}小时前';
-  final today = DateTime(now.year, now.month, now.day);
-  final day = DateTime(value.year, value.month, value.day);
-  if (today.difference(day).inDays == 1) {
-    return '昨天 ${_two(value.hour)}:${_two(value.minute)}';
-  }
-  if (value.year == now.year) return '${value.month}月${value.day}日';
+  if (difference.inDays < 7) return '${difference.inDays}天前';
   return '${value.year}年${value.month}月${value.day}日';
 }
-
-String _two(int value) => value.toString().padLeft(2, '0');
 
 void main() => runApp(const DDApp());
 
