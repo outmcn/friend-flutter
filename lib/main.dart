@@ -1857,23 +1857,51 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                           title: '加载失败', subtitle: error!, onRetry: load),
                     if (item != null) ...[
                       Row(children: [
-                        CircleAvatar(
+                        InkWell(
+                          onTap: item.userId == null
+                              ? null
+                              : () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => OtherProfilePage(
+                                        userId: item.userId,
+                                        name: item.nickname,
+                                      ),
+                                    ),
+                                  ),
+                          borderRadius: BorderRadius.circular(26),
+                          child: CircleAvatar(
                             radius: 24,
                             backgroundImage: item.avatar.isEmpty
                                 ? null
                                 : NetworkImage(item.avatar),
                             child: item.avatar.isEmpty
                                 ? const Icon(Icons.person_outline)
-                                : null),
+                                : null,
+                          ),
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                             child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                              Text(item.nickname,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 17)),
+                              InkWell(
+                                onTap: item.userId == null
+                                    ? null
+                                    : () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => OtherProfilePage(
+                                              userId: item.userId,
+                                              name: item.nickname,
+                                            ),
+                                          ),
+                                        ),
+                                child: Text(item.nickname,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 17)),
+                              ),
                               const SizedBox(height: 4),
                               Text(formatDDTime(item.createdAt),
                                   style: TextStyle(
