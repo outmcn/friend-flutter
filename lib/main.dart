@@ -2413,22 +2413,26 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   ),
                   const SizedBox(width: 14),
                   Expanded(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        Text('${p?['nickname'] ?? widget.name}',
-                            style: const TextStyle(
-                                fontSize: 22, fontWeight: FontWeight.w800)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${p?['nickname'] ?? widget.name}',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                         Text('${p?['city'] ?? ''}'),
-                        const SizedBox(height: 10),
-                        FilledButton(
-                            onPressed: actionLoading || following
-                                ? null
-                                : toggleFollow,
-                            child: Text(actionLoading
-                                ? '处理中…'
-                                : (following ? '私聊' : '关注')))
-                      ]))
+                      ],
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: actionLoading || following ? null : toggleFollow,
+                    child: Text(
+                      actionLoading ? '处理中…' : (following ? '私聊' : '关注'),
+                    ),
+                  ),
                 ]),
                 const SizedBox(height: 24),
                 Row(
