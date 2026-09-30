@@ -1355,19 +1355,31 @@ class _DynamicPostCard extends StatelessWidget {
         ),
         if (post.content.trim().isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text(post.content, style: const TextStyle(fontSize: 16, height: 1.4)),
+          InkWell(
+            onTap: onOpen,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(post.content,
+                  style: const TextStyle(fontSize: 16, height: 1.4)),
+            ),
+          ),
         ],
         if (post.imageUrl != null && post.imageUrl!.trim().isNotEmpty) ...[
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 300),
-              child: Image.network(
-                post.imageUrl!,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            child: InkWell(
+              onTap: onOpen,
+              borderRadius: BorderRadius.circular(16),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 300),
+                child: Image.network(
+                  post.imageUrl!,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
             ),
           ),
@@ -1394,11 +1406,6 @@ class _DynamicPostCard extends StatelessWidget {
               icon:
                   Icon(post.favorited ? Icons.bookmark : Icons.bookmark_border),
               label: Text('${post.favorites}'),
-            ),
-            TextButton.icon(
-              onPressed: onOpen,
-              icon: const Icon(Icons.open_in_new),
-              label: const Text('详情'),
             ),
           ],
         ),
