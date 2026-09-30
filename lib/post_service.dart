@@ -38,6 +38,30 @@ class DDPost {
   final String? imageUrl;
   final String? videoUrl;
 
+  DDPost copyWith({
+    bool? liked,
+    int? likes,
+    bool? favorited,
+    int? favorites,
+  }) =>
+      DDPost(
+        id: id,
+        userId: userId,
+        content: content,
+        createdAt: createdAt,
+        nickname: nickname,
+        avatar: avatar,
+        likes: likes ?? this.likes,
+        favorites: favorites ?? this.favorites,
+        comments: comments,
+        following: following,
+        distanceKm: distanceKm,
+        liked: liked ?? this.liked,
+        favorited: favorited ?? this.favorited,
+        imageUrl: imageUrl,
+        videoUrl: videoUrl,
+      );
+
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
         id: (json['id'] as num?)?.toInt() ?? 0,
         userId: (json['userId'] as num?)?.toInt(),

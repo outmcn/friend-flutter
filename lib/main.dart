@@ -1230,7 +1230,12 @@ class _DynamicPostCard extends StatelessWidget {
                         const SizedBox(height: 3),
                         Text(
                           formatDDTime(post.createdAt),
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: .52),
+                          ),
                         ),
                       ],
                     ),
@@ -1644,7 +1649,19 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               final t = p.getString('dd.auth.token') ?? '';
                               if (t.isEmpty) throw Exception('请先登录');
                               await service.toggleLike(t, post.id);
-                              await load();
+                              if (mounted) {
+                                setState(() {
+                                  final index = posts
+                                      .indexWhere((item) => item.id == post.id);
+                                  if (index >= 0) {
+                                    posts[index] = posts[index].copyWith(
+                                      liked: !posts[index].liked,
+                                      likes: posts[index].likes +
+                                          (posts[index].liked ? -1 : 1),
+                                    );
+                                  }
+                                });
+                              }
                             } catch (e) {
                               if (mounted) {
                                 setState(() => error = e
@@ -1659,7 +1676,19 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               final t = p.getString('dd.auth.token') ?? '';
                               if (t.isEmpty) throw Exception('请先登录');
                               await service.toggleFavorite(t, post.id);
-                              await load();
+                              if (mounted) {
+                                setState(() {
+                                  final index = posts
+                                      .indexWhere((item) => item.id == post.id);
+                                  if (index >= 0) {
+                                    posts[index] = posts[index].copyWith(
+                                      favorited: !posts[index].favorited,
+                                      favorites: posts[index].favorites +
+                                          (posts[index].favorited ? -1 : 1),
+                                    );
+                                  }
+                                });
+                              }
                             } catch (e) {
                               if (mounted) {
                                 setState(() => error = e
@@ -3140,7 +3169,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Future<void> _toggleLike() async {
     try {
       await service.toggleLike(await token(), widget.postId);
-      await load();
+      if (mounted && post != null) {
+        setState(() {
+          post = post!.copyWith(
+            liked: !post!.liked,
+            likes: post!.likes + (post!.liked ? -1 : 1),
+          );
+        });
+      }
     } catch (e) {
       if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
@@ -3150,7 +3186,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Future<void> _toggleFavorite() async {
     try {
       await service.toggleFavorite(await token(), widget.postId);
-      await load();
+      if (mounted && post != null) {
+        setState(() {
+          post = post!.copyWith(
+            favorited: !post!.favorited,
+            favorites: post!.favorites + (post!.favorited ? -1 : 1),
+          );
+        });
+      }
     } catch (e) {
       if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
@@ -3398,21 +3441,29 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           : SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: TextField(
-                  controller: commentController,
-                  focusNode: commentFocusNode,
-                  decoration: InputDecoration(
-                    filled: true,
-                    hintText: replyingTo == null
-                        ? '写下你的评论…'
-                        : '回复 ${replyingTo!.nickname}…',
-                    suffixIcon: IconButton(
-                      onPressed: deleting ? null : submitComment,
-                      icon: const Icon(Icons.send),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide.none,
+                child: AnimatedPadding(
+                  duration: const Duration(milliseconds: 180),
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  child: TextField(
+                    controller: commentController,
+                    focusNode: commentFocusNode,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => submitComment(),
+                    decoration: InputDecoration(
+                      filled: true,
+                      hintText: replyingTo == null
+                          ? '写下你的评论…'
+                          : '回复 ${replyingTo!.nickname}…',
+                      suffixIcon: IconButton(
+                        onPressed: deleting ? null : submitComment,
+                        icon: const Icon(Icons.send),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
