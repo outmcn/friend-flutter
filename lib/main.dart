@@ -1515,6 +1515,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   bool _refreshing = false;
   int selectedTab = 0;
   bool tabLoading = false;
+  String cityLabel = '城市';
   String? error;
   @override
   void initState() {
@@ -1551,6 +1552,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
+      final profile = await service.fetchMe(t);
+      final city = '${profile['city'] ?? ''}'.trim();
+      if (mounted && city.isNotEmpty && cityLabel != city) {
+        setState(() => cityLabel = city);
+      }
       await syncCachedLocation(service, t);
       final loaded = targetTab == 0
           ? await service.fetchPosts(t)
@@ -1584,7 +1590,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         appBar: AppBar(
           titleSpacing: 16,
           title: Row(
-            children: ['推荐', '附近', '关注']
+            children: ['推荐', cityLabel, '关注']
                 .asMap()
                 .entries
                 .map((entry) => GestureDetector(
@@ -1597,7 +1603,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                             Column(mainAxisSize: MainAxisSize.min, children: [
                           Text(entry.value,
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w800,
                                 color: selectedTab == entry.key
                                     ? null
