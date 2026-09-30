@@ -1012,7 +1012,7 @@ class _DynamicPostCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onLike,
                     icon: Icon(
-                        post.liked ? Icons.favorite : Icons.favorite_border),
+                        post.liked ? Icons.thumb_up : Icons.thumb_up_outlined),
                     label: Text('${post.likes}'),
                   ),
                   TextButton.icon(
@@ -2145,8 +2145,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                       Row(children: [
                         _DetailAction(
                             icon: item.liked
-                                ? Icons.favorite
-                                : Icons.favorite_border,
+                                ? Icons.thumb_up
+                                : Icons.thumb_up_outlined,
                             label: '${item.likes}',
                             active: item.liked,
                             onTap: _toggleLike),
