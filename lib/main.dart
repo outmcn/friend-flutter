@@ -76,6 +76,25 @@ Future<void> syncCachedLocation(DDPostService service, String token) async {
   }
 }
 
+Future<String> cachedCityLabel(DDPostService service, String token) async {
+  const cacheAge = Duration(hours: 1);
+  final prefs = await SharedPreferences.getInstance();
+  final cachedAt = prefs.getInt('dd.location.cachedAt');
+  final cachedCity = (prefs.getString('dd.location.city') ?? '').trim();
+  final fresh = cachedAt != null &&
+      DateTime.now().millisecondsSinceEpoch - cachedAt <
+          cacheAge.inMilliseconds;
+  if (fresh && cachedCity.isNotEmpty) return cachedCity;
+  try {
+    final profile = await service.fetchMe(token);
+    final city = '${profile['city'] ?? ''}'.trim();
+    if (city.isNotEmpty) await prefs.setString('dd.location.city', city);
+    return city.isEmpty ? '城市' : city;
+  } catch (_) {
+    return cachedCity.isEmpty ? '城市' : cachedCity;
+  }
+}
+
 void main() => runApp(const DDApp());
 
 class DDApp extends StatelessWidget {
@@ -1569,12 +1588,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
-      final profile = await service.fetchMe(t);
-      final city = '${profile['city'] ?? ''}'.trim();
-      if (mounted && city.isNotEmpty && cityLabel != city) {
-        setState(() => cityLabel = city);
-      }
       await syncCachedLocation(service, t);
+      final city = await cachedCityLabel(service, t);
+      if (mounted && cityLabel != city) setState(() => cityLabel = city);
       final loaded = targetTab == 0
           ? await service.fetchPosts(t)
           : targetTab == 1
