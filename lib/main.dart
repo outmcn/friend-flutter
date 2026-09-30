@@ -1846,11 +1846,27 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         }
       }
     } else if (action == 'report') {
+      final reason = await showModalBottomSheet<String>(
+        context: context,
+        builder: (_) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: _ReportPostPageState.reportReasons
+                .map((item) => ListTile(
+                      title: Text(item),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.pop(context, item),
+                    ))
+                .toList(),
+          ),
+        ),
+      );
+      if (reason == null) return;
       try {
         await service.reportComment(
           token: await token(),
           commentId: comment.id,
-          reason: '违规评论',
+          reason: reason,
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
