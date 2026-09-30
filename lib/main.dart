@@ -14,6 +14,15 @@ import 'package:video_player/video_player.dart';
 
 import 'post_service.dart';
 
+String _formatExactPostTime(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final value = parsed.toUtc().add(const Duration(hours: 8));
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${value.year}-${two(value.month)}-${two(value.day)} '
+      '${two(value.hour)}:${two(value.minute)}';
+}
+
 String formatDDTime(String raw) {
   final parsed = DateTime.tryParse(raw);
   if (parsed == null) return raw;
@@ -4478,10 +4487,18 @@ class _MyListCard extends StatelessWidget {
                 child: Text(post.content,
                     style: const TextStyle(fontSize: 16, height: 1.4)),
               ),
-            const SizedBox(height: 6),
-            Text(
-              formatDDTime(post.createdAt),
-              style: Theme.of(context).textTheme.labelSmall,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _formatExactPostTime(post.createdAt),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+                Text(
+                  '浏览 ${post.views}',
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ],
             ),
             const Divider(height: 20),
           ],

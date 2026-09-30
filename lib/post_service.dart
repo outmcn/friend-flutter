@@ -20,6 +20,7 @@ class DDPost {
     required this.favorited,
     this.imageUrl,
     this.videoUrl,
+    required this.views,
   });
 
   final int id;
@@ -37,7 +38,7 @@ class DDPost {
   final bool favorited;
   final String? imageUrl;
   final String? videoUrl;
-
+  final int views;
   DDPost copyWith({
     bool? liked,
     int? likes,
@@ -60,6 +61,7 @@ class DDPost {
         favorited: favorited ?? this.favorited,
         imageUrl: imageUrl,
         videoUrl: videoUrl,
+        views: views,
       );
 
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
@@ -82,6 +84,7 @@ class DDPost {
         videoUrl: DDPostService.mediaUrl(
           (json['videoURL'] ?? json['video_url'] ?? json['video'])?.toString(),
         ),
+        views: (json['views'] as num?)?.toInt() ?? 0,
       );
 }
 
