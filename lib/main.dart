@@ -2673,11 +2673,126 @@ class TrendsPage extends StatelessWidget {
       );
 }
 
-class MyPostsPage extends StatelessWidget {
+class MyPostsPage extends StatefulWidget {
   const MyPostsPage({super.key});
   @override
-  Widget build(BuildContext context) =>
-      _SimpleListPage(title: '我的动态', items: const ['暂无动态', '创建你的第一条动态']);
+  State<MyPostsPage> createState() => _MyPostsPageState();
+}
+
+class _MyPostsPageState extends State<MyPostsPage> {
+  final service = DDPostService();
+  List<DDPost> posts = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      posts = await service.fetchMyPosts(token);
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('我的动态')),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    12,
+                    16,
+                    24 + MediaQuery.of(context).padding.bottom + 88,
+                  ),
+                  children: [
+                    if (error != null)
+                      _PageErrorState(
+                        title: '动态加载失败',
+                        subtitle: error!,
+                        onRetry: load,
+                      )
+                    else if (posts.isEmpty)
+                      const _EmptyStateCard(
+                        icon: Icons.article_outlined,
+                        title: '暂无动态',
+                        subtitle: '发布你的第一条动态吧',
+                      )
+                    else
+                      ...posts.map(
+                        (post) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _DynamicPostCard(
+                            post: post,
+                            authorNavigation: false,
+                            onLike: () async {
+                              final token =
+                                  (await SharedPreferences.getInstance())
+                                          .getString('dd.auth.token') ??
+                                      '';
+                              if (token.isNotEmpty) {
+                                await service.toggleLike(token, post.id);
+                                await load();
+                              }
+                            },
+                            onFavorite: () async {
+                              final token =
+                                  (await SharedPreferences.getInstance())
+                                          .getString('dd.auth.token') ??
+                                      '';
+                              if (token.isNotEmpty) {
+                                await service.toggleFavorite(token, post.id);
+                                await load();
+                              }
+                            },
+                            onOpen: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    DynamicDetailPage(postId: post.id),
+                              ),
+                            ),
+                            onComment: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DynamicDetailPage(
+                                  postId: post.id,
+                                  focusComment: true,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+      );
 }
 
 class EditProfilePage extends StatefulWidget {
