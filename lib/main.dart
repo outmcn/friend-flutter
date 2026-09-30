@@ -3699,9 +3699,19 @@ class _DDProfilePageState extends State<DDProfilePage> {
     return Scaffold(
       appBar: AppBar(title: const Text('我的'), actions: [
         IconButton(
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const SettingsPage())),
-            icon: _tdIcon('more'))
+          tooltip: '消息',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChatPage()),
+          ),
+          icon: const Icon(Icons.notifications_none),
+        ),
+        IconButton(
+          tooltip: '设置',
+          onPressed: () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => const SettingsPage())),
+          icon: const Icon(Icons.settings_outlined),
+        ),
       ]),
       body: loading
           ? const Center(child: CircularProgressIndicator())
@@ -3717,119 +3727,152 @@ class _DDProfilePageState extends State<DDProfilePage> {
                       subtitle: error!,
                       onRetry: load,
                     ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        radius: 36,
-                        backgroundImage: (p?['avatar']?.toString() ?? '')
-                                .trim()
-                                .isNotEmpty
-                            ? NetworkImage(
-                                DDPostService.mediaUrl(p!['avatar'].toString()))
-                            : null,
-                        child: (p?['avatar']?.toString() ?? '').trim().isEmpty
-                            ? const Icon(Icons.person, size: 34)
-                            : null,
-                      ),
-                      const SizedBox(width: 13),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(children: [
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(children: [
+                                CircleAvatar(
+                                  radius: 40,
+                                  backgroundImage:
+                                      (p?['avatar']?.toString() ?? '')
+                                              .trim()
+                                              .isNotEmpty
+                                          ? NetworkImage(DDPostService.mediaUrl(
+                                              p!['avatar'].toString()))
+                                          : null,
+                                  child: (p?['avatar']?.toString() ?? '')
+                                          .trim()
+                                          .isEmpty
+                                      ? const Icon(Icons.person, size: 38)
+                                      : null,
+                                ),
+                                const Positioned(
+                                    right: 0, bottom: 1, child: _OnlineDot()),
+                                Positioned(
+                                  right: -3,
+                                  top: -3,
+                                  child: IconButton.filled(
+                                    tooltip: '编辑资料',
+                                    onPressed: () async {
+                                      await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const EditProfilePage()));
+                                      if (mounted) load();
+                                    },
+                                    icon: const Icon(Icons.edit, size: 14),
+                                  ),
+                                ),
+                              ]),
+                              const SizedBox(width: 14),
                               Expanded(
-                                child: Text('${p?['nickname'] ?? 'DD 用户'}',
-                                    style: const TextStyle(
-                                        fontSize: 23,
-                                        fontWeight: FontWeight.w800)),
-                              ),
-                              OutlinedButton.icon(
-                                onPressed: () async {
-                                  await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) =>
-                                              const EditProfilePage()));
-                                  if (mounted) load();
-                                },
-                                icon: const Icon(Icons.edit_outlined, size: 16),
-                                label: const Text('编辑'),
-                              ),
-                            ]),
-                            const SizedBox(height: 9),
-                            Wrap(spacing: 7, runSpacing: 7, children: [
-                              _ProfileTag(
-                                  text: '在线 ${p?['activeDays'] ?? 0} 天'),
-                              _ProfileTag(text: '${p?['city'] ?? '未知地区'}'),
-                            ]),
-                          ],
-                        ),
+                                  child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    Flexible(
+                                        child: Text(
+                                            '${p?['nickname'] ?? 'DD 用户'}',
+                                            style: const TextStyle(
+                                                fontSize: 23,
+                                                fontWeight: FontWeight.w800))),
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.verified,
+                                        size: 17, color: Colors.lightBlue),
+                                  ]),
+                                  const SizedBox(height: 9),
+                                  Wrap(spacing: 7, runSpacing: 7, children: [
+                                    _ProfileTag(
+                                        text: '在线 ${p?['activeDays'] ?? 0} 天'),
+                                    _ProfileTag(
+                                        text: '${p?['city'] ?? '未知地区'}'),
+                                  ]),
+                                  const SizedBox(height: 10),
+                                  const Text('记录此刻的生活，也期待新的相遇。'),
+                                ],
+                              )),
+                            ],
+                          ),
+                          const Divider(height: 30),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _Stat(
+                                  value: '${p?['following'] ?? 0}',
+                                  label: '关注'),
+                              _Stat(
+                                  value: '${p?['followers'] ?? 0}',
+                                  label: '粉丝'),
+                              _Stat(value: '${p?['likes'] ?? 0}', label: '获赞'),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 18),
+                  _MyProfileVoiceCard(name: '${p?['nickname'] ?? '我'}的声音名片'),
+                  const SizedBox(height: 14),
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color:
                           Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _Stat(value: '${p?['following'] ?? 0}', label: '关注'),
-                        _Stat(value: '${p?['followers'] ?? 0}', label: '粉丝'),
-                        _Stat(value: '${p?['likes'] ?? 0}', label: '获赞'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  Row(
-                    children: ['动态', '喜欢', '收藏']
-                        .asMap()
-                        .entries
-                        .map((entry) => Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => load(tab: entry.key),
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                  child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(entry.value,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w800,
-                                              color: selectedTab == entry.key
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .primary
-                                                  : null,
-                                            )),
-                                        const SizedBox(height: 7),
-                                        AnimatedContainer(
-                                          duration:
-                                              const Duration(milliseconds: 160),
-                                          curve: Curves.easeOutCubic,
-                                          width:
-                                              selectedTab == entry.key ? 24 : 0,
-                                          height: 3,
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                            borderRadius:
-                                                BorderRadius.circular(99),
+                      children: ['动态', '喜欢', '收藏']
+                          .asMap()
+                          .entries
+                          .map((entry) => Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => load(tab: entry.key),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10),
+                                    child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(entry.value,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                color: selectedTab == entry.key
+                                                    ? Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                    : null,
+                                              )),
+                                          const SizedBox(height: 7),
+                                          AnimatedContainer(
+                                            duration: const Duration(
+                                                milliseconds: 160),
+                                            curve: Curves.easeOutCubic,
+                                            width: selectedTab == entry.key
+                                                ? 24
+                                                : 0,
+                                            height: 3,
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              borderRadius:
+                                                  BorderRadius.circular(99),
+                                            ),
                                           ),
-                                        ),
-                                      ]),
+                                        ]),
+                                  ),
                                 ),
-                              ),
-                            ))
-                        .toList(),
+                              ))
+                          .toList(),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   if (error != null)
@@ -3859,6 +3902,24 @@ class _DDProfilePageState extends State<DDProfilePage> {
             ),
     );
   }
+}
+
+class _MyProfileVoiceCard extends StatelessWidget {
+  const _MyProfileVoiceCard({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: const Icon(Icons.play_arrow, color: Colors.white),
+          ),
+          title: Text(name),
+          subtitle: const Text('声音名片 · UI 演示，未接入真实语音'),
+          trailing: const Text('00:16'),
+        ),
+      );
 }
 
 class _MyPostWaterfall extends StatelessWidget {
