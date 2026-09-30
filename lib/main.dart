@@ -3754,22 +3754,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ),
                                 const Positioned(
                                     right: 0, bottom: 1, child: _OnlineDot()),
-                                Positioned(
-                                  right: -3,
-                                  top: -3,
-                                  child: IconButton.filled(
-                                    tooltip: '编辑资料',
-                                    onPressed: () async {
-                                      await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const EditProfilePage()));
-                                      if (mounted) load();
-                                    },
-                                    icon: const Icon(Icons.edit, size: 14),
-                                  ),
-                                ),
                               ]),
                               const SizedBox(width: 14),
                               Expanded(
@@ -3786,16 +3770,28 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                     const SizedBox(width: 6),
                                     const Icon(Icons.verified,
                                         size: 17, color: Colors.lightBlue),
+                                    const Spacer(),
+                                    OutlinedButton.icon(
+                                      onPressed: () async {
+                                        await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const EditProfilePage()));
+                                        if (mounted) load();
+                                      },
+                                      icon: const Icon(Icons.edit_outlined,
+                                          size: 16),
+                                      label: const Text('编辑'),
+                                    ),
                                   ]),
                                   const SizedBox(height: 9),
                                   Wrap(spacing: 7, runSpacing: 7, children: [
                                     _ProfileTag(
-                                        text: '在线 ${p?['activeDays'] ?? 0} 天'),
+                                        text: '${p?['activeDays'] ?? 0} 天'),
                                     _ProfileTag(
                                         text: '${p?['city'] ?? '未知地区'}'),
                                   ]),
-                                  const SizedBox(height: 10),
-                                  const Text('记录此刻的生活，也期待新的相遇。'),
                                 ],
                               )),
                             ],
