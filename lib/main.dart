@@ -1925,71 +1925,430 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
+class ChatPreview {
+  const ChatPreview({
+    required this.name,
+    required this.preview,
+    required this.time,
+    required this.icon,
+    this.unread = 0,
+    this.online = false,
+    this.pinned = false,
+  });
+  final String name;
+  final String preview;
+  final String time;
+  final IconData icon;
+  final int unread;
+  final bool online;
+  final bool pinned;
+}
+
 class _ChatPageState extends State<ChatPage> {
-  final DDPostService service = DDPostService();
-  List<DDNotification> items = const [];
-  bool loading = true;
-  String? error;
-  @override
-  void initState() {
-    super.initState();
-    load();
-  }
+  final searchController = TextEditingController();
+  int tab = 0;
+  final chats = const <ChatPreview>[
+    ChatPreview(
+        name: '林小满',
+        preview: '今天也要开心呀～',
+        time: '12:36',
+        icon: Icons.face_3_outlined,
+        unread: 2,
+        online: true,
+        pinned: true),
+    ChatPreview(
+        name: '苏念',
+        preview: '一起听的歌单发你了',
+        time: '11:20',
+        icon: Icons.music_note,
+        unread: 1,
+        online: true),
+    ChatPreview(
+        name: '小鹿',
+        preview: '晚上开黑吗？',
+        time: '昨天',
+        icon: Icons.sports_esports_outlined),
+    ChatPreview(
+        name: '温小满',
+        preview: '很高兴认识你',
+        time: '昨天',
+        icon: Icons.favorite_outline),
+  ];
 
   @override
   void dispose() {
-    service.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
-  Future<void> load() async {
-    setState(() {
-      loading = true;
-      error = null;
-    });
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      items = await service.fetchNotifications(token);
-      await service.markNotificationsRead(token);
-    } catch (e) {
-      if (mounted) {
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
+  @override
+  Widget build(BuildContext context) {
+    final query = searchController.text.trim();
+    final visible = chats
+        .where((item) =>
+            tab == 0 ||
+            (tab == 1 && item.unread > 0) ||
+            (tab == 2 && item.online))
+        .where((item) =>
+            query.isEmpty ||
+            item.name.contains(query) ||
+            item.preview.contains(query))
+        .toList();
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(children: [
+          const Text('聊天'),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.error,
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: const Text('3',
+                style: TextStyle(fontSize: 11, color: Colors.white)),
+          ),
+        ]),
+        actions: [
+          IconButton(
+            tooltip: '新聊天',
+            onPressed: () => ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('私聊服务暂未接入'))),
+            icon: const Icon(Icons.edit_square),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 104),
+        children: [
+          const _ChatDemoNotice(),
+          const SizedBox(height: 12),
+          TextField(
+            controller: searchController,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              hintText: '搜索聊天',
+              prefixIcon: Icon(Icons.search),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const _ChatSectionHeader(title: '新匹配', action: '查看全部'),
+          SizedBox(
+            height: 90,
+            child: ListView(scrollDirection: Axis.horizontal, children: const [
+              _NewMatch(name: '苏念', icon: Icons.music_note, online: true),
+              _NewMatch(
+                  name: '小鹿',
+                  icon: Icons.sports_esports_outlined,
+                  online: true),
+              _NewMatch(name: '桃子', icon: Icons.face_4_outlined),
+              _NewMatch(name: '更多', icon: Icons.add),
+            ]),
+          ),
+          const SizedBox(height: 16),
+          Row(
+              children: ['全部', '未读', '在线']
+                  .asMap()
+                  .entries
+                  .map((entry) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(entry.value),
+                          selected: tab == entry.key,
+                          onSelected: (_) => setState(() => tab = entry.key),
+                        ),
+                      ))
+                  .toList()),
+          const SizedBox(height: 13),
+          const Text('会话',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          if (visible.isEmpty)
+            const _EmptyStateCard(
+                icon: Icons.chat_bubble_outline,
+                title: '没有匹配的会话',
+                subtitle: '聊天 UI 演示不包含真实私聊')
+          else
+            ...visible.map((chat) => _ChatListItem(
+                  data: chat,
+                  onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => ChatDetailPage(peer: chat))),
+                )),
+        ],
+      ),
+    );
+  }
+}
+
+class ChatDetailPage extends StatefulWidget {
+  const ChatDetailPage({super.key, required this.peer});
+  final ChatPreview peer;
+  @override
+  State<ChatDetailPage> createState() => _ChatDetailPageState();
+}
+
+class _ChatDetailPageState extends State<ChatDetailPage> {
+  final input = TextEditingController();
+  final messages = <_DemoMessage>[
+    const _DemoMessage(text: '嗨，今天过得怎么样？', mine: false, time: '12:31'),
+    const _DemoMessage(text: '还不错，刚好在听歌～', mine: true, time: '12:32'),
+    const _DemoMessage(text: '那要不要分享一首？', mine: false, time: '12:33'),
+  ];
+
+  @override
+  void dispose() {
+    input.dispose();
+    super.dispose();
+  }
+
+  void send() {
+    final text = input.text.trim();
+    if (text.isEmpty) return;
+    setState(
+        () => messages.add(_DemoMessage(text: text, mine: true, time: '刚刚')));
+    input.clear();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('通知')),
-        body: RefreshIndicator(
-            onRefresh: load,
-            child: ListView(padding: const EdgeInsets.all(18), children: [
-              if (loading)
-                const _PageLoadState(title: '通知加载中', subtitle: '正在读取真实通知'),
-              if (!loading && error != null)
-                _PageErrorState(
-                    title: '通知加载失败', subtitle: error!, onRetry: load),
-              if (!loading && error == null && items.isEmpty)
-                const _EmptyStateCard(
-                    icon: Icons.notifications_none,
-                    title: '暂无通知',
-                    subtitle: '新的点赞、评论和关注会显示在这里'),
-              if (!loading && error == null)
-                ...items.map((item) => ListTile(
-                    leading: Icon(item.type == 'comment'
-                        ? Icons.comment
-                        : item.type == 'follow'
-                            ? Icons.person_add
-                            : Icons.favorite),
-                    title: Text(item.nickname == null
-                        ? item.content
-                        : '${item.nickname} ${item.content}'),
-                    subtitle: Text(formatDDTime(item.createdAt)))),
-            ])),
+        appBar: AppBar(
+          titleSpacing: 0,
+          title: Row(children: [
+            CircleAvatar(radius: 19, child: Icon(widget.peer.icon, size: 19)),
+            const SizedBox(width: 9),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(widget.peer.name,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w800)),
+              Text('在线 · UI 演示',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.primary)),
+            ]),
+          ]),
+          actions: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
+          ],
+        ),
+        body: Column(children: [
+          const _ChatDemoNotice(compact: true),
+          Expanded(
+              child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+            children: [
+              const Center(child: _ChatDateLabel(text: '今天 12:30')),
+              const SizedBox(height: 18),
+              ...messages.map((message) =>
+                  _ChatBubble(message: message, icon: widget.peer.icon)),
+            ],
+          )),
+          SafeArea(
+              top: false,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                color: Theme.of(context).colorScheme.surface,
+                child: Row(children: [
+                  IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.add_circle_outline)),
+                  Expanded(
+                      child: TextField(
+                    controller: input,
+                    onSubmitted: (_) => send(),
+                    decoration: const InputDecoration(hintText: '输入消息（演示）'),
+                  )),
+                  IconButton(onPressed: send, icon: const Icon(Icons.send)),
+                ]),
+              )),
+        ]),
+      );
+}
+
+class _DemoMessage {
+  const _DemoMessage(
+      {required this.text, required this.mine, required this.time});
+  final String text;
+  final bool mine;
+  final String time;
+}
+
+class _ChatDemoNotice extends StatelessWidget {
+  const _ChatDemoNotice({this.compact = false});
+  final bool compact;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding:
+            EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 6 : 9),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text('聊天为 UI 演示，未接入私聊后端',
+            style: Theme.of(context).textTheme.labelSmall),
+      );
+}
+
+class _ChatSectionHeader extends StatelessWidget {
+  const _ChatSectionHeader({required this.title, required this.action});
+  final String title;
+  final String action;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        const Spacer(),
+        Text(action,
+            style: TextStyle(
+                fontSize: 12, color: Theme.of(context).colorScheme.primary)),
+      ]);
+}
+
+class _NewMatch extends StatelessWidget {
+  const _NewMatch(
+      {required this.name, required this.icon, this.online = false});
+  final String name;
+  final IconData icon;
+  final bool online;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 72,
+        child: Column(children: [
+          Stack(children: [
+            CircleAvatar(radius: 27, child: Icon(icon)),
+            if (online)
+              const Positioned(right: 0, bottom: 1, child: _OnlineDot()),
+          ]),
+          const SizedBox(height: 6),
+          Text(name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall),
+        ]),
+      );
+}
+
+class _OnlineDot extends StatelessWidget {
+  const _OnlineDot();
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 12,
+        height: 12,
+        decoration: BoxDecoration(
+            color: const Color(0xff2fd57e),
+            shape: BoxShape.circle,
+            border: Border.all(
+                color: Theme.of(context).colorScheme.surface, width: 2)),
+      );
+}
+
+class _ChatListItem extends StatelessWidget {
+  const _ChatListItem({required this.data, required this.onTap});
+  final ChatPreview data;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          child: Row(children: [
+            Stack(children: [
+              CircleAvatar(radius: 27, child: Icon(data.icon)),
+              if (data.online)
+                const Positioned(right: -1, bottom: 0, child: _OnlineDot()),
+            ]),
+            const SizedBox(width: 12),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Row(children: [
+                    Expanded(
+                        child: Text(data.name,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w800))),
+                    Text(data.time,
+                        style: Theme.of(context).textTheme.labelSmall),
+                  ]),
+                  const SizedBox(height: 5),
+                  Text(data.preview,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall),
+                ])),
+            if (data.unread > 0)
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.error,
+                    shape: BoxShape.circle),
+                child: Text('${data.unread}',
+                    style: const TextStyle(fontSize: 10, color: Colors.white)),
+              ),
+          ]),
+        ),
+      );
+}
+
+class _ChatDateLabel extends StatelessWidget {
+  const _ChatDateLabel({required this.text});
+  final String text;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+        decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(99)),
+        child: Text(text, style: Theme.of(context).textTheme.labelSmall),
+      );
+}
+
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble({required this.message, required this.icon});
+  final _DemoMessage message;
+  final IconData icon;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(
+          mainAxisAlignment:
+              message.mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!message.mine) ...[
+              CircleAvatar(radius: 16, child: Icon(icon, size: 16)),
+              const SizedBox(width: 8)
+            ],
+            Flexible(
+                child: Column(
+              crossAxisAlignment: message.mine
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: message.mine
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(17),
+                  ),
+                  child: Text(message.text,
+                      style: TextStyle(
+                          color: message.mine
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : null)),
+                ),
+                const SizedBox(height: 4),
+                Text(message.time,
+                    style: Theme.of(context).textTheme.labelSmall),
+              ],
+            )),
+          ],
+        ),
       );
 }
 
