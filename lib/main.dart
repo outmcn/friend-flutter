@@ -2349,6 +2349,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   List<DDPost> posts = const [];
   bool loading = true;
   bool actionLoading = false;
+  bool isFollowing = false;
   String? error;
 
   @override
@@ -2382,9 +2383,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       final loadedProfile = rawProfile is Map
           ? rawProfile.cast<String, dynamic>()
           : <String, dynamic>{...data};
-      loadedProfile['following'] =
-          data['following'] == true || loadedProfile['following'] == true;
+      final followingState = data['following'] == true;
       profile = loadedProfile;
+      isFollowing = followingState;
       final raw = data['posts'];
       posts = raw is List
           ? raw.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList()
@@ -2418,7 +2419,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   @override
   Widget build(BuildContext context) {
     final p = profile;
-    final following = p?['following'] == true;
+    final following = isFollowing;
     return Scaffold(
       appBar: AppBar(title: const Text('Ta的主页'), actions: [
         IconButton(
