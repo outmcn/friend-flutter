@@ -917,23 +917,50 @@ class _DynamicPostCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage: post.avatar.isEmpty
+                  InkWell(
+                    onTap: post.userId == null
                         ? null
-                        : NetworkImage(DDPostService.mediaUrl(post.avatar)),
-                    child: post.avatar.isEmpty
-                        ? const Icon(Icons.person_outline)
-                        : null,
+                        : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => OtherProfilePage(
+                                  userId: post.userId,
+                                  name: post.nickname,
+                                ),
+                              ),
+                            ),
+                    borderRadius: BorderRadius.circular(24),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: post.avatar.isEmpty
+                          ? null
+                          : NetworkImage(DDPostService.mediaUrl(post.avatar)),
+                      child: post.avatar.isEmpty
+                          ? const Icon(Icons.person_outline)
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(post.nickname,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w700)),
+                        InkWell(
+                          onTap: post.userId == null
+                              ? null
+                              : () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => OtherProfilePage(
+                                        userId: post.userId,
+                                        name: post.nickname,
+                                      ),
+                                    ),
+                                  ),
+                          child: Text(post.nickname,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w700)),
+                        ),
                         Text(formatDDTime(post.createdAt),
                             style: Theme.of(context).textTheme.bodySmall),
                       ],
