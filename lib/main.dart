@@ -942,12 +942,12 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _HomeFolderCard(
-              icon: Icons.sports_esports_outlined,
-              title: '游戏代练',
-              subtitle: '专业上分与代打服务',
-              meta: '3,105 位代练',
-              tabLabel: 'RANK',
-              colors: const [Color(0xff2b6fd8), Color(0xff7c5ce8)],
+              icon: Icons.auto_awesome,
+              title: '缘分匹配',
+              subtitle: '遇见聊得来的人',
+              meta: '正在寻找默契伙伴',
+              tabLabel: 'FATE',
+              colors: const [Color(0xffff9a5a), Color(0xffff5f8f)],
               tabAlignment: Alignment.topLeft,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
@@ -956,7 +956,7 @@ class HomePage extends StatelessWidget {
                 bottomRight: Radius.circular(34),
               ),
               onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const GamePlayPage())),
+                  MaterialPageRoute(builder: (_) => const FateMatchPage())),
             ),
             const SizedBox(height: 22),
             Row(children: [
@@ -4701,278 +4701,116 @@ class _VoiceRoomMessage extends StatelessWidget {
           ])));
 }
 
-class GamePlayPage extends StatefulWidget {
-  const GamePlayPage({super.key});
+class FateMatchPage extends StatefulWidget {
+  const FateMatchPage({super.key});
   @override
-  State<GamePlayPage> createState() => _GamePlayPageState();
+  State<FateMatchPage> createState() => _FateMatchPageState();
 }
 
-class GameService {
-  const GameService({
-    required this.name,
-    required this.rank,
-    required this.game,
-    required this.service,
-    required this.price,
-    required this.orders,
-    required this.rating,
-    required this.icon,
-    required this.tags,
-    this.online = true,
-  });
-  final String name;
-  final String rank;
-  final String game;
-  final String service;
-  final String price;
-  final String orders;
-  final String rating;
-  final IconData icon;
-  final List<String> tags;
-  final bool online;
-}
-
-class _GamePlayPageState extends State<GamePlayPage> {
-  final search = TextEditingController();
-  int gameIndex = 0;
-  int typeIndex = 0;
-  int sortIndex = 0;
-  final games = const ['王者荣耀', '英雄联盟', '和平精英', '永劫无间', '原神'];
-  final types = const ['全部', '代练上分', '代打排位', '教学指导', '账号托管'];
-  final services = const [
-    GameService(
-        name: '小鹿',
-        rank: '国服打野',
-        game: '王者荣耀',
-        service: '星耀 Ⅲ → 王者 Ⅰ · 一天完成',
-        price: '128',
-        orders: '8,652',
-        rating: '4.9',
-        icon: Icons.sports_esports,
-        tags: ['极速代练', '胜率 95%', '当天开打', '全程直播']),
-    GameService(
-        name: '阿泽',
-        rank: '最强王者',
-        game: '王者荣耀',
-        service: '双排上分 · 可语音指挥',
-        price: '68',
-        orders: '3,481',
-        rating: '4.8',
-        icon: Icons.military_tech_outlined,
-        tags: ['代打上分', '耐心教学', '秒回']),
-    GameService(
-        name: '柚子',
-        rank: '巅峰赛 2300',
-        game: '王者荣耀',
-        service: '打野教学 · 复盘指导',
-        price: '88',
-        orders: '2,106',
-        rating: '5.0',
-        icon: Icons.psychology_outlined,
-        tags: ['教学指导', '复盘', '技术流']),
-    GameService(
-        name: '北辰',
-        rank: '荣耀王者',
-        game: '王者荣耀',
-        service: '五排车队 · 晚间可约',
-        price: '49',
-        orders: '5,337',
-        rating: '4.9',
-        icon: Icons.groups_outlined,
-        tags: ['五排代打', '稳定车队', '账号托管'],
-        online: false),
-  ];
-
-  @override
-  void dispose() {
-    search.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final query = search.text.trim();
-    final visible = services
-        .where((item) =>
-            query.isEmpty ||
-            item.name.contains(query) ||
-            item.rank.contains(query) ||
-            item.service.contains(query))
-        .toList();
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('代练广场'),
-        actions: [
-          IconButton(
-              onPressed: () => _unavailable('我的订单'),
-              icon: const Icon(Icons.receipt_long_outlined))
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 118),
-        children: [
-          const _GameDemoNotice(),
-          const SizedBox(height: 12),
-          TextField(
-              controller: search,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                  hintText: '搜索游戏、段位或服务', prefixIcon: Icon(Icons.search))),
-          const SizedBox(height: 14),
-          _GameFilterRow(
-              labels: games,
-              selected: gameIndex,
-              onSelected: (index) => setState(() => gameIndex = index),
-              icon: Icons.videogame_asset_outlined),
-          const SizedBox(height: 10),
-          _GameFilterRow(
-              labels: types,
-              selected: typeIndex,
-              onSelected: (index) => setState(() => typeIndex = index)),
-          const SizedBox(height: 12),
-          Row(
-              children: ['综合', '销量', '评分', '价格']
-                  .asMap()
-                  .entries
-                  .map((entry) => Expanded(
-                          child: TextButton(
-                        onPressed: () => setState(() => sortIndex = entry.key),
-                        child: Text(entry.value,
-                            style: TextStyle(
-                                fontWeight: sortIndex == entry.key
-                                    ? FontWeight.w800
-                                    : FontWeight.w500)),
-                      )))
-                  .toList()),
-          const SizedBox(height: 4),
-          ...visible.map((item) => _GameServiceCard(
-                item: item,
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => GameTrainerProfilePage(service: item))),
-                onOrder: () => _unavailable('下单服务'),
-              )),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: FilledButton.icon(
-                onPressed: () => _unavailable('发布代练需求'),
-                icon: const Icon(Icons.add),
-                label: const Text('发布代练需求')),
-          )),
-    );
-  }
-
-  void _unavailable(String feature) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text('$feature暂未接入')));
-}
-
-class GameTrainerProfilePage extends StatelessWidget {
-  const GameTrainerProfilePage({super.key, required this.service});
-  final GameService service;
+class _FateMatchPageState extends State<FateMatchPage> {
+  bool matching = false;
+  bool matched = false;
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('代练主页'), actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
-        ]),
-        body: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 108),
-            children: [
-              const _GameDemoNotice(),
-              const SizedBox(height: 16),
-              Row(children: [
-                Stack(children: [
-                  CircleAvatar(radius: 38, child: Icon(service.icon, size: 36)),
-                  if (service.online)
-                    const Positioned(right: 0, bottom: 2, child: _OnlineDot()),
-                ]),
-                const SizedBox(width: 14),
-                Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Row(children: [
-                        Text(service.name,
-                            style: const TextStyle(
-                                fontSize: 22, fontWeight: FontWeight.w800)),
-                        const SizedBox(width: 7),
-                        const Icon(Icons.verified,
-                            size: 17, color: Colors.lightBlue)
-                      ]),
-                      const SizedBox(height: 5),
-                      Text(service.rank,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 5),
-                      Text('★ ${service.rating} · 已完成 ${service.orders} 单',
-                          style: Theme.of(context).textTheme.bodySmall),
-                    ])),
-              ]),
-              const SizedBox(height: 20),
-              Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: const [
-                    _GameProfileStat(value: '98%', label: '好评率'),
-                    _GameProfileStat(value: '12分钟', label: '平均响应'),
-                    _GameProfileStat(value: '2年', label: '服务时长'),
-                  ]),
-              const SizedBox(height: 22),
-              const Text('服务项目',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 10),
-              _GameProfileServiceRow(
-                  game: service.game,
-                  title: service.service,
-                  price: service.price),
-              _GameProfileServiceRow(
-                  game: service.game, title: '代打排位 · 实时进度', price: '49'),
-              _GameProfileServiceRow(
-                  game: service.game, title: '教学复盘 · 技术指导', price: '88'),
-              const SizedBox(height: 18),
-              const Text('服务标签',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 10),
-              Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: service.tags
-                      .map((tag) => Chip(label: Text(tag)))
-                      .toList()),
-              const SizedBox(height: 22),
-              const Text('评价',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 10),
-              const _GameReview(name: '小橘', text: '技术很好，沟通耐心，上分很顺利。'),
-              const _GameReview(name: '阿言', text: '全程透明，体验不错。'),
-            ]),
-        bottomNavigationBar: SafeArea(
-            top: false,
+        backgroundColor: const Color(0xff191019),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          title: const Text('缘分匹配'),
+        ),
+        body: Stack(children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topRight,
+                  radius: 1.4,
+                  colors: [Color(0xffff6f9a), Color(0xff191019)],
+                ),
+              ),
+            ),
+          ),
+          Center(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: FilledButton(
-                  onPressed: () => ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(content: Text('下单服务暂未接入'))),
-                  child: Text('¥ ${service.price} 起 · 立即下单')),
-            )),
+              padding: const EdgeInsets.all(26),
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('缘分匹配为 UI 演示，未接入真实匹配服务',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white60, fontSize: 11)),
+                    const SizedBox(height: 36),
+                    Stack(alignment: Alignment.center, children: [
+                      for (final size in [250.0, 190.0, 132.0])
+                        Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color:
+                                    Colors.pinkAccent.withValues(alpha: .36)),
+                          ),
+                        ),
+                      CircleAvatar(
+                        radius: 53,
+                        backgroundColor: const Color(0xffff5f8f),
+                        child: Icon(
+                          matched ? Icons.favorite : Icons.auto_awesome,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ]),
+                    const SizedBox(height: 36),
+                    Text(
+                      matched
+                          ? '遇见了 林小满'
+                          : (matching ? '正在寻找有缘人…' : '开启一段新的缘分'),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      matched ? '音乐 · 旅行 · 聊得来' : '填写兴趣后，寻找默契的聊天伙伴',
+                      style: const TextStyle(color: Colors.white60),
+                    ),
+                    const SizedBox(height: 32),
+                    if (matched)
+                      Wrap(spacing: 10, children: [
+                        FilledButton(
+                          onPressed: () => ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                                  const SnackBar(content: Text('私聊服务暂未接入'))),
+                          child: const Text('开始聊天'),
+                        ),
+                        OutlinedButton(
+                          onPressed: () => setState(() {
+                            matched = false;
+                            matching = false;
+                          }),
+                          child: const Text('重新匹配'),
+                        ),
+                      ])
+                    else
+                      FilledButton.icon(
+                        onPressed: matching
+                            ? null
+                            : () => setState(() {
+                                  matching = true;
+                                  matched = true;
+                                }),
+                        icon: const Icon(Icons.favorite_outline),
+                        label: Text(matching ? '匹配中…' : '开始匹配'),
+                      ),
+                  ]),
+            ),
+          ),
+        ]),
       );
-}
-
-class _GameDemoNotice extends StatelessWidget {
-  const _GameDemoNotice();
-  @override
-  Widget build(BuildContext context) => Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(12)),
-      child: Text('代练广场为 UI 演示，未接入订单、支付和私聊服务',
-          style: Theme.of(context).textTheme.labelSmall));
 }
 
 class _GameFilterRow extends StatelessWidget {
@@ -4987,120 +4825,25 @@ class _GameFilterRow extends StatelessWidget {
   final IconData? icon;
   @override
   Widget build(BuildContext context) => SizedBox(
-      height: 38,
-      child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: labels
-              .asMap()
-              .entries
-              .map((entry) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                      label: Row(mainAxisSize: MainAxisSize.min, children: [
-                        if (icon != null && entry.key == selected) ...[
-                          Icon(icon, size: 15),
-                          const SizedBox(width: 4)
-                        ],
-                        Text(entry.value)
-                      ]),
-                      selected: selected == entry.key,
-                      onSelected: (_) => onSelected(entry.key))))
-              .toList()));
-}
-
-class _GameServiceCard extends StatelessWidget {
-  const _GameServiceCard(
-      {required this.item, required this.onTap, required this.onOrder});
-  final GameService item;
-  final VoidCallback onTap;
-  final VoidCallback onOrder;
-  @override
-  Widget build(BuildContext context) => Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-          onTap: onTap,
-          child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Stack(children: [
-                        CircleAvatar(
-                            radius: 26, child: Icon(item.icon, size: 25)),
-                        if (item.online)
-                          const Positioned(
-                              right: 0, bottom: 0, child: _OnlineDot())
-                      ]),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                            Row(children: [
-                              Text(item.name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 16)),
-                              const SizedBox(width: 5),
-                              const Icon(Icons.verified,
-                                  size: 15, color: Colors.lightBlue),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                  child: Chip(
-                                      label: Text(item.rank),
-                                      visualDensity: VisualDensity.compact))
-                            ]),
-                            Text(
-                                '★ ${item.rating} · ${item.orders} 单 · ${item.online ? '在线' : '稍后在线'}',
-                                style: Theme.of(context).textTheme.labelSmall)
-                          ]))
-                    ]),
-                    const SizedBox(height: 12),
-                    Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .secondaryContainer,
-                            borderRadius: BorderRadius.circular(12)),
-                        child: Row(children: [
-                          Icon(Icons.sports_esports_outlined,
-                              size: 17,
-                              color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 5),
-                          Text(item.game,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w700)),
-                          const SizedBox(width: 9),
-                          const Expanded(child: VerticalDivider()),
-                          Expanded(
-                              child: Text(item.service,
-                                  maxLines: 1, overflow: TextOverflow.ellipsis))
-                        ])),
-                    const SizedBox(height: 10),
-                    Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: item.tags
-                            .map((tag) => Chip(
-                                label: Text(tag),
-                                visualDensity: VisualDensity.compact))
-                            .toList()),
-                    const Divider(height: 26),
-                    Row(children: [
-                      Text('¥ ${item.price}',
-                          style: const TextStyle(
-                              fontSize: 22,
-                              color: Color(0xffff4d6a),
-                              fontWeight: FontWeight.w800)),
-                      const Text(' 起', style: TextStyle(color: Colors.grey)),
-                      const Spacer(),
-                      FilledButton(
-                          onPressed: onOrder, child: const Text('立即下单'))
-                    ]),
-                  ]))));
+        height: 38,
+        child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: labels
+                .asMap()
+                .entries
+                .map((entry) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        avatar: icon != null && entry.key == selected
+                            ? Icon(icon, size: 15)
+                            : null,
+                        label: Text(entry.value),
+                        selected: selected == entry.key,
+                        onSelected: (_) => onSelected(entry.key),
+                      ),
+                    ))
+                .toList()),
+      );
 }
 
 class _GameProfileStat extends StatelessWidget {
@@ -5112,7 +4855,7 @@ class _GameProfileStat extends StatelessWidget {
         Text(value,
             style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text(label, style: Theme.of(context).textTheme.labelSmall)
+        Text(label, style: Theme.of(context).textTheme.labelSmall),
       ]);
 }
 
@@ -5124,13 +4867,14 @@ class _GameProfileServiceRow extends StatelessWidget {
   final String price;
   @override
   Widget build(BuildContext context) => Card(
-      child: ListTile(
-          leading: const Icon(Icons.sports_esports_outlined),
-          title: Text(title),
-          subtitle: Text(game),
-          trailing: Text('¥$price 起',
-              style: const TextStyle(
-                  color: Color(0xffff4d6a), fontWeight: FontWeight.w800))));
+          child: ListTile(
+        leading: const Icon(Icons.sports_esports_outlined),
+        title: Text(title),
+        subtitle: Text(game),
+        trailing: Text('¥$price 起',
+            style: const TextStyle(
+                color: Color(0xffff4d6a), fontWeight: FontWeight.w800)),
+      ));
 }
 
 class _GameReview extends StatelessWidget {
@@ -5139,11 +4883,12 @@ class _GameReview extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-      title: Text(name),
-      subtitle: Text(text),
-      trailing: const Text('★ 5.0'));
+        contentPadding: EdgeInsets.zero,
+        leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+        title: Text(name),
+        subtitle: Text(text),
+        trailing: const Text('★ 5.0'),
+      );
 }
 
 class EventsPage extends StatelessWidget {
