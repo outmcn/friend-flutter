@@ -1551,7 +1551,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   bool _refreshing = false;
   int selectedTab = 0;
   bool tabLoading = false;
-  String cityLabel = '城市';
+  String? cityLabel;
   String? error;
   @override
   void initState() {
@@ -1588,6 +1588,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
+      final cachedCity = (p.getString('dd.location.city') ?? '').trim();
+      if (mounted && cachedCity.isNotEmpty && cityLabel != cachedCity) {
+        setState(() => cityLabel = cachedCity);
+      }
       await syncCachedLocation(service, t);
       final city = await cachedCityLabel(service, t);
       if (mounted && cityLabel != city) setState(() => cityLabel = city);
@@ -1623,7 +1627,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         appBar: AppBar(
           titleSpacing: 16,
           title: Row(
-            children: ['推荐', cityLabel, '关注']
+            children: ['推荐', cityLabel ?? '', '关注']
                 .asMap()
                 .entries
                 .map((entry) => GestureDetector(
@@ -4171,48 +4175,37 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   const SizedBox(height: 18),
                   _MyProfileVoiceCard(name: '${p?['nickname'] ?? '我'}的声音名片'),
                   const SizedBox(height: 14),
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Row(
-                      children: ['置顶', '动态', '收藏', '喜欢']
-                          .asMap()
-                          .entries
-                          .map((entry) => Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => load(tab: entry.key),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 160),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8, horizontal: 8),
-                                    decoration: BoxDecoration(
-                                      color: selectedTab == entry.key
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(entry.value,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                          color: selectedTab == entry.key
-                                              ? Theme.of(context)
-                                                  .colorScheme
-                                                  .onPrimary
-                                              : null,
-                                        )),
+                  Row(
+                    children: ['置顶', '动态', '收藏', '喜欢']
+                        .asMap()
+                        .entries
+                        .map((entry) => Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => load(tab: entry.key),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 160),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: selectedTab == entry.key
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
+                                  child: Text(entry.value,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        color: selectedTab == entry.key
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary
+                                            : null,
+                                      )),
                                 ),
-                              ))
-                          .toList(),
-                    ),
+                              ),
+                            ))
+                        .toList(),
                   ),
                   const SizedBox(height: 10),
                   if (error != null)
