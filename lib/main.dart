@@ -3516,8 +3516,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           : SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: AnimatedPadding(
-                  duration: const Duration(milliseconds: 180),
+                child: Padding(
                   padding: EdgeInsets.only(
                     bottom: MediaQuery.of(context).viewInsets.bottom,
                   ),
