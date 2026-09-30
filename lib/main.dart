@@ -950,9 +950,9 @@ class _DDShellState extends State<DDShell> {
         onDestinationSelected: (value) => setState(() => index = value),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: '首页',
+            icon: Icon(Icons.sports_esports_outlined),
+            selectedIcon: Icon(Icons.sports_esports),
+            label: '娱乐',
           ),
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),
