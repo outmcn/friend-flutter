@@ -2625,6 +2625,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   List<DDPost> posts = [];
   int selectedTab = 0;
   bool loading = true;
+  bool tabLoading = false;
   String? error;
   @override
   void initState() {
@@ -2640,21 +2641,45 @@ class _DDProfilePageState extends State<DDProfilePage> {
 
   Future<void> load({int? tab}) async {
     final targetTab = tab ?? selectedTab;
+    final isTabSwitch = tab != null && !loading;
+    if (mounted) {
+      setState(() {
+        error = null;
+        if (isTabSwitch) {
+          selectedTab = targetTab;
+          tabLoading = true;
+        } else {
+          loading = true;
+        }
+      });
+    }
     try {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('请先登录');
-      profile = await service.fetchMe(t);
-      posts = targetTab == 0
+      final loadedProfile = await service.fetchMe(t);
+      final loadedPosts = targetTab == 0
           ? await service.fetchMyPosts(t)
           : targetTab == 1
               ? await service.fetchLikedPosts(t)
               : await service.fetchFavoritedPosts(t);
-      selectedTab = targetTab;
+      if (!mounted) return;
+      setState(() {
+        profile = loadedProfile;
+        posts = loadedPosts;
+        selectedTab = targetTab;
+      });
     } catch (e) {
-      if (mounted) error = e.toString().replaceFirst('Exception: ', '');
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          tabLoading = false;
+        });
+      }
     }
   }
 
@@ -2797,10 +2822,26 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         .toList(),
                   ),
                   const SizedBox(height: 10),
-                  if (selectedTab == 0)
-                    _MyPostWaterfall(posts: posts)
+                  if (error != null)
+                    _PageErrorState(
+                      title: '动态加载失败',
+                      subtitle: error!,
+                      onRetry: () => load(tab: selectedTab),
+                    )
+                  else if (tabLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 38),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
                   else
-                    _ProfileEmptyTab(label: selectedTab == 1 ? '喜欢' : '收藏'),
+                    _MyPostWaterfall(
+                      posts: posts,
+                      emptyLabel: selectedTab == 0
+                          ? '动态'
+                          : selectedTab == 1
+                              ? '喜欢'
+                              : '收藏',
+                    ),
                 ],
               ),
             ),
@@ -2809,12 +2850,13 @@ class _DDProfilePageState extends State<DDProfilePage> {
 }
 
 class _MyPostWaterfall extends StatelessWidget {
-  const _MyPostWaterfall({required this.posts});
+  const _MyPostWaterfall({required this.posts, required this.emptyLabel});
   final List<DDPost> posts;
+  final String emptyLabel;
 
   @override
   Widget build(BuildContext context) {
-    if (posts.isEmpty) return const _ProfileEmptyTab(label: '动态');
+    if (posts.isEmpty) return _ProfileEmptyTab(label: emptyLabel);
     final left = <DDPost>[];
     final right = <DDPost>[];
     for (var i = 0; i < posts.length; i++) {
