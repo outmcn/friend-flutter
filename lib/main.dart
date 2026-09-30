@@ -1404,7 +1404,7 @@ class _DynamicPostCard extends StatelessWidget {
           children: [
             TextButton.icon(
               onPressed: onLike,
-              icon: Icon(post.liked ? Icons.thumb_up : Icons.thumb_up_outlined),
+              icon: Icon(TIcons.thumb_up_1),
               label: Text('${post.likes}'),
             ),
             TextButton.icon(
@@ -1414,8 +1414,7 @@ class _DynamicPostCard extends StatelessWidget {
             ),
             TextButton.icon(
               onPressed: onFavorite,
-              icon:
-                  Icon(post.favorited ? Icons.bookmark : Icons.bookmark_border),
+              icon: Icon(TIcons.bookmark),
               label: Text('${post.favorites}'),
             ),
           ],
@@ -2678,7 +2677,7 @@ class _ChatPageState extends State<ChatPage> {
           const SizedBox(height: 6),
           if (visible.isEmpty)
             const _EmptyStateCard(
-                icon: Icons.chat_bubble_outline,
+                icon: TIcons.chat,
                 title: '没有匹配的会话',
                 subtitle: '聊天 UI 演示不包含真实私聊')
           else
@@ -3384,7 +3383,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                     height: 48,
                   ),
                   onPressed: _openReportPage,
-                  icon: const Icon(Icons.report_gmailerrorred_outlined),
+                  icon: Icon(TIcons.shield_error),
                 ),
               ),
             ),
@@ -3516,22 +3515,18 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                       const SizedBox(height: 18),
                       Row(children: [
                         _DetailAction(
-                            icon: item.liked
-                                ? Icons.thumb_up
-                                : Icons.thumb_up_outlined,
+                            icon: TIcons.thumb_up_1,
                             label: '${item.likes}',
                             active: item.liked,
                             onTap: _toggleLike),
                         const SizedBox(width: 24),
                         _DetailAction(
-                            icon: Icons.chat_bubble_outline,
+                            icon: TIcons.chat,
                             label: '${comments.length}',
                             onTap: () {}),
                         const SizedBox(width: 24),
                         _DetailAction(
-                            icon: item.favorited
-                                ? Icons.bookmark
-                                : Icons.bookmark_border,
+                            icon: TIcons.bookmark,
                             label: '${item.favorites}',
                             active: item.favorited,
                             onTap: _toggleFavorite),
@@ -3543,7 +3538,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                       const SizedBox(height: 8),
                       if (comments.isEmpty)
                         const _EmptyStateCard(
-                            icon: Icons.chat_bubble_outline,
+                            icon: TIcons.chat,
                             title: '暂无评论',
                             subtitle: '成为第一个评论的人')
                       else
@@ -4115,12 +4110,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
             context,
             MaterialPageRoute(builder: (_) => const ChatPage()),
           ),
-          icon: const Icon(Icons.notifications_none),
+          icon: Icon(TIcons.scan),
         ),
         IconButton(
           tooltip: '设置',
           onPressed: () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => const SettingsPage())),
+            context,
+            MaterialPageRoute(builder: (_) => const SettingsPage()),
+          ),
           icon: const Icon(Icons.settings_outlined),
         ),
       ]),
