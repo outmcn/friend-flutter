@@ -3657,42 +3657,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
     }
   }
 
-  Future<void> _deletePostFromProfile(DDPost post) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('确认删除'),
-        content: const Text('确认删除这条动态？删除后无法恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      await service.deletePost(token, post.id);
-      await load(tab: 0);
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('动态已删除')));
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -3877,8 +3841,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   else
                     _MyPostWaterfall(
                       posts: posts,
-                      onDelete:
-                          selectedTab == 0 ? _deletePostFromProfile : null,
                       emptyLabel: selectedTab == 0
                           ? '动态'
                           : selectedTab == 1
@@ -3914,11 +3876,9 @@ class _MyPostWaterfall extends StatelessWidget {
   const _MyPostWaterfall({
     required this.posts,
     required this.emptyLabel,
-    this.onDelete,
   });
   final List<DDPost> posts;
   final String emptyLabel;
-  final ValueChanged<DDPost>? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -3930,9 +3890,8 @@ class _MyPostWaterfall extends StatelessWidget {
     }
     Widget column(List<DDPost> items) => Expanded(
           child: Column(
-            children: items
-                .map((post) => _MyWaterfallCard(post: post, onDelete: onDelete))
-                .toList(),
+            children:
+                items.map((post) => _MyWaterfallCard(post: post)).toList(),
           ),
         );
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -3944,79 +3903,50 @@ class _MyPostWaterfall extends StatelessWidget {
 }
 
 class _MyWaterfallCard extends StatelessWidget {
-  const _MyWaterfallCard({required this.post, this.onDelete});
+  const _MyWaterfallCard({required this.post});
   final DDPost post;
-  final ValueChanged<DDPost>? onDelete;
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 10),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => DynamicDetailPage(postId: post.id)),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Ink(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (post.imageUrl?.trim().isNotEmpty == true)
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: Image.network(
-                    DDPostService.mediaUrl(post.imageUrl),
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox(
-                      height: 112,
-                      child: Center(
-                          child: Icon(Icons.image_not_supported_outlined)),
-                    ),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (post.imageUrl?.trim().isNotEmpty == true)
+              ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
+                child: Image.network(
+                  DDPostService.mediaUrl(post.imageUrl),
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox(
+                    height: 112,
+                    child:
+                        Center(child: Icon(Icons.image_not_supported_outlined)),
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(post.content.isEmpty ? '分享了一条动态' : post.content,
-                          maxLines: 4, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 8),
-                      Row(children: [
-                        if (onDelete != null) ...[
-                          IconButton(
-                            tooltip: '删除动态',
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onPressed: () => onDelete!(post),
-                            icon: const Icon(Icons.delete_outline, size: 17),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        Icon(
-                            post.liked
-                                ? Icons.thumb_up
-                                : Icons.thumb_up_outlined,
-                            size: 15),
-                        const SizedBox(width: 3),
-                        Text('${post.likes}',
-                            style: Theme.of(context).textTheme.labelSmall),
-                        const SizedBox(width: 10),
-                        const Icon(Icons.chat_bubble_outline, size: 15),
-                        const SizedBox(width: 3),
-                        Text('${post.comments}',
-                            style: Theme.of(context).textTheme.labelSmall),
-                      ]),
-                    ]),
               ),
-            ]),
-          ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(11, 10, 11, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(post.content.isEmpty ? '分享了一条动态' : post.content,
+                      maxLines: 4, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 6),
+                  Text(
+                    formatDDTime(post.createdAt),
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ),
+          ]),
         ),
       );
 }
