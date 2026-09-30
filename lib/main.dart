@@ -910,6 +910,17 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 20),
             _HomeVoiceMatch(onTap: () => _unavailable(context, '语音匹配')),
             const SizedBox(height: 12),
+            _HomeMiniCard(
+              icon: Icons.sports_esports_outlined,
+              title: '游戏陪玩',
+              subtitle: '开黑交友不孤单',
+              meta: '1,236 位陪玩',
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const GameCompanionPlazaPage())),
+            ),
+            const SizedBox(height: 12),
             Row(children: [
               Expanded(
                   child: _HomeMiniCard(
@@ -939,7 +950,10 @@ class HomePage extends StatelessWidget {
               _HomeQuickAction(
                   icon: Icons.mic_none_outlined,
                   label: '语音房',
-                  onTap: () => _unavailable(context, '语音房')),
+                  onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const VoiceRoomPage()))),
               _HomeQuickAction(
                   icon: Icons.music_note_outlined,
                   label: '一起听',
@@ -3786,6 +3800,542 @@ class MyQrCodePage extends StatelessWidget {
           ],
         ),
       );
+}
+
+class GameCompanionPlazaPage extends StatefulWidget {
+  const GameCompanionPlazaPage({super.key});
+  @override
+  State<GameCompanionPlazaPage> createState() => _GameCompanionPlazaPageState();
+}
+
+class CompanionProfile {
+  const CompanionProfile(
+      {required this.name,
+      required this.game,
+      required this.price,
+      required this.rating,
+      required this.icon,
+      required this.tags,
+      required this.voice});
+  final String name;
+  final String game;
+  final String price;
+  final String rating;
+  final IconData icon;
+  final List<String> tags;
+  final String voice;
+}
+
+class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
+  final search = TextEditingController();
+  int game = 0;
+  int type = 0;
+  final games = const ['王者荣耀', '英雄联盟', '和平精英', '原神', '更多'];
+  final types = const ['全部', '上分陪玩', '娱乐开黑', '语音陪伴', '新手教学'];
+  final companions = const [
+    CompanionProfile(
+        name: '小鹿',
+        game: '王者荣耀',
+        price: '39',
+        rating: '4.9',
+        icon: Icons.face_3_outlined,
+        tags: ['声音好听', '国服打野', '秒回'],
+        voice: '温柔声线 · 试听 16 秒'),
+    CompanionProfile(
+        name: '苏念',
+        game: '英雄联盟',
+        price: '49',
+        rating: '5.0',
+        icon: Icons.music_note,
+        tags: ['氛围感', '可连麦', '晚间在线'],
+        voice: '甜妹音 · 试听 12 秒'),
+    CompanionProfile(
+        name: '桃子',
+        game: '和平精英',
+        price: '35',
+        rating: '4.8',
+        icon: Icons.favorite_outline,
+        tags: ['带萌新', '不压力', '情绪价值'],
+        voice: '元气音 · 试听 18 秒'),
+    CompanionProfile(
+        name: '北辰',
+        game: '原神',
+        price: '45',
+        rating: '4.9',
+        icon: Icons.auto_awesome_outlined,
+        tags: ['探索陪伴', '任务带做', '耐心'],
+        voice: '治愈音 · 试听 14 秒'),
+  ];
+  @override
+  void dispose() {
+    search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = search.text.trim();
+    final visible = companions
+        .where((c) =>
+            q.isEmpty ||
+            c.name.contains(q) ||
+            c.game.contains(q) ||
+            c.tags.any((tag) => tag.contains(q)))
+        .toList();
+    return Scaffold(
+      appBar: AppBar(title: const Text('陪玩广场'), actions: [
+        IconButton(
+            onPressed: () => _notice('陪玩订单'),
+            icon: const Icon(Icons.receipt_long_outlined))
+      ]),
+      body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
+          children: [
+            const _CompanionNotice(),
+            const SizedBox(height: 12),
+            TextField(
+                controller: search,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                    hintText: '搜索游戏、声音或陪玩', prefixIcon: Icon(Icons.search))),
+            const SizedBox(height: 13),
+            _GameFilterRow(
+                labels: games,
+                selected: game,
+                onSelected: (v) => setState(() => game = v),
+                icon: Icons.sports_esports_outlined),
+            const SizedBox(height: 9),
+            _GameFilterRow(
+                labels: types,
+                selected: type,
+                onSelected: (v) => setState(() => type = v)),
+            const _CompanionSection(title: '今日推荐'),
+            SizedBox(
+                height: 208,
+                child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: companions
+                        .take(3)
+                        .map((c) => _CompanionRecommendCard(
+                            data: c, onTap: () => _open(c)))
+                        .toList())),
+            const _CompanionSection(title: '在线陪玩'),
+            ...visible.map((c) => _CompanionListCard(
+                data: c,
+                onTap: () => _open(c),
+                onOrder: () => _notice('约玩服务'))),
+          ]),
+      bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: FilledButton.icon(
+                  onPressed: () => _notice('发布陪玩需求'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('发布陪玩需求')))),
+    );
+  }
+
+  void _open(CompanionProfile c) => Navigator.push(context,
+      MaterialPageRoute(builder: (_) => CompanionProfilePage(data: c)));
+  void _notice(String feature) => ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text('$feature暂未接入')));
+}
+
+class CompanionProfilePage extends StatelessWidget {
+  const CompanionProfilePage({super.key, required this.data});
+  final CompanionProfile data;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: Stack(children: [
+          Container(
+              height: 270,
+              decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: [Color(0xff4a2a6b), Color(0xffe05ca8)]))),
+          SafeArea(
+              child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white))),
+          ListView(
+              padding: const EdgeInsets.fromLTRB(16, 220, 16, 108),
+              children: [
+                const _CompanionNotice(),
+                const SizedBox(height: 12),
+                Card(
+                    child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                Stack(children: [
+                                  CircleAvatar(
+                                      radius: 38,
+                                      child: Icon(data.icon, size: 36)),
+                                  const Positioned(
+                                      right: 0, bottom: 1, child: _OnlineDot())
+                                ]),
+                                const SizedBox(width: 13),
+                                Expanded(
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                      Row(children: [
+                                        Text(data.name,
+                                            style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w800)),
+                                        const SizedBox(width: 6),
+                                        const Icon(Icons.verified,
+                                            color: Colors.lightBlue, size: 17)
+                                      ]),
+                                      const SizedBox(height: 5),
+                                      Text('${data.game} · ★ ${data.rating}',
+                                          style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary)),
+                                      const SizedBox(height: 4),
+                                      Text('在线 · 5 分钟内响应',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall)
+                                    ]))
+                              ]),
+                              const SizedBox(height: 14),
+                              const Text('喜欢轻松聊天和开黑，一起享受游戏的快乐吧～'),
+                              const Divider(height: 28),
+                              const Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _GameProfileStat(
+                                        value: '99%', label: '好评率'),
+                                    _GameProfileStat(
+                                        value: '6分钟', label: '平均响应'),
+                                    _GameProfileStat(
+                                        value: '1,286', label: '接单数')
+                                  ]),
+                            ]))),
+                const _CompanionSection(title: '声音名片'),
+                _CompanionVoiceCard(text: data.voice),
+                const _CompanionSection(title: '陪玩服务'),
+                _GameProfileServiceRow(
+                    game: data.game, title: '娱乐开黑 · 语音陪伴', price: data.price),
+                _GameProfileServiceRow(
+                    game: data.game, title: '上分陪玩 · 全程连麦', price: '59'),
+                const _CompanionSection(title: '标签与评价'),
+                Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children:
+                        data.tags.map((t) => Chip(label: Text(t))).toList()),
+                const SizedBox(height: 12),
+                const _GameReview(name: '小橘', text: '声音很好听，开黑很开心。'),
+              ]),
+        ]),
+        bottomNavigationBar: SafeArea(
+            top: false,
+            child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: FilledButton(
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('约玩服务暂未接入'))),
+                    child: Text('¥ ${data.price} 起 · 立即约玩')))),
+      );
+}
+
+class VoiceRoomPage extends StatefulWidget {
+  const VoiceRoomPage({super.key});
+  @override
+  State<VoiceRoomPage> createState() => _VoiceRoomPageState();
+}
+
+class _VoiceRoomPageState extends State<VoiceRoomPage> {
+  bool muted = false;
+  bool joined = false;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xff1a1224),
+        appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            title: const Text('深夜电台 · 一起听'),
+            actions: [
+              IconButton(onPressed: () {}, icon: const Icon(Icons.ios_share)),
+              IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
+            ]),
+        body: Stack(children: [
+          Positioned.fill(
+              child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                      gradient: RadialGradient(
+                          center: Alignment.topRight,
+                          radius: 1.4,
+                          colors: [Color(0xff673a8c), Color(0xff1a1224)])))),
+          ListView(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+              children: [
+                const _VoiceRoomNotice(),
+                const SizedBox(height: 18),
+                Center(
+                    child: Column(children: [
+                  Stack(alignment: Alignment.center, children: [
+                    Container(
+                      width: 118,
+                      height: 118,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: Colors.purpleAccent, width: 2)),
+                    ),
+                    const CircleAvatar(
+                        radius: 41, child: Icon(Icons.mic, size: 38)),
+                  ]),
+                  const SizedBox(height: 12),
+                  const Text('苏念  房主',
+                      style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white)),
+                  const SizedBox(height: 5),
+                  const Chip(
+                      label: Text('正在说话'),
+                      avatar: Icon(Icons.graphic_eq, size: 15))
+                ])),
+                const SizedBox(height: 28),
+                const Text('麦位  ·  128 人在听',
+                    style: TextStyle(
+                        color: Colors.white70, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 14),
+                GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 18,
+                    children: const [
+                      _VoiceSeat(icon: Icons.music_note, name: '小鹿'),
+                      _VoiceSeat(icon: Icons.favorite_outline, name: '桃子'),
+                      _VoiceSeat(
+                          icon: Icons.sports_esports_outlined, name: '北辰'),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true)
+                    ]),
+                const SizedBox(height: 24),
+                const Text('房间消息',
+                    style: TextStyle(
+                        color: Colors.white70, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 10),
+                const _VoiceRoomMessage(name: '小鹿', text: '这首歌好好听～'),
+                const _VoiceRoomMessage(name: '桃子', text: '新来的朋友晚上好'),
+              ]),
+        ]),
+        bottomNavigationBar: SafeArea(
+            top: false,
+            child: Container(
+                color: const Color(0xff21172e),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(children: [
+                  IconButton(
+                      onPressed: () => setState(() => muted = !muted),
+                      icon: Icon(muted ? Icons.mic_off : Icons.mic_none,
+                          color: Colors.white)),
+                  Expanded(
+                      child: FilledButton(
+                          onPressed: () => setState(() => joined = !joined),
+                          child: Text(joined ? '已上麦（UI）' : '申请上麦'))),
+                  IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.card_giftcard_outlined,
+                          color: Colors.white))
+                ]))),
+      );
+}
+
+class _CompanionNotice extends StatelessWidget {
+  const _CompanionNotice();
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(12)),
+      child: Text('陪玩广场为 UI 演示，未接入约玩、订单、支付和私聊服务',
+          style: Theme.of(context).textTheme.labelSmall));
+}
+
+class _VoiceRoomNotice extends StatelessWidget {
+  const _VoiceRoomNotice();
+  @override
+  Widget build(BuildContext context) => const Center(
+      child: Text('语音房为 UI 演示，未接入真实语音、麦位和房间消息',
+          style: TextStyle(color: Colors.white70, fontSize: 11)));
+}
+
+class _CompanionSection extends StatelessWidget {
+  const _CompanionSection({required this.title});
+  final String title;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.only(top: 22, bottom: 11),
+      child: Text(title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)));
+}
+
+class _CompanionRecommendCard extends StatelessWidget {
+  const _CompanionRecommendCard({required this.data, required this.onTap});
+  final CompanionProfile data;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+          width: 150,
+          margin: const EdgeInsets.only(right: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(18)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+                child: Center(
+                    child: CircleAvatar(
+                        radius: 34, child: Icon(data.icon, size: 30)))),
+            Text(data.name,
+                style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(data.voice,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 5),
+            Text('¥${data.price}/局 · ★${data.rating}',
+                style: TextStyle(
+                    fontSize: 11, color: Theme.of(context).colorScheme.primary))
+          ])));
+}
+
+class _CompanionListCard extends StatelessWidget {
+  const _CompanionListCard(
+      {required this.data, required this.onTap, required this.onOrder});
+  final CompanionProfile data;
+  final VoidCallback onTap;
+  final VoidCallback onOrder;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Stack(children: [
+                  CircleAvatar(radius: 26, child: Icon(data.icon, size: 25)),
+                  const Positioned(right: 0, bottom: 0, child: _OnlineDot()),
+                ]),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(data.name,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 4),
+                      Text('${data.game} · ★${data.rating} · 在线',
+                          style: Theme.of(context).textTheme.labelSmall),
+                    ])),
+                FilledButton(onPressed: onOrder, child: const Text('约玩')),
+              ]),
+              const SizedBox(height: 10),
+              Text(data.voice,
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.primary)),
+              const SizedBox(height: 9),
+              Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: data.tags
+                      .map((t) => Chip(
+                          label: Text(t), visualDensity: VisualDensity.compact))
+                      .toList()),
+              const Divider(height: 24),
+              Row(children: [
+                Text('¥ ${data.price}/局起',
+                    style: const TextStyle(
+                        fontSize: 20,
+                        color: Color(0xffff4d8a),
+                        fontWeight: FontWeight.w800)),
+                const Spacer(),
+                const Text('已服务 1,286 次',
+                    style: TextStyle(fontSize: 11, color: Colors.grey)),
+              ]),
+            ]),
+          ),
+        ),
+      );
+}
+
+class _CompanionVoiceCard extends StatelessWidget {
+  const _CompanionVoiceCard({required this.text});
+  final String text;
+  @override
+  Widget build(BuildContext context) => Card(
+      child: ListTile(
+          leading: const CircleAvatar(child: Icon(Icons.play_arrow)),
+          title: Text(text),
+          subtitle: const Text('声音名片 · UI 演示'),
+          trailing: const Text('00:16')));
+}
+
+class _VoiceSeat extends StatelessWidget {
+  const _VoiceSeat(
+      {required this.icon, required this.name, this.empty = false});
+  final IconData icon;
+  final String name;
+  final bool empty;
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        CircleAvatar(
+            radius: 27,
+            backgroundColor: empty ? Colors.white10 : null,
+            child: Icon(icon, color: empty ? Colors.white38 : null)),
+        const SizedBox(height: 5),
+        Text(name,
+            style: TextStyle(
+                fontSize: 11, color: empty ? Colors.white38 : Colors.white70),
+            overflow: TextOverflow.ellipsis)
+      ]);
+}
+
+class _VoiceRoomMessage extends StatelessWidget {
+  const _VoiceRoomMessage({required this.name, required this.text});
+  final String name;
+  final String text;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: RichText(
+          text: TextSpan(
+              style: const TextStyle(fontSize: 13, color: Colors.white70),
+              children: [
+            TextSpan(
+                text: '$name  ',
+                style: const TextStyle(
+                    color: Color(0xffe8b8ff), fontWeight: FontWeight.w700)),
+            TextSpan(text: text)
+          ])));
 }
 
 class GamePlayPage extends StatefulWidget {
