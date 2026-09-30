@@ -67,31 +67,66 @@ Future<void> syncCachedLocation(DDPostService service, String token) async {
 
 void main() => runApp(const DDApp());
 
-class DDApp extends StatelessWidget {
+class DDApp extends StatefulWidget {
   const DDApp({super.key});
+
+  @override
+  State<DDApp> createState() => _DDAppState();
+}
+
+class _DDAppState extends State<DDApp> {
+  static _DDAppState? current;
+  ThemeMode themeMode = ThemeMode.dark;
+
+  @override
+  void initState() {
+    super.initState();
+    current = this;
+    _restoreTheme();
+  }
+
+  Future<void> _restoreTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() => themeMode = prefs.getBool('dd.theme.light') == true
+          ? ThemeMode.light
+          : ThemeMode.dark);
+    }
+  }
+
+  Future<void> setTheme(ThemeMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dd.theme.light', mode == ThemeMode.light);
+    if (mounted) setState(() => themeMode = mode);
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'DD',
+      themeMode: themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xff101010),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xffa77bff),
-          brightness: Brightness.dark,
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: const Color(0xfff7f5fb),
+        listTileTheme: const ListTileThemeData(
+          dense: true,
+          minVerticalPadding: 0,
+          contentPadding: EdgeInsets.zero,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xff242329),
+          fillColor: const Color(0xffefedf4),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 13,
           ),
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: .56)),
-          prefixIconColor: Colors.white.withValues(alpha: .72),
+          hintStyle: TextStyle(color: Colors.black54),
+          prefixIconColor: Colors.black54,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide.none,
@@ -105,6 +140,41 @@ class DDApp extends StatelessWidget {
             borderSide: BorderSide(
               color: const Color(0xffa77bff).withValues(alpha: .72),
             ),
+          ),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xff101010),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xffa77bff),
+          brightness: Brightness.dark,
+        ),
+        listTileTheme: const ListTileThemeData(
+          dense: true,
+          minVerticalPadding: 0,
+          contentPadding: EdgeInsets.zero,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xff242329),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          hintStyle: TextStyle(color: Colors.white54),
+          prefixIconColor: Colors.white70,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(
+                color: const Color(0xffa77bff).withValues(alpha: .72)),
           ),
         ),
       ),
@@ -3124,33 +3194,49 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           FocusScope.of(context).requestFocus(commentFocusNode);
         },
         onLongPress: () => _commentMenu(comment),
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: InkWell(
-            onTap: comment.userId == null
-                ? null
-                : () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => OtherProfilePage(
-                          userId: comment.userId,
-                          name: comment.nickname,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InkWell(
+                onTap: comment.userId == null
+                    ? null
+                    : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => OtherProfilePage(
+                              userId: comment.userId,
+                              name: comment.nickname,
+                            ),
+                          ),
                         ),
-                      ),
+                borderRadius: BorderRadius.circular(20),
+                child: const CircleAvatar(
+                  radius: 20,
+                  child: Icon(Icons.person_outline, size: 18),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      comment.nickname,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-            borderRadius: BorderRadius.circular(20),
-            child: const CircleAvatar(
-              child: Icon(Icons.person_outline, size: 18),
-            ),
-          ),
-          title: Text(
-            comment.nickname,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          subtitle: Text(comment.content),
-          trailing: Text(
-            formatDDTime(comment.createdAt),
-            style: const TextStyle(fontSize: 11),
+                    const SizedBox(height: 2),
+                    Text(comment.content),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                formatDDTime(comment.createdAt),
+                style: const TextStyle(fontSize: 11),
+              ),
+            ],
           ),
         ),
       );
@@ -5648,6 +5734,15 @@ class SettingsPage extends StatelessWidget {
                   );
                 }
               },
+            ),
+            ListTile(
+              leading: const Icon(Icons.light_mode_outlined),
+              title: const Text('白天模式'),
+              trailing: Switch(
+                value: Theme.of(context).brightness == Brightness.light,
+                onChanged: (value) => _DDAppState.current
+                    ?.setTheme(value ? ThemeMode.light : ThemeMode.dark),
+              ),
             ),
             const _SettingsGroup(title: '其他', items: ['清理缓存', '关于 DD', '退出登录']),
           ],
