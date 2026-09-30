@@ -2269,6 +2269,21 @@ class ReportPostPage extends StatefulWidget {
 }
 
 class _ReportPostPageState extends State<ReportPostPage> {
+  static const reportReasons = [
+    '低俗色情',
+    '攻击辱骂',
+    '涉嫌诈骗',
+    '未成年人',
+    '政治敏感',
+    '网络谣言',
+    '违法信息',
+    '血腥暴力',
+    '广告引流',
+    '网乞相关',
+    '恶意诱导到其他平台',
+    '其他',
+  ];
+
   String? reason;
   bool submitting = false;
   String? error;
@@ -2307,11 +2322,12 @@ class _ReportPostPageState extends State<ReportPostPage> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
-            ...['广告或垃圾信息', '不当内容', '其他'].map(
+            ...reportReasons.map(
               (item) => RadioListTile<String>(
                 value: item,
                 groupValue: reason,
                 title: Text(item),
+                secondary: const Icon(Icons.chevron_right),
                 onChanged: submitting
                     ? null
                     : (value) => setState(() => reason = value),
