@@ -1096,6 +1096,77 @@ class HomePage extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const FateMatchPage())),
             ),
             const SizedBox(height: 22),
+            const _HomeSectionTitle(title: '热门玩法'),
+            _HomeCartoonCard(
+              icon: Icons.menu_book_outlined,
+              title: '玩剧本',
+              subtitle: '拨开迷雾，寻找真相',
+              badge: 'GO',
+              colors: const [Color(0xff352b62), Color(0xff8b4e9f)],
+              onTap: () => _unavailable(context, '玩剧本'),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _HomeCartoonCard(
+                    icon: Icons.groups_2_outlined,
+                    title: '真人带本',
+                    subtitle: '52 局等待中',
+                    badge: 'LIVE',
+                    colors: const [Color(0xff5a315b), Color(0xffd46b82)],
+                    onTap: () => _unavailable(context, '真人带本'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _HomeCartoonCard(
+                    icon: Icons.smart_toy_outlined,
+                    title: 'AI剧本杀',
+                    subtitle: '随时开局',
+                    badge: 'AI',
+                    colors: const [Color(0xff164b68), Color(0xff3c9fa9)],
+                    onTap: () => _unavailable(context, 'AI剧本杀'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _HomeCartoonCard(
+                    icon: Icons.mic_external_on_outlined,
+                    title: '嗨歌抢唱',
+                    subtitle: '轮到你开唱',
+                    badge: 'NEW',
+                    colors: const [Color(0xff713b42), Color(0xffe38d57)],
+                    onTap: () => _unavailable(context, '嗨歌抢唱'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _HomeCartoonCard(
+                    icon: Icons.casino_outlined,
+                    title: '骗子酒馆',
+                    subtitle: '猜猜谁在说谎',
+                    badge: 'NEW',
+                    colors: const [Color(0xff254d72), Color(0xff63a5c5)],
+                    onTap: () => _unavailable(context, '骗子酒馆'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _HomeCartoonCard(
+              icon: Icons.flight_takeoff_outlined,
+              title: '飞行棋',
+              subtitle: '轻松玩一局',
+              badge: 'PLAY',
+              colors: const [Color(0xff2c5d3a), Color(0xff83bc67)],
+              onTap: () => _unavailable(context, '飞行棋'),
+            ),
+            const SizedBox(height: 22),
             Row(children: [
               _HomeQuickAction(
                   icon: Icons.forum_outlined,
@@ -1823,6 +1894,85 @@ class _HomeVoiceMatch extends StatelessWidget {
               child: const Icon(Icons.mic_none, color: Colors.white, size: 29),
             ),
           ]),
+        ),
+      );
+}
+
+class _HomeCartoonCard extends StatelessWidget {
+  const _HomeCartoonCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.badge,
+    required this.colors,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String badge;
+  final List<Color> colors;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Ink(
+          height: 112,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: colors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -12,
+                bottom: -18,
+                child: Icon(icon,
+                    size: 112, color: Colors.white.withValues(alpha: .16)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .88),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        badge,
+                        style: TextStyle(
+                          color: colors.first,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(title,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 3),
+                    Text(subtitle,
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: .82),
+                            fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
 }
