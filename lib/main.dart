@@ -3470,10 +3470,8 @@ class _ProfileShortcuts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entries = <Map<String, dynamic>>[
-      {'icon': Icons.account_balance_wallet_outlined, 'label': 'DD币中心'},
-      {'icon': Icons.auto_awesome_outlined, 'label': '超级会员'},
+      {'icon': Icons.auto_awesome_outlined, 'label': '会员中心'},
       {'icon': Icons.storefront_outlined, 'label': '个性商城'},
-      {'icon': Icons.sports_esports_outlined, 'label': '娱乐中心'},
       {'icon': Icons.collections_bookmark_outlined, 'label': '数字藏馆'},
     ];
     return Container(
