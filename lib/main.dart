@@ -1782,7 +1782,26 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
   List<Widget> _buildCommentTree(List<DDComment> source) {
     final roots = source.where((c) => c.parentId == null).toList();
-    return roots.map(_commentTile).toList();
+    final repliesByParent = <int, List<DDComment>>{};
+    for (final comment in source.where((c) => c.parentId != null)) {
+      repliesByParent.putIfAbsent(comment.parentId!, () => []).add(comment);
+    }
+    final result = <Widget>[];
+    for (final root in roots) {
+      result.add(_commentTile(root));
+      final replies = repliesByParent[root.id] ?? const <DDComment>[];
+      if (replies.isNotEmpty) {
+        result.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 42),
+            child: Column(
+              children: replies.map(_commentTile).toList(),
+            ),
+          ),
+        );
+      }
+    }
+    return result;
   }
 
   Widget _commentTile(DDComment comment) => InkWell(
