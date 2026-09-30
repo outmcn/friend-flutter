@@ -975,8 +975,8 @@ class _DynamicPostCard extends StatelessWidget {
                   ),
                   if (onFollow != null && post.userId != null)
                     OutlinedButton(
-                      onPressed: onFollow,
-                      child: Text(post.following ? '取消关注' : '关注'),
+                      onPressed: post.following ? null : onFollow,
+                      child: Text(post.following ? '私聊' : '关注'),
                     ),
                 ],
               ),
@@ -1882,10 +1882,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                             ])),
                         if (!isOwner)
                           OutlinedButton(
-                            onPressed: followLoading ? null : _toggleFollow,
+                            onPressed: followLoading || item.following
+                                ? null
+                                : _toggleFollow,
                             child: Text(followLoading
                                 ? '处理中…'
-                                : (item.following ? '已关注' : '关注')),
+                                : (item.following ? '私聊' : '关注')),
                           ),
                       ]),
                       const SizedBox(height: 18),
@@ -2212,10 +2214,12 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                         Text('${p?['city'] ?? ''}'),
                         const SizedBox(height: 10),
                         FilledButton(
-                            onPressed: actionLoading ? null : toggleFollow,
+                            onPressed: actionLoading || following
+                                ? null
+                                : toggleFollow,
                             child: Text(actionLoading
                                 ? '处理中…'
-                                : (following ? '已关注' : '关注')))
+                                : (following ? '私聊' : '关注')))
                       ]))
                 ]),
                 const SizedBox(height: 24),
