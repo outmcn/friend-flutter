@@ -965,13 +965,6 @@ class _DynamicPostCard extends StatelessWidget {
                               style:
                                   const TextStyle(fontWeight: FontWeight.w700)),
                         ),
-                        Text(formatDDTime(post.createdAt),
-                            style: Theme.of(context).textTheme.bodySmall),
-                        if (post.distanceKm != null)
-                          Text(
-                            '${post.distanceKm!.toStringAsFixed(1)} km',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
                       ],
                     ),
                   ),
@@ -1002,6 +995,22 @@ class _DynamicPostCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 10),
+              Row(
+                children: [
+                  Text(
+                    formatDDTime(post.createdAt),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (post.distanceKm != null) ...[
+                    const SizedBox(width: 10),
+                    Text(
+                      '${post.distanceKm!.toStringAsFixed(1)} km',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 6),
               Row(
                 children: [
                   TextButton.icon(
