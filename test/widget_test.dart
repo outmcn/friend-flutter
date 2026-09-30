@@ -18,4 +18,24 @@ void main() {
     expect(find.text('密码登录'), findsOneWidget);
     expect(find.text('使用手机号和密码登录 DD'), findsOneWidget);
   });
+
+  testWidgets('DD startup network gate blocks when unavailable',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: StartupNetworkGate(checker: () async => false),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('网络连接失败'), findsOneWidget);
+    expect(find.text('重新连接'), findsOneWidget);
+  });
+
+  testWidgets('DD startup network gate opens auth after connection',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: StartupNetworkGate(checker: () async => true),
+    ));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(AuthGate), findsOneWidget);
+  });
 }

@@ -107,8 +107,114 @@ class DDApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const AuthGate(),
+      home: const StartupNetworkGate(),
     );
+  }
+}
+
+class StartupNetworkGate extends StatefulWidget {
+  const StartupNetworkGate({super.key, this.checker});
+  final Future<bool> Function()? checker;
+
+  @override
+  State<StartupNetworkGate> createState() => _StartupNetworkGateState();
+}
+
+class _StartupNetworkGateState extends State<StartupNetworkGate> {
+  bool checking = true;
+  bool connected = false;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    checkNetwork();
+  }
+
+  Future<bool> _probeNetwork() async {
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+    try {
+      final request = await client
+          .getUrl(Uri.parse('https://friend.outmcn.net/api'))
+          .timeout(const Duration(seconds: 10));
+      final response =
+          await request.close().timeout(const Duration(seconds: 10));
+      await response.drain<void>();
+      return response.statusCode < 500;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<void> checkNetwork() async {
+    if (mounted) {
+      setState(() {
+        checking = true;
+        error = null;
+      });
+    }
+    try {
+      final reachable = await (widget.checker ?? _probeNetwork)();
+      if (!mounted) return;
+      setState(() {
+        connected = reachable;
+        checking = false;
+        error = reachable ? null : '服务器暂时无法连接';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        connected = false;
+        checking = false;
+        error = '请检查网络连接后重试';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (checking) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 14),
+              Text('正在连接网络…'),
+            ],
+          ),
+        ),
+      );
+    }
+    if (!connected) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off_outlined, size: 48),
+                const SizedBox(height: 16),
+                const Text('网络连接失败',
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                Text(error ?? '请连接网络后重试', textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: checkNetwork,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('重新连接'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return const AuthGate();
   }
 }
 
