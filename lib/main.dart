@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
 
@@ -1804,8 +1805,67 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     return result;
   }
 
+  Future<void> _commentMenu(DDComment comment) async {
+    final isMine = currentUserId != null && comment.userId == currentUserId;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: const Text('复制'),
+              onTap: () => Navigator.pop(context, 'copy'),
+            ),
+            ListTile(
+              leading:
+                  Icon(isMine ? Icons.delete_outline : Icons.report_outlined),
+              title: Text(isMine ? '删除' : '举报'),
+              onTap: () => Navigator.pop(context, isMine ? 'delete' : 'report'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == 'copy') {
+      await Clipboard.setData(ClipboardData(text: comment.content));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已复制')),
+        );
+      }
+    } else if (action == 'delete') {
+      try {
+        await service.deleteComment(await token(), comment.id);
+        await load();
+      } catch (e) {
+        if (mounted) {
+          setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+        }
+      }
+    } else if (action == 'report') {
+      try {
+        await service.reportComment(
+          token: await token(),
+          commentId: comment.id,
+          reason: '违规评论',
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('举报已提交')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+        }
+      }
+    }
+  }
+
   Widget _commentTile(DDComment comment) => InkWell(
         onTap: () => setState(() => replyingTo = comment),
+        onLongPress: () => _commentMenu(comment),
         child: ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const CircleAvatar(

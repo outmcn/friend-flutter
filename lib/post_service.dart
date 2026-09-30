@@ -59,17 +59,20 @@ class DDPost {
 class DDComment {
   const DDComment(
       {required this.id,
+      required this.userId,
       required this.parentId,
       required this.nickname,
       required this.content,
       required this.createdAt});
   final int id;
+  final int? userId;
   final int? parentId;
   final String nickname;
   final String content;
   final String createdAt;
   factory DDComment.fromJson(Map<String, dynamic> json) => DDComment(
         id: (json['id'] as num?)?.toInt() ?? 0,
+        userId: (json['userId'] as num?)?.toInt(),
         parentId: (json['parentId'] as num?)?.toInt(),
         nickname: '${json['nickname'] ?? '用户'}',
         content: '${json['content'] ?? ''}',
@@ -269,6 +272,40 @@ class DDPostService {
         response.statusCode >= 300 ||
         decoded['ok'] != true) {
       throw Exception('${decoded['message'] ?? '评论发布失败'}');
+    }
+  }
+
+  Future<void> deleteComment(String token, int commentId) async {
+    final response = await _client.delete(
+      _base.resolve('/api/comments/$commentId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '删除评论失败'}');
+    }
+  }
+
+  Future<void> reportComment({
+    required String token,
+    required int commentId,
+    required String reason,
+  }) async {
+    final response = await _client.post(
+      _base.resolve('/api/comments/$commentId/report'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'reason': reason}),
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? '举报评论失败'}');
     }
   }
 
