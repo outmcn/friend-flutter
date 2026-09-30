@@ -6149,9 +6149,20 @@ class _DistanceBadge extends StatelessWidget {
           color: Theme.of(context).colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(99),
         ),
-        child: Text(
-          '${distanceKm.toStringAsFixed(2)} km',
-          style: Theme.of(context).textTheme.labelSmall,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              TIcons.location,
+              size: 13,
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              '${distanceKm.toStringAsFixed(2)} km',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
         ),
       );
 }
