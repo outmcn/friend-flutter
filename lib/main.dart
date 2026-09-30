@@ -3986,7 +3986,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   final DDPostService service = DDPostService();
   Map<String, dynamic>? profile;
   List<DDPost> posts = [];
-  int selectedTab = 0;
+  int selectedTab = 1;
   bool loading = true;
   bool tabLoading = false;
   String? error;
@@ -4022,10 +4022,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
       if (t.isEmpty) throw Exception('请先登录');
       final loadedProfile = await service.fetchMe(t);
       final loadedPosts = targetTab == 0
-          ? await service.fetchMyPosts(t)
+          ? const <DDPost>[]
           : targetTab == 1
-              ? await service.fetchLikedPosts(t)
-              : await service.fetchFavoritedPosts(t);
+              ? await service.fetchMyPosts(t)
+              : targetTab == 2
+                  ? await service.fetchLikedPosts(t)
+                  : await service.fetchFavoritedPosts(t);
       if (!mounted) return;
       setState(() {
         profile = loadedProfile;
@@ -4170,7 +4172,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   _MyProfileVoiceCard(name: '${p?['nickname'] ?? '我'}的声音名片'),
                   const SizedBox(height: 14),
                   Row(
-                    children: ['动态', '喜欢', '收藏']
+                    children: ['置顶', '动态', '喜欢', '收藏']
                         .asMap()
                         .entries
                         .map((entry) => Expanded(
@@ -4231,10 +4233,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     _MyPostWaterfall(
                       posts: posts,
                       emptyLabel: selectedTab == 0
-                          ? '动态'
+                          ? '置顶'
                           : selectedTab == 1
-                              ? '喜欢'
-                              : '收藏',
+                              ? '动态'
+                              : selectedTab == 2
+                                  ? '喜欢'
+                                  : '收藏',
                     ),
                 ],
               ),
@@ -4272,70 +4276,47 @@ class _MyPostWaterfall extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (posts.isEmpty) return _ProfileEmptyTab(label: emptyLabel);
-    final left = <DDPost>[];
-    final right = <DDPost>[];
-    for (var i = 0; i < posts.length; i++) {
-      (i.isEven ? left : right).add(posts[i]);
-    }
-    Widget column(List<DDPost> items) => Expanded(
-          child: Column(
-            children:
-                items.map((post) => _MyWaterfallCard(post: post)).toList(),
-          ),
-        );
-    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      column(left),
-      const SizedBox(width: 10),
-      column(right),
-    ]);
+    return Column(
+      children: posts.map((post) => _MyListCard(post: post)).toList(),
+    );
   }
 }
 
-class _MyWaterfallCard extends StatelessWidget {
-  const _MyWaterfallCard({required this.post});
+class _MyListCard extends StatelessWidget {
+  const _MyListCard({required this.post});
   final DDPost post;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             if (post.imageUrl?.trim().isNotEmpty == true)
               ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: BorderRadius.circular(14),
                 child: Image.network(
                   DDPostService.mediaUrl(post.imageUrl),
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox(
-                    height: 112,
-                    child:
-                        Center(child: Icon(Icons.image_not_supported_outlined)),
-                  ),
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(11, 10, 11, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(post.content.isEmpty ? '分享了一条动态' : post.content,
-                      maxLines: 4, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 6),
-                  Text(
-                    formatDDTime(post.createdAt),
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ],
+            if (post.videoUrl?.trim().isNotEmpty == true)
+              _NetworkVideoPreview(url: post.videoUrl!),
+            if (post.content.trim().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(post.content,
+                    style: const TextStyle(fontSize: 16, height: 1.4)),
               ),
+            const SizedBox(height: 6),
+            Text(
+              formatDDTime(post.createdAt),
+              style: Theme.of(context).textTheme.labelSmall,
             ),
-          ]),
+            const Divider(height: 20),
+          ],
         ),
       );
 }
