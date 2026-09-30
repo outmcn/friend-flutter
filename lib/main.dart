@@ -1870,12 +1870,39 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         onLongPress: () => _commentMenu(comment),
         child: ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: const CircleAvatar(
-            child: Icon(Icons.person_outline, size: 18),
+          leading: InkWell(
+            onTap: comment.userId == null
+                ? null
+                : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OtherProfilePage(
+                          userId: comment.userId,
+                          name: comment.nickname,
+                        ),
+                      ),
+                    ),
+            borderRadius: BorderRadius.circular(20),
+            child: const CircleAvatar(
+              child: Icon(Icons.person_outline, size: 18),
+            ),
           ),
-          title: Text(
-            comment.nickname,
-            style: const TextStyle(fontWeight: FontWeight.w700),
+          title: InkWell(
+            onTap: comment.userId == null
+                ? null
+                : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OtherProfilePage(
+                          userId: comment.userId,
+                          name: comment.nickname,
+                        ),
+                      ),
+                    ),
+            child: Text(
+              comment.nickname,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
           subtitle: Text(comment.content),
           trailing: Text(
