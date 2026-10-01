@@ -4180,11 +4180,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        const Icon(
-                                          Icons.verified,
-                                          size: 17,
-                                          color: Colors.lightBlue,
-                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 6),
