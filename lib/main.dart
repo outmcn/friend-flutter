@@ -2207,15 +2207,7 @@ class _HomeFolderCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: const BoxDecoration(
-                          color: Colors.white24,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(icon, color: Colors.white, size: 27),
-                      ),
+                      Icon(icon, color: Colors.white, size: 27),
                     ],
                   ),
                 ),
