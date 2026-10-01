@@ -1058,16 +1058,8 @@ class HomePage extends StatelessWidget {
         body: SafeArea(
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
             children: [
-              Container(
-                height: 12,
-                decoration: BoxDecoration(
-                  color: const Color(0xffff83c4),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(height: 18),
               SizedBox(
                 height: 248,
                 child: Row(
@@ -2156,7 +2148,7 @@ class _HomeFolderCard extends StatelessWidget {
             borderRadius: borderRadius,
             child: Ink(
               height: height,
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              padding: const EdgeInsets.fromLTRB(14, 22, 14, 12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(colors: colors),
                 borderRadius: borderRadius,
@@ -2172,18 +2164,34 @@ class _HomeFolderCard extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text(title,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      Text(subtitle,
-                          style: const TextStyle(color: Colors.white70)),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 11),
+                      ),
                       const Spacer(),
-                      Text(meta,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 11)),
+                      Text(
+                        meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 9,
+                        ),
+                      ),
                     ])),
                 Container(
                     width: 58,
