@@ -2140,87 +2140,159 @@ class _HomeFolderCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 13),
-        child: Stack(clipBehavior: Clip.none, children: [
-          InkWell(
-            onTap: onTap,
-            borderRadius: borderRadius,
-            child: Ink(
-              height: height,
-              padding: const EdgeInsets.fromLTRB(14, 22, 14, 12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: colors),
-                borderRadius: borderRadius,
-                boxShadow: [
-                  BoxShadow(
-                      color: colors.last.withValues(alpha: .26),
+  Widget build(BuildContext context) {
+    final shape = _FolderShape(borderRadius: borderRadius);
+    return Padding(
+      padding: const EdgeInsets.only(top: 13),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              customBorder: shape,
+              child: Ink(
+                height: height,
+                decoration: ShapeDecoration(
+                  gradient: LinearGradient(colors: colors),
+                  shape: shape,
+                  shadows: [
+                    BoxShadow(
+                      color: colors.last.withValues(alpha: .28),
                       blurRadius: 18,
-                      offset: const Offset(0, 8))
-                ],
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              meta,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: const BoxDecoration(
+                          color: Colors.white24,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, color: Colors.white, size: 27),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Row(children: [
-                Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 11),
-                      ),
-                      const Spacer(),
-                      Text(
-                        meta,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 9,
-                        ),
-                      ),
-                    ])),
-                Container(
-                    width: 58,
-                    height: 58,
-                    decoration: const BoxDecoration(
-                        color: Colors.white24, shape: BoxShape.circle),
-                    child: Icon(icon, color: Colors.white, size: 29)),
-              ]),
             ),
           ),
           Align(
             alignment: tabAlignment,
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 18),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
               decoration: BoxDecoration(
-                  color: colors.first.withValues(alpha: .94),
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(12))),
-              child: Text(tabLabel,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2)),
+                color: colors.first.withValues(alpha: .96),
+                borderRadius: const BorderRadius.all(Radius.circular(10)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .14),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                tabLabel,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
+                ),
+              ),
             ),
           ),
-        ]),
-      );
+        ],
+      ),
+    );
+  }
+}
+
+class _FolderShape extends ShapeBorder {
+  const _FolderShape({required this.borderRadius});
+  final BorderRadius borderRadius;
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    final r = borderRadius.resolve(textDirection);
+    final path = Path();
+    path.moveTo(rect.left + 20, rect.top);
+    path.lineTo(rect.left + 82, rect.top);
+    path.quadraticBezierTo(
+        rect.left + 92, rect.top, rect.left + 99, rect.top + 9);
+    path.lineTo(rect.right - 24, rect.top + 9);
+    path.quadraticBezierTo(rect.right, rect.top + 9, rect.right, rect.top + 33);
+    path.lineTo(rect.right, rect.bottom - r.bottomRight.y);
+    path.quadraticBezierTo(
+        rect.right, rect.bottom, rect.right - r.bottomRight.x, rect.bottom);
+    path.lineTo(rect.left + r.bottomLeft.x, rect.bottom);
+    path.quadraticBezierTo(
+        rect.left, rect.bottom, rect.left, rect.bottom - r.bottomLeft.y);
+    path.lineTo(rect.left, rect.top + r.topLeft.y);
+    path.quadraticBezierTo(rect.left, rect.top, rect.left + 20, rect.top);
+    path.close();
+    return path;
+  }
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) =>
+      getOuterPath(rect, textDirection: textDirection);
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
+
+  @override
+  ShapeBorder scale(double t) => _FolderShape(borderRadius: borderRadius * t);
 }
 
 class _HomeMiniCard extends StatelessWidget {
