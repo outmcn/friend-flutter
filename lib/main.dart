@@ -1056,7 +1056,7 @@ class HomePage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
             children: [
               SizedBox(
-                height: 193,
+                height: 153,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -1071,7 +1071,7 @@ class HomePage extends StatelessWidget {
                         colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
                         tabAlignment: Alignment.topRight,
                         borderRadius: BorderRadius.circular(28),
-                        height: 180,
+                        height: 140,
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -1098,7 +1098,7 @@ class HomePage extends StatelessWidget {
                               ],
                               tabAlignment: Alignment.topLeft,
                               borderRadius: BorderRadius.circular(24),
-                              height: 77,
+                              height: 63,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -1121,7 +1121,7 @@ class HomePage extends StatelessWidget {
                               ],
                               tabAlignment: Alignment.topLeft,
                               borderRadius: BorderRadius.circular(24),
-                              height: 77,
+                              height: 63,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
