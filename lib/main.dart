@@ -4486,37 +4486,59 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   const SizedBox(height: 18),
                   _MyProfileVoiceCard(name: '${p?['nickname'] ?? '我'}的声音名片'),
                   const SizedBox(height: 14),
-                  Row(
-                    children: ['置顶', '动态', '收藏', '喜欢']
-                        .asMap()
-                        .entries
-                        .map((entry) => Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => load(tab: entry.key),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 160),
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8, horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    color: selectedTab == entry.key
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(entry.value,
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: .72),
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: Row(
+                      children: ['置顶', '动态', '收藏', '喜欢']
+                          .asMap()
+                          .entries
+                          .map((entry) => Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => load(tab: entry.key),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    alignment: Alignment.center,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 6),
+                                    decoration: BoxDecoration(
+                                      color: selectedTab == entry.key
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: Text(
+                                      entry.value,
+                                      textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                        fontWeight: selectedTab == entry.key
+                                            ? FontWeight.w800
+                                            : FontWeight.w600,
                                         color: selectedTab == entry.key
                                             ? Theme.of(context)
                                                 .colorScheme
                                                 .onPrimary
-                                            : null,
-                                      )),
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: .72),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ))
-                        .toList(),
+                              ))
+                          .toList(),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   if (error != null)
