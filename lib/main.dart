@@ -984,7 +984,10 @@ class _DDShellState extends State<DDShell> {
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: index,
-          onDestinationSelected: (value) => setState(() => index = value),
+          onDestinationSelected: (value) {
+            HapticFeedback.selectionClick();
+            setState(() => index = value);
+          },
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.sports_esports_outlined),
@@ -1742,7 +1745,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
     super.dispose();
   }
 
-  Future<void> load({bool fromRefresh = false, int? tab}) async {
+  Future<void> load({int? tab, bool fromRefresh = false}) async {
+    if (fromRefresh) HapticFeedback.mediumImpact();
     final targetTab = tab ?? selectedTab;
     final switchingTab = tab != null && !fromRefresh && !loading;
     if (switchingTab) {
@@ -1850,6 +1854,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 .map((entry) => GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
+                        HapticFeedback.selectionClick();
                         final now = DateTime.now();
                         final isDoubleTap = _lastTabIndex == entry.key &&
                             _lastTabTapAt != null &&
