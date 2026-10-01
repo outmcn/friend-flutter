@@ -1750,7 +1750,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     if (switchingTab) {
       setState(() {
         selectedTab = targetTab;
-        tabLoading = true;
+        tabLoading = false;
         error = null;
       });
     }
@@ -1767,13 +1767,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
-      final cachedCity = (p.getString('dd.location.city') ?? '').trim();
-      if (mounted && cachedCity.isNotEmpty && cityLabel != cachedCity) {
-        setState(() => cityLabel = cachedCity);
-      }
-      await syncCachedLocation(service, t);
-      final city = await cachedCityLabel(service, t);
-      if (mounted && cityLabel != city) setState(() => cityLabel = city);
       final cacheKey = 'dd.discover.cache.$targetTab';
       final cacheAtKey = '$cacheKey.at';
       final cachedAt = p.getInt(cacheAtKey);
@@ -1783,17 +1776,36 @@ class _DiscoverPageState extends State<DiscoverPage> {
           cachedJson != null &&
           DateTime.now().millisecondsSinceEpoch - cachedAt <
               _cacheDuration.inMilliseconds;
-      final loaded = cacheFresh
+      final cachedPosts = cacheFresh
           ? (jsonDecode(cachedJson!) as List)
               .whereType<Map<String, dynamic>>()
               .map(DDPost.fromJson)
               .toList()
-          : (targetTab == 0
+          : <DDPost>[];
+      if (cacheFresh && mounted) {
+        setState(() {
+          posts = cachedPosts;
+          selectedTab = targetTab;
+          loading = false;
+          tabLoading = false;
+        });
+      }
+      final cachedCity = (p.getString('dd.location.city') ?? '').trim();
+      if (mounted && cachedCity.isNotEmpty && cityLabel != cachedCity) {
+        setState(() => cityLabel = cachedCity);
+      }
+      await syncCachedLocation(service, t);
+      final city = await cachedCityLabel(service, t);
+      if (mounted && cityLabel != city) setState(() => cityLabel = city);
+      final shouldFetch = fromRefresh || switchingTab || !cacheFresh;
+      final loaded = shouldFetch
+          ? (targetTab == 0
               ? await service.fetchPosts(t)
               : targetTab == 1
                   ? await service.fetchNearbyPosts(t)
-                  : await service.fetchFollowingPosts(t));
-      if (!cacheFresh) {
+                  : await service.fetchFollowingPosts(t))
+          : cachedPosts;
+      if (shouldFetch) {
         await p.setString(
           cacheKey,
           jsonEncode(loaded
@@ -1853,7 +1865,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        load(tab: entry.key, fromRefresh: true);
+                        load(tab: entry.key);
                       },
                       child: Padding(
                         padding:
