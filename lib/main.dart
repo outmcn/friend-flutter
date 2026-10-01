@@ -4225,6 +4225,16 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                             label: '赞', value: '$profileLikes'),
                                       ],
                                     ),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      children: const [
+                                        _ProfileTag(text: '御姐'),
+                                        _ProfileTag(text: '美食'),
+                                        _ProfileTag(text: '音乐'),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
