@@ -4402,90 +4402,85 @@ class _DDProfilePageState extends State<DDProfilePage> {
                       subtitle: error!,
                       onRetry: load,
                     ),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Stack(children: [
-                                CircleAvatar(
-                                  radius: 40,
-                                  backgroundImage:
-                                      (p?['avatar']?.toString() ?? '')
-                                              .trim()
-                                              .isNotEmpty
-                                          ? NetworkImage(DDPostService.mediaUrl(
-                                              p!['avatar'].toString()))
-                                          : null,
-                                  child: (p?['avatar']?.toString() ?? '')
-                                          .trim()
-                                          .isEmpty
-                                      ? const Icon(Icons.person, size: 38)
-                                      : null,
-                                ),
-                                const Positioned(
-                                    right: 0, bottom: 1, child: _OnlineDot()),
-                              ]),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                  child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(children: [
-                                    Flexible(
-                                        child: Text(
-                                            '${p?['nickname'] ?? 'DD 用户'}',
-                                            style: const TextStyle(
-                                                fontSize: 23,
-                                                fontWeight: FontWeight.w800))),
-                                    const SizedBox(width: 6),
-                                    const Icon(Icons.verified,
-                                        size: 17, color: Colors.lightBlue),
-                                    const Spacer(),
-                                    OutlinedButton.icon(
-                                      onPressed: () async {
-                                        await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const EditProfilePage()));
-                                        if (mounted) load();
-                                      },
-                                      icon: const Icon(Icons.edit_outlined,
-                                          size: 16),
-                                      label: const Text('编辑'),
-                                    ),
-                                  ]),
-                                  const SizedBox(height: 9),
-                                  Wrap(spacing: 7, runSpacing: 7, children: [
-                                    _ProfileTag(
-                                        text: '${p?['activeDays'] ?? 0} 天'),
-                                    _ProfileTag(
-                                        text: '${p?['city'] ?? '未知地区'}'),
-                                  ]),
-                                ],
-                              )),
-                            ],
-                          ),
-                          const Divider(height: 30),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _Stat(
-                                  value: '${p?['following'] ?? 0}',
-                                  label: '关注'),
-                              _Stat(
-                                  value: '${p?['followers'] ?? 0}',
-                                  label: '粉丝'),
-                              _Stat(value: '${p?['likes'] ?? 0}', label: '获赞'),
-                            ],
-                          ),
-                        ],
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Stack(children: [
+                              CircleAvatar(
+                                radius: 40,
+                                backgroundImage:
+                                    (p?['avatar']?.toString() ?? '')
+                                            .trim()
+                                            .isNotEmpty
+                                        ? NetworkImage(DDPostService.mediaUrl(
+                                            p!['avatar'].toString()))
+                                        : null,
+                                child: (p?['avatar']?.toString() ?? '')
+                                        .trim()
+                                        .isEmpty
+                                    ? const Icon(Icons.person, size: 38)
+                                    : null,
+                              ),
+                              const Positioned(
+                                  right: 0, bottom: 1, child: _OnlineDot()),
+                            ]),
+                            const SizedBox(width: 14),
+                            Expanded(
+                                child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(children: [
+                                  Flexible(
+                                      child: Text(
+                                          '${p?['nickname'] ?? 'DD 用户'}',
+                                          style: const TextStyle(
+                                              fontSize: 23,
+                                              fontWeight: FontWeight.w800))),
+                                  const SizedBox(width: 6),
+                                  const Icon(Icons.verified,
+                                      size: 17, color: Colors.lightBlue),
+                                  const Spacer(),
+                                  OutlinedButton.icon(
+                                    onPressed: () async {
+                                      await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const EditProfilePage()));
+                                      if (mounted) load();
+                                    },
+                                    icon: const Icon(Icons.edit_outlined,
+                                        size: 16),
+                                    label: const Text('编辑'),
+                                  ),
+                                ]),
+                                const SizedBox(height: 9),
+                                Wrap(spacing: 7, runSpacing: 7, children: [
+                                  _ProfileTag(
+                                      text: '${p?['activeDays'] ?? 0} 天'),
+                                  _ProfileTag(text: '${p?['city'] ?? '未知地区'}'),
+                                ]),
+                              ],
+                            )),
+                          ],
+                        ),
+                        const Divider(height: 30),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _Stat(
+                                value: '${p?['following'] ?? 0}', label: '关注'),
+                            _Stat(
+                                value: '${p?['followers'] ?? 0}', label: '粉丝'),
+                            _Stat(value: '${p?['likes'] ?? 0}', label: '获赞'),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 18),
