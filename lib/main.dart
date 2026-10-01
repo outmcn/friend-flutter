@@ -4095,6 +4095,16 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       appBar: AppBar(
         title: const Text('Ta的主页'),
         actions: [
+          if (!loading)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: _ProfileLikePill(
+                liked: isProfileLiked,
+                count: profileLikes,
+                onTap:
+                    actionLoading || isProfileLiked ? null : toggleProfileLike,
+              ),
+            ),
           IconButton(
             onPressed: () => _showProfileMenu(context),
             icon: _tdIcon('more'),
@@ -4216,23 +4226,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                onPressed: actionLoading || isProfileLiked
-                                    ? null
-                                    : toggleProfileLike,
-                                icon: Icon(
-                                  isProfileLiked
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color:
-                                      isProfileLiked ? Colors.pinkAccent : null,
-                                  size: 20,
-                                ),
-                              ),
-                              Text('$profileLikes'),
                             ],
                           ),
                         ],
@@ -4687,6 +4680,47 @@ class _ProfileEmptyTab extends StatelessWidget {
             const SizedBox(height: 10),
             Text('暂无$label内容'),
           ]),
+        ),
+      );
+}
+
+class _ProfileLikePill extends StatelessWidget {
+  const _ProfileLikePill({
+    required this.liked,
+    required this.count,
+    required this.onTap,
+  });
+  final bool liked;
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: BoxDecoration(
+              color: liked
+                  ? Colors.pinkAccent.withValues(alpha: .16)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  liked ? Icons.favorite : Icons.favorite_border,
+                  color: liked ? Colors.pinkAccent : null,
+                  size: 17,
+                ),
+                const SizedBox(width: 4),
+                Text('$count'),
+              ],
+            ),
+          ),
         ),
       );
 }
