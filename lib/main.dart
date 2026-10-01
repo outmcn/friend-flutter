@@ -1109,18 +1109,14 @@ class HomePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           Expanded(
-                            child: _HomeFolderCard(
+                            child: _HomeNormalCard(
                               icon: Icons.auto_awesome,
                               title: '缘分匹配',
                               subtitle: '遇见聊得来的人',
-                              meta: 'FATE',
-                              tabLabel: 'FATE',
                               colors: const [
                                 Color(0xffff9a5a),
-                                Color(0xffff5f8f)
+                                Color(0xffff5f8f),
                               ],
-                              tabAlignment: Alignment.topLeft,
-                              borderRadius: BorderRadius.circular(24),
                               height: 63,
                               onTap: () => Navigator.push(
                                 context,
@@ -2227,6 +2223,65 @@ class _HomeFolderCard extends StatelessWidget {
       ],
     );
   }
+}
+
+class _HomeNormalCard extends StatelessWidget {
+  const _HomeNormalCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.colors,
+    required this.height,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<Color> colors;
+  final double height;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Ink(
+            height: height,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: colors),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                ),
+                const SizedBox(width: 6),
+                Icon(icon, color: Colors.white, size: 22),
+              ],
+            ),
+          ),
+        ),
+      );
 }
 
 class _FolderShape extends ShapeBorder {
