@@ -963,44 +963,52 @@ class DDShell extends StatefulWidget {
 
 class _DDShellState extends State<DDShell> {
   int index = 0;
+  late final List<Widget> pages;
+
   @override
-  Widget build(BuildContext context) {
-    final pages = [
-      const HomePage(),
-      const DiscoverPage(),
-      const ChatPage(),
-      const DDProfilePage(),
+  void initState() {
+    super.initState();
+    pages = const [
+      HomePage(),
+      DiscoverPage(),
+      ChatPage(),
+      DDProfilePage(),
     ];
-    return Scaffold(
-      body: pages[index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (value) => setState(() => index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.sports_esports_outlined),
-            selectedIcon: Icon(Icons.sports_esports),
-            label: '娱乐',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: '发现',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: '聊天',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: '我的',
-          ),
-        ],
-      ),
-    );
   }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: IndexedStack(
+          index: index,
+          children: pages,
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: index,
+          onDestinationSelected: (value) => setState(() => index = value),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.sports_esports_outlined),
+              selectedIcon: Icon(Icons.sports_esports),
+              label: '娱乐',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.explore_outlined),
+              selectedIcon: Icon(Icons.explore),
+              label: '发现',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.chat_bubble_outline),
+              selectedIcon: Icon(Icons.chat_bubble),
+              label: '聊天',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: '我的',
+            ),
+          ],
+        ),
+      );
 }
 
 class _PageLoadState extends StatelessWidget {
