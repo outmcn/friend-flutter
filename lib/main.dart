@@ -4194,12 +4194,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                                 '在线 ${p?['activeDays'] ?? 0} 天'),
                                       ],
                                     ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      '喜欢分享日常，也期待遇见聊得来的人。',
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
-                                    ),
                                   ],
                                 ),
                               ),
