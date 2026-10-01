@@ -1046,10 +1046,7 @@ class _PageErrorState extends StatelessWidget {
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  void _unavailable(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('$feature暂未接入')));
-  }
+  void _unavailable(BuildContext context, String feature) {}
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -1218,10 +1215,7 @@ class HomePage extends StatelessWidget {
 class _LegacyHomePage extends StatelessWidget {
   const _LegacyHomePage({super.key});
 
-  void _unavailable(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('$feature暂未接入')));
-  }
+  void _unavailable(BuildContext context, String feature) {}
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -5074,8 +5068,7 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
 
   void _open(CompanionProfile c) => Navigator.push(context,
       MaterialPageRoute(builder: (_) => CompanionProfilePage(data: c)));
-  void _notice(String feature) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text('$feature暂未接入')));
+  void _notice(String feature) {}
 }
 
 class CompanionProfilePage extends StatelessWidget {
@@ -6407,10 +6400,7 @@ class _ProfileShortcuts extends StatelessWidget {
             .map((entry) => Expanded(
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: entry['label'] == '个性商城'
-                        ? onEdit
-                        : () => ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${entry['label']}暂未接入'))),
+                    onTap: entry['label'] == '个性商城' ? onEdit : () {},
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
