@@ -4070,6 +4070,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool isFollowing = false;
   bool isProfileLiked = false;
   int profileLikes = 0;
+  int selectedContentTab = 0;
   String? error;
 
   @override
@@ -4300,29 +4301,28 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   const SizedBox(height: 18),
                   _OtherProfileVoiceCard(
                       name: '${p?['nickname'] ?? widget.name}的声音名片'),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 24, bottom: 10),
-                    child: Text('Ta的动态',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 14),
+                  _MyProfileIconTabs(
+                    selectedTab: selectedContentTab,
+                    onSelect: (tab) => setState(() => selectedContentTab = tab),
                   ),
+                  const SizedBox(height: 12),
                   if (posts.isEmpty)
-                    const _EmptyStateCard(
-                        icon: Icons.article_outlined,
-                        title: '暂无动态',
-                        subtitle: 'Ta 还没有发布动态')
+                    const Padding(
+                      padding: EdgeInsets.only(top: 42),
+                      child: Center(child: Text('暂无内容')),
+                    )
                   else
-                    ...posts.map((post) => _DynamicPostCard(
-                        post: post,
-                        listMode: true,
-                        authorNavigation: false,
-                        onLike: () {},
-                        onFavorite: () {},
-                        onOpen: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) =>
-                                    DynamicDetailPage(postId: post.id))))),
+                    _MyProfileGrid(posts: posts),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24, bottom: 12),
+                    child: Center(
+                      child: Text(
+                        '暂时没有更多了',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
