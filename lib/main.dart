@@ -1512,6 +1512,9 @@ class _DynamicPostCard extends StatelessWidget {
           children: [
             TextButton.icon(
               onPressed: onLike,
+              style: TextButton.styleFrom(
+                foregroundColor: post.liked ? Colors.red : null,
+              ),
               icon: Icon(TIcons.thumb_up_1),
               label: Text('${post.likes}'),
             ),
@@ -1522,6 +1525,9 @@ class _DynamicPostCard extends StatelessWidget {
             ),
             TextButton.icon(
               onPressed: onFavorite,
+              style: TextButton.styleFrom(
+                foregroundColor: post.favorited ? Colors.red : null,
+              ),
               icon: Icon(TIcons.bookmark),
               label: Text('${post.favorites}'),
             ),
@@ -1706,6 +1712,7 @@ class DiscoverPage extends StatefulWidget {
 
 class _DiscoverPageState extends State<DiscoverPage> {
   final DDPostService service = DDPostService();
+  static const _cacheDuration = Duration(minutes: 10);
   List<DDPost> posts = const [];
   bool loading = true;
   bool _refreshing = false;
@@ -1713,6 +1720,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
   bool tabLoading = false;
   String? cityLabel;
   String? error;
+  DateTime? _lastTabTapAt;
+  int? _lastTabIndex;
   @override
   void initState() {
     super.initState();
@@ -1755,11 +1764,51 @@ class _DiscoverPageState extends State<DiscoverPage> {
       await syncCachedLocation(service, t);
       final city = await cachedCityLabel(service, t);
       if (mounted && cityLabel != city) setState(() => cityLabel = city);
-      final loaded = targetTab == 0
-          ? await service.fetchPosts(t)
-          : targetTab == 1
-              ? await service.fetchNearbyPosts(t)
-              : await service.fetchFollowingPosts(t);
+      final cacheKey = 'dd.discover.cache.$targetTab';
+      final cacheAtKey = '$cacheKey.at';
+      final cachedAt = p.getInt(cacheAtKey);
+      final cachedJson = p.getString(cacheKey);
+      final cacheFresh = !fromRefresh &&
+          cachedAt != null &&
+          cachedJson != null &&
+          DateTime.now().millisecondsSinceEpoch - cachedAt <
+              _cacheDuration.inMilliseconds;
+      final loaded = cacheFresh
+          ? (jsonDecode(cachedJson!) as List)
+              .whereType<Map<String, dynamic>>()
+              .map(DDPost.fromJson)
+              .toList()
+          : (targetTab == 0
+              ? await service.fetchPosts(t)
+              : targetTab == 1
+                  ? await service.fetchNearbyPosts(t)
+                  : await service.fetchFollowingPosts(t));
+      if (!cacheFresh) {
+        await p.setString(
+          cacheKey,
+          jsonEncode(loaded
+              .map((item) => {
+                    'id': item.id,
+                    'userId': item.userId,
+                    'content': item.content,
+                    'createdAt': item.createdAt,
+                    'nickname': item.nickname,
+                    'avatar': item.avatar,
+                    'likes': item.likes,
+                    'favorites': item.favorites,
+                    'comments': item.comments,
+                    'following': item.following,
+                    'distanceKm': item.distanceKm,
+                    'liked': item.liked,
+                    'favorited': item.favorited,
+                    'imageURL': item.imageUrl,
+                    'videoURL': item.videoUrl,
+                    'views': item.views,
+                  })
+              .toList()),
+        );
+        await p.setInt(cacheAtKey, DateTime.now().millisecondsSinceEpoch);
+      }
       if (mounted) {
         setState(() {
           posts = loaded;
@@ -1792,7 +1841,16 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 .entries
                 .map((entry) => GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => load(tab: entry.key),
+                      onTap: () {
+                        final now = DateTime.now();
+                        final isDoubleTap = _lastTabIndex == entry.key &&
+                            _lastTabTapAt != null &&
+                            now.difference(_lastTabTapAt!) <
+                                const Duration(milliseconds: 450);
+                        _lastTabIndex = entry.key;
+                        _lastTabTapAt = now;
+                        load(tab: entry.key, fromRefresh: isDoubleTap);
+                      },
                       child: Padding(
                         padding:
                             const EdgeInsets.only(right: 20, top: 9, bottom: 6),
@@ -1905,10 +1963,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                   final index = posts
                                       .indexWhere((item) => item.id == post.id);
                                   if (index >= 0) {
-                                    posts[index] = posts[index].copyWith(
-                                      liked: !posts[index].liked,
-                                      likes: posts[index].likes +
-                                          (posts[index].liked ? -1 : 1),
+                                    final current = posts[index];
+                                    posts[index] = current.copyWith(
+                                      liked: !current.liked,
+                                      likes: current.likes +
+                                          (current.liked ? -1 : 1),
                                     );
                                   }
                                 });
@@ -1932,10 +1991,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                   final index = posts
                                       .indexWhere((item) => item.id == post.id);
                                   if (index >= 0) {
-                                    posts[index] = posts[index].copyWith(
-                                      favorited: !posts[index].favorited,
-                                      favorites: posts[index].favorites +
-                                          (posts[index].favorited ? -1 : 1),
+                                    final current = posts[index];
+                                    posts[index] = current.copyWith(
+                                      favorited: !current.favorited,
+                                      favorites: current.favorites +
+                                          (current.favorited ? -1 : 1),
                                     );
                                   }
                                 });
