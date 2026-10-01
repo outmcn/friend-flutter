@@ -4173,25 +4173,43 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                         Flexible(
                                           child: Text(
                                             '${p?['nickname'] ?? widget.name}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
                                               fontSize: 22,
                                               fontWeight: FontWeight.w800,
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 6),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Wrap(
+                                            spacing: 4,
+                                            children: [
+                                              _ProfileTag(
+                                                  text:
+                                                      '${p?['city'] ?? '未知地区'}'),
+                                              _ProfileTag(
+                                                  text:
+                                                      '${p?['activeDays'] ?? 0}天'),
+                                            ],
+                                          ),
+                                        ),
                                       ],
                                     ),
-                                    const SizedBox(height: 6),
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 6,
+                                    const SizedBox(height: 8),
+                                    Row(
                                       children: [
-                                        _ProfileTag(
-                                            text: '${p?['city'] ?? '未知地区'}'),
-                                        _ProfileTag(
-                                            text:
-                                                '在线 ${p?['activeDays'] ?? 0} 天'),
+                                        _InlineProfileStat(
+                                            label: '关注',
+                                            value: '${p?['following'] ?? 0}'),
+                                        const SizedBox(width: 14),
+                                        _InlineProfileStat(
+                                            label: '粉丝',
+                                            value: '${p?['followers'] ?? 0}'),
+                                        const SizedBox(width: 14),
+                                        _InlineProfileStat(
+                                            label: '赞', value: '$profileLikes'),
                                       ],
                                     ),
                                   ],
@@ -4215,19 +4233,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 ),
                               ),
                               Text('$profileLikes'),
-                            ],
-                          ),
-                          const Divider(height: 30),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _Stat(
-                                  value: '${p?['following'] ?? 0}',
-                                  label: '关注'),
-                              _Stat(
-                                  value: '${p?['followers'] ?? 0}',
-                                  label: '粉丝'),
-                              _Stat(value: '$profileLikes', label: '获赞'),
                             ],
                           ),
                         ],
@@ -4682,6 +4687,35 @@ class _ProfileEmptyTab extends StatelessWidget {
             const SizedBox(height: 10),
             Text('暂无$label内容'),
           ]),
+        ),
+      );
+}
+
+class _InlineProfileStat extends StatelessWidget {
+  const _InlineProfileStat({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => RichText(
+        text: TextSpan(
+          style: DefaultTextStyle.of(context).style,
+          children: [
+            TextSpan(
+              text: '$value ',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            TextSpan(
+              text: label,
+              style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: .65),
+                fontSize: 12,
+              ),
+            ),
+          ],
         ),
       );
 }
