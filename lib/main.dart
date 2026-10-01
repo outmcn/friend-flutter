@@ -1924,9 +1924,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
             child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
-                    18, 8, 18, 28 + MediaQuery.of(context).padding.bottom + 88),
+                    18, 2, 18, 28 + MediaQuery.of(context).padding.bottom + 88),
                 children: [
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 2),
                   if (loading)
                     const _PageLoadState(
                       title: '动态加载中',
@@ -1964,7 +1964,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                   if (!loading && !tabLoading && error == null)
                     ...posts.map(
                       (post) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: 2),
                         child: _DynamicPostCard(
                           post: post,
                           listMode: true,
