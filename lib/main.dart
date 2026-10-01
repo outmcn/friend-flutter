@@ -1056,7 +1056,7 @@ class HomePage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
             children: [
               SizedBox(
-                height: 153,
+                height: 140,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -1112,7 +1112,6 @@ class HomePage extends StatelessWidget {
                             child: _HomeNormalCard(
                               icon: Icons.sports_esports_outlined,
                               title: 'Game 俱乐部',
-                              subtitle: '开黑交友不孤单',
                               colors: const [
                                 Color(0xffff9a5a),
                                 Color(0xffff5f8f),
@@ -2230,14 +2229,14 @@ class _HomeNormalCard extends StatelessWidget {
   const _HomeNormalCard({
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.colors,
     required this.height,
     required this.onTap,
   });
   final IconData icon;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final List<Color> colors;
   final double height;
   final VoidCallback onTap;
@@ -2269,13 +2268,20 @@ class _HomeNormalCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 10),
-                ),
+                if (subtitle != null) ...[
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 6),
                 Icon(icon, color: Colors.white, size: 22),
               ],
