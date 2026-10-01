@@ -4070,18 +4070,22 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   }
 
   Future<void> toggleProfileLike() async {
-    if (widget.userId == null || isProfileLiked) return;
+    if (widget.userId == null || actionLoading) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('dd.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       setState(() => actionLoading = true);
       final response = await service.toggleProfileLike(token, widget.userId!);
-      isProfileLiked = response['liked'] == true;
-      profileLikes = (response['likes'] as num?)?.toInt() ?? profileLikes;
+      if (!mounted) return;
+      setState(() {
+        isProfileLiked = response['liked'] == true;
+        profileLikes = (response['likes'] as num?)?.toInt() ?? profileLikes;
+      });
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       if (mounted) setState(() => actionLoading = false);
     }
@@ -4101,8 +4105,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               child: _ProfileLikePill(
                 liked: isProfileLiked,
                 count: profileLikes,
-                onTap:
-                    actionLoading || isProfileLiked ? null : toggleProfileLike,
+                onTap: actionLoading ? null : toggleProfileLike,
               ),
             ),
           IconButton(
