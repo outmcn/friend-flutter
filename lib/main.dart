@@ -4707,10 +4707,10 @@ class _MyProfileGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: posts.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 3,
-        mainAxisSpacing: 3,
-        childAspectRatio: .78,
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: .72,
       ),
       itemBuilder: (context, index) {
         final post = posts[index];
@@ -4721,52 +4721,74 @@ class _MyProfileGrid extends StatelessWidget {
               builder: (_) => DynamicDetailPage(postId: post.id),
             ),
           ),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (post.imageUrl?.trim().isNotEmpty == true)
-                Image.network(
-                  DDPostService.mediaUrl(post.imageUrl),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: const Icon(Icons.broken_image_outlined),
-                  ),
-                )
-              else
-                Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  padding: const EdgeInsets.all(10),
-                  alignment: Alignment.center,
+          borderRadius: BorderRadius.circular(14),
+          child: Card(
+            margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: 1.25,
+                  child: post.imageUrl?.trim().isNotEmpty == true
+                      ? Image.network(
+                          DDPostService.mediaUrl(post.imageUrl),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            child: const Icon(Icons.broken_image_outlined),
+                          ),
+                        )
+                      : Container(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          padding: const EdgeInsets.all(12),
+                          alignment: Alignment.center,
+                          child: Text(
+                            post.content,
+                            maxLines: 5,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
                   child: Text(
-                    post.content,
-                    maxLines: 5,
+                    post.content.trim().isEmpty ? '图文动态' : post.content,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              Positioned(
-                left: 7,
-                bottom: 6,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.visibility_outlined,
-                        color: Colors.white, size: 16),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${post.views}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        shadows: [Shadow(blurRadius: 3, color: Colors.black)],
-                      ),
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 9),
+                  child: Row(
+                    children: [
+                      Icon(Icons.thumb_up_alt_outlined,
+                          size: 15,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 3),
+                      Text('${post.likes}'),
+                      const SizedBox(width: 12),
+                      Icon(Icons.visibility_outlined,
+                          size: 15,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 3),
+                      Text('${post.views}'),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
