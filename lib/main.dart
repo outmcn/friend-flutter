@@ -1731,8 +1731,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
   bool tabLoading = false;
   String? cityLabel;
   String? error;
-  DateTime? _lastTabTapAt;
-  int? _lastTabIndex;
   @override
   void initState() {
     super.initState();
@@ -1855,9 +1853,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        final now = DateTime.now();
-                        _lastTabIndex = entry.key;
-                        _lastTabTapAt = now;
                         load(tab: entry.key, fromRefresh: true);
                       },
                       child: Padding(
