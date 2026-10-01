@@ -2149,13 +2149,6 @@ class _HomeFolderCard extends StatelessWidget {
                 decoration: ShapeDecoration(
                   gradient: LinearGradient(colors: colors),
                   shape: shape,
-                  shadows: [
-                    BoxShadow(
-                      color: colors.last.withValues(alpha: .28),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
                 ),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
