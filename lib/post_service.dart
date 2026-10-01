@@ -119,12 +119,22 @@ class DDNotification {
       required this.content,
       required this.createdAt,
       this.nickname,
+      this.avatar,
+      this.postId,
+      this.commentId,
+      this.postContent,
+      this.commentContent,
       this.read = false});
   final int id;
   final String type;
   final String content;
   final String createdAt;
   final String? nickname;
+  final String? avatar;
+  final int? postId;
+  final int? commentId;
+  final String? postContent;
+  final String? commentContent;
   final bool read;
   factory DDNotification.fromJson(Map<String, dynamic> json) => DDNotification(
         id: (json['id'] as num?)?.toInt() ?? 0,
@@ -132,6 +142,11 @@ class DDNotification {
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
         nickname: json['nickname']?.toString(),
+        avatar: DDPostService.mediaUrl(json['avatar']?.toString()),
+        postId: (json['postId'] as num?)?.toInt(),
+        commentId: (json['commentId'] as num?)?.toInt(),
+        postContent: json['postContent']?.toString(),
+        commentContent: json['commentContent']?.toString(),
         read: json['read'] == true,
       );
 }
