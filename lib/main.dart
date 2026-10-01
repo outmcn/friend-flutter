@@ -4752,7 +4752,8 @@ class _MyProfileGrid extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.play_arrow, color: Colors.white, size: 16),
+                    const Icon(Icons.visibility_outlined,
+                        color: Colors.white, size: 16),
                     const SizedBox(width: 2),
                     Text(
                       '${post.views}',
