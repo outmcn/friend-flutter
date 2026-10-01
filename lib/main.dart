@@ -4413,19 +4413,19 @@ class _DDProfilePageState extends State<DDProfilePage> {
     final p = profile;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('我的'),
+        title: const SizedBox.shrink(),
+        leading: IconButton(
+          tooltip: '编辑资料',
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EditProfilePage()),
+            );
+            if (mounted) load();
+          },
+          icon: const Icon(Icons.edit_outlined),
+        ),
         actions: [
-          IconButton(
-            tooltip: '编辑资料',
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const EditProfilePage()),
-              );
-              if (mounted) load();
-            },
-            icon: const Icon(Icons.edit_outlined),
-          ),
           IconButton(
             tooltip: '浏览记录',
             onPressed: () {},
