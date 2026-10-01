@@ -4134,18 +4134,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Align(
-                            alignment: Alignment.topRight,
-                            child: OutlinedButton.icon(
-                              onPressed: actionLoading || isProfileLiked
-                                  ? null
-                                  : toggleProfileLike,
-                              icon: Icon(isProfileLiked
-                                  ? Icons.favorite
-                                  : Icons.favorite_border),
-                              label: Text('$profileLikes'),
-                            ),
-                          ),
                           Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -4178,18 +4166,45 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                     child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(children: [
-                                      Flexible(
+                                    Row(
+                                      children: [
+                                        Flexible(
                                           child: Text(
-                                              '${p?['nickname'] ?? widget.name}',
-                                              style: const TextStyle(
-                                                  fontSize: 22,
-                                                  fontWeight:
-                                                      FontWeight.w800))),
-                                      const SizedBox(width: 6),
-                                      const Icon(Icons.verified,
-                                          size: 17, color: Colors.lightBlue),
-                                    ]),
+                                            '${p?['nickname'] ?? widget.name}',
+                                            style: const TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        IconButton(
+                                          visualDensity: VisualDensity.compact,
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          onPressed:
+                                              actionLoading || isProfileLiked
+                                                  ? null
+                                                  : toggleProfileLike,
+                                          icon: Icon(
+                                            isProfileLiked
+                                                ? Icons.favorite
+                                                : Icons.favorite_border,
+                                            color: isProfileLiked
+                                                ? Colors.pinkAccent
+                                                : null,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        Text('$profileLikes'),
+                                        const SizedBox(width: 6),
+                                        const Icon(
+                                          Icons.verified,
+                                          size: 17,
+                                          color: Colors.lightBlue,
+                                        ),
+                                      ],
+                                    ),
                                     const SizedBox(height: 6),
                                     Wrap(spacing: 6, runSpacing: 6, children: [
                                       _ProfileTag(
