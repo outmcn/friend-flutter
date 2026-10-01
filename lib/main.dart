@@ -1069,7 +1069,7 @@ class HomePage extends StatelessWidget {
                       flex: 11,
                       child: _HomeFolderCard(
                         icon: Icons.sports_esports_outlined,
-                        title: '游戏陪玩',
+                        title: 'Game 俱乐部',
                         subtitle: '开黑交友不孤单',
                         meta: '游戏陪玩广场 · UI演示',
                         tabLabel: 'PLAY',
@@ -1240,7 +1240,7 @@ class _LegacyHomePage extends StatelessWidget {
                     flex: 11,
                     child: _HomeFolderCard(
                       icon: Icons.sports_esports_outlined,
-                      title: '游戏陪玩',
+                      title: 'Game 俱乐部',
                       subtitle: '开黑交友不孤单',
                       meta: '1,236 位陪玩',
                       tabLabel: 'PLAY',
