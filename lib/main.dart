@@ -1090,7 +1090,7 @@ class HomePage extends StatelessWidget {
                               icon: Icons.mic_none,
                               title: '语音匹配',
                               subtitle: '遇见懂你的人',
-                              meta: 'VOICE',
+                              meta: '',
                               tabLabel: 'VOICE',
                               colors: const [
                                 Color(0xff6e4fe0),
