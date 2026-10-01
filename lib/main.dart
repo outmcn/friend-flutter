@@ -4135,9 +4135,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Stack(children: [
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(
+                                children: [
                                   CircleAvatar(
                                     radius: 42,
                                     backgroundImage:
@@ -4160,10 +4161,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                     bottom: 2,
                                     child: _OnlineDot(),
                                   ),
-                                ]),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                    child: Column(
+                                ],
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
@@ -4178,26 +4180,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        IconButton(
-                                          visualDensity: VisualDensity.compact,
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(),
-                                          onPressed:
-                                              actionLoading || isProfileLiked
-                                                  ? null
-                                                  : toggleProfileLike,
-                                          icon: Icon(
-                                            isProfileLiked
-                                                ? Icons.favorite
-                                                : Icons.favorite_border,
-                                            color: isProfileLiked
-                                                ? Colors.pinkAccent
-                                                : null,
-                                            size: 20,
-                                          ),
-                                        ),
-                                        Text('$profileLikes'),
-                                        const SizedBox(width: 6),
                                         const Icon(
                                           Icons.verified,
                                           size: 17,
@@ -4206,21 +4188,46 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                       ],
                                     ),
                                     const SizedBox(height: 6),
-                                    Wrap(spacing: 6, runSpacing: 6, children: [
-                                      _ProfileTag(
-                                          text: '${p?['city'] ?? '未知地区'}'),
-                                      _ProfileTag(
-                                          text:
-                                              '在线 ${p?['activeDays'] ?? 0} 天'),
-                                    ]),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      children: [
+                                        _ProfileTag(
+                                            text: '${p?['city'] ?? '未知地区'}'),
+                                        _ProfileTag(
+                                            text:
+                                                '在线 ${p?['activeDays'] ?? 0} 天'),
+                                      ],
+                                    ),
                                     const SizedBox(height: 10),
-                                    Text('喜欢分享日常，也期待遇见聊得来的人。',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall),
+                                    Text(
+                                      '喜欢分享日常，也期待遇见聊得来的人。',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
                                   ],
-                                )),
-                              ]),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: actionLoading || isProfileLiked
+                                    ? null
+                                    : toggleProfileLike,
+                                icon: Icon(
+                                  isProfileLiked
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color:
+                                      isProfileLiked ? Colors.pinkAccent : null,
+                                  size: 20,
+                                ),
+                              ),
+                              Text('$profileLikes'),
+                            ],
+                          ),
                           const Divider(height: 30),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
