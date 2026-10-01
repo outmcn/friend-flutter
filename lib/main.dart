@@ -1856,13 +1856,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       onTap: () {
                         HapticFeedback.selectionClick();
                         final now = DateTime.now();
-                        final isDoubleTap = _lastTabIndex == entry.key &&
-                            _lastTabTapAt != null &&
-                            now.difference(_lastTabTapAt!) <
-                                const Duration(milliseconds: 450);
                         _lastTabIndex = entry.key;
                         _lastTabTapAt = now;
-                        load(tab: entry.key, fromRefresh: isDoubleTap);
+                        load(tab: entry.key, fromRefresh: true);
                       },
                       child: Padding(
                         padding:
