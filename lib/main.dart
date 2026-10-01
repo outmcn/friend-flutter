@@ -1063,11 +1063,11 @@ class HomePage extends StatelessWidget {
                     Expanded(
                       flex: 11,
                       child: _HomeFolderCard(
-                        icon: Icons.sports_esports_outlined,
-                        title: 'Game 俱乐部',
-                        subtitle: '开黑交友不孤单',
-                        meta: '游戏陪玩广场',
-                        tabLabel: 'PLAY',
+                        icon: Icons.auto_awesome,
+                        title: '缘分匹配',
+                        subtitle: '遇见聊得来的人',
+                        meta: 'FATE',
+                        tabLabel: 'FATE',
                         colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
                         tabAlignment: Alignment.topRight,
                         borderRadius: BorderRadius.circular(28),
@@ -1075,7 +1075,7 @@ class HomePage extends StatelessWidget {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const GameCompanionPlazaPage(),
+                            builder: (_) => const FateMatchPage(),
                           ),
                         ),
                       ),
@@ -1110,9 +1110,9 @@ class HomePage extends StatelessWidget {
                           const SizedBox(height: 12),
                           Expanded(
                             child: _HomeNormalCard(
-                              icon: Icons.auto_awesome,
-                              title: '缘分匹配',
-                              subtitle: '遇见聊得来的人',
+                              icon: Icons.sports_esports_outlined,
+                              title: 'Game 俱乐部',
+                              subtitle: '开黑交友不孤单',
                               colors: const [
                                 Color(0xffff9a5a),
                                 Color(0xffff5f8f),
@@ -1121,7 +1121,8 @@ class HomePage extends StatelessWidget {
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const FateMatchPage(),
+                                  builder: (_) =>
+                                      const GameCompanionPlazaPage(),
                                 ),
                               ),
                             ),
