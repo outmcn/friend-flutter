@@ -4481,22 +4481,31 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${p?['nickname'] ?? 'DD 用户'}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
+                            Row(
                               children: [
-                                _ProfileTag(text: '${p?['city'] ?? '未知地区'}'),
-                                _ProfileTag(text: '${p?['activeDays'] ?? 0}天'),
+                                Flexible(
+                                  child: Text(
+                                    '${p?['nickname'] ?? 'DD 用户'}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 25,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Wrap(
+                                    spacing: 4,
+                                    children: [
+                                      _ProfileTag(
+                                          text: '${p?['city'] ?? '未知地区'}'),
+                                      _ProfileTag(
+                                          text: '${p?['activeDays'] ?? 0}天'),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 10),
