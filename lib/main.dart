@@ -4366,6 +4366,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   List<DDPost> posts = [];
   int selectedTab = 0;
   bool loading = true;
+  bool isOnline = true;
   bool tabLoading = false;
   String? error;
   @override
@@ -4388,7 +4389,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
         error = null;
         if (isTabSwitch) {
           selectedTab = targetTab;
-          tabLoading = true;
         } else {
           loading = true;
         }
@@ -4418,7 +4418,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
       if (mounted) {
         setState(() {
           loading = false;
-          tabLoading = false;
         });
       }
     }
@@ -4574,14 +4573,35 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                     ? const Icon(Icons.person, size: 42)
                                     : null,
                           ),
-                          const Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: CircleAvatar(
-                              radius: 13,
-                              backgroundColor: Colors.blue,
-                              child: Icon(Icons.add,
-                                  color: Colors.white, size: 18),
+                          Positioned(
+                            right: -8,
+                            bottom: -4,
+                            child: GestureDetector(
+                              onTap: () => setState(() => isOnline = !isOnline),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 9, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color:
+                                      (isOnline ? Colors.green : Colors.amber)
+                                          .withValues(alpha: .16),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color:
+                                        isOnline ? Colors.green : Colors.amber,
+                                  ),
+                                ),
+                                child: Text(
+                                  isOnline ? '在线' : '隐身',
+                                  style: TextStyle(
+                                    color: isOnline
+                                        ? Colors.green
+                                        : Colors.amber.shade700,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],
