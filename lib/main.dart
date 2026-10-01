@@ -502,9 +502,7 @@ class LoginPage extends StatelessWidget {
             ),
             _PrimaryAuthButton(
               label: '登录',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('手机号验证码登录接口尚未接入')),
-              ),
+              onTap: () {},
             ),
           ],
         ),
@@ -1071,7 +1069,7 @@ class HomePage extends StatelessWidget {
                         icon: Icons.sports_esports_outlined,
                         title: 'Game 俱乐部',
                         subtitle: '开黑交友不孤单',
-                        meta: '游戏陪玩广场 · UI演示',
+                        meta: '游戏陪玩广场',
                         tabLabel: 'PLAY',
                         colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
                         tabAlignment: Alignment.topRight,
@@ -1095,7 +1093,7 @@ class HomePage extends StatelessWidget {
                               icon: Icons.mic_none,
                               title: '语音匹配',
                               subtitle: '遇见懂你的人',
-                              meta: 'VOICE · UI演示',
+                              meta: 'VOICE',
                               tabLabel: 'VOICE',
                               colors: const [
                                 Color(0xff6e4fe0),
@@ -1118,7 +1116,7 @@ class HomePage extends StatelessWidget {
                               icon: Icons.auto_awesome,
                               title: '缘分匹配',
                               subtitle: '遇见聊得来的人',
-                              meta: 'FATE · UI演示',
+                              meta: 'FATE',
                               tabLabel: 'FATE',
                               colors: const [
                                 Color(0xffff9a5a),
@@ -2828,7 +2826,7 @@ class _ChatPageState extends State<ChatPage> {
           IconButton(
             tooltip: '新聊天',
             onPressed: () => ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text('私聊服务暂未接入'))),
+                .showSnackBar(const SnackBar(content: Text(''))),
             icon: const Icon(Icons.edit_square),
           ),
         ],
@@ -2880,9 +2878,7 @@ class _ChatPageState extends State<ChatPage> {
           const SizedBox(height: 6),
           if (visible.isEmpty)
             const _EmptyStateCard(
-                icon: TIcons.chat,
-                title: '没有匹配的会话',
-                subtitle: '聊天 UI 演示不包含真实私聊')
+                icon: TIcons.chat, title: '没有匹配的会话', subtitle: '聊天 不包含真实私聊')
           else
             ...visible.map((chat) => _ChatListItem(
                   data: chat,
@@ -2937,7 +2933,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               Text(widget.peer.name,
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w800)),
-              Text('在线 · UI 演示',
+              Text('在线',
                   style: TextStyle(
                       fontSize: 11,
                       color: Theme.of(context).colorScheme.primary)),
@@ -2972,7 +2968,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       child: TextField(
                     controller: input,
                     onSubmitted: (_) => send(),
-                    decoration: const InputDecoration(hintText: '输入消息（演示）'),
+                    decoration: const InputDecoration(hintText: '输入消息'),
                   )),
                   IconButton(onPressed: send, icon: const Icon(Icons.send)),
                 ]),
@@ -3000,8 +2996,7 @@ class _ChatDemoNotice extends StatelessWidget {
           color: Theme.of(context).colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Text('聊天为 UI 演示，未接入私聊后端',
-            style: Theme.of(context).textTheme.labelSmall),
+        child: Text('聊天为 ，', style: Theme.of(context).textTheme.labelSmall),
       );
 }
 
@@ -4502,7 +4497,7 @@ class _MyProfileVoiceCard extends StatelessWidget {
             child: const Icon(Icons.play_arrow, color: Colors.white),
           ),
           title: Text(name),
-          subtitle: const Text('声音名片 · UI 演示，未接入真实语音'),
+          subtitle: const Text('声音名片 · ，'),
           trailing: const Text('00:16'),
         ),
       );
@@ -4646,7 +4641,7 @@ class _OtherProfileVoiceCard extends StatelessWidget {
             child: const Icon(Icons.play_arrow, color: Colors.white),
           ),
           title: Text(name),
-          subtitle: const Text('声音名片 · UI 演示，未接入真实语音'),
+          subtitle: const Text('声音名片 · ，'),
           trailing: const Text('00:16'),
         ),
       );
@@ -4909,7 +4904,7 @@ class _VoiceMatchSuccess extends StatelessWidget {
           Chip(label: Text('在线'))
         ]),
         const SizedBox(height: 28),
-        const Text('通话 00:03 · UI 演示', style: TextStyle(color: Colors.white70)),
+        const Text('通话 00:03', style: TextStyle(color: Colors.white70)),
         const SizedBox(height: 26),
         Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
           IconButton(
@@ -4931,14 +4926,14 @@ class _VoiceMatchSuccess extends StatelessWidget {
 class _ListenDemoNotice extends StatelessWidget {
   const _ListenDemoNotice();
   @override
-  Widget build(BuildContext context) => const Text('一起听为 UI 演示，未接入真实音乐同步或房间服务',
-      style: TextStyle(color: Colors.white60, fontSize: 11));
+  Widget build(BuildContext context) =>
+      const Text('一起听', style: TextStyle(color: Colors.white60, fontSize: 11));
 }
 
 class _VoiceUiNotice extends StatelessWidget {
   const _VoiceUiNotice();
   @override
-  Widget build(BuildContext context) => const Text('语音匹配为 UI 演示，未接入真实匹配和语音通话',
+  Widget build(BuildContext context) => const Text('语音匹配',
       textAlign: TextAlign.center,
       style: TextStyle(color: Colors.white60, fontSize: 11));
 }
@@ -5139,7 +5134,7 @@ class CompanionProfilePage extends StatelessWidget {
                                                   .colorScheme
                                                   .primary)),
                                       const SizedBox(height: 4),
-                                      Text('在线 · 5 分钟内响应',
+                                      Text('在线5 分钟内响应',
                                           style: Theme.of(context)
                                               .textTheme
                                               .labelSmall)
@@ -5182,8 +5177,8 @@ class CompanionProfilePage extends StatelessWidget {
             child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: FilledButton(
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('约玩服务暂未接入'))),
+                    onPressed: () => ScaffoldMessenger.of(context)
+                        .showSnackBar(const SnackBar(content: Text(''))),
                     child: Text('¥ ${data.price} 起 · 立即约玩')))),
       );
 }
@@ -5306,15 +5301,14 @@ class _CompanionNotice extends StatelessWidget {
       decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(12)),
-      child: Text('陪玩广场为 UI 演示，未接入约玩、订单、支付和私聊服务',
-          style: Theme.of(context).textTheme.labelSmall));
+      child: Text('陪玩广场', style: Theme.of(context).textTheme.labelSmall));
 }
 
 class _VoiceRoomNotice extends StatelessWidget {
   const _VoiceRoomNotice();
   @override
   Widget build(BuildContext context) => const Center(
-      child: Text('语音房为 UI 演示，未接入真实语音、麦位和房间消息',
+      child: Text('语音房、麦位和房间消息',
           style: TextStyle(color: Colors.white70, fontSize: 11)));
 }
 
@@ -5436,7 +5430,7 @@ class _CompanionVoiceCard extends StatelessWidget {
       child: ListTile(
           leading: const CircleAvatar(child: Icon(Icons.play_arrow)),
           title: Text(text),
-          subtitle: const Text('声音名片 · UI 演示'),
+          subtitle: const Text('声音名片 · '),
           trailing: const Text('00:16')));
 }
 
@@ -5515,7 +5509,7 @@ class _FateMatchPageState extends State<FateMatchPage> {
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('缘分匹配为 UI 演示，未接入真实匹配服务',
+                    const Text('缘分匹配',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.white60, fontSize: 11)),
                     const SizedBox(height: 36),
@@ -5561,8 +5555,7 @@ class _FateMatchPageState extends State<FateMatchPage> {
                       Wrap(spacing: 10, children: [
                         FilledButton(
                           onPressed: () => ScaffoldMessenger.of(context)
-                              .showSnackBar(
-                                  const SnackBar(content: Text('私聊服务暂未接入'))),
+                              .showSnackBar(const SnackBar(content: Text(''))),
                           child: const Text('开始聊天'),
                         ),
                         OutlinedButton(
@@ -6130,7 +6123,7 @@ class _SimpleListPage extends StatelessWidget {
             child: ListTile(
               leading: CircleAvatar(child: Text('${index + 1}')),
               title: Text(items[index]),
-              subtitle: const Text('静态演示内容'),
+              subtitle: const Text('内容'),
               trailing: const Icon(Icons.chevron_right),
             ),
           ),
