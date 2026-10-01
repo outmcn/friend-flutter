@@ -2045,7 +2045,7 @@ class _HomeCartoonCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: Ink(
-          height: 112,
+          height: 96,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: colors,
