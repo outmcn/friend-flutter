@@ -4114,22 +4114,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           ),
         ],
       ),
-      bottomNavigationBar: loading
-          ? null
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: actionLoading || following ? null : toggleFollow,
-                    child: Text(
-                      actionLoading ? '处理中…' : (following ? '私聊' : '关注'),
-                    ),
-                  ),
-                ),
-              ),
-            ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
