@@ -4578,6 +4578,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   bool _showStickyNickname = false;
   String? _sonicUrl;
   String? error;
+  List<String> _tags = const ['声优', '御姐', '忧郁', '旅游', '电影'];
 
   @override
   void initState() {
@@ -4867,11 +4868,23 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      const _ProfileTag(text: '声优'),
-                      const _ProfileTag(text: '御姐'),
-                      const _ProfileTag(text: '忧郁'),
-                      const _ProfileTag(text: '旅游'),
-                      const _ProfileTag(text: '电影'),
+                      ActionChip(
+                        label: const Text('+'),
+                        onPressed: () async {
+                          final selected = await Navigator.push<List<String>>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => _ProfileTagEditorPage(
+                                selectedTags: _tags,
+                              ),
+                            ),
+                          );
+                          if (selected != null && mounted) {
+                            setState(() => _tags = selected);
+                          }
+                        },
+                      ),
+                      ..._tags.map((tag) => _ProfileTag(text: tag)),
                     ],
                   ),
                   const SizedBox(height: 22),
@@ -7182,6 +7195,68 @@ class _DistanceBadge extends StatelessWidget {
             Text(
               '${distanceKm.toStringAsFixed(2)} km',
               style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
+        ),
+      );
+}
+
+class _ProfileTagEditorPage extends StatefulWidget {
+  const _ProfileTagEditorPage({required this.selectedTags});
+  final List<String> selectedTags;
+
+  @override
+  State<_ProfileTagEditorPage> createState() => _ProfileTagEditorPageState();
+}
+
+class _ProfileTagEditorPageState extends State<_ProfileTagEditorPage> {
+  static const allTags = [
+    '声优',
+    '御姐',
+    '忧郁',
+    '旅游',
+    '电影',
+    '游戏',
+    '音乐',
+    '美食',
+    '旅行',
+    '摄影'
+  ];
+  late final Set<String> selected = {...widget.selectedTags};
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('标签编辑'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, selected.toList()),
+              child: const Text('保存'),
+            ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const Text('选择你的兴趣标签'),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: allTags.map((tag) {
+                final active = selected.contains(tag);
+                return FilterChip(
+                  label: Text(tag),
+                  selected: active,
+                  onSelected: (value) => setState(() {
+                    if (value) {
+                      selected.add(tag);
+                    } else {
+                      selected.remove(tag);
+                    }
+                  }),
+                );
+              }).toList(),
             ),
           ],
         ),
