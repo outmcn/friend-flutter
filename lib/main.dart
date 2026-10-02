@@ -4851,12 +4851,16 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                     : null,
                           ),
                           Positioned(
-                            left: 20,
+                            left: 0,
+                            right: 0,
                             bottom: -12,
-                            child: _SonicProfileButton(
-                              playing: _sonicPlaying,
-                              enabled: _sonicUrl?.isNotEmpty == true,
-                              onTap: _toggleSonic,
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: _SonicProfileButton(
+                                playing: _sonicPlaying,
+                                enabled: _sonicUrl?.isNotEmpty == true,
+                                onTap: _toggleSonic,
+                              ),
                             ),
                           ),
                         ],
