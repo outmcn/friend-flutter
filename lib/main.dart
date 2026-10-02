@@ -2644,21 +2644,16 @@ class _CreatePostPageState extends State<CreatePostPage> {
     }
   }
 
-  Future<String?> _imageDataUrl() async {
+  Future<String?> _imageObjectKey(String token) async {
     if (selectedImage == null) return null;
     final bytes = await selectedImage!.readAsBytes();
-    if (bytes.length > 8 * 1024 * 1024) {
-      throw Exception('图片不能超过 8MB');
-    }
+    if (bytes.length > 8 * 1024 * 1024) throw Exception('图片不能超过 8MB');
     final decoded = img.decodeImage(bytes);
     final resized = decoded == null
         ? null
-        : (decoded.width > 1600
-            ? img.copyResize(decoded, width: 1600)
-            : decoded);
-    final compressed =
-        resized == null ? bytes : img.encodeJpg(resized, quality: 82);
-    return 'data:image/jpeg;base64,${base64Encode(compressed)}';
+        : (decoded.width > 1600 ? img.copyResize(decoded, width: 1600) : decoded);
+    final compressed = resized == null ? bytes : img.encodeJpg(resized, quality: 82);
+    return _service.uploadImageToOss(token: token, bytes: compressed, fileName: selectedImage!.name);
   }
 
   Future<_PostLocation?> _locationForPost(String token) async {
@@ -2741,7 +2736,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         await _service.createPost(
                           token: token,
                           content: _content.text.trim(),
-                          imageDataUrl: await _imageDataUrl(),
+                          imageDataUrl: await _imageObjectKey(token),
                           visibility: visibility == '仅好友可见'
                               ? 'friends'
                               : visibility == '仅自己可见'
@@ -5360,12 +5355,25 @@ class _MyProfilePostCard extends StatelessWidget {
               else if (video != null && video.isNotEmpty)
                 _NetworkVideoPreview(url: video)
               else
-                Container(
-                  height: 150,
-                  color: scheme.surfaceContainerHighest,
-                  alignment: Alignment.center,
-                  child: Icon(Icons.image_outlined,
-                      color: scheme.onSurfaceVariant),
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    color: scheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      post.content.trim().isEmpty ? '暂无动态内容' : post.content.trim(),
+                      maxLines: 8,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: scheme.onSurface,
+                        fontSize: 16,
+                        height: 1.45,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
@@ -5376,6 +5384,11 @@ class _MyProfilePostCard extends StatelessWidget {
                         color: post.liked ? Colors.red : scheme.onSurfaceVariant),
                     const SizedBox(width: 4),
                     Text('${post.likes}'),
+                    const SizedBox(width: 12),
+                    Icon(Icons.bookmark_border,
+                        size: 16, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('${post.favorites}'),
                     const Spacer(),
                     Icon(Icons.visibility_outlined,
                         size: 16, color: scheme.onSurfaceVariant),

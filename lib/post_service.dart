@@ -318,8 +318,45 @@ class DDPostService {
     }
   }
 
-  Future<int> createPost(
-      {required String token,
+  Future<Map<String, dynamic>> fetchStorageSts(String token) async {
+    final response = await _client.get(
+      _base.resolve('/api/storage/sts'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = await _decodeResponse(response, '获取对象存储凭证失败');
+    if (decoded['ok'] != true || decoded['data'] is! Map<String, dynamic>) {
+      throw Exception('${decoded['message'] ?? '获取对象存储凭证失败'}');
+    }
+    return decoded['data'] as Map<String, dynamic>;
+  }
+
+  Future<String> uploadImageToOss({
+    required String token,
+    required List<int> bytes,
+    required String fileName,
+  }) async {
+    final sts = await fetchStorageSts(token);
+    final prefix = sts['prefix']?.toString() ?? 'friend/';
+    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final objectKey = '$prefix/posts/${DateTime.now().millisecondsSinceEpoch}_$safeName';
+    final endpoint = sts['endpoint']?.toString() ?? 'oss-${sts['region']}.aliyuncs.com';
+    final uri = Uri.parse('https://$endpoint/$objectKey');
+    final response = await _client.put(
+      uri,
+      headers: {
+        'x-oss-security-token': sts['securityToken'].toString(),
+        'Content-Type': 'image/jpeg',
+        'Content-Length': '${bytes.length}',
+      },
+      body: bytes,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('图片上传 OSS 失败（${response.statusCode}）');
+    }
+    return objectKey;
+  }
+  Future<int> createPost({
+      required String token,
       required String content,
       String? imageDataUrl,
       String visibility = 'public',
