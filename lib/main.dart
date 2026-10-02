@@ -4719,7 +4719,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                           children: [
                             Row(
                               children: [
-                                Flexible(
+                                Expanded(
                                   child: Text(
                                     '${p?['nickname'] ?? 'DD 用户'}',
                                     maxLines: 1,
@@ -4731,16 +4731,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Flexible(
-                                  child: Wrap(
-                                    spacing: 4,
-                                    children: [
-                                      _ProfileTag(
-                                          text: '${p?['city'] ?? '未知地区'}'),
-                                      _ProfileTag(
-                                          text: '${p?['activeDays'] ?? 0}天'),
-                                    ],
-                                  ),
+                                Wrap(
+                                  spacing: 4,
+                                  children: [
+                                    _ProfileTag(
+                                        text: '${p?['city'] ?? '未知地区'}'),
+                                    _ProfileTag(
+                                        text: '${p?['activeDays'] ?? 0}天'),
+                                  ],
                                 ),
                               ],
                             ),
