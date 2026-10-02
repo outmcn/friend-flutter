@@ -64,6 +64,24 @@ class DDPost {
         views: views,
       );
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'userId': userId,
+        'content': content,
+        'createdAt': createdAt,
+        'nickname': nickname,
+        'avatar': avatar,
+        'likes': likes,
+        'favorites': favorites,
+        'comments': comments,
+        'following': following,
+        'distanceKm': distanceKm,
+        'liked': liked,
+        'favorited': favorited,
+        'imageURL': imageUrl,
+        'videoURL': videoUrl,
+        'views': views,
+      };
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
         id: (json['id'] as num?)?.toInt() ?? 0,
         userId: (json['userId'] as num?)?.toInt(),
@@ -156,6 +174,15 @@ class DDPostService {
 
   static final Uri _base = Uri.parse('https://friend.outmcn.net/api');
   final http.Client _client;
+  static const profileTabCachePrefix = 'dd.profile.tab.cache.';
+
+  static Future<void> clearProfileTabCaches() async {
+    final prefs = await SharedPreferences.getInstance();
+    for (var tab = 0; tab < 3; tab++) {
+      await prefs.remove('$profileTabCachePrefix$tab');
+    }
+  }
+
   static String mediaUrl(String? value) {
     final raw = (value ?? '').trim();
     if (raw.isEmpty) return '';

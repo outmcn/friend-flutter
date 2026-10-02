@@ -4615,9 +4615,41 @@ class _DDProfilePageState extends State<DDProfilePage> {
     if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
   }
 
-  Future<void> load({int? tab}) async {
+  static const _profileTabCachePrefix = 'dd.profile.tab.cache.';
+
+  Future<void> _saveTabCache(int tab, List<DDPost> value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      '$_profileTabCachePrefix$tab',
+      jsonEncode(value.map((post) => post.toJson()).toList()),
+    );
+  }
+
+  Future<List<DDPost>?> _readTabCache(int tab) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('$_profileTabCachePrefix$tab');
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final data = jsonDecode(raw) as List;
+      return data
+          .whereType<Map>()
+          .map((item) => DDPost.fromJson(item.cast<String, dynamic>()))
+          .toList();
+    } catch (_) {
+      await prefs.remove('$_profileTabCachePrefix$tab');
+      return null;
+    }
+  }
+
+  Future<void> _invalidateProfileCacheAndReload() async {
+    await DDPostService.clearProfileTabCaches();
+    tabPosts.clear();
+    await load(tab: selectedTab, forceRefresh: true);
+  }
+
+  Future<void> load({int? tab, bool forceRefresh = false}) async {
     final targetTab = tab ?? selectedTab;
-    final isTabSwitch = tab != null && !loading;
+    final isTabSwitch = tab != null && !loading && !forceRefresh;
     if (mounted) {
       setState(() {
         error = null;
@@ -4642,8 +4674,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
         _sonicUrl =
             DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
       }
-      final cached = tabPosts[targetTab];
-      if (isTabSwitch && cached != null) {
+      final cached = tabPosts[targetTab] ?? await _readTabCache(targetTab);
+      if (cached != null && !forceRefresh) {
+        tabPosts[targetTab] = cached;
         if (mounted) {
           setState(() {
             profile = loadedProfile;
@@ -4659,6 +4692,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
               ? await service.fetchFavoritedPosts(t)
               : await service.fetchLikedPosts(t);
       tabPosts[targetTab] = loadedPosts;
+      await _saveTabCache(targetTab, loadedPosts);
       if (!mounted) return;
       setState(() {
         profile = loadedProfile;
@@ -4739,7 +4773,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: load,
+              onRefresh: () => load(forceRefresh: true),
               child: ListView(
                 controller: _profileScrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -4927,7 +4961,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else
-                    _MyProfileGrid(posts: posts),
+                    _MyProfileGrid(
+                      posts: posts,
+                      onChanged: _invalidateProfileCacheAndReload,
+                    ),
                   if (!tabLoading && error == null)
                     const Padding(
                       padding: EdgeInsets.only(top: 24, bottom: 12),
@@ -5137,8 +5174,9 @@ class _MyProfileIconTabs extends StatelessWidget {
 }
 
 class _MyProfileGrid extends StatelessWidget {
-  const _MyProfileGrid({required this.posts});
+  const _MyProfileGrid({required this.posts, this.onChanged});
   final List<DDPost> posts;
+  final VoidCallback? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -5158,12 +5196,15 @@ class _MyProfileGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         final post = posts[index];
         return InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DynamicDetailPage(postId: post.id),
-            ),
-          ),
+          onTap: () async {
+            final changed = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DynamicDetailPage(postId: post.id),
+              ),
+            );
+            if (changed == true) onChanged?.call();
+          },
           borderRadius: BorderRadius.circular(14),
           child: Card(
             margin: EdgeInsets.zero,
