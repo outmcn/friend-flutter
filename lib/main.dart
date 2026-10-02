@@ -4948,7 +4948,7 @@ class _MyProfileGrid extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 220),
+                  constraints: const BoxConstraints(maxHeight: 400),
                   child: AspectRatio(
                     aspectRatio: 1.25,
                     child: post.imageUrl?.trim().isNotEmpty == true
