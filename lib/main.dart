@@ -4406,7 +4406,17 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                       child: _SonicProfileButton(
                                         playing: _sonicPlaying,
                                         enabled: _sonicUrl?.isNotEmpty == true,
-                                        onTap: _toggleSonic,
+                                        onTap: () async {
+                                          await Navigator.push<bool>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => _VoiceRecordPage(
+                                                currentUrl: _sonicUrl,
+                                              ),
+                                            ),
+                                          );
+                                          if (mounted) load();
+                                        },
                                       ),
                                     ),
                                   ),
@@ -4865,7 +4875,17 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               child: _SonicProfileButton(
                                 playing: _sonicPlaying,
                                 enabled: _sonicUrl?.isNotEmpty == true,
-                                onTap: _toggleSonic,
+                                onTap: () async {
+                                  await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => _VoiceRecordPage(
+                                        currentUrl: _sonicUrl,
+                                      ),
+                                    ),
+                                  );
+                                  if (mounted) load();
+                                },
                               ),
                             ),
                           ),
@@ -5067,6 +5087,116 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                             },
                           ),
                   ),
+      );
+}
+
+class _VoiceRecordPage extends StatefulWidget {
+  const _VoiceRecordPage({required this.currentUrl});
+  final String? currentUrl;
+
+  @override
+  State<_VoiceRecordPage> createState() => _VoiceRecordPageState();
+}
+
+class _VoiceRecordPageState extends State<_VoiceRecordPage> {
+  final DDPostService service = DDPostService();
+  final AudioPlayer player = AudioPlayer();
+  bool recording = false;
+  bool saving = false;
+  bool playing = false;
+  String? recordingPath;
+  String? error;
+
+  @override
+  void dispose() {
+    player.dispose();
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _record() async {
+    setState(() {
+      recording = !recording;
+      error = null;
+    });
+    if (!recording) {
+      setState(() => recordingPath = 'local-recording-placeholder.m4a');
+    }
+  }
+
+  Future<void> _preview() async {
+    final url = widget.currentUrl;
+    if (url == null || url.isEmpty) {
+      setState(() => error = '请先录制声音');
+      return;
+    }
+    if (playing) {
+      await player.pause();
+    } else {
+      await player.play(UrlSource(url));
+    }
+    if (mounted) setState(() => playing = !playing);
+  }
+
+  Future<void> _save() async {
+    if (recordingPath == null && (widget.currentUrl?.isEmpty ?? true)) {
+      setState(() => error = '请先录制声音');
+      return;
+    }
+    setState(() => saving = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      if (recordingPath == null) {
+        await service.updateMe(token: token, voiceUrl: widget.currentUrl);
+      } else {
+        throw Exception('录音文件上传接口尚未接入');
+      }
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('声音录制')),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              Icon(TIcons.sonic,
+                  size: 72, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 24),
+              Text(recording ? '正在录音…' : '录制你的声音名片'),
+              const SizedBox(height: 24),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Colors.orange)),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: saving ? null : _record,
+                icon: Icon(recording ? Icons.stop : Icons.mic),
+                label: Text(recording ? '停止录音' : '开始录音'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _preview,
+                icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                label: const Text('试听'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                  onPressed: saving ? null : _save,
+                  child: Text(saving ? '保存中…' : '保存')),
+            ],
+          ),
+        ),
       );
 }
 

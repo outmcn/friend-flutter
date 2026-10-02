@@ -478,7 +478,8 @@ class DDPostService {
       {required String token,
       String? nickname,
       String? city,
-      String? avatar}) async {
+      String? avatar,
+      String? voiceUrl}) async {
     final response = await _client.put(
       _base.resolve('/api/me'),
       headers: {
@@ -488,7 +489,8 @@ class DDPostService {
       body: jsonEncode({
         if (nickname != null) 'nickname': nickname,
         if (city != null) 'city': city,
-        if (avatar != null) 'avatar': avatar
+        if (avatar != null) 'avatar': avatar,
+        if (voiceUrl != null) 'voiceUrl': voiceUrl,
       }),
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
