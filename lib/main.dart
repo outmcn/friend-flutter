@@ -11,6 +11,7 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:video_player/video_player.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'post_service.dart';
@@ -4582,7 +4583,11 @@ class _DDProfilePageState extends State<DDProfilePage> {
   bool isOnline = true;
   bool tabLoading = false;
   final Map<int, List<DDPost>> tabPosts = {};
+  final AudioPlayer _sonicPlayer = AudioPlayer();
+  bool _sonicPlaying = false;
+  String? _sonicUrl;
   String? error;
+
   @override
   void initState() {
     super.initState();
@@ -4591,8 +4596,20 @@ class _DDProfilePageState extends State<DDProfilePage> {
 
   @override
   void dispose() {
+    _sonicPlayer.dispose();
     service.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleSonic() async {
+    final url = _sonicUrl;
+    if (url == null || url.isEmpty) return;
+    if (_sonicPlaying) {
+      await _sonicPlayer.pause();
+    } else {
+      await _sonicPlayer.play(UrlSource(url));
+    }
+    if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
   }
 
   Future<void> load({int? tab}) async {
@@ -4615,9 +4632,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('请先登录');
-      if (!isTabSwitch || profile == null) {
-        profile = await service.fetchMe(t);
-      }
+      final loadedProfile = await service.fetchMe(t);
+      _sonicUrl = DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
       final loadedPosts = targetTab == 0
           ? await service.fetchMyPosts(t)
           : targetTab == 1
@@ -4626,7 +4642,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
       tabPosts[targetTab] = loadedPosts;
       if (!mounted) return;
       setState(() {
-        profile = profile;
+        profile = loadedProfile;
         posts = loadedPosts;
         selectedTab = targetTab;
       });
@@ -4765,8 +4781,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
                             Wrap(
                               spacing: 6,
                               runSpacing: 6,
-                              children: const [
-                                _ProfileTag(text: 'sonic'),
+                              children: [
+                                _SonicProfileButton(
+                                  playing: _sonicPlaying,
+                                  enabled: _sonicUrl?.isNotEmpty == true,
+                                  onTap: _toggleSonic,
+                                ),
                                 _ProfileTag(text: '声优'),
                                 _ProfileTag(text: '御姐'),
                                 _ProfileTag(text: '忧郁'),
@@ -4862,6 +4882,55 @@ class _DDProfilePageState extends State<DDProfilePage> {
             ),
     );
   }
+}
+
+class _SonicProfileButton extends StatelessWidget {
+  const _SonicProfileButton({
+    required this.playing,
+    required this.enabled,
+    required this.onTap,
+  });
+  final bool playing;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: enabled ? onTap : null,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .primary
+                .withValues(alpha: enabled ? .14 : .07),
+            borderRadius: BorderRadius.circular(99),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                TIcons.sonic,
+                size: 16,
+                color: enabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).disabledColor,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                playing ? '暂停' : 'sonic',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: enabled
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).disabledColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _MyProfileIconTabs extends StatelessWidget {
