@@ -11,6 +11,7 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'post_service.dart';
 
@@ -4914,16 +4915,13 @@ class _MyProfileGrid extends StatelessWidget {
         child: Center(child: Text('暂无内容')),
       );
     }
-    return GridView.builder(
+    return MasonryGridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 18,
       itemCount: posts.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: .72,
-      ),
       itemBuilder: (context, index) {
         final post = posts[index];
         return InkWell(
@@ -4939,6 +4937,7 @@ class _MyProfileGrid extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 AspectRatio(
                   aspectRatio: 1.25,
