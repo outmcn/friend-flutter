@@ -3087,8 +3087,6 @@ class ChatPreview {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  final searchController = TextEditingController();
-  int tab = 0;
   final chats = const <ChatPreview>[
     ChatPreview(
         name: '林小满',
@@ -3119,107 +3117,29 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
-    searchController.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    final query = searchController.text.trim();
-    final visible = chats
-        .where((item) =>
-            tab == 0 ||
-            (tab == 1 && item.unread > 0) ||
-            (tab == 2 && item.online))
-        .where((item) =>
-            query.isEmpty ||
-            item.name.contains(query) ||
-            item.preview.contains(query))
-        .toList();
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(children: [
-          const Text('聊天'),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.error,
-              borderRadius: BorderRadius.circular(99),
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('聊天')),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
+          children: [
+            ...chats.map(
+              (chat) => _ChatListItem(
+                data: chat,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatDetailPage(peer: chat),
+                  ),
+                ),
+              ),
             ),
-            child: const Text('3',
-                style: TextStyle(fontSize: 11, color: Colors.white)),
-          ),
-        ]),
-        actions: [
-          IconButton(
-            tooltip: '新聊天',
-            onPressed: () => ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text(''))),
-            icon: const Icon(Icons.edit_square),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 104),
-        children: [
-          const _ChatDemoNotice(),
-          const SizedBox(height: 12),
-          TextField(
-            controller: searchController,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              hintText: '搜索聊天',
-              prefixIcon: Icon(Icons.search),
-            ),
-          ),
-          const SizedBox(height: 18),
-          const _ChatSectionHeader(title: '新匹配', action: '查看全部'),
-          SizedBox(
-            height: 90,
-            child: ListView(scrollDirection: Axis.horizontal, children: const [
-              _NewMatch(name: '苏念', icon: Icons.music_note, online: true),
-              _NewMatch(
-                  name: '小鹿',
-                  icon: Icons.sports_esports_outlined,
-                  online: true),
-              _NewMatch(name: '桃子', icon: Icons.face_4_outlined),
-              _NewMatch(name: '更多', icon: Icons.add),
-            ]),
-          ),
-          const SizedBox(height: 16),
-          Row(
-              children: ['全部', '未读', '在线']
-                  .asMap()
-                  .entries
-                  .map((entry) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(entry.value),
-                          selected: tab == entry.key,
-                          onSelected: (_) => setState(() => tab = entry.key),
-                        ),
-                      ))
-                  .toList()),
-          const SizedBox(height: 13),
-          const Text('会话',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          if (visible.isEmpty)
-            const _EmptyStateCard(
-                icon: TIcons.chat, title: '没有匹配的会话', subtitle: '聊天 不包含真实私聊')
-          else
-            ...visible.map((chat) => _ChatListItem(
-                  data: chat,
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => ChatDetailPage(peer: chat))),
-                )),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
 }
 
 class ChatDetailPage extends StatefulWidget {
