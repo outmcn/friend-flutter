@@ -4570,7 +4570,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
   List<DDPost> posts = [];
   int selectedTab = 0;
   bool loading = true;
-  bool isOnline = true;
   bool tabLoading = false;
   final Map<int, List<DDPost>> tabPosts = {};
   final AudioPlayer _sonicPlayer = AudioPlayer();
@@ -4849,26 +4848,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 (p?['avatar']?.toString() ?? '').trim().isEmpty
                                     ? const Icon(Icons.person, size: 42)
                                     : null,
-                          ),
-                          Positioned(
-                            left: 0,
-                            top: -12,
-                            child: GestureDetector(
-                              onTap: () => setState(() => isOnline = !isOnline),
-                              child: Container(
-                                width: 18,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: isOnline ? Colors.green : Colors.amber,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Theme.of(context)
-                                        .scaffoldBackgroundColor,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                            ),
                           ),
                           Positioned(
                             right: 0,
