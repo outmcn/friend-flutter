@@ -4866,26 +4866,15 @@ class _DDProfilePageState extends State<DDProfilePage> {
                             child: GestureDetector(
                               onTap: () => setState(() => isOnline = !isOnline),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 9, vertical: 5),
+                                width: 18,
+                                height: 18,
                                 decoration: BoxDecoration(
-                                  color:
-                                      (isOnline ? Colors.green : Colors.amber)
-                                          .withValues(alpha: .16),
-                                  borderRadius: BorderRadius.circular(16),
+                                  color: isOnline ? Colors.green : Colors.amber,
+                                  shape: BoxShape.circle,
                                   border: Border.all(
-                                    color:
-                                        isOnline ? Colors.green : Colors.amber,
-                                  ),
-                                ),
-                                child: Text(
-                                  isOnline ? '在线' : '隐身',
-                                  style: TextStyle(
-                                    color: isOnline
-                                        ? Colors.green
-                                        : Colors.amber.shade700,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
+                                    width: 2,
                                   ),
                                 ),
                               ),
