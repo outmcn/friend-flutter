@@ -5344,27 +5344,8 @@ class _MyProfileGrid extends StatelessWidget {
                     width: double.infinity,
                     color:
                         Theme.of(context).colorScheme.surfaceContainerHighest,
-                    padding: const EdgeInsets.all(12),
-                    alignment: Alignment.center,
-                    child: Text(
-                      post.content,
-                      maxLines: 5,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13),
-                    ),
+                    child: const SizedBox(height: 120),
                   ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-                  child: Text(
-                    post.content.trim().isEmpty ? '图文动态' : post.content,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 0, 10, 9),
                   child: Row(
