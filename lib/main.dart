@@ -4581,6 +4581,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   bool loading = true;
   bool isOnline = true;
   bool tabLoading = false;
+  final Map<int, List<DDPost>> tabPosts = {};
   String? error;
   @override
   void initState() {
@@ -4602,6 +4603,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
         error = null;
         if (isTabSwitch) {
           selectedTab = targetTab;
+          tabLoading = false;
+          final cached = tabPosts[targetTab];
+          if (cached != null) posts = cached;
         } else {
           loading = true;
         }
@@ -4611,15 +4615,18 @@ class _DDProfilePageState extends State<DDProfilePage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('请先登录');
-      final loadedProfile = await service.fetchMe(t);
+      if (!isTabSwitch || profile == null) {
+        profile = await service.fetchMe(t);
+      }
       final loadedPosts = targetTab == 0
           ? await service.fetchMyPosts(t)
           : targetTab == 1
               ? await service.fetchFavoritedPosts(t)
               : await service.fetchLikedPosts(t);
+      tabPosts[targetTab] = loadedPosts;
       if (!mounted) return;
       setState(() {
-        profile = loadedProfile;
+        profile = profile;
         posts = loadedPosts;
         selectedTab = targetTab;
       });
@@ -4631,6 +4638,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
       if (mounted) {
         setState(() {
           loading = false;
+          tabLoading = false;
         });
       }
     }
