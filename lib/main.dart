@@ -4939,32 +4939,35 @@ class _MyProfileGrid extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                AspectRatio(
-                  aspectRatio: 1.25,
-                  child: post.imageUrl?.trim().isNotEmpty == true
-                      ? Image.network(
-                          DDPostService.mediaUrl(post.imageUrl),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: AspectRatio(
+                    aspectRatio: 1.25,
+                    child: post.imageUrl?.trim().isNotEmpty == true
+                        ? Image.network(
+                            DDPostService.mediaUrl(post.imageUrl),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              child: const Icon(Icons.broken_image_outlined),
+                            ),
+                          )
+                        : Container(
                             color: Theme.of(context)
                                 .colorScheme
                                 .surfaceContainerHighest,
-                            child: const Icon(Icons.broken_image_outlined),
+                            padding: const EdgeInsets.all(12),
+                            alignment: Alignment.center,
+                            child: Text(
+                              post.content,
+                              maxLines: 5,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           ),
-                        )
-                      : Container(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          padding: const EdgeInsets.all(12),
-                          alignment: Alignment.center,
-                          child: Text(
-                            post.content,
-                            maxLines: 5,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ),
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
