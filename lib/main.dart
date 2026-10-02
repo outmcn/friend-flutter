@@ -4702,7 +4702,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
           IconButton(
             tooltip: '添加好友',
             onPressed: () {},
-            icon: const Icon(Icons.person_add_alt_1_outlined),
+            icon: const Icon(TIcons.scan),
           ),
           IconButton(
             tooltip: '更多',
