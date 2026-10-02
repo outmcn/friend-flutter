@@ -4854,7 +4854,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         clipBehavior: Clip.none,
                         children: [
                           CircleAvatar(
-                            radius: 48,
+                            radius: 40,
                             backgroundImage:
                                 (p?['avatar']?.toString() ?? '').trim().isEmpty
                                     ? null
