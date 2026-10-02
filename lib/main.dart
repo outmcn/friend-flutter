@@ -4872,9 +4872,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      ActionChip(
-                        label: const Text('+'),
-                        onPressed: () async {
+                      GestureDetector(
+                        onTap: () async {
                           final selected = await Navigator.push<List<String>>(
                             context,
                             MaterialPageRoute(
@@ -4887,6 +4886,20 @@ class _DDProfilePageState extends State<DDProfilePage> {
                             setState(() => _tags = selected);
                           }
                         },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 9, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Text(
+                            '+',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ),
                       ),
                       ..._tags.map((tag) => _ProfileTag(text: tag)),
                     ],
