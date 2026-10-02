@@ -5877,9 +5877,7 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
                         .toList())),
             const _CompanionSection(title: '在线陪玩'),
             ...visible.map((c) => _CompanionListCard(
-                data: c,
-                onTap: () => _open(c),
-                onOrder: () => _notice('约玩服务'))),
+                data: c, onTap: () => _open(c), onOrder: _showFakeOrderDialog)),
           ]),
       bottomNavigationBar: SafeArea(
           top: false,
@@ -5894,6 +5892,22 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
 
   void _open(CompanionProfile c) => Navigator.push(context,
       MaterialPageRoute(builder: (_) => CompanionProfilePage(data: c)));
+  Future<void> _showFakeOrderDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('胡进正在伪装，请稍后……'),
+        content: const Text('当前进度：正在插入变声器'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _notice(String feature) {}
 }
 
