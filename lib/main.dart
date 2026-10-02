@@ -4948,18 +4948,21 @@ class _MyProfileGrid extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (post.imageUrl?.trim().isNotEmpty == true)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: Image.network(
-                      DDPostService.mediaUrl(post.imageUrl),
-                      width: double.infinity,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 120,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        child: const Icon(Icons.broken_image_outlined),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      child: Image.network(
+                        DDPostService.mediaUrl(post.imageUrl),
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 120,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          child: const Icon(Icons.broken_image_outlined),
+                        ),
                       ),
                     ),
                   )
