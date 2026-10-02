@@ -5307,7 +5307,8 @@ class _MyProfileGrid extends StatelessWidget {
       itemCount: posts.length,
       itemBuilder: (context, index) {
         final post = posts[index];
-        return InkWell(
+        return _MyProfilePostCard(
+          post: post,
           onTap: () async {
             final changed = await Navigator.push<bool>(
               context,
@@ -5317,69 +5318,76 @@ class _MyProfileGrid extends StatelessWidget {
             );
             if (changed == true) onChanged?.call();
           },
-          borderRadius: BorderRadius.circular(14),
-          child: Card(
-            margin: EdgeInsets.zero,
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (post.imageUrl?.trim().isNotEmpty == true)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 300),
-                      child: Image.network(
-                        DDPostService.mediaUrl(post.imageUrl),
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          height: 120,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          child: const Icon(Icons.broken_image_outlined),
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    constraints: const BoxConstraints(minHeight: 120),
-                    width: double.infinity,
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: const SizedBox(height: 120),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 9),
-                  child: Row(
-                    children: [
-                      Icon(
-                        TIcons.thumb_up_1,
-                        size: 15,
-                        color: post.liked
-                            ? Colors.red
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 3),
-                      Text('${post.likes}'),
-                      const SizedBox(width: 12),
-                      Icon(Icons.visibility_outlined,
-                          size: 15,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 3),
-                      Text('${post.views}'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         );
       },
+    );
+  }
+}
+
+class _MyProfilePostCard extends StatelessWidget {
+  const _MyProfilePostCard({required this.post, required this.onTap});
+  final DDPost post;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final image = post.imageUrl?.trim();
+    final video = post.videoUrl?.trim();
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Card(
+          margin: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (image != null && image.isNotEmpty)
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.network(
+                    DDPostService.mediaUrl(image),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: scheme.surfaceContainerHighest,
+                      child: const Icon(Icons.broken_image_outlined),
+                    ),
+                  ),
+                )
+              else if (video != null && video.isNotEmpty)
+                _NetworkVideoPreview(url: video)
+              else
+                Container(
+                  height: 150,
+                  color: scheme.surfaceContainerHighest,
+                  alignment: Alignment.center,
+                  child: Icon(Icons.image_outlined,
+                      color: scheme.onSurfaceVariant),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Row(
+                  children: [
+                    Icon(TIcons.thumb_up_1,
+                        size: 16,
+                        color: post.liked ? Colors.red : scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('${post.likes}'),
+                    const Spacer(),
+                    Icon(Icons.visibility_outlined,
+                        size: 16, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('${post.views}'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -5414,7 +5422,20 @@ class _MyPostList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (posts.isEmpty) return _ProfileEmptyTab(label: emptyLabel);
     return Column(
-      children: posts.map((post) => _MyListCard(post: post)).toList(),
+      children: posts
+          .map((post) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _MyProfilePostCard(
+                  post: post,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DynamicDetailPage(postId: post.id),
+                    ),
+                  ),
+                ),
+              ))
+          .toList(),
     );
   }
 }
@@ -5431,7 +5452,20 @@ class _MyPostWaterfall extends StatelessWidget {
   Widget build(BuildContext context) {
     if (posts.isEmpty) return _ProfileEmptyTab(label: emptyLabel);
     return Column(
-      children: posts.map((post) => _MyListCard(post: post)).toList(),
+      children: posts
+          .map((post) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _MyProfilePostCard(
+                  post: post,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DynamicDetailPage(postId: post.id),
+                    ),
+                  ),
+                ),
+              ))
+          .toList(),
     );
   }
 }
