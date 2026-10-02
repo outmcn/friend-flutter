@@ -4873,7 +4873,7 @@ class _MyProfileIconTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
         children: [
-          _tab(context, 0, Icons.grid_view_outlined),
+          _tab(context, 0, TIcons.format_vertical_align_left),
           _tab(context, 1, Icons.bookmark_border),
           _tab(context, 2, Icons.favorite_border),
         ],
