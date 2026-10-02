@@ -440,16 +440,6 @@ class OnboardingPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 34),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(34),
-                child: _SafeAssetImage(
-                  asset: 'assets/figma/hero-laptop.png',
-                  height: 220,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  borderRadius: BorderRadius.circular(34),
-                ),
-              ),
               const Spacer(),
               SizedBox(
                 width: double.infinity,
