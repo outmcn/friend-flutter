@@ -6699,7 +6699,6 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final service = DDPostService();
   final nickname = TextEditingController();
-  final city = TextEditingController();
   XFile? image;
   bool loading = true;
   bool saving = false;
@@ -6714,7 +6713,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void dispose() {
     service.dispose();
     nickname.dispose();
-    city.dispose();
     super.dispose();
   }
 
@@ -6725,7 +6723,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (token.isEmpty) throw Exception('请先登录');
       final data = await service.fetchMe(token);
       nickname.text = '${data['nickname'] ?? ''}';
-      city.text = '${data['city'] ?? ''}';
     } catch (e) {
       if (mounted) error = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -6766,10 +6763,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (token.isEmpty) throw Exception('请先登录');
       final avatar = await _avatarDataUrl();
       await service.updateMe(
-          token: token,
-          nickname: nickname.text.trim(),
-          city: city.text.trim(),
-          avatar: avatar);
+          token: token, nickname: nickname.text.trim(), avatar: avatar);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted)
@@ -6805,10 +6799,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     controller: nickname,
                     maxLength: 5,
                     decoration: const InputDecoration(labelText: '昵称')),
-                const SizedBox(height: 14),
-                TextField(
-                    controller: city,
-                    decoration: const InputDecoration(labelText: '城市')),
               ]),
       );
 }
