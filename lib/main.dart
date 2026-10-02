@@ -1979,6 +1979,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                     );
                                   }
                                 });
+                                await DDPostService.clearProfileTabCaches();
                               }
                             } catch (e) {
                               if (mounted) {
@@ -2007,6 +2008,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                     );
                                   }
                                 });
+                                await DDPostService.clearProfileTabCaches();
                               }
                             } catch (e) {
                               if (mounted) {
@@ -2742,6 +2744,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           latitude: location?.latitude,
                           longitude: location?.longitude,
                         );
+                        await DDPostService.clearProfileTabCaches();
                         if (mounted) {
                           Navigator.pop(context, true);
                         }
@@ -3807,6 +3810,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Future<void> _toggleLike() async {
     try {
       await service.toggleLike(await token(), widget.postId);
+      await DDPostService.clearProfileTabCaches();
       if (mounted && post != null) {
         setState(() {
           post = post!.copyWith(
@@ -3824,6 +3828,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Future<void> _toggleFavorite() async {
     try {
       await service.toggleFavorite(await token(), widget.postId);
+      await DDPostService.clearProfileTabCaches();
       if (mounted && post != null) {
         setState(() {
           post = post!.copyWith(
@@ -3857,6 +3862,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     try {
       setState(() => deleting = true);
       await service.deletePost(await token(), widget.postId);
+      await DDPostService.clearProfileTabCaches();
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted)
@@ -6650,6 +6656,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
               '';
       if (token.isEmpty) throw Exception('请先登录');
       await service.deletePost(token, post.id);
+      await DDPostService.clearProfileTabCaches();
       await load();
       if (mounted) {
         ScaffoldMessenger.of(context)
