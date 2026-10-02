@@ -4810,6 +4810,16 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 _InlineProfileStat(
                                   label: '赞',
                                   value: '${p?['likes'] ?? 0}',
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const _UserRelationListPage(
+                                        relation: 'likers',
+                                        title: '获赞',
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
