@@ -429,6 +429,18 @@ class DDPostService {
   Future<Map<String, dynamic>> fetchUserProfile(String token, int userId) =>
       _fetchObject(token, '/api/users/$userId');
 
+  Future<List<Map<String, dynamic>>> fetchUsers(String token,
+      {required String relation}) async {
+    final response = await _client.get(
+      _base.resolve('/api/users?relation=$relation'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = await _decodeResponse(response, '用户列表加载失败');
+    final data = decoded['data'];
+    if (data is! List) throw Exception('用户列表数据格式错误');
+    return data.whereType<Map<String, dynamic>>().toList();
+  }
+
   Future<Map<String, dynamic>> fetchMe(String token) =>
       _fetchObject(token, '/api/me');
 
