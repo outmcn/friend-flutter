@@ -1905,7 +1905,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                   MaterialPageRoute(builder: (_) => const NotificationsPage()),
                 );
               },
-              icon: const Icon(Icons.notifications_none),
+              icon: const Icon(TIcons.notification),
               tooltip: '通知中心',
             ),
             IconButton(
