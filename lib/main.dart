@@ -6796,6 +6796,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   Text(error!, style: const TextStyle(color: Colors.orange)),
                 TextField(
                     controller: nickname,
+                    maxLength: 5,
                     decoration: const InputDecoration(labelText: '昵称')),
                 const SizedBox(height: 14),
                 TextField(
