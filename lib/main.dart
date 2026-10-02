@@ -4868,41 +4868,50 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                          final selected = await Navigator.push<List<String>>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => _ProfileTagEditorPage(
-                                selectedTags: _tags,
+                  SizedBox(
+                    height: 32,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () async {
+                              final selected =
+                                  await Navigator.push<List<String>>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => _ProfileTagEditorPage(
+                                    selectedTags: _tags,
+                                  ),
+                                ),
+                              );
+                              if (selected != null && mounted) {
+                                setState(() => _tags = selected);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 9, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Text(
+                                '+',
+                                style: Theme.of(context).textTheme.labelSmall,
                               ),
                             ),
-                          );
-                          if (selected != null && mounted) {
-                            setState(() => _tags = selected);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 9, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .secondaryContainer,
-                            borderRadius: BorderRadius.circular(99),
                           ),
-                          child: Text(
-                            '+',
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ),
+                          ..._tags.map((tag) => Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: _ProfileTag(text: tag),
+                              )),
+                        ],
                       ),
-                      ..._tags.map((tag) => _ProfileTag(text: tag)),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 22),
                   _MyProfileIconTabs(
