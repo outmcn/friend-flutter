@@ -4737,18 +4737,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: const [
-                                _ProfileTag(text: '声优'),
-                                _ProfileTag(text: '御姐'),
-                                _ProfileTag(text: '忧郁'),
-                                _ProfileTag(text: '旅游'),
-                                _ProfileTag(text: '电影'),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
                             Row(
                               children: [
                                 _InlineProfileStat(
@@ -4765,6 +4753,18 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                   label: '赞',
                                   value: '${p?['likes'] ?? 0}',
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: const [
+                                _ProfileTag(text: '声优'),
+                                _ProfileTag(text: '御姐'),
+                                _ProfileTag(text: '忧郁'),
+                                _ProfileTag(text: '旅游'),
+                                _ProfileTag(text: '电影'),
                               ],
                             ),
                           ],
