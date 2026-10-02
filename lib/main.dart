@@ -4766,6 +4766,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               spacing: 6,
                               runSpacing: 6,
                               children: const [
+                                _ProfileTag(text: 'sonic'),
                                 _ProfileTag(text: '声优'),
                                 _ProfileTag(text: '御姐'),
                                 _ProfileTag(text: '忧郁'),
