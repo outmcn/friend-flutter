@@ -335,23 +335,31 @@ class DDPostService {
     required List<int> bytes,
     required String fileName,
   }) async {
-    final sts = await fetchStorageSts(token);
-    final prefix = sts['prefix']?.toString() ?? 'friend/';
     final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-    final objectKey = '$prefix/posts/${DateTime.now().millisecondsSinceEpoch}_$safeName';
-    final endpoint = sts['endpoint']?.toString() ?? 'oss-${sts['region']}.aliyuncs.com';
-    final uri = Uri.parse('https://$endpoint/$objectKey');
-    final response = await _client.put(
-      uri,
+    final response = await _client.get(
+      _base.resolve('/api/storage/upload-url?fileName=${Uri.encodeQueryComponent(safeName)}'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = await _decodeResponse(response, '获取 OSS 上传地址失败');
+    if (decoded['ok'] != true || decoded['data'] is! Map<String, dynamic>) {
+      throw Exception('${decoded['message'] ?? '获取 OSS 上传地址失败'}');
+    }
+    final data = decoded['data'] as Map<String, dynamic>;
+    final uploadUrl = data['url']?.toString();
+    final objectKey = data['objectKey']?.toString();
+    if (uploadUrl == null || uploadUrl.isEmpty || objectKey == null || objectKey.isEmpty) {
+      throw Exception('OSS 上传地址响应格式错误');
+    }
+    final upload = await _client.put(
+      Uri.parse(uploadUrl),
       headers: {
-        'x-oss-security-token': sts['securityToken'].toString(),
         'Content-Type': 'image/jpeg',
         'Content-Length': '${bytes.length}',
       },
       body: bytes,
     );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('图片上传 OSS 失败（${response.statusCode}）');
+    if (upload.statusCode < 200 || upload.statusCode >= 300) {
+      throw Exception('图片上传 OSS 失败（${upload.statusCode}）');
     }
     return objectKey;
   }
