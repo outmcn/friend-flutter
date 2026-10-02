@@ -4861,8 +4861,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                     : null,
                           ),
                           Positioned(
-                            right: -8,
-                            bottom: -4,
+                            left: 0,
+                            top: -12,
                             child: GestureDetector(
                               onTap: () => setState(() => isOnline = !isOnline),
                               child: Container(
@@ -4891,6 +4891,15 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               ),
                             ),
                           ),
+                          Positioned(
+                            right: 0,
+                            bottom: -12,
+                            child: _SonicProfileButton(
+                              playing: _sonicPlaying,
+                              enabled: _sonicUrl?.isNotEmpty == true,
+                              onTap: _toggleSonic,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -4900,11 +4909,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      _SonicProfileButton(
-                        playing: _sonicPlaying,
-                        enabled: _sonicUrl?.isNotEmpty == true,
-                        onTap: _toggleSonic,
-                      ),
                       const _ProfileTag(text: '声优'),
                       const _ProfileTag(text: '御姐'),
                       const _ProfileTag(text: '忧郁'),
