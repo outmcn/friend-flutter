@@ -4850,7 +4850,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                     : null,
                           ),
                           Positioned(
-                            right: 0,
+                            left: 20,
                             bottom: -12,
                             child: _SonicProfileButton(
                               playing: _sonicPlaying,
