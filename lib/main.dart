@@ -4906,28 +4906,12 @@ class _SonicProfileButton extends StatelessWidget {
                 .withValues(alpha: enabled ? .14 : .07),
             borderRadius: BorderRadius.circular(99),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                TIcons.sonic,
-                size: 16,
-                color: enabled
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).disabledColor,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                playing ? '暂停' : 'sonic',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: enabled
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).disabledColor,
-                ),
-              ),
-            ],
+          child: Icon(
+            playing ? Icons.pause : TIcons.sonic,
+            size: 18,
+            color: enabled
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).disabledColor,
           ),
         ),
       );
