@@ -5239,10 +5239,13 @@ class _MyProfileGrid extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(10, 0, 10, 9),
                   child: Row(
                     children: [
-                      Icon(Icons.thumb_up_alt_outlined,
-                          size: 15,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant),
+                      Icon(
+                        TIcons.thumb_up_1,
+                        size: 15,
+                        color: post.liked
+                            ? Colors.red
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 3),
                       Text('${post.likes}'),
                       const SizedBox(width: 12),
