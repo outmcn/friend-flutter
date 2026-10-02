@@ -4452,7 +4452,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                         ),
                                         const SizedBox(width: 18),
                                         _InlineProfileStat(
-                                          label: '赞',
+                                          label: '魅力',
                                           value: '$profileLikes',
                                         ),
                                       ],
@@ -4822,7 +4822,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ),
                                 const SizedBox(width: 18),
                                 _InlineProfileStat(
-                                  label: '赞',
+                                  label: '魅力',
                                   value: '${p?['likes'] ?? 0}',
                                   onTap: () => Navigator.push(
                                     context,
