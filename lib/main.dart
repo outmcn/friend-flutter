@@ -4281,6 +4281,8 @@ class OtherProfilePage extends StatefulWidget {
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
   final DDPostService service = DDPostService();
+  final ScrollController _profileScrollController = ScrollController();
+  final AudioPlayer _sonicPlayer = AudioPlayer();
   Map<String, dynamic>? profile;
   List<DDPost> posts = const [];
   bool loading = true;
@@ -4289,16 +4291,31 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool isProfileLiked = false;
   int profileLikes = 0;
   int selectedContentTab = 0;
+  bool _showStickyNickname = false;
+  bool _sonicPlaying = false;
+  String? _sonicUrl;
   String? error;
 
   @override
   void initState() {
     super.initState();
+    _profileScrollController.addListener(_handleProfileScroll);
     load();
+  }
+
+  void _handleProfileScroll() {
+    final show = _profileScrollController.hasClients &&
+        _profileScrollController.offset >= 58;
+    if (show != _showStickyNickname && mounted) {
+      setState(() => _showStickyNickname = show);
+    }
   }
 
   @override
   void dispose() {
+    _profileScrollController.removeListener(_handleProfileScroll);
+    _profileScrollController.dispose();
+    _sonicPlayer.dispose();
     service.dispose();
     super.dispose();
   }
@@ -4327,6 +4344,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       isFollowing = followingState;
       isProfileLiked = data['liked'] == true;
       profileLikes = (loadedProfile['likes'] as num?)?.toInt() ?? 0;
+      _sonicUrl = DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
       final raw = data['posts'];
       posts = raw is List
           ? raw.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList()
@@ -4338,6 +4356,17 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  Future<void> _toggleSonic() async {
+    final url = _sonicUrl;
+    if (url == null || url.isEmpty) return;
+    if (_sonicPlaying) {
+      await _sonicPlayer.pause();
+    } else {
+      await _sonicPlayer.play(UrlSource(url));
+    }
+    if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
   }
 
   Future<void> toggleFollow() async {
@@ -4384,7 +4413,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     final following = isFollowing;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ta的主页'),
+        title: _showStickyNickname
+            ? Text(
+                '${p?['nickname'] ?? widget.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            : const SizedBox.shrink(),
         actions: [
           if (!loading)
             Padding(
@@ -4406,6 +4441,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           : RefreshIndicator(
               onRefresh: load,
               child: ListView(
+                controller: _profileScrollController,
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 108),
                 children: [
                   if (error != null)
@@ -4422,9 +4458,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Stack(
+                                clipBehavior: Clip.none,
                                 children: [
                                   CircleAvatar(
-                                    radius: 42,
+                                    radius: 40,
                                     backgroundImage:
                                         (p?['avatar']?.toString() ?? '')
                                                 .trim()
@@ -4440,10 +4477,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                             size: 34)
                                         : null,
                                   ),
-                                  const Positioned(
-                                    right: 1,
-                                    bottom: 2,
-                                    child: _OnlineDot(),
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: -12,
+                                    child: Align(
+                                      alignment: Alignment.center,
+                                      child: _SonicProfileButton(
+                                        playing: _sonicPlaying,
+                                        enabled: _sonicUrl?.isNotEmpty == true,
+                                        onTap: _toggleSonic,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -4460,51 +4505,59 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.w800,
+                                              fontSize: 25,
+                                              fontWeight: FontWeight.w900,
                                             ),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        Flexible(
-                                          child: Wrap(
-                                            spacing: 4,
-                                            children: [
-                                              _ProfileTag(
-                                                  text:
-                                                      '${p?['city'] ?? '未知地区'}'),
-                                              _ProfileTag(
-                                                  text:
-                                                      '${p?['activeDays'] ?? 0}天'),
-                                            ],
-                                          ),
-                                        ),
+                                        _ProfileTag(
+                                            text: '${p?['city'] ?? '未知'}'),
+                                        const SizedBox(width: 4),
+                                        _ProfileTag(
+                                            text: '${p?['activeDays'] ?? 0}天'),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
                                         _InlineProfileStat(
-                                            label: '关注',
-                                            value: '${p?['following'] ?? 0}'),
-                                        const SizedBox(width: 14),
+                                          label: '关注',
+                                          value: '${p?['following'] ?? 0}',
+                                        ),
+                                        const SizedBox(width: 18),
                                         _InlineProfileStat(
-                                            label: '粉丝',
-                                            value: '${p?['followers'] ?? 0}'),
-                                        const SizedBox(width: 14),
+                                          label: '粉丝',
+                                          value: '${p?['followers'] ?? 0}',
+                                        ),
+                                        const SizedBox(width: 18),
                                         _InlineProfileStat(
-                                            label: '赞', value: '$profileLikes'),
+                                          label: '赞',
+                                          value: '$profileLikes',
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 6,
-                                      children: const [
-                                        _ProfileTag(text: '御姐'),
-                                        _ProfileTag(text: '美食'),
-                                        _ProfileTag(text: '音乐'),
-                                      ],
+                                    SizedBox(
+                                      height: 32,
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          children: [
+                                            _ProfileTag(text: '+'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '声优'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '御姐'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '忧郁'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '旅游'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '电影'),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -4516,9 +4569,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  _OtherProfileVoiceCard(
-                      name: '${p?['nickname'] ?? widget.name}的声音名片'),
                   const SizedBox(height: 14),
                   _MyProfileIconTabs(
                     selectedTab: selectedContentTab,
@@ -4580,8 +4630,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
   final Map<int, List<DDPost>> tabPosts = {};
   final AudioPlayer _sonicPlayer = AudioPlayer();
   final ScrollController _profileScrollController = ScrollController();
-  bool _sonicPlaying = false;
   bool _showStickyNickname = false;
+  bool _sonicPlaying = false;
   String? _sonicUrl;
   String? error;
   List<String> _tags = const ['声优', '御姐', '忧郁', '旅游', '电影'];
