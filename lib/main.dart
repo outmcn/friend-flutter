@@ -4632,8 +4632,24 @@ class _DDProfilePageState extends State<DDProfilePage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('dd.auth.token') ?? '';
       if (t.isEmpty) throw Exception('请先登录');
-      final loadedProfile = await service.fetchMe(t);
-      _sonicUrl = DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
+      final needProfile = profile == null || !isTabSwitch;
+      Map<String, dynamic> loadedProfile = profile ?? {};
+      if (needProfile) {
+        loadedProfile = await service.fetchMe(t);
+        _sonicUrl =
+            DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
+      }
+      final cached = tabPosts[targetTab];
+      if (isTabSwitch && cached != null) {
+        if (mounted) {
+          setState(() {
+            profile = loadedProfile;
+            posts = cached;
+            selectedTab = targetTab;
+          });
+        }
+        return;
+      }
       final loadedPosts = targetTab == 0
           ? await service.fetchMyPosts(t)
           : targetTab == 1
