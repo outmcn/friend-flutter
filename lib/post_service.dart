@@ -441,6 +441,9 @@ class DDPostService {
     return data.whereType<Map<String, dynamic>>().toList();
   }
 
+  Future<List<Map<String, dynamic>>> fetchHistory(String token) =>
+      fetchUsers(token, relation: 'history');
+
   Future<Map<String, dynamic>> fetchMe(String token) =>
       _fetchObject(token, '/api/me');
 

@@ -4696,7 +4696,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
         actions: [
           IconButton(
             tooltip: '浏览记录',
-            onPressed: () {},
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const _HistoryRecordsPage()),
+            ),
             icon: const Icon(Icons.history),
           ),
           IconButton(
@@ -4928,6 +4931,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
             ),
     );
   }
+}
+
+class _HistoryRecordsPage extends _UserRelationListPage {
+  const _HistoryRecordsPage() : super(relation: 'history', title: '历史访客');
 }
 
 class _UserRelationListPage extends StatefulWidget {
