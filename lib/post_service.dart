@@ -3,6 +3,18 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+int? _intValue(Object? value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+double? _doubleValue(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
 class DDPost {
   const DDPost({
     required this.id,
@@ -83,17 +95,17 @@ class DDPost {
         'views': views,
       };
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        userId: (json['userId'] as num?)?.toInt(),
+        id: _intValue(json['id']) ?? 0,
+        userId: _intValue(json['userId']),
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? json['created_at'] ?? ''}',
         nickname: '${json['nickname'] ?? json['username'] ?? '用户'}',
         avatar: DDPostService.mediaUrl(json['avatar']?.toString()),
-        likes: (json['likes'] as num?)?.toInt() ?? 0,
-        favorites: (json['favorites'] as num?)?.toInt() ?? 0,
-        comments: (json['comments'] as num?)?.toInt() ?? 0,
+        likes: _intValue(json['likes']) ?? 0,
+        favorites: _intValue(json['favorites']) ?? 0,
+        comments: _intValue(json['comments']) ?? 0,
         following: json['following'] == true,
-        distanceKm: (json['distanceKm'] as num?)?.toDouble(),
+        distanceKm: _doubleValue(json['distanceKm']),
         liked: json['liked'] == true,
         favorited: json['favorited'] == true,
         imageUrl: DDPostService.mediaUrl(
@@ -102,7 +114,7 @@ class DDPost {
         videoUrl: DDPostService.mediaUrl(
           (json['videoURL'] ?? json['video_url'] ?? json['video'])?.toString(),
         ),
-        views: (json['views'] as num?)?.toInt() ?? 0,
+        views: _intValue(json['views']) ?? 0,
       );
 }
 
@@ -121,9 +133,9 @@ class DDComment {
   final String content;
   final String createdAt;
   factory DDComment.fromJson(Map<String, dynamic> json) => DDComment(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        userId: (json['userId'] as num?)?.toInt(),
-        parentId: (json['parentId'] as num?)?.toInt(),
+        id: _intValue(json['id']) ?? 0,
+        userId: _intValue(json['userId']),
+        parentId: _intValue(json['parentId']),
         nickname: '${json['nickname'] ?? '用户'}',
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
@@ -155,14 +167,14 @@ class DDNotification {
   final String? commentContent;
   final bool read;
   factory DDNotification.fromJson(Map<String, dynamic> json) => DDNotification(
-        id: (json['id'] as num?)?.toInt() ?? 0,
+        id: _intValue(json['id']) ?? 0,
         type: '${json['type'] ?? ''}',
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
         nickname: json['nickname']?.toString(),
         avatar: DDPostService.mediaUrl(json['avatar']?.toString()),
-        postId: (json['postId'] as num?)?.toInt(),
-        commentId: (json['commentId'] as num?)?.toInt(),
+        postId: _intValue(json['postId']),
+        commentId: _intValue(json['commentId']),
         postContent: json['postContent']?.toString(),
         commentContent: json['commentContent']?.toString(),
         read: json['read'] == true,
@@ -336,7 +348,7 @@ class DDPostService {
     }
     final data = decoded['data'];
     return data is Map<String, dynamic>
-        ? (data['id'] as num?)?.toInt() ?? 0
+        ? _intValue(data['id']) ?? 0
         : 0;
   }
 

@@ -16,6 +16,12 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'post_service.dart';
 
+int? _intValue(Object? value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
 String _formatExactPostTime(String raw) {
   final parsed = DateTime.tryParse(raw);
   if (parsed == null) return raw;
@@ -3546,7 +3552,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     try {
       final t = await token();
       final me = await service.fetchMe(t);
-      currentUserId = (me['id'] as num?)?.toInt();
+      currentUserId = _intValue(me['id']);
       post = await service.fetchPost(t, widget.postId);
       comments = await service.fetchComments(t, widget.postId);
       if (post == null) throw Exception('动态不存在');
@@ -4263,7 +4269,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       profile = loadedProfile;
       isFollowing = followingState;
       isProfileLiked = data['liked'] == true;
-      profileLikes = (loadedProfile['likes'] as num?)?.toInt() ?? 0;
+      profileLikes = _intValue(loadedProfile['likes']) ?? 0;
       _sonicUrl = DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
       final raw = data['posts'];
       posts = raw is List
@@ -4316,7 +4322,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       if (!mounted) return;
       setState(() {
         isProfileLiked = response['liked'] == true;
-        profileLikes = (response['likes'] as num?)?.toInt() ?? profileLikes;
+        profileLikes = _intValue(response['likes']) ?? profileLikes;
       });
     } catch (e) {
       if (mounted) {
@@ -5052,7 +5058,7 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                 const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final user = users[index];
-                              final userId = (user['id'] as num?)?.toInt();
+                              final userId = _intValue(user['id']);
                               return Card(
                                 margin: EdgeInsets.zero,
                                 child: ListTile(
