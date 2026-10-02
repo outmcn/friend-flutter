@@ -4723,11 +4723,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
             icon: const Icon(Icons.history),
           ),
           IconButton(
-            tooltip: '添加好友',
-            onPressed: () {},
-            icon: const Icon(TIcons.scan),
-          ),
-          IconButton(
             tooltip: '更多',
             onPressed: () => showModalBottomSheet<void>(
               context: context,
