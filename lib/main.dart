@@ -4955,7 +4955,7 @@ class _MyProfileGrid extends StatelessWidget {
                       child: Image.network(
                         DDPostService.mediaUrl(post.imageUrl),
                         width: double.infinity,
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           height: 120,
                           color: Theme.of(context)
