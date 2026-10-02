@@ -330,43 +330,38 @@ class DDPostService {
     return decoded['data'] as Map<String, dynamic>;
   }
 
+  Future<String> uploadFileToOss({
+    required String token,
+    required List<int> bytes,
+    required String fileName,
+    String directory = 'files',
+    String contentType = 'application/octet-stream',
+  }) async {
+    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final response = await _client.get(
+      _base.resolve('/api/storage/upload-url?fileName=${Uri.encodeQueryComponent(safeName)}&directory=${Uri.encodeQueryComponent(directory)}'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = await _decodeResponse(response, '获取 OSS 上传地址失败');
+    final data = decoded['data'];
+    if (decoded['ok'] != true || data is! Map<String, dynamic>) throw Exception('${decoded['message'] ?? '获取 OSS 上传地址失败'}');
+    final uploadUrl = data['url']?.toString();
+    final objectKey = data['objectKey']?.toString();
+    if (uploadUrl == null || objectKey == null) throw Exception('OSS 上传地址响应格式错误');
+    final upload = await _client.put(Uri.parse(uploadUrl), headers: {'Content-Type': contentType, 'Content-Length': '${bytes.length}'}, body: bytes);
+    if (upload.statusCode < 200 || upload.statusCode >= 300) throw Exception('文件上传 OSS 失败（${upload.statusCode}）');
+    return objectKey;
+  }
   Future<String> uploadImageToOss({
     required String token,
     required List<int> bytes,
     required String fileName,
-  }) async {
-    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-    final response = await _client.get(
-      _base.resolve('/api/storage/upload-url?fileName=${Uri.encodeQueryComponent(safeName)}'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    final decoded = await _decodeResponse(response, '获取 OSS 上传地址失败');
-    if (decoded['ok'] != true || decoded['data'] is! Map<String, dynamic>) {
-      throw Exception('${decoded['message'] ?? '获取 OSS 上传地址失败'}');
-    }
-    final data = decoded['data'] as Map<String, dynamic>;
-    final uploadUrl = data['url']?.toString();
-    final objectKey = data['objectKey']?.toString();
-    if (uploadUrl == null || uploadUrl.isEmpty || objectKey == null || objectKey.isEmpty) {
-      throw Exception('OSS 上传地址响应格式错误');
-    }
-    final upload = await _client.put(
-      Uri.parse(uploadUrl),
-      headers: {
-        'Content-Type': 'image/jpeg',
-        'Content-Length': '${bytes.length}',
-      },
-      body: bytes,
-    );
-    if (upload.statusCode < 200 || upload.statusCode >= 300) {
-      throw Exception('图片上传 OSS 失败（${upload.statusCode}）');
-    }
-    return objectKey;
-  }
+  }) => uploadFileToOss(token: token, bytes: bytes, fileName: fileName, directory: 'posts', contentType: 'image/jpeg');
   Future<int> createPost({
       required String token,
       required String content,
       String? imageDataUrl,
+      String? videoUrl,
       String visibility = 'public',
       double? latitude,
       double? longitude}) async {
@@ -377,6 +372,9 @@ class DDPostService {
     }
     if (imageDataUrl != null && imageDataUrl.isNotEmpty) {
       body['image'] = imageDataUrl;
+    }
+    if (videoUrl != null && videoUrl.isNotEmpty) {
+      body['video'] = videoUrl;
     }
     body['visibility'] = visibility;
     final response = await _client.post(

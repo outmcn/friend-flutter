@@ -2613,6 +2613,7 @@ class CreatePostPage extends StatefulWidget {
 class _CreatePostPageState extends State<CreatePostPage> {
   String? mediaType;
   XFile? selectedImage;
+  XFile? selectedVideo;
   String visibility = '所有人可见';
   bool publishing = false;
   final TextEditingController _content = TextEditingController();
@@ -2644,17 +2645,40 @@ class _CreatePostPageState extends State<CreatePostPage> {
     }
   }
 
+  Future<void> _pickVideo() async {
+    try {
+      final video = await ImagePicker().pickVideo(source: ImageSource.gallery);
+      if (video != null && mounted) {
+        final bytes = await video.length();
+        if (bytes > 50 * 1024 * 1024) throw Exception('视频不能超过 50MB');
+        setState(() {
+          selectedVideo = video;
+          selectedImage = null;
+          mediaType = '视频';
+          error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '视频选择失败：$e');
+    }
+  }
   Future<String?> _imageObjectKey(String token) async {
     if (selectedImage == null) return null;
     final bytes = await selectedImage!.readAsBytes();
     if (bytes.length > 8 * 1024 * 1024) throw Exception('图片不能超过 8MB');
     final decoded = img.decodeImage(bytes);
-    final resized = decoded == null
-        ? null
-        : (decoded.width > 1600 ? img.copyResize(decoded, width: 1600) : decoded);
+    final resized = decoded == null ? null : (decoded.width > 1600 ? img.copyResize(decoded, width: 1600) : decoded);
     final compressed = resized == null ? bytes : img.encodeJpg(resized, quality: 82);
     return _service.uploadImageToOss(token: token, bytes: compressed, fileName: selectedImage!.name);
   }
+
+  Future<String?> _videoObjectKey(String token) async {
+    if (selectedVideo == null) return null;
+    final bytes = await selectedVideo!.readAsBytes();
+    if (bytes.length > 50 * 1024 * 1024) throw Exception('视频不能超过 50MB');
+    return _service.uploadFileToOss(token: token, bytes: bytes, fileName: selectedVideo!.name, directory: 'posts', contentType: 'video/mp4');
+  }
+
 
   Future<_PostLocation?> _locationForPost(String token) async {
     const cacheAge = Duration(hours: 1);
@@ -2700,7 +2724,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
   void _clearImage() => setState(() {
         selectedImage = null;
-        if (mediaType == '图片') mediaType = null;
+        selectedVideo = null;
+        mediaType = null;
       });
 
   @override
@@ -2723,7 +2748,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         return;
                       }
                       if (_content.text.trim().isEmpty &&
-                          selectedImage == null) {
+          selectedImage == null &&
+          selectedVideo == null) {
                         setState(() => error = '请输入动态内容或选择图片');
                         return;
                       }
@@ -2737,6 +2763,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           token: token,
                           content: _content.text.trim(),
                           imageDataUrl: await _imageObjectKey(token),
+                          videoUrl: await _videoObjectKey(token),
                           visibility: visibility == '仅好友可见'
                               ? 'friends'
                               : visibility == '仅自己可见'
@@ -2789,6 +2816,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   icon: Icons.photo_outlined,
                   label: selectedImage != null ? '已选图片' : '图片',
                   onTap: _pickImage,
+                ),
+                _MediaAction(
+                  icon: Icons.videocam_outlined,
+                  label: selectedVideo != null ? '已选视频' : '视频',
+                  onTap: _pickVideo,
                 ),
               ],
             ),
