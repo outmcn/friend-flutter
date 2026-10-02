@@ -4584,18 +4584,31 @@ class _DDProfilePageState extends State<DDProfilePage> {
   bool tabLoading = false;
   final Map<int, List<DDPost>> tabPosts = {};
   final AudioPlayer _sonicPlayer = AudioPlayer();
+  final ScrollController _profileScrollController = ScrollController();
   bool _sonicPlaying = false;
+  bool _showStickyNickname = false;
   String? _sonicUrl;
   String? error;
 
   @override
   void initState() {
     super.initState();
+    _profileScrollController.addListener(_handleProfileScroll);
     load();
+  }
+
+  void _handleProfileScroll() {
+    final shouldShow = _profileScrollController.hasClients &&
+        _profileScrollController.offset >= 58;
+    if (shouldShow != _showStickyNickname && mounted) {
+      setState(() => _showStickyNickname = shouldShow);
+    }
   }
 
   @override
   void dispose() {
+    _profileScrollController.removeListener(_handleProfileScroll);
+    _profileScrollController.dispose();
     _sonicPlayer.dispose();
     service.dispose();
     super.dispose();
@@ -4681,7 +4694,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
     final p = profile;
     return Scaffold(
       appBar: AppBar(
-        title: const SizedBox.shrink(),
+        centerTitle: true,
+        title: _showStickyNickname
+            ? Text(
+                '${p?['nickname'] ?? 'DD 用户'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            : const SizedBox.shrink(),
         leading: IconButton(
           tooltip: '编辑资料',
           onPressed: () async {
@@ -4736,6 +4756,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
           : RefreshIndicator(
               onRefresh: load,
               child: ListView(
+                controller: _profileScrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
                 children: [
@@ -4769,8 +4790,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 Wrap(
                                   spacing: 4,
                                   children: [
-                                    _ProfileTag(
-                                        text: '${p?['city'] ?? '未知地区'}'),
+                                    _ProfileTag(text: '${p?['city'] ?? '未知'}'),
                                     _ProfileTag(
                                         text: '${p?['activeDays'] ?? 0}天'),
                                   ],
