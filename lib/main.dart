@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5143,11 +5144,12 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
   bool recording = false;
   bool saving = false;
   bool playing = false;
-  String? recordingPath;
-  String? error;
+  Timer? _recordingTimer;
+  int recordingSeconds = 0;
 
   @override
   void dispose() {
+    _recordingTimer?.cancel();
     recorder.dispose();
     player.dispose();
     service.dispose();
@@ -5156,18 +5158,47 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
 
   Future<void> _record() async {
     try {
-      if (recording) {
+      final active = await recorder.isRecording();
+      if (active) {
         final path = await recorder.stop();
+        if (path == null || path.isEmpty) throw Exception('停止录音失败，未生成音频文件');
+        final file = File(path);
+        if (!await file.exists() || await file.length() == 0) throw Exception('录音文件为空');
         if (mounted) setState(() { recording = false; recordingPath = path; error = null; });
+        _recordingTimer?.cancel();
         return;
       }
-      if (!await recorder.hasPermission()) throw Exception('没有麦克风权限');
+      final permission = await recorder.hasPermission();
+      if (!permission) throw Exception('没有麦克风权限，请在设置中允许 DD 使用麦克风');
       final dir = await getTemporaryDirectory();
       final path = '${dir.path}/friend_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+      await recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          numChannels: 1,
+          sampleRate: 44100,
+          bitRate: 128000,
+          autoGain: true,
+          echoCancel: true,
+          noiseSuppress: true,
+        ),
+        path: path,
+      );
+      if (!await recorder.isRecording()) throw Exception('录音启动失败');
+      recordingSeconds = 0;
+      _recordingTimer?.cancel();
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+        if (!mounted) return;
+        if (recordingSeconds >= 15) {
+          _recordingTimer?.cancel();
+          await _record();
+        } else {
+          setState(() => recordingSeconds++);
+        }
+      });
       if (mounted) setState(() { recording = true; error = null; });
     } catch (e) {
-      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) setState(() { recording = false; error = e.toString().replaceFirst('Exception: ', ''); });
     }
   }
 
@@ -5223,7 +5254,7 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
               Icon(TIcons.sonic,
                   size: 72, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 24),
-              Text(recording ? '正在录音…' : '录制你的声音名片'),
+              Text(recording ? '正在录音… ${recordingSeconds}s / 15s' : '录制你的声音名片'),
               const SizedBox(height: 24),
               if (error != null)
                 Text(error!, style: const TextStyle(color: Colors.orange)),
