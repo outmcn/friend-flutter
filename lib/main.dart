@@ -5261,7 +5261,7 @@ class _SonicProfileButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: enabled ? onTap : null,
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
           decoration: BoxDecoration(
