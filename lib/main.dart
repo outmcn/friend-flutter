@@ -5134,7 +5134,7 @@ class _VoiceRecordPage extends StatefulWidget {
 }
 
 class _VoiceRecordPageState extends State<_VoiceRecordPage> {
-  final Record recorder = AudioRecorder();
+  final AudioRecorder recorder = AudioRecorder();
   final AudioPlayer player = AudioPlayer();
   final DDPostService service = DDPostService();
   bool recording = false;
