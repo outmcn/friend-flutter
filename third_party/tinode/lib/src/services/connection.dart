@@ -54,9 +54,10 @@ class ConnectionService {
     _ws = await WebSocket.connect(Tools.makeBaseURL(_options)).timeout(Duration(milliseconds: 5000));
     _connecting = false;
     _loggerService.log('Connected.');
-    _channel = IOWebSocketChannel(_ws!);
+    final channel = IOWebSocketChannel(_ws!);
+    _channel = channel;
     onOpen.add('Opened');
-    _channel.stream.listen((message) {
+    channel.stream.listen((message) {
       onMessage.add(message);
     });
   }

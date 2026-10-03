@@ -3396,10 +3396,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     final lat2 = widget.peer.latitude, lon2 = widget.peer.longitude;
     if ([lat1, lon1, lat2, lon2].any((v) => v == null || !v.isFinite)) return null;
     const radians = math.pi / 180;
-    final y = math.sin((lon2! - lon1!) * radians) * math.cos(lat2 * radians);
-    final x = math.cos(lat1 * radians) * math.sin(lat2 * radians) -
-        math.sin(lat1 * radians) * math.cos(lat2 * radians) *
-            math.cos((lon2 - lon1) * radians);
+    final latA = lat1!;
+    final lonA = lon1!;
+    final latB = lat2!;
+    final lonB = lon2!;
+    final y = math.sin((lonB - lonA) * radians) * math.cos(latB * radians);
+    final x = math.cos(latA * radians) * math.sin(latB * radians) -
+        math.sin(latA * radians) * math.cos(latB * radians) *
+            math.cos((lonB - lonA) * radians);
     final bearing = math.atan2(y, x) * 180 / math.pi;
     var relative = bearing - _heading;
     while (relative > 180) relative -= 360;
