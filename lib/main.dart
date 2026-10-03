@@ -5569,12 +5569,6 @@ class _MyListCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (post.content.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(post.content,
-                      style: const TextStyle(fontSize: 16, height: 1.4)),
-                ),
               if (post.imageUrl?.trim().isNotEmpty == true)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
