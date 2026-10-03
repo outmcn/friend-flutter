@@ -4079,23 +4079,24 @@ class _PostImageHolder extends StatelessWidget {
             url,
             width: double.infinity,
             fit: BoxFit.cover,
-          loadingBuilder: (_, child, progress) => progress == null
-              ? child
-              : const SizedBox(
-                  height: 260,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-          errorBuilder: (_, __, ___) => Container(
-            height: 220,
-            color: Colors.black12,
-            alignment: Alignment.center,
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.broken_image_outlined, size: 42),
-                SizedBox(height: 8),
-                Text('图片加载失败'),
-              ],
+            loadingBuilder: (_, child, progress) => progress == null
+                ? child
+                : const SizedBox(
+                    height: 260,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+            errorBuilder: (_, __, ___) => Container(
+              height: 220,
+              color: Colors.black12,
+              alignment: Alignment.center,
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.broken_image_outlined, size: 42),
+                  SizedBox(height: 8),
+                  Text('图片加载失败'),
+                ],
+              ),
             ),
           ),
         ),
