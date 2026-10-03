@@ -5146,6 +5146,8 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
   bool playing = false;
   Timer? _recordingTimer;
   int recordingSeconds = 0;
+  String? recordingPath;
+  String? error;
 
   @override
   void dispose() {
