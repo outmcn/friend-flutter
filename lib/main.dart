@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import 'package:tinode/tinode.dart' hide Set;
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
@@ -1906,6 +1908,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
               icon: Icons.person_outline,
               userId: userId,
               topic: uid,
+              latitude: double.tryParse('${target['user']?['latitude']}'),
+              longitude: double.tryParse('${target['user']?['longitude']}'),
             ),
             client: client,
             topic: topic,
@@ -3207,6 +3211,8 @@ class ChatPreview {
     required this.icon,
     this.userId,
     this.topic,
+    this.latitude,
+    this.longitude,
     this.unread = 0,
     this.online = false,
     this.pinned = false,
@@ -3217,6 +3223,8 @@ class ChatPreview {
   final IconData icon;
   final int? userId;
   final String? topic;
+  final double? latitude;
+  final double? longitude;
   final int unread;
   final bool online;
   final bool pinned;
@@ -3338,12 +3346,65 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final input = TextEditingController();
   StreamSubscription? _dataSubscription;
   late final List<_DemoMessage> messages;
+  StreamSubscription<MagnetometerEvent>? _magnetometer;
+  double _heading = 0;
+  double? _myLatitude;
+  double? _myLongitude;
 
   @override
   void initState() {
     super.initState();
     messages = [];
+    _magnetometer = magnetometerEvents.listen((event) {
+      final heading = math.atan2(event.y, event.x) * 180 / math.pi;
+      if (mounted && heading.isFinite) setState(() => _heading = heading);
+    });
+    _loadRadarLocation();
     _loadHistory();
+  }
+
+  Future<void> _loadRadarLocation() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) return;
+      final me = await DDPostService().fetchMe(token);
+      if (!mounted) return;
+      setState(() {
+        _myLatitude = double.tryParse('${me['latitude']}');
+        _myLongitude = double.tryParse('${me['longitude']}');
+      });
+    } catch (_) {}
+  }
+
+  double? _distanceKm() {
+    final lat1 = _myLatitude, lon1 = _myLongitude;
+    final lat2 = widget.peer.latitude, lon2 = widget.peer.longitude;
+    if ([lat1, lon1, lat2, lon2].any((v) => v == null || !v.isFinite)) return null;
+    const radius = 6371.0;
+    const radians = math.pi / 180;
+    final dLat = (lat2! - lat1!) * radians;
+    final dLon = (lon2! - lon1!) * radians;
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * radians) * math.cos(lat2 * radians) *
+            math.sin(dLon / 2) * math.sin(dLon / 2);
+    return 2 * radius * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  }
+
+  double? _relativeBearing() {
+    final lat1 = _myLatitude, lon1 = _myLongitude;
+    final lat2 = widget.peer.latitude, lon2 = widget.peer.longitude;
+    if ([lat1, lon1, lat2, lon2].any((v) => v == null || !v.isFinite)) return null;
+    const radians = math.pi / 180;
+    final y = math.sin((lon2! - lon1!) * radians) * math.cos(lat2 * radians);
+    final x = math.cos(lat1 * radians) * math.sin(lat2 * radians) -
+        math.sin(lat1 * radians) * math.cos(lat2 * radians) *
+            math.cos((lon2 - lon1) * radians);
+    final bearing = math.atan2(y, x) * 180 / math.pi;
+    var relative = bearing - _heading;
+    while (relative > 180) relative -= 360;
+    while (relative < -180) relative += 360;
+    return relative;
   }
 
   Future<void> _loadHistory() async {
@@ -3370,6 +3431,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   void dispose() {
     _dataSubscription?.cancel();
+    _magnetometer?.cancel();
     input.dispose();
     super.dispose();
   }
@@ -3413,7 +3475,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           ],
         ),
         body: Column(children: [
-          const _ChatDemoNotice(compact: true),
+          Align(
+            alignment: Alignment.topRight,
+            child: _ChatRadar(
+              distanceKm: _distanceKm(),
+              relativeBearing: _relativeBearing(),
+            ),
+          ),
           Expanded(
               child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
@@ -3454,19 +3522,35 @@ class _DemoMessage {
   final String time;
 }
 
-class _ChatDemoNotice extends StatelessWidget {
-  const _ChatDemoNotice({this.compact = false});
-  final bool compact;
+class _ChatRadar extends StatelessWidget {
+  const _ChatRadar({required this.distanceKm, required this.relativeBearing});
+  final double? distanceKm;
+  final double? relativeBearing;
+
   @override
-  Widget build(BuildContext context) => Container(
-        padding:
-            EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 6 : 9),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text('聊天为 ，', style: Theme.of(context).textTheme.labelSmall),
-      );
+  Widget build(BuildContext context) {
+    final distance = distanceKm == null ? '暂无距离' : '${distanceKm!.toStringAsFixed(2)}km';
+    return Container(
+      margin: const EdgeInsets.only(top: 6, right: 12, bottom: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .92),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: .45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Transform.rotate(
+            angle: (relativeBearing ?? 0) * math.pi / 180,
+            child: Icon(Icons.navigation, size: 17, color: Theme.of(context).colorScheme.primary),
+          ),
+          const SizedBox(width: 5),
+          Text(distance, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
 }
 
 class _ChatSectionHeader extends StatelessWidget {
@@ -4567,6 +4651,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               icon: Icons.person_outline,
               userId: userId,
               topic: uid,
+              latitude: double.tryParse('${target['user']?['latitude']}'),
+              longitude: double.tryParse('${target['user']?['longitude']}'),
             ),
             client: client,
             topic: topic,
