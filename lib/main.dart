@@ -2800,7 +2800,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             TextField(
               controller: _content,
               maxLines: 7,
-              maxLength: 500,
+              maxLength: 300,
               onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 hintText: '分享此刻的想法…',
@@ -4073,10 +4073,12 @@ class _PostImageHolder extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Image.network(
-          url,
-          width: double.infinity,
-          fit: BoxFit.contain,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 400),
+          child: Image.network(
+            url,
+            width: double.infinity,
+            fit: BoxFit.cover,
           loadingBuilder: (_, child, progress) => progress == null
               ? child
               : const SizedBox(
@@ -5386,19 +5388,26 @@ class _MyProfilePostCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (image != null && image.isNotEmpty)
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: Image.network(
-                    DDPostService.mediaUrl(image),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: scheme.surfaceContainerHighest,
-                      child: const Icon(Icons.broken_image_outlined),
+                LayoutBuilder(
+                  builder: (context, constraints) => ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 400),
+                    child: Image.network(
+                      DDPostService.mediaUrl(image),
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 180,
+                        color: scheme.surfaceContainerHighest,
+                        child: const Icon(Icons.broken_image_outlined),
+                      ),
                     ),
                   ),
                 )
               else if (video != null && video.isNotEmpty)
-                _NetworkVideoPreview(url: video)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 400),
+                  child: _NetworkVideoPreview(url: video),
+                )
               else
                 AspectRatio(
                   aspectRatio: 1,
@@ -5418,6 +5427,18 @@ class _MyProfilePostCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                  ),
+                ),
+              if (post.content.trim().isNotEmpty &&
+                  ((image != null && image.isNotEmpty) ||
+                      (video != null && video.isNotEmpty)))
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                  child: Text(
+                    post.content.trim(),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15, height: 1.4),
                   ),
                 ),
               Padding(
