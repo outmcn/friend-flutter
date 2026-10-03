@@ -192,6 +192,7 @@ class DDPostService {
     final prefs = await SharedPreferences.getInstance();
     for (var tab = 0; tab < 3; tab++) {
       await prefs.remove('$profileTabCachePrefix$tab');
+      await prefs.remove('dd.profile.tab.cache.at.$tab');
     }
   }
 
@@ -540,6 +541,9 @@ class DDPostService {
 
   Future<Map<String, dynamic>> fetchTinodeConfig(String token) =>
       _fetchObject(token, '/api/tinode/config');
+
+  Future<Map<String, dynamic>> fetchTinodeUser(String token, int userId) =>
+      _fetchObject(token, '/api/tinode/users/$userId');
 
   Future<Map<String, dynamic>> updateMe(
       {required String token,

@@ -1385,6 +1385,7 @@ class _DynamicPostCard extends StatelessWidget {
     required this.onOpen,
     this.onComment,
     this.onFollow,
+    this.onPrivateChat,
     this.onDelete,
     this.authorNavigation = true,
     this.listMode = false,
@@ -1395,6 +1396,7 @@ class _DynamicPostCard extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback? onComment;
   final VoidCallback? onFollow;
+  final VoidCallback? onPrivateChat;
   final VoidCallback? onDelete;
   final bool authorNavigation;
   final bool listMode;
@@ -1478,10 +1480,15 @@ class _DynamicPostCard extends StatelessWidget {
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline),
               )
+            else if (post.following && onPrivateChat != null && post.userId != null)
+              OutlinedButton(
+                onPressed: onPrivateChat,
+                child: const Text('私聊'),
+              )
             else if (onFollow != null && post.userId != null)
               OutlinedButton(
                 onPressed: post.following ? null : onFollow,
-                child: Text(post.following ? '私聊' : '关注'),
+                child: Text(post.following ? '已关注' : '关注'),
               ),
           ],
         ),
@@ -1855,6 +1862,59 @@ class _DiscoverPageState extends State<DiscoverPage> {
     }
   }
 
+  Future<void> _openPrivateChat(DDPost post) async {
+    final userId = post.userId;
+    if (userId == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final target = await service.fetchTinodeUser(token, userId);
+      final uid = '${target['uid'] ?? ''}'.trim();
+      if (uid.isEmpty) throw Exception('聊天用户不可用');
+      final config = await service.fetchTinodeConfig(token);
+      final apiKey = '${config['apiKey'] ?? ''}'.trim();
+      if (apiKey.isEmpty) throw Exception('聊天服务配置不可用');
+      final me = await service.fetchMe(token);
+      final username = '${me['username'] ?? ''}'.trim();
+      if (username.isEmpty) throw Exception('Friend 用户名为空');
+      final client = FriendTinodeClient(apiKey: apiKey);
+      await client.tinode.connect();
+      await client.tinode.loginBasic(username, token, null);
+      final topic = client.tinode.getTopic(uid);
+      if (!topic.isSubscribed) {
+        await topic.subscribe(GetQuery(what: 'desc sub data'), null);
+      }
+      if (!mounted) {
+        client.dispose();
+        return;
+      }
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatDetailPage(
+            peer: ChatPreview(
+              name: post.nickname,
+              preview: '',
+              time: '',
+              icon: Icons.person_outline,
+              userId: userId,
+              topic: uid,
+            ),
+            client: client,
+            topic: topic,
+          ),
+        ),
+      );
+      client.dispose();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
+  }
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -2044,6 +2104,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               ),
                             ),
                           ),
+                          onPrivateChat: post.userId == null || !post.following
+                              ? null
+                              : () => _openPrivateChat(post),
                           onFollow: post.userId == null
                               ? null
                               : () async {
@@ -3136,6 +3199,8 @@ class ChatPreview {
     required this.preview,
     required this.time,
     required this.icon,
+    this.userId,
+    this.topic,
     this.unread = 0,
     this.online = false,
     this.pinned = false,
@@ -3144,6 +3209,8 @@ class ChatPreview {
   final String preview;
   final String time;
   final IconData icon;
+  final int? userId;
+  final String? topic;
   final int unread;
   final bool online;
   final bool pinned;
@@ -3186,7 +3253,9 @@ class _ChatPageState extends State<ChatPage> {
           chats = contacts.where((c) => c.topic != null).map((c) => ChatPreview(
             name: '${c.public is Map ? (c.public['fn'] ?? c.public['nickname'] ?? c.topic) : c.topic}',
             preview: '', time: c.touched?.toLocal().toString().substring(0, 16) ?? '',
-            icon: Icons.person_outline, unread: (c.unread ?? 0), online: c.online == true,
+            icon: Icons.person_outline,
+            topic: c.topic,
+            unread: (c.unread ?? 0), online: c.online == true,
           )).toList();
           loading = false;
         });
@@ -3207,7 +3276,21 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('聊天')),
+        appBar: AppBar(
+          title: const Text('聊天'),
+          actions: [
+            IconButton(
+              tooltip: '通讯录',
+              icon: const Icon(Icons.contacts_outlined),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const _ChatContactsPage(),
+                ),
+              ),
+            ),
+          ],
+        ),
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
@@ -3232,32 +3315,70 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class ChatDetailPage extends StatefulWidget {
-  const ChatDetailPage({super.key, required this.peer});
+  const ChatDetailPage({
+    super.key,
+    required this.peer,
+    this.client,
+    this.topic,
+  });
   final ChatPreview peer;
+  final FriendTinodeClient? client;
+  final Topic? topic;
   @override
   State<ChatDetailPage> createState() => _ChatDetailPageState();
 }
 
 class _ChatDetailPageState extends State<ChatDetailPage> {
   final input = TextEditingController();
-  final messages = <_DemoMessage>[
-    const _DemoMessage(text: '嗨，今天过得怎么样？', mine: false, time: '12:31'),
-    const _DemoMessage(text: '还不错，刚好在听歌～', mine: true, time: '12:32'),
-    const _DemoMessage(text: '那要不要分享一首？', mine: false, time: '12:33'),
-  ];
+  StreamSubscription? _dataSubscription;
+  late final List<_DemoMessage> messages;
+
+  @override
+  void initState() {
+    super.initState();
+    messages = [];
+    final topic = widget.topic;
+    if (topic != null) {
+      _dataSubscription = topic.onData.listen((data) {
+        if (!mounted || data == null) return;
+        final text = data.content is String
+            ? data.content as String
+            : data.content is Map
+                ? '${(data.content as Map)['txt'] ?? ''}'
+                : '${data.content ?? ''}';
+        if (text.trim().isEmpty) return;
+        setState(() => messages.add(_DemoMessage(
+              text: text,
+              mine: data.from == null,
+              time: data.ts?.toLocal().toString().substring(11, 16) ?? '刚刚',
+            )));
+      });
+      topic.getMessagesPage(50, false);
+    }
+  }
 
   @override
   void dispose() {
+    _dataSubscription?.cancel();
     input.dispose();
     super.dispose();
   }
 
-  void send() {
+  Future<void> send() async {
     final text = input.text.trim();
     if (text.isEmpty) return;
-    setState(
-        () => messages.add(_DemoMessage(text: text, mine: true, time: '刚刚')));
-    input.clear();
+    final topic = widget.topic;
+    if (topic == null) return;
+    try {
+      await topic.publishMessage(topic.createMessage(text, true));
+      input.clear();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
   }
 
   @override
@@ -4397,6 +4518,62 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
+  Future<void> _openProfilePrivateChat() async {
+    final userId = widget.userId;
+    if (userId == null || !isFollowing || actionLoading) return;
+    FriendTinodeClient? client;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final target = await service.fetchTinodeUser(token, userId);
+      final uid = '${target['uid'] ?? ''}'.trim();
+      final config = await service.fetchTinodeConfig(token);
+      final apiKey = '${config['apiKey'] ?? ''}'.trim();
+      final me = await service.fetchMe(token);
+      final username = '${me['username'] ?? ''}'.trim();
+      if (uid.isEmpty || apiKey.isEmpty || username.isEmpty) {
+        throw Exception('聊天服务配置不可用');
+      }
+      client = FriendTinodeClient(apiKey: apiKey);
+      await client.tinode.connect();
+      await client.tinode.loginBasic(username, token, null);
+      final topic = client.tinode.getTopic(uid);
+      if (!topic.isSubscribed) {
+        await topic.subscribe(GetQuery(what: 'desc sub data'), null);
+      }
+      if (!mounted) {
+        client.dispose();
+        return;
+      }
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatDetailPage(
+            peer: ChatPreview(
+              name: '${profile?['nickname'] ?? widget.name}',
+              preview: '',
+              time: '',
+              icon: Icons.person_outline,
+              userId: userId,
+              topic: uid,
+            ),
+            client: client,
+            topic: topic,
+          ),
+        ),
+      );
+      client.dispose();
+    } catch (e) {
+      client?.dispose();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
+  }
+
   Future<void> toggleProfileLike() async {
     if (widget.userId == null || actionLoading) return;
     try {
@@ -4587,6 +4764,34 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                               const SizedBox(width: 8),
                             ],
                           ),
+                          const SizedBox(height: 18),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: actionLoading ? null : toggleFollow,
+                                  icon: Icon(
+                                    following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined,
+                                  ),
+                                  label: Text(
+                                    actionLoading
+                                        ? '处理中…'
+                                        : (following ? '取消关注' : '关注'),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: following && !actionLoading
+                                      ? () => _openProfilePrivateChat()
+                                      : null,
+                                  icon: const Icon(Icons.chat_bubble_outline),
+                                  label: const Text('私聊'),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -4694,6 +4899,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
   }
 
   static const _profileTabCachePrefix = 'dd.profile.tab.cache.';
+  static const _profileTabCacheAtPrefix = 'dd.profile.tab.cache.at.';
+  static const _profileMediaRefreshAge = Duration(minutes: 12);
 
   Future<void> _saveTabCache(int tab, List<DDPost> value) async {
     final prefs = await SharedPreferences.getInstance();
@@ -4701,12 +4908,23 @@ class _DDProfilePageState extends State<DDProfilePage> {
       '$_profileTabCachePrefix$tab',
       jsonEncode(value.map((post) => post.toJson()).toList()),
     );
+    await prefs.setInt(
+      '$_profileTabCacheAtPrefix$tab',
+      DateTime.now().millisecondsSinceEpoch,
+    );
   }
 
-  Future<List<DDPost>?> _readTabCache(int tab) async {
+  Future<List<DDPost>?> _readTabCache(int tab, {bool requireFreshMedia = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('$_profileTabCachePrefix$tab');
     if (raw == null || raw.isEmpty) return null;
+    final cachedAt = prefs.getInt('$_profileTabCacheAtPrefix$tab');
+    if (requireFreshMedia &&
+        (cachedAt == null ||
+            DateTime.now().millisecondsSinceEpoch - cachedAt >=
+                _profileMediaRefreshAge.inMilliseconds)) {
+      return null;
+    }
     try {
       final data = jsonDecode(raw) as List;
       return data
@@ -4752,7 +4970,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
         _sonicUrl =
             DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
       }
-      final cached = tabPosts[targetTab] ?? await _readTabCache(targetTab);
+      final cached = forceRefresh
+          ? null
+          : await _readTabCache(targetTab, requireFreshMedia: true);
       if (cached != null && !forceRefresh) {
         tabPosts[targetTab] = cached;
         if (mounted) {
@@ -5068,6 +5288,113 @@ class _DDProfilePageState extends State<DDProfilePage> {
             ),
     );
   }
+}
+
+class _ChatContactsPage extends StatefulWidget {
+  const _ChatContactsPage();
+
+  @override
+  State<_ChatContactsPage> createState() => _ChatContactsPageState();
+}
+
+class _ChatContactsPageState extends State<_ChatContactsPage> {
+  final DDPostService service = DDPostService();
+  List<Map<String, dynamic>> contacts = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final loaded = await service.fetchUsers(token, relation: 'mutual');
+      if (mounted) setState(() => contacts = loaded);
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('通讯录')),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+                ? _PageErrorState(
+                    title: '通讯录加载失败',
+                    subtitle: error!,
+                    onRetry: _load,
+                  )
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: contacts.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              Padding(
+                                padding: EdgeInsets.only(top: 100),
+                                child: Center(child: Text('暂无好友')),
+                              ),
+                            ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                            itemCount: contacts.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final user = contacts[index];
+                              final userId = _intValue(user['id']);
+                              final avatar = '${user['avatar'] ?? ''}'.trim();
+                              return Card(
+                                margin: EdgeInsets.zero,
+                                child: ListTile(
+                                  onTap: userId == null
+                                      ? null
+                                      : () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => OtherProfilePage(
+                                                userId: userId,
+                                                name: '${user['nickname'] ?? '用户'}',
+                                              ),
+                                            ),
+                                          ),
+                                  leading: CircleAvatar(
+                                    backgroundImage: avatar.isEmpty
+                                        ? null
+                                        : NetworkImage(DDPostService.mediaUrl(avatar)),
+                                    child: avatar.isEmpty
+                                        ? const Icon(Icons.person_outline)
+                                        : null,
+                                  ),
+                                  title: Text('${user['nickname'] ?? '用户'}'),
+                                  subtitle: Text('${user['city'] ?? '未知地区'}'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+      );
 }
 
 class _HistoryRecordsPage extends _UserRelationListPage {
