@@ -1873,57 +1873,20 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Future<void> _openPrivateChat(DDPost post) async {
     final userId = post.userId;
     if (userId == null) return;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      final target = await service.fetchTinodeUser(token, userId);
-      final uid = '${target['uid'] ?? ''}'.trim();
-      if (uid.isEmpty) throw Exception('聊天用户不可用');
-      final config = await service.fetchTinodeConfig(token);
-      final apiKey = '${config['apiKey'] ?? ''}'.trim();
-      if (apiKey.isEmpty) throw Exception('聊天服务配置不可用');
-      final me = await service.fetchMe(token);
-      final username = '${me['username'] ?? ''}'.trim();
-      if (username.isEmpty) throw Exception('Friend 用户名为空');
-      final client = FriendTinodeClient(apiKey: apiKey);
-      await client.tinode.connect();
-      await client.tinode.loginBasic(username, token, null);
-      final topic = client.tinode.getTopic(uid);
-      if (!topic.isSubscribed) {
-        await topic.subscribe(GetQuery(what: 'desc sub data'), null);
-      }
-      if (!mounted) {
-        client.dispose();
-        return;
-      }
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatDetailPage(
-            peer: ChatPreview(
-              name: post.nickname,
-              preview: '',
-              time: '',
-              icon: Icons.person_outline,
-              userId: userId,
-              topic: uid,
-              latitude: double.tryParse('${target['user']?['latitude']}'),
-              longitude: double.tryParse('${target['user']?['longitude']}'),
-            ),
-            client: client,
-            topic: topic,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatDetailPage(
+          peer: ChatPreview(
+            name: post.nickname,
+            preview: '',
+            time: '',
+            icon: Icons.person_outline,
+            userId: userId,
           ),
         ),
-      );
-      client.dispose();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-        );
-      }
-    }
+      ),
+    );
   }
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -3346,6 +3309,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final input = TextEditingController();
   StreamSubscription? _dataSubscription;
   late final List<_DemoMessage> messages;
+  FriendTinodeClient? _activeClient;
+  Topic? _activeTopic;
+  bool _connecting = true;
+  String? _connectionError;
+  bool _sendBusy = false;
   StreamSubscription<MagnetometerEvent>? _magnetometer;
   double _heading = 0;
   double? _myLatitude;
@@ -3355,12 +3323,57 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void initState() {
     super.initState();
     messages = [];
+    _connectChat();
     _magnetometer = magnetometerEvents.listen((event) {
       final heading = math.atan2(event.y, event.x) * 180 / math.pi;
       if (mounted && heading.isFinite) setState(() => _heading = heading);
     });
     _loadRadarLocation();
-    _loadHistory();
+  }
+
+  Future<void> _connectChat() async {
+    try {
+      final userId = widget.peer.userId;
+      if (userId == null) throw Exception('聊天用户不可用');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final service = DDPostService();
+      final target = await service.fetchTinodeUser(token, userId);
+      final uid = '${target['uid'] ?? ''}'.trim();
+      final config = await service.fetchTinodeConfig(token);
+      final apiKey = '${config['apiKey'] ?? ''}'.trim();
+      final me = await service.fetchMe(token);
+      final username = '${me['username'] ?? ''}'.trim();
+      if (uid.isEmpty || apiKey.isEmpty || username.isEmpty) {
+        throw Exception('聊天服务配置不可用');
+      }
+      final client = FriendTinodeClient(apiKey: apiKey);
+      await client.tinode.connect();
+      await client.tinode.loginBasic(username, token, null);
+      final topic = client.tinode.getTopic(uid);
+      if (!topic.isSubscribed) {
+        await topic.subscribe(GetQuery(what: 'desc sub data'), null);
+      }
+      if (!mounted) {
+        client.dispose();
+        return;
+      }
+      setState(() {
+        _activeClient = client;
+        _activeTopic = topic;
+        _connecting = false;
+        _connectionError = null;
+      });
+      _loadHistory();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _connecting = false;
+          _connectionError = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
   }
 
   Future<void> _loadRadarLocation() async {
@@ -3412,7 +3425,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Future<void> _loadHistory() async {
-    final topic = widget.topic;
+    final topic = _activeTopic;
     if (topic == null) return;
     _dataSubscription = topic.onData.listen((data) {
       if (!mounted || data == null) return;
@@ -3436,6 +3449,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void dispose() {
     _dataSubscription?.cancel();
     _magnetometer?.cancel();
+    _activeClient?.dispose();
     input.dispose();
     super.dispose();
   }
@@ -3443,17 +3457,30 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Future<void> send() async {
     final text = input.text.trim();
     if (text.isEmpty) return;
-    final topic = widget.topic;
-    if (topic == null) return;
+    final local = _DemoMessage(
+      text: text,
+      mine: true,
+      time: '刚刚',
+      status: _ChatMessageStatus.sending,
+    );
+    setState(() {
+      messages.add(local);
+      _sendBusy = true;
+    });
+    input.clear();
     try {
+      final topic = _activeTopic;
+      if (topic == null) throw Exception('消息发送失败');
       await topic.publishMessage(topic.createMessage(text, true));
-      input.clear();
+      if (mounted) {
+        setState(() => local.status = _ChatMessageStatus.sent);
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-        );
+        setState(() => local.status = _ChatMessageStatus.failed);
       }
+    } finally {
+      if (mounted) setState(() => _sendBusy = false);
     }
   }
 
@@ -3501,29 +3528,52 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
                 color: Theme.of(context).colorScheme.surface,
-                child: Row(children: [
-                  IconButton(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(children: [
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
                       onPressed: () {},
-                      icon: const Icon(Icons.add_circle_outline)),
-                  Expanded(
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                    Expanded(
                       child: TextField(
-                    controller: input,
-                    onSubmitted: (_) => send(),
-                    decoration: const InputDecoration(hintText: '输入消息'),
-                  )),
-                  IconButton(onPressed: send, icon: const Icon(Icons.send)),
-                ]),
+                        controller: input,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => send(),
+                        decoration: const InputDecoration(
+                          hintText: '输入消息',
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: send,
+                      icon: const Icon(Icons.send),
+                    ),
+                  ]),
+                ),
               )),
         ]),
       );
 }
 
+enum _ChatMessageStatus { sending, sent, delivered, read, failed }
+
 class _DemoMessage {
-  const _DemoMessage(
-      {required this.text, required this.mine, required this.time});
+  _DemoMessage({
+      required this.text, required this.mine, required this.time, this.status});
   final String text;
   final bool mine;
   final String time;
+  _ChatMessageStatus? status;
 }
 
 class _ChatRadar extends StatelessWidget {
@@ -3554,6 +3604,24 @@ class _ChatRadar extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ChatStatusIcon extends StatelessWidget {
+  const _ChatStatusIcon({required this.status});
+  final _ChatMessageStatus status;
+  @override
+  Widget build(BuildContext context) {
+    if (status == _ChatMessageStatus.sending) {
+      return const Text('•••', style: TextStyle(fontSize: 12, color: Colors.black54));
+    }
+    if (status == _ChatMessageStatus.failed) {
+      return const Text('!', style: TextStyle(fontSize: 12, color: Colors.red));
+    }
+    final doubleCheck = status == _ChatMessageStatus.delivered ||
+        status == _ChatMessageStatus.read;
+    final color = status == _ChatMessageStatus.read ? Colors.green : Colors.black54;
+    return Icon(doubleCheck ? Icons.done_all : Icons.done, size: 14, color: color);
   }
 }
 
@@ -3712,6 +3780,11 @@ class _ChatBubble extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(message.time,
                     style: Theme.of(context).textTheme.labelSmall),
+                if (message.mine && message.status != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: _ChatStatusIcon(status: message.status!),
+                  ),
               ],
             )),
           ],
