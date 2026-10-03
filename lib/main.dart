@@ -1480,7 +1480,7 @@ class _DynamicPostCard extends StatelessWidget {
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline),
               )
-            else if (post.following && onPrivateChat != null && post.userId != null)
+            else if (onPrivateChat != null && post.userId != null)
               OutlinedButton(
                 onPressed: onPrivateChat,
                 child: const Text('私聊'),
@@ -1488,6 +1488,12 @@ class _DynamicPostCard extends StatelessWidget {
             else if (onFollow != null && post.userId != null)
               OutlinedButton(
                 onPressed: post.following ? null : onFollow,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.secondary,
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
                 child: Text(post.following ? '已关注' : '关注'),
               ),
           ],
@@ -2104,7 +2110,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               ),
                             ),
                           ),
-                          onPrivateChat: post.userId == null || !post.following
+                          onPrivateChat: post.userId == null
                               ? null
                               : () => _openPrivateChat(post),
                           onFollow: post.userId == null
@@ -3337,24 +3343,28 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void initState() {
     super.initState();
     messages = [];
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
     final topic = widget.topic;
-    if (topic != null) {
-      _dataSubscription = topic.onData.listen((data) {
-        if (!mounted || data == null) return;
-        final text = data.content is String
-            ? data.content as String
-            : data.content is Map
-                ? '${(data.content as Map)['txt'] ?? ''}'
-                : '${data.content ?? ''}';
-        if (text.trim().isEmpty) return;
-        setState(() => messages.add(_DemoMessage(
-              text: text,
-              mine: data.from == null,
-              time: data.ts?.toLocal().toString().substring(11, 16) ?? '刚刚',
-            )));
-      });
-      topic.getMessagesPage(50, false);
-    }
+    if (topic == null) return;
+    _dataSubscription = topic.onData.listen((data) {
+      if (!mounted || data == null) return;
+      final text = data.content is String
+          ? data.content as String
+          : data.content is Map
+              ? '${(data.content as Map)['txt'] ?? ''}'
+              : '${data.content ?? ''}';
+      if (text.trim().isEmpty) return;
+      setState(() => messages.add(_DemoMessage(
+            text: text,
+            mine: data.from == null,
+            time: data.ts?.toLocal().toString().substring(11, 16) ?? '刚刚',
+          )));
+    });
+    final historyQuery = topic.startMetaQuery().withEarlierData(50).build();
+    await topic.getMeta(historyQuery);
   }
 
   @override
@@ -4520,7 +4530,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
   Future<void> _openProfilePrivateChat() async {
     final userId = widget.userId;
-    if (userId == null || !isFollowing || actionLoading) return;
+    if (userId == null || actionLoading) return;
     FriendTinodeClient? client;
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -4770,6 +4780,16 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: actionLoading ? null : toggleFollow,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .secondary,
+                                    side: BorderSide(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                    ),
+                                  ),
                                   icon: Icon(
                                     following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined,
                                   ),
@@ -4783,7 +4803,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: FilledButton.icon(
-                                  onPressed: following && !actionLoading
+                                  onPressed: !actionLoading
                                       ? () => _openProfilePrivateChat()
                                       : null,
                                   icon: const Icon(Icons.chat_bubble_outline),
