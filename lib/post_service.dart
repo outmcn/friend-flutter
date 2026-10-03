@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 int? _intValue(Object? value) {
@@ -358,6 +359,25 @@ class DDPostService {
     required List<int> bytes,
     required String fileName,
   }) => uploadFileToOss(token: token, bytes: bytes, fileName: fileName, directory: 'posts', contentType: 'image/jpeg');
+  Future<String> moderateMedia({
+    required String token,
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    final request = http.MultipartRequest('POST', _base.resolve('/api/media/moderate-upload'))
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(http.MultipartFile.fromBytes('media', bytes, filename: fileName, contentType: MediaType.parse(contentType)));
+    final response = await request.send();
+    final body = await response.stream.bytesToString();
+    final decoded = jsonDecode(body) as Map<String, dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded['ok'] != true) {
+      throw Exception('${decoded['message'] ?? decoded['reason'] ?? '媒体审核未通过'}');
+    }
+    final data = decoded['data'];
+    if (data is! Map<String, dynamic> || data['objectKey'] is! String) throw Exception('媒体审核响应格式错误');
+    return data['objectKey'] as String;
+  }
   Future<void> replaceVoice({required String token, required String objectKey}) async {
     final response = await _client.post(
       _base.resolve('/api/me/voice'),

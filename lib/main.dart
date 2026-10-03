@@ -2709,14 +2709,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final decoded = img.decodeImage(bytes);
     final resized = decoded == null ? null : (decoded.width > 1600 ? img.copyResize(decoded, width: 1600) : decoded);
     final compressed = resized == null ? bytes : img.encodeJpg(resized, quality: 82);
-    return _service.uploadImageToOss(token: token, bytes: compressed, fileName: selectedImage!.name);
+    return _service.moderateMedia(token: token, bytes: compressed, fileName: selectedImage!.name, contentType: 'image/jpeg');
   }
 
   Future<String?> _videoObjectKey(String token) async {
     if (selectedVideo == null) return null;
     final bytes = await selectedVideo!.readAsBytes();
     if (bytes.length > 50 * 1024 * 1024) throw Exception('视频不能超过 50MB');
-    return _service.uploadFileToOss(token: token, bytes: bytes, fileName: selectedVideo!.name, directory: 'posts', contentType: 'video/mp4');
+    return _service.moderateMedia(token: token, bytes: bytes, fileName: selectedVideo!.name, contentType: 'video/mp4');
   }
 
 
