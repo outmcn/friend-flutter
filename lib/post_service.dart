@@ -357,6 +357,15 @@ class DDPostService {
     required List<int> bytes,
     required String fileName,
   }) => uploadFileToOss(token: token, bytes: bytes, fileName: fileName, directory: 'posts', contentType: 'image/jpeg');
+  Future<void> replaceVoice({required String token, required String objectKey}) async {
+    final response = await _client.post(
+      _base.resolve('/api/me/voice'),
+      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      body: jsonEncode({'objectKey': objectKey}),
+    );
+    final decoded = await _decodeResponse(response, '保存声音失败');
+    if (decoded['ok'] != true) throw Exception('${decoded['message'] ?? '保存声音失败'}');
+  }
   Future<int> createPost({
       required String token,
       required String content,

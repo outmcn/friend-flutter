@@ -5191,11 +5191,12 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
       _recordingTimer?.cancel();
       _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
         if (!mounted) return;
+        recordingSeconds++;
         if (recordingSeconds >= 15) {
           _recordingTimer?.cancel();
           await _record();
         } else {
-          setState(() => recordingSeconds++);
+          setState(() {});
         }
       });
       if (mounted) setState(() { recording = true; error = null; });
@@ -5205,15 +5206,20 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
   }
 
   Future<void> _preview() async {
+    final localPath = recordingPath;
     final url = widget.currentUrl;
-    if (url == null || url.isEmpty) {
+    if ((localPath == null || localPath.isEmpty) && (url == null || url.isEmpty)) {
       setState(() => error = '请先录制声音');
       return;
     }
     if (playing) {
       await player.pause();
     } else {
-      await player.play(UrlSource(url));
+      if (localPath != null && localPath.isNotEmpty) {
+        await player.play(DeviceFileSource(localPath));
+      } else {
+        await player.play(UrlSource(url!));
+      }
     }
     if (mounted) setState(() => playing = !playing);
   }
@@ -5233,7 +5239,7 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
       } else {
         final bytes = await File(recordingPath!).readAsBytes();
         final objectKey = await service.uploadFileToOss(token: token, bytes: bytes, fileName: 'voice.m4a', directory: 'voices', contentType: 'audio/mp4');
-        await service.updateMe(token: token, voiceUrl: objectKey);
+        await service.replaceVoice(token: token, objectKey: objectKey);
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
