@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tinode/tinode.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
@@ -3097,6 +3098,32 @@ class _NotificationsPageState extends State<NotificationsPage> {
       );
 }
 
+class FriendTinodeClient {
+  FriendTinodeClient({required this.apiKey})
+      : tinode = Tinode(
+          'Friend',
+          ConnectionOptions('friend.outmcn.net/tinode', apiKey, secure: true),
+          false,
+        );
+  final Tinode tinode;
+  final String apiKey;
+
+  Future<void> connectWithFriendCredentials({
+    required String username,
+    required String password,
+  }) async {
+    await tinode.connect();
+    await tinode.loginBasic(username, password, null);
+  }
+
+  void dispose() => tinode.disconnect();
+}
+class _TinodeChatState {
+  _TinodeChatState({required this.client, required this.topic});
+  final FriendTinodeClient client;
+  final Topic topic;
+}
+
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
   @override
@@ -3123,58 +3150,84 @@ class ChatPreview {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  final chats = const <ChatPreview>[
-    ChatPreview(
-        name: '林小满',
-        preview: '今天也要开心呀～',
-        time: '12:36',
-        icon: Icons.face_3_outlined,
-        unread: 2,
-        online: true,
-        pinned: true),
-    ChatPreview(
-        name: '苏念',
-        preview: '一起听的歌单发你了',
-        time: '11:20',
-        icon: Icons.music_note,
-        unread: 1,
-        online: true),
-    ChatPreview(
-        name: '小鹿',
-        preview: '晚上开黑吗？',
-        time: '昨天',
-        icon: Icons.sports_esports_outlined),
-    ChatPreview(
-        name: '温小满',
-        preview: '很高兴认识你',
-        time: '昨天',
-        icon: Icons.favorite_outline),
-  ];
+  FriendTinodeClient? _client;
+  TopicMe? _meTopic;
+  StreamSubscription? _contactSubscription;
+  List<ChatPreview> chats = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRealChats();
+  }
+
+  Future<void> _loadRealChats() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final friendToken = prefs.getString('dd.auth.token') ?? '';
+      if (friendToken.isEmpty) throw Exception('请先登录');
+      final service = DDPostService();
+      final me = await service.fetchMe(friendToken);
+      final username = '${me['username'] ?? ''}'.trim();
+      if (username.isEmpty) throw Exception('Friend 用户名为空');
+      final config = await service.fetchTinodeConfig(friendToken);
+      final apiKey = '${config['apiKey'] ?? ''}';
+      if (apiKey.isEmpty) throw Exception('聊天服务配置不可用');
+      _client = FriendTinodeClient(apiKey: apiKey);
+      await _client!.tinode.connect();
+      await _client!.tinode.loginBasic(username, friendToken, null);
+      _meTopic = _client!.tinode.getMeTopic();
+      await _meTopic!.subscribe(GetQuery(what: 'desc sub data'), null);
+      _contactSubscription = _meTopic!.onSubsUpdated.listen((contacts) {
+        if (!mounted) return;
+        setState(() {
+          chats = contacts.where((c) => c.topic != null).map((c) => ChatPreview(
+            name: '${c.public is Map ? (c.public['fn'] ?? c.public['nickname'] ?? c.topic) : c.topic}',
+            preview: '', time: c.touched?.toLocal().toString().substring(0, 16) ?? '',
+            icon: Icons.person_outline, unread: (c.unread ?? 0), online: c.online == true,
+          )).toList();
+          loading = false;
+        });
+      });
+      if (mounted) setState(() => loading = false);
+    } catch (e) {
+      if (mounted) setState(() { loading = false; error = e.toString().replaceFirst('Exception: ', ''); });
+    }
+  }
+
 
   @override
   void dispose() {
+    _contactSubscription?.cancel();
+    _client?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('聊天')),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
-          children: [
-            ...chats.map(
-              (chat) => _ChatListItem(
-                data: chat,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatDetailPage(peer: chat),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+                ? Center(child: Text(error!))
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
+                    children: [
+                      ...chats.map(
+                        (chat) => _ChatListItem(
+                          data: chat,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChatDetailPage(peer: chat),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ),
-          ],
-        ),
       );
 }
 

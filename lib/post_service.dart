@@ -538,6 +538,9 @@ class DDPostService {
   Future<Map<String, dynamic>> fetchMe(String token) =>
       _fetchObject(token, '/api/me');
 
+  Future<Map<String, dynamic>> fetchTinodeConfig(String token) =>
+      _fetchObject(token, '/api/tinode/config');
+
   Future<Map<String, dynamic>> updateMe(
       {required String token,
       String? nickname,
