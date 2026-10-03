@@ -3308,7 +3308,9 @@ class ChatDetailPage extends StatefulWidget {
 class _ChatDetailPageState extends State<ChatDetailPage> {
   final input = TextEditingController();
   StreamSubscription? _dataSubscription;
+  StreamSubscription? _infoSubscription;
   late final List<_DemoMessage> messages;
+  String? _myTinodeUid;
   FriendTinodeClient? _activeClient;
   Topic? _activeTopic;
   bool _connecting = true;
@@ -3323,6 +3325,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void initState() {
     super.initState();
     messages = [];
+    _restoreLocalMessages();
     _connectChat();
     _magnetometer = magnetometerEvents.listen((event) {
       final heading = math.atan2(event.y, event.x) * 180 / math.pi;
@@ -3351,6 +3354,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       final client = FriendTinodeClient(apiKey: apiKey);
       await client.tinode.connect();
       await client.tinode.loginBasic(username, token, null);
+      _myTinodeUid = client.tinode.userId;
       final topic = client.tinode.getTopic(uid);
       if (!topic.isSubscribed) {
         await topic.subscribe(GetQuery(what: 'desc sub data'), null);
@@ -3435,11 +3439,41 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               ? '${(data.content as Map)['txt'] ?? ''}'
               : '${data.content ?? ''}';
       if (text.trim().isEmpty) return;
-      setState(() => messages.add(_DemoMessage(
-            text: text,
-            mine: data.from == null,
-            time: data.ts?.toLocal().toString().substring(11, 16) ?? '刚刚',
-          )));
+      final mine = data.from == null || data.from == _myTinodeUid;
+      final matching = messages.where((item) =>
+          (data.seq != null && item.seq == data.seq) ||
+          (mine && item.mine && item.text == text && item.status == _ChatMessageStatus.sending));
+      final match = matching.isEmpty ? null : matching.first;
+      if (match != null) {
+        match.seq = data.seq ?? match.seq;
+        match.status = mine ? _ChatMessageStatus.sent : match.status;
+      } else {
+        messages.add(_DemoMessage(
+          text: text,
+          mine: mine,
+          time: data.ts?.toLocal().toString().substring(11, 16) ?? '刚刚',
+          seq: data.seq,
+          status: mine ? _ChatMessageStatus.sent : null,
+        ));
+      }
+      _saveLocalMessages();
+      setState(() {});
+    });
+    _infoSubscription = topic.onInfo.listen((info) {
+      if (!mounted || info.seq == null) return;
+      final status = info.what == 'read'
+          ? _ChatMessageStatus.read
+          : info.what == 'recv'
+              ? _ChatMessageStatus.delivered
+              : null;
+      if (status == null) return;
+      for (final message in messages) {
+        if (message.mine && message.seq != null && message.seq! <= info.seq!) {
+          message.status = status;
+        }
+      }
+      _saveLocalMessages();
+      setState(() {});
     });
     final historyQuery = topic.startMetaQuery().withEarlierData(50).build();
     await topic.getMeta(historyQuery);
@@ -3448,6 +3482,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   void dispose() {
     _dataSubscription?.cancel();
+    _infoSubscription?.cancel();
     _magnetometer?.cancel();
     _activeClient?.dispose();
     input.dispose();
@@ -3462,26 +3497,53 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       mine: true,
       time: '刚刚',
       status: _ChatMessageStatus.sending,
+      seq: null,
     );
     setState(() {
       messages.add(local);
       _sendBusy = true;
     });
     input.clear();
+    await _saveLocalMessages();
     try {
       final topic = _activeTopic;
       if (topic == null) throw Exception('消息发送失败');
-      await topic.publishMessage(topic.createMessage(text, true));
+      final result = await topic.publishMessage(topic.createMessage(text, true));
+      if (result.code == null || result.code! >= 300 || result.params['seq'] == null) {
+        throw Exception('消息发送失败');
+      }
+      local.seq = int.tryParse('${result.params['seq']}');
       if (mounted) {
         setState(() => local.status = _ChatMessageStatus.sent);
+        await _saveLocalMessages();
       }
     } catch (e) {
       if (mounted) {
         setState(() => local.status = _ChatMessageStatus.failed);
+        await _saveLocalMessages();
       }
     } finally {
       if (mounted) setState(() => _sendBusy = false);
     }
+  }
+
+  Future<void> _restoreLocalMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('dd.chat.messages.${widget.peer.userId}');
+    if (raw == null || !mounted) return;
+    try {
+      final list = jsonDecode(raw);
+      if (list is! List) return;
+      messages
+        ..clear()
+        ..addAll(list.whereType<Map>().map((item) => _DemoMessage.fromJson(item)));
+      setState(() {});
+    } catch (_) {}
+  }
+
+  Future<void> _saveLocalMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('dd.chat.messages.${widget.peer.userId}', jsonEncode(messages.map((item) => item.toJson()).toList()));
   }
 
   @override
@@ -3569,11 +3631,31 @@ enum _ChatMessageStatus { sending, sent, delivered, read, failed }
 
 class _DemoMessage {
   _DemoMessage({
-      required this.text, required this.mine, required this.time, this.status});
+      required this.text, required this.mine, required this.time, this.status, this.seq});
   final String text;
   final bool mine;
   final String time;
   _ChatMessageStatus? status;
+  int? seq;
+
+  Map<String, dynamic> toJson() => {
+        'text': text,
+        'mine': mine,
+        'time': time,
+        'status': status?.name,
+        'seq': seq,
+      };
+
+  factory _DemoMessage.fromJson(Map data) => _DemoMessage(
+        text: '${data['text'] ?? ''}',
+        mine: data['mine'] == true,
+        time: '${data['time'] ?? '刚刚'}',
+        status: (() {
+          final values = _ChatMessageStatus.values.where((item) => item.name == data['status']);
+          return values.isEmpty ? null : values.first;
+        })(),
+        seq: int.tryParse('${data['seq'] ?? ''}'),
+      );
 }
 
 class _ChatRadar extends StatelessWidget {
