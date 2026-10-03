@@ -339,7 +339,7 @@ class DDPostService {
   }) async {
     final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final response = await _client.get(
-      _base.resolve('/api/storage/upload-url?fileName=${Uri.encodeQueryComponent(safeName)}&directory=${Uri.encodeQueryComponent(directory)}'),
+      _base.resolve('/api/storage/upload-url?fileName=${Uri.encodeQueryComponent(safeName)}&directory=${Uri.encodeQueryComponent(directory)}&contentType=${Uri.encodeQueryComponent(contentType)}'),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = await _decodeResponse(response, '获取 OSS 上传地址失败');
