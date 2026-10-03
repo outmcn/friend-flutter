@@ -12,6 +12,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:video_player/video_player.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'post_service.dart';
@@ -5132,8 +5134,9 @@ class _VoiceRecordPage extends StatefulWidget {
 }
 
 class _VoiceRecordPageState extends State<_VoiceRecordPage> {
-  final DDPostService service = DDPostService();
+  final Record recorder = AudioRecorder();
   final AudioPlayer player = AudioPlayer();
+  final DDPostService service = DDPostService();
   bool recording = false;
   bool saving = false;
   bool playing = false;
@@ -5142,18 +5145,26 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
 
   @override
   void dispose() {
+    recorder.dispose();
     player.dispose();
     service.dispose();
     super.dispose();
   }
 
   Future<void> _record() async {
-    setState(() {
-      recording = !recording;
-      error = null;
-    });
-    if (!recording) {
-      setState(() => recordingPath = 'local-recording-placeholder.m4a');
+    try {
+      if (recording) {
+        final path = await recorder.stop();
+        if (mounted) setState(() { recording = false; recordingPath = path; error = null; });
+        return;
+      }
+      if (!await recorder.hasPermission()) throw Exception('没有麦克风权限');
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/friend_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+      if (mounted) setState(() { recording = true; error = null; });
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -5184,7 +5195,9 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
       if (recordingPath == null) {
         await service.updateMe(token: token, voiceUrl: widget.currentUrl);
       } else {
-        throw Exception('录音文件上传接口尚未接入');
+        final bytes = await File(recordingPath!).readAsBytes();
+        final objectKey = await service.uploadFileToOss(token: token, bytes: bytes, fileName: 'voice.m4a', directory: 'voices', contentType: 'audio/mp4');
+        await service.updateMe(token: token, voiceUrl: objectKey);
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
