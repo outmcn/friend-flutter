@@ -4035,21 +4035,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       if (widget.userId == null) {
         throw Exception('用户信息不存在');
       }
-      final data = await service.fetchUserProfile(token, widget.userId!);
-      final rawProfile = data['profile'];
-      final loadedProfile = rawProfile is Map
-          ? rawProfile.cast<String, dynamic>()
-          : <String, dynamic>{...data};
-      final followingState = data['following'] == true;
-      profile = loadedProfile;
-      isFollowing = followingState;
-      isProfileLiked = data['liked'] == true;
-      profileLikes = _intValue(loadedProfile['likes']) ?? 0;
-      _sonicUrl = DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
-      final raw = data['posts'];
-      posts = raw is List
-          ? raw.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList()
-          : const [];
+      throw UnsupportedError('新后端暂未提供其他用户资料接口');
+    } on UnsupportedError catch (e) {
+      if (mounted) {
+        setState(() => error = e.message);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
@@ -4498,10 +4488,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
         return;
       }
       final loadedPosts = targetTab == 0
-          ? await service.fetchMyPosts(t)
-          : targetTab == 1
-              ? await service.fetchFavoritedPosts(t)
-              : await service.fetchLikedPosts(t);
+          ? const <DDPost>[]
+          : const <DDPost>[];
       tabPosts[targetTab] = loadedPosts;
       await _saveTabCache(targetTab, loadedPosts);
       if (!mounted) return;
@@ -4772,8 +4760,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   const SizedBox(height: 12),
                   if (error != null)
                     _PageErrorState(
-                      title: '动态加载失败',
-                      subtitle: error!,
+                      title: '动态为空',
+                      subtitle: '新后端暂未提供动态接口',
                       onRetry: () => load(tab: selectedTab),
                     )
                   else if (tabLoading)
@@ -6634,7 +6622,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
-      posts = await service.fetchMyPosts(token);
+      posts = const [];
     } catch (e) {
       if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
@@ -6699,8 +6687,8 @@ class _MyPostsPageState extends State<MyPostsPage> {
                   children: [
                     if (error != null)
                       _PageErrorState(
-                        title: '动态加载失败',
-                        subtitle: error!,
+                        title: '动态为空',
+                        subtitle: '新后端暂未提供动态接口',
                         onRetry: load,
                       )
                     else if (posts.isEmpty)

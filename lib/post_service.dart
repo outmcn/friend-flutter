@@ -225,12 +225,12 @@ class DDPostService {
 
   Future<void> markNotificationsRead(String token) async {}
 
-  Future<List<DDPost>> fetchPosts(String token) =>
-      _fetchList(token, '/api/social/posts');
-  Future<List<DDPost>> fetchNearbyPosts(String token) =>
-      _fetchList(token, '/api/social/posts');
-  Future<List<DDPost>> fetchFollowingPosts(String token) =>
-      _fetchList(token, '/api/social/posts');
+  // The new backend has not exposed social-post routes yet. Keep the original
+  // page layout usable by returning an empty state instead of calling the old
+  // /api/social endpoints and showing a misleading 404 error.
+  Future<List<DDPost>> fetchPosts(String token) async => const [];
+  Future<List<DDPost>> fetchNearbyPosts(String token) async => const [];
+  Future<List<DDPost>> fetchFollowingPosts(String token) async => const [];
 
   Future<DDPost> fetchPost(String token, int postId) async {
     final response = await _client.get(
@@ -251,28 +251,12 @@ class DDPostService {
     return DDPost.fromJson(data.cast<String, dynamic>());
   }
 
-  Future<List<DDPost>> fetchMyPosts(String token) =>
-      _fetchList(token, '/api/social/posts');
-  Future<List<DDPost>> fetchLikedPosts(String token) =>
-      _fetchList(token, '/api/social/posts');
-  Future<List<DDPost>> fetchFavoritedPosts(String token) =>
-      _fetchList(token, '/api/social/posts');
+  Future<List<DDPost>> fetchMyPosts(String token) async => const [];
+  Future<List<DDPost>> fetchLikedPosts(String token) async => const [];
+  Future<List<DDPost>> fetchFavoritedPosts(String token) async => const [];
 
   Future<List<DDPost>> _fetchList(String token, String path) async {
-    final response = await _client.get(
-      _base.resolve(path),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('动态加载失败（${response.statusCode}）');
-    }
-    final decoded = jsonDecode(response.body);
-    final data = decoded;
-    final dynamic list = data is List
-        ? data
-        : (data is Map<String, dynamic> ? data['posts'] : null);
-    if (list is! List) throw Exception('动态数据格式错误');
-    return list.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+    return const [];
   }
 
   Future<Map<String, dynamic>> _decodeResponse(
@@ -450,18 +434,7 @@ class DDPostService {
   }
 
   Future<Map<String, dynamic>> fetchUserProfile(String token, int userId) async {
-    final data = await _fetchObject(token, '/api/social/users/$userId/profile');
-    final stats = (data['stats'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
-    return {
-      ...data,
-      'nickname': data['displayName'] ?? '',
-      'avatar': data['avatarUrl'] ?? '',
-      'followers': stats['followers'] ?? 0,
-      'followingCount': stats['following'] ?? 0,
-      'postCount': stats['posts'] ?? 0,
-      'likes': data['likes'] ?? 0,
-      'posts': data['posts'] is List ? data['posts'] : const [],
-    };
+    throw UnsupportedError('新后端暂未提供其他用户资料接口');
   }
 
   Future<List<Map<String, dynamic>>> fetchUsers(String token,
