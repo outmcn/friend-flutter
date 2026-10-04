@@ -217,7 +217,7 @@ class DDPostService {
     final token = decoded['token'];
     if (token is! String) throw Exception('登录响应格式错误');
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('dd.auth.token', token);
+    await prefs.setString('friend.auth.token', token);
     return token;
   }
 
@@ -446,7 +446,7 @@ class DDPostService {
       throw Exception('退出登录失败');
     }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('dd.auth.token');
+    await prefs.remove('friend.auth.token');
   }
 
   Future<Map<String, dynamic>> fetchUserProfile(String token, int userId) async {

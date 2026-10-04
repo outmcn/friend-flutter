@@ -1858,7 +1858,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     }
     try {
       final p = await SharedPreferences.getInstance();
-      final t = p.getString('dd.auth.token') ?? '';
+      final t = p.getString('friend.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
       final cacheKey = 'dd.discover.cache.$targetTab';
       final cacheAtKey = '$cacheKey.at';
@@ -2064,7 +2064,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                           onLike: () async {
                             try {
                               final p = await SharedPreferences.getInstance();
-                              final t = p.getString('dd.auth.token') ?? '';
+                              final t = p.getString('friend.auth.token') ?? '';
                               if (t.isEmpty) throw Exception('请先登录');
                               await service.toggleLike(t, post.id);
                               if (mounted) {
@@ -2093,7 +2093,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                           onFavorite: () async {
                             try {
                               final p = await SharedPreferences.getInstance();
-                              final t = p.getString('dd.auth.token') ?? '';
+                              final t = p.getString('friend.auth.token') ?? '';
                               if (t.isEmpty) throw Exception('请先登录');
                               await service.toggleFavorite(t, post.id);
                               if (mounted) {
@@ -2140,7 +2140,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               : () async {
                                   final p =
                                       await SharedPreferences.getInstance();
-                                  final t = p.getString('dd.auth.token') ?? '';
+                                  final t = p.getString('friend.auth.token') ?? '';
                                   if (t.isEmpty) return;
                                   await service.toggleFollow(t, post.userId!);
                                   await load();
@@ -2837,7 +2837,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   ? null
                   : () async {
                       final prefs = await SharedPreferences.getInstance();
-                      final token = prefs.getString('dd.auth.token') ?? '';
+                      final token = prefs.getString('friend.auth.token') ?? '';
                       if (token.isEmpty) {
                         setState(() => error = '请先登录后发布动态');
                         return;
@@ -3004,7 +3004,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Future<String> token() async {
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString('dd.auth.token') ?? '';
+    final value = prefs.getString('friend.auth.token') ?? '';
     if (value.isEmpty) throw Exception('请先登录');
     return value;
   }
@@ -3310,7 +3310,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
   Future<String> token() async {
     final p = await SharedPreferences.getInstance();
-    final value = p.getString('dd.auth.token') ?? '';
+    final value = p.getString('friend.auth.token') ?? '';
     if (value.isEmpty) throw Exception('请先登录');
     return value;
   }
@@ -4028,7 +4028,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     });
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
+      final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) {
         throw Exception('请先登录');
       }
@@ -4073,7 +4073,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   Future<void> toggleFollow() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
+      final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty || widget.userId == null) throw Exception('请先登录');
       setState(() => actionLoading = true);
       await service.toggleFollow(token, widget.userId!);
@@ -4091,7 +4091,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     if (userId == null || actionLoading) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
+      final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       setState(() => actionLoading = true);
       final result = await service.toggleProfileLike(token, userId);
@@ -4474,7 +4474,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
     }
     try {
       final p = await SharedPreferences.getInstance();
-      final t = p.getString('dd.auth.token') ?? '';
+      final t = p.getString('friend.auth.token') ?? '';
       if (t.isEmpty) throw Exception('请先登录');
       final needProfile = profile == null || !isTabSwitch;
       Map<String, dynamic> loadedProfile = profile ?? {};
@@ -4837,7 +4837,7 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
+      final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       final loaded = await service.fetchUsers(token, relation: widget.relation);
       if (mounted) setState(() => users = loaded);
@@ -6632,7 +6632,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
     });
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
+      final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       posts = await service.fetchMyPosts(token);
     } catch (e) {
@@ -6664,7 +6664,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
     if (confirmed != true) return;
     try {
       final token =
-          (await SharedPreferences.getInstance()).getString('dd.auth.token') ??
+          (await SharedPreferences.getInstance()).getString('friend.auth.token') ??
               '';
       if (token.isEmpty) throw Exception('请先登录');
       await service.deletePost(token, post.id);
@@ -6720,7 +6720,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
                             onLike: () async {
                               final token =
                                   (await SharedPreferences.getInstance())
-                                          .getString('dd.auth.token') ??
+                                          .getString('friend.auth.token') ??
                                       '';
                               if (token.isNotEmpty) {
                                 await service.toggleLike(token, post.id);
@@ -6730,7 +6730,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
                             onFavorite: () async {
                               final token =
                                   (await SharedPreferences.getInstance())
-                                          .getString('dd.auth.token') ??
+                                          .getString('friend.auth.token') ??
                                       '';
                               if (token.isNotEmpty) {
                                 await service.toggleFavorite(token, post.id);
@@ -6791,7 +6791,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> load() async {
     try {
       final p = await SharedPreferences.getInstance();
-      final token = p.getString('dd.auth.token') ?? '';
+      final token = p.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       final data = await service.fetchMe(token);
       final profile = data['user'] is Map<String, dynamic>
@@ -6843,7 +6843,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       setState(() => saving = true);
       final p = await SharedPreferences.getInstance();
-      final token = p.getString('dd.auth.token') ?? '';
+      final token = p.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       final avatarKey = await _avatarObjectKey(token);
       await service.updateMe(
