@@ -266,9 +266,11 @@ class DDPostService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('动态加载失败（${response.statusCode}）');
     }
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    final data = decoded['data'] ?? decoded;
-    final list = data is List
+    final decoded = jsonDecode(response.body);
+    final dynamic data = decoded is Map<String, dynamic>
+        ? (decoded['data'] ?? decoded)
+        : decoded;
+    final dynamic list = data is List
         ? data
         : (data is Map<String, dynamic> ? data['posts'] : null);
     if (list is! List) throw Exception('动态数据格式错误');
