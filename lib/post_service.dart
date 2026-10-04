@@ -490,6 +490,12 @@ class DDPostService {
     }
     return decoded['url'] as String;
   }
+
+  Future<String?> resolveAvatarUrl(String token, Object? avatarKey) async {
+    final key = '${avatarKey ?? ''}'.trim();
+    if (key.isEmpty) return null;
+    return avatarUrl(token, key);
+  }
   Future<Map<String, dynamic>> fetchMe(String token) async {
     final data = await _fetchObject(token, '/api/me');
     final user = data['user'];

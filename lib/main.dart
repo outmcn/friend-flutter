@@ -3996,6 +3996,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
   String? _sonicUrl;
+  String? _avatarUrl;
   String? error;
 
   @override
@@ -4364,6 +4365,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
   String? _sonicUrl;
+  String? _avatarUrl;
   String? error;
   List<String> _tags = const ['声优', '御姐', '忧郁', '旅游', '电影'];
 
@@ -4473,6 +4475,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
         loadedProfile = await service.fetchMe(t);
         _sonicUrl =
             DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
+        _avatarUrl = await service.resolveAvatarUrl(t, loadedProfile['avatarKey']);
       }
       final cached = forceRefresh
           ? null
@@ -4670,15 +4673,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         children: [
                           CircleAvatar(
                             radius: 40,
-                            backgroundImage:
-                                (p?['avatar']?.toString() ?? '').trim().isEmpty
-                                    ? null
-                                    : NetworkImage(
-                                        DDPostService.mediaUrl(p?['avatar'])),
-                            child:
-                                (p?['avatar']?.toString() ?? '').trim().isEmpty
-                                    ? const Icon(Icons.person, size: 42)
-                                    : null,
+                            backgroundImage: _avatarUrl == null
+                                ? null
+                                : NetworkImage(_avatarUrl!),
+                            child: _avatarUrl == null
+                                ? const Icon(Icons.person, size: 42)
+                                : null,
                           ),
                           Positioned(
                             left: 0,
@@ -6764,6 +6764,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   List<int>? croppedAvatar;
   bool loading = true;
   bool saving = false;
+  String? _avatarPreviewUrl;
   String? error;
   @override
   void initState() {
@@ -6788,6 +6789,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ? data['user'] as Map<String, dynamic>
           : data;
       nickname.text = '${profile['nickname'] ?? ''}';
+      if (profile['avatarKey'] is String &&
+          (profile['avatarKey'] as String).trim().isNotEmpty) {
+        final signed = await service.resolveAvatarUrl(
+          token,
+          profile['avatarKey'],
+        );
+        if (mounted) {
+          setState(() => _avatarPreviewUrl = signed);
+        }
+      }
     } catch (e) {
       if (mounted) error = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -6869,9 +6880,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     onTap: pickAvatar,
                     child: CircleAvatar(
                         radius: 48,
-                        backgroundImage:
-                            image == null ? null : FileImage(File(image!.path)),
-                        child: image == null
+                        backgroundImage: image != null
+                            ? FileImage(File(image!.path))
+                            : (_avatarPreviewUrl == null
+                                ? null
+                                : NetworkImage(_avatarPreviewUrl!)),
+                        child: image == null && _avatarPreviewUrl == null
                             ? const Icon(Icons.add_a_photo_outlined, size: 30)
                             : null)),
                 const SizedBox(height: 22),
