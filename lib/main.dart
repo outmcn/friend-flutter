@@ -2763,16 +2763,42 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final bytes = await selectedImage!.readAsBytes();
     if (bytes.length > 8 * 1024 * 1024) throw Exception('图片不能超过 8MB');
     final decoded = img.decodeImage(bytes);
-    final resized = decoded == null ? null : (decoded.width > 1600 ? img.copyResize(decoded, width: 1600) : decoded);
+    final resized = decoded == null
+        ? null
+        : (decoded.width > 1600 ? img.copyResize(decoded, width: 1600) : decoded);
     final compressed = resized == null ? bytes : img.encodeJpg(resized, quality: 82);
-    return _service.moderateMedia(token: token, bytes: compressed, fileName: selectedImage!.name, contentType: 'image/jpeg');
+    final signed = await _service.postMediaUploadUrl(
+      token: token,
+      fileName: selectedImage!.name,
+      contentType: 'image/jpeg',
+      kind: 'image',
+    );
+    final url = signed['url'];
+    final key = signed['objectKey'];
+    if (url is! String || key is! String) throw Exception('图片上传地址格式错误');
+    if (!await _service.uploadAvatar(url: url, bytes: compressed, contentType: 'image/jpeg')) {
+      throw Exception('图片上传失败');
+    }
+    return key;
   }
 
   Future<String?> _videoObjectKey(String token) async {
     if (selectedVideo == null) return null;
     final bytes = await selectedVideo!.readAsBytes();
     if (bytes.length > 50 * 1024 * 1024) throw Exception('视频不能超过 50MB');
-    return _service.moderateMedia(token: token, bytes: bytes, fileName: selectedVideo!.name, contentType: 'video/mp4');
+    final signed = await _service.postMediaUploadUrl(
+      token: token,
+      fileName: selectedVideo!.name,
+      contentType: 'video/mp4',
+      kind: 'video',
+    );
+    final url = signed['url'];
+    final key = signed['objectKey'];
+    if (url is! String || key is! String) throw Exception('视频上传地址格式错误');
+    if (!await _service.uploadAvatar(url: url, bytes: bytes, contentType: 'video/mp4')) {
+      throw Exception('视频上传失败');
+    }
+    return key;
   }
 
 

@@ -225,12 +225,21 @@ class DDPostService {
 
   Future<void> markNotificationsRead(String token) async {}
 
-  // The new backend has not exposed social-post routes yet. Keep the original
-  // page layout usable by returning an empty state instead of calling the old
-  // /api/social endpoints and showing a misleading 404 error.
-  Future<List<DDPost>> fetchPosts(String token) async => const [];
-  Future<List<DDPost>> fetchNearbyPosts(String token) async => const [];
-  Future<List<DDPost>> fetchFollowingPosts(String token) async => const [];
+  Future<List<DDPost>> fetchPosts(String token) async {
+    final response = await _client.get(
+      _api('/posts'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+      throw Exception('动态加载失败');
+    }
+    final rows = decoded['posts'];
+    if (rows is! List) throw Exception('动态数据格式错误');
+    return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+  }
+  Future<List<DDPost>> fetchNearbyPosts(String token) => fetchPosts(token);
+  Future<List<DDPost>> fetchFollowingPosts(String token) => fetchPosts(token);
 
   Future<DDPost> fetchPost(String token, int postId) async {
     final response = await _client.get(
@@ -307,20 +316,22 @@ class DDPostService {
       String visibility = 'public',
       double? latitude,
       double? longitude}) async {
-    final body = <String, dynamic>{'content': content};
+    final body = <String, dynamic>{
+      'content': content,
+      'visibility': visibility,
+    };
     if (latitude != null && longitude != null) {
       body['latitude'] = latitude;
       body['longitude'] = longitude;
     }
     if (imageDataUrl != null && imageDataUrl.isNotEmpty) {
-      body['image'] = imageDataUrl;
+      body['imageKey'] = imageDataUrl;
     }
     if (videoUrl != null && videoUrl.isNotEmpty) {
-      body['video'] = videoUrl;
+      body['videoKey'] = videoUrl;
     }
-    body['visibility'] = visibility;
     final response = await _client.post(
-      _api('/api/social/posts'),
+      _api('/posts'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json'
@@ -328,7 +339,8 @@ class DDPostService {
       body: jsonEncode(body),
     );
     final decoded = await _decodeResponse(response, '发布动态失败');
-    return _intValue(decoded['id']) ?? 0;
+    final post = decoded['post'];
+    return _intValue(post is Map ? post['id'] : decoded['id']) ?? 0;
   }
 
   Future<List<DDComment>> fetchComments(String token, int postId) async {
@@ -451,12 +463,41 @@ class DDPostService {
   Future<List<Map<String, dynamic>>> fetchHistory(String token) =>
       fetchUsers(token, relation: 'history');
 
+  Future<Map<String, dynamic>> postMediaUploadUrl({
+    required String token,
+    required String fileName,
+    required String contentType,
+    required String kind,
+  }) async {
+    final uri = _api('/media/post/upload-url').replace(queryParameters: {
+      'fileName': fileName,
+      'contentType': contentType,
+      'kind': kind,
+    });
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+      throw Exception('动态媒体上传地址获取失败');
+    }
+    return decoded;
+  }
+
+  Future<String> mediaUrlForKey(String token, String key) async {
+    final uri = _api('/media/url').replace(queryParameters: {'key': key});
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic> || decoded['url'] is! String) {
+      throw Exception('动态媒体地址获取失败');
+    }
+    return decoded['url'] as String;
+  }
+
   Future<Map<String, dynamic>> avatarUploadUrl({
     required String token,
     required String fileName,
     required String contentType,
   }) async {
-    final uri = _api('/api/media/avatar/upload-url').replace(queryParameters: {
+    final uri = _api('/media/avatar/upload-url').replace(queryParameters: {
       'fileName': fileName,
       'contentType': contentType,
     });
