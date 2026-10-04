@@ -9,7 +9,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tinode/tinode.dart' hide Set;
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
@@ -959,6 +958,15 @@ class _PrimaryAuthButton extends StatelessWidget {
       );
 }
 
+class ChatPage extends StatelessWidget {
+  const ChatPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+        body: Center(child: Text('NavoIM 聊天功能待接入')),
+      );
+}
+
 class DDShell extends StatefulWidget {
   const DDShell({super.key});
   @override
@@ -1387,7 +1395,6 @@ class _DynamicPostCard extends StatelessWidget {
     required this.onOpen,
     this.onComment,
     this.onFollow,
-    this.onPrivateChat,
     this.onDelete,
     this.authorNavigation = true,
     this.listMode = false,
@@ -1398,7 +1405,6 @@ class _DynamicPostCard extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback? onComment;
   final VoidCallback? onFollow;
-  final VoidCallback? onPrivateChat;
   final VoidCallback? onDelete;
   final bool authorNavigation;
   final bool listMode;
@@ -1481,11 +1487,6 @@ class _DynamicPostCard extends StatelessWidget {
                 tooltip: '删除动态',
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline),
-              )
-            else if (onPrivateChat != null && post.userId != null)
-              OutlinedButton(
-                onPressed: onPrivateChat,
-                child: const Text('私聊'),
               )
             else if (onFollow != null && post.userId != null)
               OutlinedButton(
@@ -1870,24 +1871,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
     }
   }
 
-  Future<void> _openPrivateChat(DDPost post) async {
-    final userId = post.userId;
-    if (userId == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChatDetailPage(
-          peer: ChatPreview(
-            name: post.nickname,
-            preview: '',
-            time: '',
-            icon: Icons.person_outline,
-            userId: userId,
-          ),
-        ),
-      ),
-    );
-  }
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -2077,9 +2060,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               ),
                             ),
                           ),
-                          onPrivateChat: post.userId == null
-                              ? null
-                              : () => _openPrivateChat(post),
                           onFollow: post.userId == null
                               ? null
                               : () async {
@@ -3134,746 +3114,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
       );
 }
 
-class FriendTinodeClient {
-  FriendTinodeClient({required this.apiKey})
-      : tinode = Tinode(
-          'Friend',
-          ConnectionOptions('friend.outmcn.net/tinode', apiKey, secure: true),
-          false,
-        );
-  final Tinode tinode;
-  final String apiKey;
-
-  Future<void> connectWithFriendCredentials({
-    required String username,
-    required String password,
-  }) async {
-    await tinode.connect();
-    await tinode.loginBasic(username, password, null);
-  }
-
-  void dispose() => tinode.disconnect();
-}
-class _TinodeChatState {
-  _TinodeChatState({required this.client, required this.topic});
-  final FriendTinodeClient client;
-  final Topic topic;
-}
-
-class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
-  @override
-  State<ChatPage> createState() => _ChatPageState();
-}
-
-class ChatPreview {
-  const ChatPreview({
-    required this.name,
-    required this.preview,
-    required this.time,
-    required this.icon,
-    this.userId,
-    this.topic,
-    this.latitude,
-    this.longitude,
-    this.unread = 0,
-    this.online = false,
-    this.pinned = false,
-  });
-  final String name;
-  final String preview;
-  final String time;
-  final IconData icon;
-  final int? userId;
-  final String? topic;
-  final double? latitude;
-  final double? longitude;
-  final int unread;
-  final bool online;
-  final bool pinned;
-}
-
-class _ChatPageState extends State<ChatPage> {
-  FriendTinodeClient? _client;
-  TopicMe? _meTopic;
-  StreamSubscription? _contactSubscription;
-  List<ChatPreview> chats = const [];
-  bool loading = true;
-  String? error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRealChats();
-  }
-
-  Future<void> _loadRealChats() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final friendToken = prefs.getString('dd.auth.token') ?? '';
-      if (friendToken.isEmpty) throw Exception('请先登录');
-      final service = DDPostService();
-      final me = await service.fetchMe(friendToken);
-      final username = '${me['username'] ?? ''}'.trim();
-      if (username.isEmpty) throw Exception('Friend 用户名为空');
-      final config = await service.fetchTinodeConfig(friendToken);
-      final apiKey = '${config['apiKey'] ?? ''}';
-      if (apiKey.isEmpty) throw Exception('聊天服务配置不可用');
-      _client = FriendTinodeClient(apiKey: apiKey);
-      await _client!.tinode.connect();
-      await _client!.tinode.loginBasic(username, friendToken, null);
-      _meTopic = _client!.tinode.getMeTopic();
-      await _meTopic!.subscribe(GetQuery(what: 'desc sub data'), null);
-      _contactSubscription = _meTopic!.onSubsUpdated.listen((contacts) {
-        if (!mounted) return;
-        setState(() {
-          chats = contacts.where((c) => c.topic != null).map((c) => ChatPreview(
-            name: '${c.public is Map ? (c.public['fn'] ?? c.public['nickname'] ?? c.topic) : c.topic}',
-            preview: '', time: c.touched?.toLocal().toString().substring(0, 16) ?? '',
-            icon: Icons.person_outline,
-            topic: c.topic,
-            unread: (c.unread ?? 0), online: c.online == true,
-          )).toList();
-          loading = false;
-        });
-      });
-      if (mounted) setState(() => loading = false);
-    } catch (e) {
-      if (mounted) setState(() { loading = false; error = e.toString().replaceFirst('Exception: ', ''); });
-    }
-  }
-
-
-  @override
-  void dispose() {
-    _contactSubscription?.cancel();
-    _client?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('聊天'),
-          actions: [
-            IconButton(
-              tooltip: '通讯录',
-              icon: const Icon(Icons.contacts_outlined),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const _ChatContactsPage(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        body: loading
-            ? const Center(child: CircularProgressIndicator())
-            : error != null
-                ? Center(child: Text(error!))
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
-                    children: [
-                      ...chats.map(
-                        (chat) => _ChatListItem(
-                          data: chat,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ChatDetailPage(peer: chat),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-      );
-}
-
-class ChatDetailPage extends StatefulWidget {
-  const ChatDetailPage({
-    super.key,
-    required this.peer,
-    this.client,
-    this.topic,
-  });
-  final ChatPreview peer;
-  final FriendTinodeClient? client;
-  final Topic? topic;
-  @override
-  State<ChatDetailPage> createState() => _ChatDetailPageState();
-}
-
-class _ChatDetailPageState extends State<ChatDetailPage> {
-  final input = TextEditingController();
-  StreamSubscription? _dataSubscription;
-  StreamSubscription? _infoSubscription;
-  late final List<_DemoMessage> messages;
-  String? _myTinodeUid;
-  FriendTinodeClient? _activeClient;
-  Topic? _activeTopic;
-  bool _connecting = true;
-  String? _connectionError;
-  bool _sendBusy = false;
-  StreamSubscription<MagnetometerEvent>? _magnetometer;
-  double _heading = 0;
-  double? _myLatitude;
-  double? _myLongitude;
-
-  @override
-  void initState() {
-    super.initState();
-    messages = [];
-    _restoreLocalMessages();
-    _connectChat();
-    _magnetometer = magnetometerEvents.listen((event) {
-      final heading = math.atan2(event.y, event.x) * 180 / math.pi;
-      if (mounted && heading.isFinite) setState(() => _heading = heading);
-    });
-    _loadRadarLocation();
-  }
-
-  Future<void> _connectChat() async {
-    try {
-      final userId = widget.peer.userId;
-      if (userId == null) throw Exception('聊天用户不可用');
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      final service = DDPostService();
-      final target = await service.fetchTinodeUser(token, userId);
-      final uid = '${target['uid'] ?? ''}'.trim();
-      final config = await service.fetchTinodeConfig(token);
-      final apiKey = '${config['apiKey'] ?? ''}'.trim();
-      final me = await service.fetchMe(token);
-      final username = '${me['username'] ?? ''}'.trim();
-      if (uid.isEmpty || apiKey.isEmpty || username.isEmpty) {
-        throw Exception('聊天服务配置不可用');
-      }
-      final client = FriendTinodeClient(apiKey: apiKey);
-      await client.tinode.connect();
-      await client.tinode.loginBasic(username, token, null);
-      _myTinodeUid = client.tinode.userId;
-      final topic = client.tinode.getTopic(uid);
-      if (!topic.isSubscribed) {
-        await topic.subscribe(GetQuery(what: 'desc sub data'), null);
-      }
-      if (!mounted) {
-        client.dispose();
-        return;
-      }
-      setState(() {
-        _activeClient = client;
-        _activeTopic = topic;
-        _connecting = false;
-        _connectionError = null;
-      });
-      _loadHistory();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _connecting = false;
-          _connectionError = e.toString().replaceFirst('Exception: ', '');
-        });
-      }
-    }
-  }
-
-  Future<void> _loadRadarLocation() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) return;
-      final me = await DDPostService().fetchMe(token);
-      if (!mounted) return;
-      setState(() {
-        _myLatitude = double.tryParse('${me['latitude']}');
-        _myLongitude = double.tryParse('${me['longitude']}');
-      });
-    } catch (_) {}
-  }
-
-  double? _distanceKm() {
-    final lat1 = _myLatitude, lon1 = _myLongitude;
-    final lat2 = widget.peer.latitude, lon2 = widget.peer.longitude;
-    if ([lat1, lon1, lat2, lon2].any((v) => v == null || !v.isFinite)) return null;
-    const radius = 6371.0;
-    const radians = math.pi / 180;
-    final dLat = (lat2! - lat1!) * radians;
-    final dLon = (lon2! - lon1!) * radians;
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(lat1 * radians) * math.cos(lat2 * radians) *
-            math.sin(dLon / 2) * math.sin(dLon / 2);
-    return 2 * radius * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-  }
-
-  double? _relativeBearing() {
-    final lat1 = _myLatitude, lon1 = _myLongitude;
-    final lat2 = widget.peer.latitude, lon2 = widget.peer.longitude;
-    if ([lat1, lon1, lat2, lon2].any((v) => v == null || !v.isFinite)) return null;
-    const radians = math.pi / 180;
-    final latA = lat1!;
-    final lonA = lon1!;
-    final latB = lat2!;
-    final lonB = lon2!;
-    final y = math.sin((lonB - lonA) * radians) * math.cos(latB * radians);
-    final x = math.cos(latA * radians) * math.sin(latB * radians) -
-        math.sin(latA * radians) * math.cos(latB * radians) *
-            math.cos((lonB - lonA) * radians);
-    final bearing = math.atan2(y, x) * 180 / math.pi;
-    var relative = bearing - _heading;
-    while (relative > 180) relative -= 360;
-    while (relative < -180) relative += 360;
-    return relative;
-  }
-
-  Future<void> _loadHistory() async {
-    final topic = _activeTopic;
-    if (topic == null) return;
-    _dataSubscription = topic.onData.listen((data) {
-      if (!mounted || data == null) return;
-      final text = data.content is String
-          ? data.content as String
-          : data.content is Map
-              ? '${(data.content as Map)['txt'] ?? ''}'
-              : '${data.content ?? ''}';
-      if (text.trim().isEmpty) return;
-      final mine = data.from == null || data.from == _myTinodeUid;
-      final matching = messages.where((item) =>
-          (data.seq != null && item.seq == data.seq) ||
-          (mine && item.mine && item.text == text && item.status == _ChatMessageStatus.sending));
-      final match = matching.isEmpty ? null : matching.first;
-      if (match != null) {
-        match.seq = data.seq ?? match.seq;
-        match.status = mine ? _ChatMessageStatus.sent : match.status;
-      } else {
-        messages.add(_DemoMessage(
-          text: text,
-          mine: mine,
-          time: data.ts?.toLocal().toString().substring(11, 16) ?? '刚刚',
-          seq: data.seq,
-          status: mine ? _ChatMessageStatus.sent : null,
-        ));
-      }
-      _saveLocalMessages();
-      setState(() {});
-    });
-    _infoSubscription = topic.onInfo.listen((info) {
-      if (!mounted || info.seq == null) return;
-      final status = info.what == 'read'
-          ? _ChatMessageStatus.read
-          : info.what == 'recv'
-              ? _ChatMessageStatus.delivered
-              : null;
-      if (status == null) return;
-      for (final message in messages) {
-        if (message.mine && message.seq != null && message.seq! <= info.seq!) {
-          message.status = status;
-        }
-      }
-      _saveLocalMessages();
-      setState(() {});
-    });
-    final historyQuery = topic.startMetaQuery().withEarlierData(50).build();
-    await topic.getMeta(historyQuery);
-  }
-
-  @override
-  void dispose() {
-    _dataSubscription?.cancel();
-    _infoSubscription?.cancel();
-    _magnetometer?.cancel();
-    _activeClient?.dispose();
-    input.dispose();
-    super.dispose();
-  }
-
-  Future<void> send() async {
-    final text = input.text.trim();
-    if (text.isEmpty) return;
-    final local = _DemoMessage(
-      text: text,
-      mine: true,
-      time: '刚刚',
-      status: _ChatMessageStatus.sending,
-      seq: null,
-    );
-    setState(() {
-      messages.add(local);
-      _sendBusy = true;
-    });
-    input.clear();
-    await _saveLocalMessages();
-    try {
-      final topic = _activeTopic;
-      if (topic == null) throw Exception('消息发送失败');
-      final result = await topic.publishMessage(topic.createMessage(text, true));
-      if (result.code == null || result.code! >= 300 || result.params['seq'] == null) {
-        throw Exception('消息发送失败');
-      }
-      local.seq = int.tryParse('${result.params['seq']}');
-      if (mounted) {
-        setState(() => local.status = _ChatMessageStatus.sent);
-        await _saveLocalMessages();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => local.status = _ChatMessageStatus.failed);
-        await _saveLocalMessages();
-      }
-    } finally {
-      if (mounted) setState(() => _sendBusy = false);
-    }
-  }
-
-  Future<void> _restoreLocalMessages() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('dd.chat.messages.${widget.peer.userId}');
-    if (raw == null || !mounted) return;
-    try {
-      final list = jsonDecode(raw);
-      if (list is! List) return;
-      messages
-        ..clear()
-        ..addAll(list.whereType<Map>().map((item) => _DemoMessage.fromJson(item)));
-      setState(() {});
-    } catch (_) {}
-  }
-
-  Future<void> _saveLocalMessages() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('dd.chat.messages.${widget.peer.userId}', jsonEncode(messages.map((item) => item.toJson()).toList()));
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          titleSpacing: 0,
-          title: Row(children: [
-            CircleAvatar(radius: 19, child: Icon(widget.peer.icon, size: 19)),
-            const SizedBox(width: 9),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(widget.peer.name,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w800)),
-              Text('在线',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.primary)),
-            ]),
-          ]),
-          actions: [
-            IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
-          ],
-        ),
-        body: Column(children: [
-          Align(
-            alignment: Alignment.topRight,
-            child: _ChatRadar(
-              distanceKm: _distanceKm(),
-              relativeBearing: _relativeBearing(),
-            ),
-          ),
-          Expanded(
-              child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
-            children: [
-              const Center(child: _ChatDateLabel(text: '今天 12:30')),
-              const SizedBox(height: 18),
-              ...messages.map((message) =>
-                  _ChatBubble(message: message, icon: widget.peer.icon)),
-            ],
-          )),
-          SafeArea(
-              top: false,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                color: Theme.of(context).colorScheme.surface,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(children: [
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () {},
-                      icon: const Icon(Icons.add_circle_outline),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: input,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => send(),
-                        decoration: const InputDecoration(
-                          hintText: '输入消息',
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: send,
-                      icon: const Icon(Icons.send),
-                    ),
-                  ]),
-                ),
-              )),
-        ]),
-      );
-}
-
-enum _ChatMessageStatus { sending, sent, delivered, read, failed }
-
-class _DemoMessage {
-  _DemoMessage({
-      required this.text, required this.mine, required this.time, this.status, this.seq});
-  final String text;
-  final bool mine;
-  final String time;
-  _ChatMessageStatus? status;
-  int? seq;
-
-  Map<String, dynamic> toJson() => {
-        'text': text,
-        'mine': mine,
-        'time': time,
-        'status': status?.name,
-        'seq': seq,
-      };
-
-  factory _DemoMessage.fromJson(Map data) => _DemoMessage(
-        text: '${data['text'] ?? ''}',
-        mine: data['mine'] == true,
-        time: '${data['time'] ?? '刚刚'}',
-        status: (() {
-          final values = _ChatMessageStatus.values.where((item) => item.name == data['status']);
-          return values.isEmpty ? null : values.first;
-        })(),
-        seq: int.tryParse('${data['seq'] ?? ''}'),
-      );
-}
-
-class _ChatRadar extends StatelessWidget {
-  const _ChatRadar({required this.distanceKm, required this.relativeBearing});
-  final double? distanceKm;
-  final double? relativeBearing;
-
-  @override
-  Widget build(BuildContext context) {
-    final distance = distanceKm == null ? '暂无距离' : '${distanceKm!.toStringAsFixed(2)}km';
-    return Container(
-      margin: const EdgeInsets.only(top: 6, right: 12, bottom: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .92),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: .45)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Transform.rotate(
-            angle: (relativeBearing ?? 0) * math.pi / 180,
-            child: Icon(Icons.navigation, size: 17, color: Theme.of(context).colorScheme.primary),
-          ),
-          const SizedBox(width: 5),
-          Text(distance, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChatStatusIcon extends StatelessWidget {
-  const _ChatStatusIcon({required this.status});
-  final _ChatMessageStatus status;
-  @override
-  Widget build(BuildContext context) {
-    if (status == _ChatMessageStatus.sending) {
-      return const Text('•••', style: TextStyle(fontSize: 12, color: Colors.black54));
-    }
-    if (status == _ChatMessageStatus.failed) {
-      return const Text('!', style: TextStyle(fontSize: 12, color: Colors.red));
-    }
-    final doubleCheck = status == _ChatMessageStatus.delivered ||
-        status == _ChatMessageStatus.read;
-    final color = status == _ChatMessageStatus.read ? Colors.green : Colors.black54;
-    return Icon(doubleCheck ? Icons.done_all : Icons.done, size: 14, color: color);
-  }
-}
-
-class _ChatSectionHeader extends StatelessWidget {
-  const _ChatSectionHeader({required this.title, required this.action});
-  final String title;
-  final String action;
-  @override
-  Widget build(BuildContext context) => Row(children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        const Spacer(),
-        Text(action,
-            style: TextStyle(
-                fontSize: 12, color: Theme.of(context).colorScheme.primary)),
-      ]);
-}
-
-class _NewMatch extends StatelessWidget {
-  const _NewMatch(
-      {required this.name, required this.icon, this.online = false});
-  final String name;
-  final IconData icon;
-  final bool online;
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: 72,
-        child: Column(children: [
-          Stack(children: [
-            CircleAvatar(radius: 27, child: Icon(icon)),
-            if (online)
-              const Positioned(right: 0, bottom: 1, child: _OnlineDot()),
-          ]),
-          const SizedBox(height: 6),
-          Text(name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall),
-        ]),
-      );
-}
-
-class _OnlineDot extends StatelessWidget {
-  const _OnlineDot();
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 12,
-        height: 12,
-        decoration: BoxDecoration(
-            color: const Color(0xff2fd57e),
-            shape: BoxShape.circle,
-            border: Border.all(
-                color: Theme.of(context).colorScheme.surface, width: 2)),
-      );
-}
-
-class _ChatListItem extends StatelessWidget {
-  const _ChatListItem({required this.data, required this.onTap});
-  final ChatPreview data;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-          child: Row(children: [
-            Stack(children: [
-              CircleAvatar(radius: 27, child: Icon(data.icon)),
-              if (data.online)
-                const Positioned(right: -1, bottom: 0, child: _OnlineDot()),
-            ]),
-            const SizedBox(width: 12),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Row(children: [
-                    Expanded(
-                        child: Text(data.name,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w800))),
-                    Text(data.time,
-                        style: Theme.of(context).textTheme.labelSmall),
-                  ]),
-                  const SizedBox(height: 5),
-                  Text(data.preview,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall),
-                ])),
-            if (data.unread > 0)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error,
-                    shape: BoxShape.circle),
-                child: Text('${data.unread}',
-                    style: const TextStyle(fontSize: 10, color: Colors.white)),
-              ),
-          ]),
-        ),
-      );
-}
-
-class _ChatDateLabel extends StatelessWidget {
-  const _ChatDateLabel({required this.text});
-  final String text;
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
-        decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(99)),
-        child: Text(text, style: Theme.of(context).textTheme.labelSmall),
-      );
-}
-
-class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.message, required this.icon});
-  final _DemoMessage message;
-  final IconData icon;
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: Row(
-          mainAxisAlignment:
-              message.mine ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!message.mine) ...[
-              CircleAvatar(radius: 16, child: Icon(icon, size: 16)),
-              const SizedBox(width: 8)
-            ],
-            Flexible(
-                child: Column(
-              crossAxisAlignment: message.mine
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: message.mine
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(17),
-                  ),
-                  child: Text(message.text,
-                      style: TextStyle(
-                          color: message.mine
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : null)),
-                ),
-                const SizedBox(height: 4),
-                Text(message.time,
-                    style: Theme.of(context).textTheme.labelSmall),
-                if (message.mine && message.status != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: _ChatStatusIcon(status: message.status!),
-                  ),
-              ],
-            )),
-          ],
-        ),
-      );
-}
-
 class _EmptyStateCard extends StatelessWidget {
   const _EmptyStateCard({
     required this.icon,
@@ -4771,86 +4011,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
-  Future<void> _openProfilePrivateChat() async {
-    final userId = widget.userId;
-    if (userId == null || actionLoading) return;
-    FriendTinodeClient? client;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      final target = await service.fetchTinodeUser(token, userId);
-      final uid = '${target['uid'] ?? ''}'.trim();
-      final config = await service.fetchTinodeConfig(token);
-      final apiKey = '${config['apiKey'] ?? ''}'.trim();
-      final me = await service.fetchMe(token);
-      final username = '${me['username'] ?? ''}'.trim();
-      if (uid.isEmpty || apiKey.isEmpty || username.isEmpty) {
-        throw Exception('聊天服务配置不可用');
-      }
-      client = FriendTinodeClient(apiKey: apiKey);
-      await client.tinode.connect();
-      await client.tinode.loginBasic(username, token, null);
-      final topic = client.tinode.getTopic(uid);
-      if (!topic.isSubscribed) {
-        await topic.subscribe(GetQuery(what: 'desc sub data'), null);
-      }
-      if (!mounted) {
-        client.dispose();
-        return;
-      }
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatDetailPage(
-            peer: ChatPreview(
-              name: '${profile?['nickname'] ?? widget.name}',
-              preview: '',
-              time: '',
-              icon: Icons.person_outline,
-              userId: userId,
-              topic: uid,
-              latitude: double.tryParse('${target['user']?['latitude']}'),
-              longitude: double.tryParse('${target['user']?['longitude']}'),
-            ),
-            client: client,
-            topic: topic,
-          ),
-        ),
-      );
-      client.dispose();
-    } catch (e) {
-      client?.dispose();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-        );
-      }
-    }
-  }
-
-  Future<void> toggleProfileLike() async {
-    if (widget.userId == null || actionLoading) return;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      setState(() => actionLoading = true);
-      final response = await service.toggleProfileLike(token, widget.userId!);
-      if (!mounted) return;
-      setState(() {
-        isProfileLiked = response['liked'] == true;
-        profileLikes = _intValue(response['likes']) ?? profileLikes;
-      });
-    } catch (e) {
-      if (mounted) {
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => actionLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -5043,16 +4203,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                         ? '处理中…'
                                         : (following ? '取消关注' : '关注'),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: !actionLoading
-                                      ? () => _openProfilePrivateChat()
-                                      : null,
-                                  icon: const Icon(Icons.chat_bubble_outline),
-                                  label: const Text('私聊'),
                                 ),
                               ),
                             ],
@@ -5555,113 +4705,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
   }
 }
 
-class _ChatContactsPage extends StatefulWidget {
-  const _ChatContactsPage();
-
-  @override
-  State<_ChatContactsPage> createState() => _ChatContactsPageState();
-}
-
-class _ChatContactsPageState extends State<_ChatContactsPage> {
-  final DDPostService service = DDPostService();
-  List<Map<String, dynamic>> contacts = const [];
-  bool loading = true;
-  String? error;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  @override
-  void dispose() {
-    service.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      final loaded = await service.fetchUsers(token, relation: 'mutual');
-      if (mounted) setState(() => contacts = loaded);
-    } catch (e) {
-      if (mounted) {
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('通讯录')),
-        body: loading
-            ? const Center(child: CircularProgressIndicator())
-            : error != null
-                ? _PageErrorState(
-                    title: '通讯录加载失败',
-                    subtitle: error!,
-                    onRetry: _load,
-                  )
-                : RefreshIndicator(
-                    onRefresh: _load,
-                    child: contacts.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: const [
-                              Padding(
-                                padding: EdgeInsets.only(top: 100),
-                                child: Center(child: Text('暂无好友')),
-                              ),
-                            ],
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                            itemCount: contacts.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final user = contacts[index];
-                              final userId = _intValue(user['id']);
-                              final avatar = '${user['avatar'] ?? ''}'.trim();
-                              return Card(
-                                margin: EdgeInsets.zero,
-                                child: ListTile(
-                                  onTap: userId == null
-                                      ? null
-                                      : () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => OtherProfilePage(
-                                                userId: userId,
-                                                name: '${user['nickname'] ?? '用户'}',
-                                              ),
-                                            ),
-                                          ),
-                                  leading: CircleAvatar(
-                                    backgroundImage: avatar.isEmpty
-                                        ? null
-                                        : NetworkImage(DDPostService.mediaUrl(avatar)),
-                                    child: avatar.isEmpty
-                                        ? const Icon(Icons.person_outline)
-                                        : null,
-                                  ),
-                                  title: Text('${user['nickname'] ?? '用户'}'),
-                                  subtitle: Text('${user['city'] ?? '未知地区'}'),
-                                  trailing: const Icon(Icons.chevron_right),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-      );
-}
-
 class _HistoryRecordsPage extends _UserRelationListPage {
   const _HistoryRecordsPage() : super(relation: 'history', title: '历史访客');
 }
@@ -5871,29 +4914,11 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
 
   Future<void> _save() async {
     if (recordingPath == null && (widget.currentUrl?.isEmpty ?? true)) {
-      setState(() => error = '请先录制声音');
+      setState(() => error = '声音上传功能已关闭');
       return;
     }
-    setState(() => saving = true);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('dd.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      if (recordingPath == null) {
-        await service.updateMe(token: token, voiceUrl: widget.currentUrl);
-      } else {
-        final bytes = await File(recordingPath!).readAsBytes();
-        final objectKey = await service.uploadFileToOss(token: token, bytes: bytes, fileName: 'voice.m4a', directory: 'voices', contentType: 'audio/mp4');
-        await service.replaceVoice(token: token, objectKey: objectKey);
-      }
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      if (mounted) {
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => saving = false);
-    }
+    setState(() => saving = false);
+    if (mounted) setState(() => error = '当前版本不支持保存声音');
   }
 
   @override
@@ -6491,7 +5516,6 @@ class _ListenTogetherPageState extends State<ListenTogetherPage> {
                           radius: 1.4,
                           colors: [Color(0xff542c91), Color(0xff0c0a14)])))),
           Column(children: [
-            const _ListenDemoNotice(),
             const SizedBox(height: 26),
             Container(
                 width: 235,
@@ -6699,13 +5723,6 @@ class _VoiceMatchSuccess extends StatelessWidget {
         const SizedBox(height: 18),
         TextButton(onPressed: onRestart, child: const Text('重新模拟匹配')),
       ]));
-}
-
-class _ListenDemoNotice extends StatelessWidget {
-  const _ListenDemoNotice();
-  @override
-  Widget build(BuildContext context) =>
-      const Text('一起听', style: TextStyle(color: Colors.white60, fontSize: 11));
 }
 
 class _VoiceUiNotice extends StatelessWidget {

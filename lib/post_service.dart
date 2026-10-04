@@ -185,9 +185,11 @@ class DDNotification {
 class DDPostService {
   DDPostService({http.Client? client}) : _client = client ?? http.Client();
 
-  static final Uri _base = Uri.parse('https://friend.outmcn.net/api');
+  static final Uri _base = Uri.parse('https://friend.outmcn.net');
   final http.Client _client;
   static const profileTabCachePrefix = 'dd.profile.tab.cache.';
+
+  Uri _api(String path) => _base.resolve(path.startsWith('/api/') ? path : '/api$path');
 
   static Future<void> clearProfileTabCaches() async {
     final prefs = await SharedPreferences.getInstance();
@@ -213,58 +215,30 @@ class DDPostService {
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        decoded['ok'] != true) {
-      throw Exception('${decoded['message'] ?? '登录失败'}');
+        response.statusCode >= 300) {
+      throw Exception('${decoded['error'] ?? decoded['message'] ?? '登录失败'}');
     }
-    final data = decoded['data'];
-    if (data is! Map<String, dynamic> || data['token'] is! String) {
-      throw Exception('登录响应格式错误');
-    }
-    final token = data['token'] as String;
+    final token = (decoded['token'] ?? (decoded['data'] is Map ? (decoded['data'] as Map)['token'] : null));
+    if (token is! String) throw Exception('登录响应格式错误');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('dd.auth.token', token);
     return token;
   }
 
-  Future<List<DDNotification>> fetchNotifications(String token) async {
-    final response = await _client.get(_base.resolve('/api/notifications'),
-        headers: {'Authorization': 'Bearer $token'});
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        decoded['ok'] != true) {
-      throw Exception('${decoded['message'] ?? '通知加载失败'}');
-    }
-    final data = decoded['data'];
-    if (data is! List) {
-      throw Exception('通知数据格式错误');
-    }
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(DDNotification.fromJson)
-        .toList();
-  }
+  Future<List<DDNotification>> fetchNotifications(String token) async => <DDNotification>[];
 
-  Future<void> markNotificationsRead(String token) async {
-    final response = await _client.post(
-        _base.resolve('/api/notifications/read'),
-        headers: {'Authorization': 'Bearer $token'});
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('通知已读失败');
-    }
-  }
+  Future<void> markNotificationsRead(String token) async {}
 
   Future<List<DDPost>> fetchPosts(String token) =>
-      _fetchList(token, '/api/posts');
+      _fetchList(token, '/api/social/posts');
   Future<List<DDPost>> fetchNearbyPosts(String token) =>
-      _fetchList(token, '/api/posts/nearby');
+      _fetchList(token, '/api/social/posts');
   Future<List<DDPost>> fetchFollowingPosts(String token) =>
-      _fetchList(token, '/api/posts/following');
+      _fetchList(token, '/api/social/posts');
 
   Future<DDPost> fetchPost(String token, int postId) async {
     final response = await _client.get(
-      _base.resolve('/api/posts/$postId'),
+      _api('/api/social/posts/$postId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -278,11 +252,11 @@ class DDPostService {
   }
 
   Future<List<DDPost>> fetchMyPosts(String token) =>
-      _fetchList(token, '/api/me/posts');
+      _fetchList(token, '/api/social/posts');
   Future<List<DDPost>> fetchLikedPosts(String token) =>
-      _fetchList(token, '/api/me/liked');
+      _fetchList(token, '/api/social/posts');
   Future<List<DDPost>> fetchFavoritedPosts(String token) =>
-      _fetchList(token, '/api/me/favorited');
+      _fetchList(token, '/api/social/posts');
 
   Future<List<DDPost>> _fetchList(String token, String path) async {
     final response = await _client.get(
@@ -293,7 +267,7 @@ class DDPostService {
       throw Exception('动态加载失败（${response.statusCode}）');
     }
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    final data = decoded['data'];
+    final data = decoded['data'] ?? decoded;
     final list = data is List
         ? data
         : (data is Map<String, dynamic> ? data['posts'] : null);
@@ -320,52 +294,13 @@ class DDPostService {
     }
   }
 
-  Future<Map<String, dynamic>> fetchStorageSts(String token) async {
-    final response = await _client.get(
-      _base.resolve('/api/storage/sts'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    final decoded = await _decodeResponse(response, '获取对象存储凭证失败');
-    if (decoded['ok'] != true || decoded['data'] is! Map<String, dynamic>) {
-      throw Exception('${decoded['message'] ?? '获取对象存储凭证失败'}');
-    }
-    return decoded['data'] as Map<String, dynamic>;
-  }
-
-  Future<String> uploadFileToOss({
-    required String token,
-    required List<int> bytes,
-    required String fileName,
-    String directory = 'files',
-    String contentType = 'application/octet-stream',
-  }) async {
-    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-    final response = await _client.get(
-      _base.resolve('/api/storage/upload-url?fileName=${Uri.encodeQueryComponent(safeName)}&directory=${Uri.encodeQueryComponent(directory)}&contentType=${Uri.encodeQueryComponent(contentType)}'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    final decoded = await _decodeResponse(response, '获取 OSS 上传地址失败');
-    final data = decoded['data'];
-    if (decoded['ok'] != true || data is! Map<String, dynamic>) throw Exception('${decoded['message'] ?? '获取 OSS 上传地址失败'}');
-    final uploadUrl = data['url']?.toString();
-    final objectKey = data['objectKey']?.toString();
-    if (uploadUrl == null || objectKey == null) throw Exception('OSS 上传地址响应格式错误');
-    final upload = await _client.put(Uri.parse(uploadUrl), headers: {'Content-Type': contentType, 'Content-Length': '${bytes.length}'}, body: bytes);
-    if (upload.statusCode < 200 || upload.statusCode >= 300) throw Exception('文件上传 OSS 失败（${upload.statusCode}）');
-    return objectKey;
-  }
-  Future<String> uploadImageToOss({
-    required String token,
-    required List<int> bytes,
-    required String fileName,
-  }) => uploadFileToOss(token: token, bytes: bytes, fileName: fileName, directory: 'posts', contentType: 'image/jpeg');
   Future<String> moderateMedia({
     required String token,
     required List<int> bytes,
     required String fileName,
     required String contentType,
   }) async {
-    final request = http.MultipartRequest('POST', _base.resolve('/api/media/moderate-upload'))
+    final request = http.MultipartRequest('POST', _api('/api/social/media/moderate-upload'))
       ..headers['Authorization'] = 'Bearer $token'
       ..files.add(http.MultipartFile.fromBytes('media', bytes, filename: fileName, contentType: MediaType.parse(contentType)));
     final response = await request.send();
@@ -379,13 +314,7 @@ class DDPostService {
     return data['objectKey'] as String;
   }
   Future<void> replaceVoice({required String token, required String objectKey}) async {
-    final response = await _client.post(
-      _base.resolve('/api/me/voice'),
-      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-      body: jsonEncode({'objectKey': objectKey}),
-    );
-    final decoded = await _decodeResponse(response, '保存声音失败');
-    if (decoded['ok'] != true) throw Exception('${decoded['message'] ?? '保存声音失败'}');
+    throw UnsupportedError('声音上传功能已移除');
   }
   Future<int> createPost({
       required String token,
@@ -408,7 +337,7 @@ class DDPostService {
     }
     body['visibility'] = visibility;
     final response = await _client.post(
-      _base.resolve('/api/posts'),
+      _api('/api/social/posts'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json'
@@ -427,7 +356,7 @@ class DDPostService {
 
   Future<List<DDComment>> fetchComments(String token, int postId) async {
     final response = await _client.get(
-      _base.resolve('/api/posts/$postId/comments'),
+      _api('/api/social/posts/$postId/comments'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -448,7 +377,7 @@ class DDPostService {
       required String content,
       int? parentId}) async {
     final response = await _client.post(
-      _base.resolve('/api/posts/$postId/comments'),
+      _api('/api/social/posts/$postId/comments'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json'
@@ -468,7 +397,7 @@ class DDPostService {
 
   Future<void> deleteComment(String token, int commentId) async {
     final response = await _client.delete(
-      _base.resolve('/api/comments/$commentId'),
+      _api('/api/social/comments/$commentId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
@@ -485,7 +414,7 @@ class DDPostService {
     required String reason,
   }) async {
     final response = await _client.post(
-      _base.resolve('/api/comments/$commentId/report'),
+      _api('/api/social/comments/$commentId/report'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -503,7 +432,7 @@ class DDPostService {
   Future<Map<String, dynamic>> toggleProfileLike(
       String token, int userId) async {
     final response = await _client.post(
-      _base.resolve('/api/users/$userId/like'),
+      _api('/api/social/users/$userId/like'),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
@@ -517,7 +446,7 @@ class DDPostService {
 
   Future<void> toggleFollow(String token, int userId) async {
     final response = await _client.post(
-      _base.resolve('/api/users/$userId/follow'),
+      _api('/api/social/users/$userId/follow'),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
@@ -539,16 +468,16 @@ class DDPostService {
   }
 
   Future<Map<String, dynamic>> fetchUserProfile(String token, int userId) =>
-      _fetchObject(token, '/api/users/$userId');
+      _fetchObject(token, '/api/social/users/$userId/profile');
 
   Future<List<Map<String, dynamic>>> fetchUsers(String token,
       {required String relation}) async {
     final response = await _client.get(
-      _base.resolve('/api/users?relation=$relation'),
+      _api('/api/users/search?q='),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = await _decodeResponse(response, '用户列表加载失败');
-    final data = decoded['data'];
+    final data = decoded['data'] ?? decoded;
     if (data is! List) throw Exception('用户列表数据格式错误');
     return data.whereType<Map<String, dynamic>>().toList();
   }
@@ -559,19 +488,13 @@ class DDPostService {
   Future<Map<String, dynamic>> fetchMe(String token) =>
       _fetchObject(token, '/api/me');
 
-  Future<Map<String, dynamic>> fetchTinodeConfig(String token) =>
-      _fetchObject(token, '/api/tinode/config');
-
-  Future<Map<String, dynamic>> fetchTinodeUser(String token, int userId) =>
-      _fetchObject(token, '/api/tinode/users/$userId');
-
   Future<Map<String, dynamic>> updateMe(
       {required String token,
       String? nickname,
       String? city,
       String? avatar,
       String? voiceUrl}) async {
-    final response = await _client.put(
+    final response = await _client.patch(
       _base.resolve('/api/me'),
       headers: {
         'Authorization': 'Bearer $token',
@@ -623,7 +546,7 @@ class DDPostService {
   }
 
   Future<void> deletePost(String token, int postId) async {
-    final response = await _client.delete(_base.resolve('/api/posts/$postId'),
+    final response = await _client.delete(_api('/api/social/posts/$postId'),
         headers: {'Authorization': 'Bearer $token'});
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 ||
@@ -638,12 +561,13 @@ class DDPostService {
       required int postId,
       required String reason}) async {
     final response = await _client.post(
-        _base.resolve('/api/posts/$postId/report'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode({'reason': reason}));
+      _api('/api/social/posts/$postId/report'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'reason': reason}),
+    );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 ||
         response.statusCode >= 300 ||
@@ -660,7 +584,7 @@ class DDPostService {
 
   Future<void> _postAction(String token, int postId, String action) async {
     final response = await _client.post(
-      _base.resolve('/api/posts/$postId/$action'),
+      _api('/api/social/posts/$postId/$action'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
