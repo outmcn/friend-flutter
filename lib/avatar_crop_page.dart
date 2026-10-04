@@ -1,5 +1,12 @@
-/// Square avatar crop screen. The drag handle and preview stay local; only
-/// the confirmed JPEG bytes leave the device for the OSS upload.
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
+
+/// Square avatar crop screen. The confirmed JPEG bytes are returned locally
+/// and uploaded only after the user accepts the crop.
 class AvatarCropPage extends StatefulWidget {
   const AvatarCropPage({super.key, required this.file});
   final XFile file;
@@ -100,4 +107,3 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
     );
   }
 }
-
