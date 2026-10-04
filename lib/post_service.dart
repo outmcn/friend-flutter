@@ -97,14 +97,14 @@ class DDPost {
       };
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
         id: _intValue(json['id']) ?? 0,
-        userId: _intValue(json['userId']),
+        userId: _intValue(json['userId'] ?? json['user_id']),
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? json['created_at'] ?? ''}',
-        nickname: '${json['nickname'] ?? json['username'] ?? '用户'}',
-        avatar: DDPostService.mediaUrl(json['avatar']?.toString()),
-        likes: _intValue(json['likes']) ?? 0,
-        favorites: _intValue(json['favorites']) ?? 0,
-        comments: _intValue(json['comments']) ?? 0,
+        nickname: '${json['nickname'] ?? json['display_name'] ?? json['username'] ?? '用户'}',
+        avatar: DDPostService.mediaUrl((json['avatar'] ?? json['avatar_url'])?.toString()),
+        likes: _intValue(json['likes'] ?? json['like_count']) ?? 0,
+        favorites: _intValue(json['favorites'] ?? json['favorite_count']) ?? 0,
+        comments: _intValue(json['comments'] ?? json['comment_count']) ?? 0,
         following: json['following'] == true,
         distanceKm: _doubleValue(json['distanceKm']),
         liked: json['liked'] == true,
@@ -469,8 +469,22 @@ class DDPostService {
     await prefs.remove('dd.auth.token');
   }
 
-  Future<Map<String, dynamic>> fetchUserProfile(String token, int userId) =>
-      _fetchObject(token, '/api/social/users/$userId/profile');
+  Future<Map<String, dynamic>> fetchUserProfile(String token, int userId) async {
+    final data = await _fetchObject(token, '/api/social/users/$userId/profile');
+    final rawStats = data['stats'];
+    final stats = rawStats is Map ? rawStats.cast<String, dynamic>() : <String, dynamic>{};
+    return {
+      ...data,
+      'nickname': data['nickname'] ?? data['display_name'] ?? data['displayName'] ?? data['username'] ?? '',
+      'avatar': data['avatar'] ?? data['avatar_url'] ?? data['avatarUrl'] ?? '',
+      'following': data['following'] == true,
+      'followers': data['followers'] ?? stats['followers'] ?? 0,
+      'followingCount': data['followingCount'] ?? stats['following'] ?? 0,
+      'postCount': data['postCount'] ?? stats['posts'] ?? 0,
+      'likes': data['likes'] ?? data['profileLikes'] ?? 0,
+      'posts': data['posts'] is List ? data['posts'] : const [],
+    };
+  }
 
   Future<List<Map<String, dynamic>>> fetchUsers(String token,
       {required String relation}) async {
@@ -487,8 +501,16 @@ class DDPostService {
   Future<List<Map<String, dynamic>>> fetchHistory(String token) =>
       fetchUsers(token, relation: 'history');
 
-  Future<Map<String, dynamic>> fetchMe(String token) =>
-      _fetchObject(token, '/api/me');
+  Future<Map<String, dynamic>> fetchMe(String token) async {
+    final data = await _fetchObject(token, '/api/me');
+    return {
+      ...data,
+      'nickname': data['nickname'] ?? data['displayName'] ?? data['display_name'] ?? '',
+      'avatar': data['avatar'] ?? data['avatarUrl'] ?? data['avatar_url'] ?? '',
+      'voiceUrl': data['voiceUrl'] ?? data['ringtoneUrl'] ?? data['ringtone_url'],
+      'activeDays': data['activeDays'] ?? data['onlineDays'] ?? 0,
+    };
+  }
 
   Future<Map<String, dynamic>> updateMe(
       {required String token,
@@ -537,14 +559,19 @@ class DDPostService {
   Future<Map<String, dynamic>> _fetchObject(String token, String path) async {
     final response = await _client
         .get(_base.resolve(path), headers: {'Authorization': 'Bearer $token'});
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        decoded['ok'] != true) {
-      throw Exception('${decoded['message'] ?? '资料加载失败'}');
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = decoded is Map<String, dynamic>
+          ? (decoded['error'] ?? decoded['message'] ?? '资料加载失败')
+          : '资料加载失败';
+      throw Exception('$message');
     }
-    return (decoded['data'] as Map?)?.cast<String, dynamic>() ??
-        <String, dynamic>{};
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('资料数据格式错误');
+    }
+    final data = decoded['data'];
+    if (data is Map) return data.cast<String, dynamic>();
+    return decoded;
   }
 
   Future<void> deletePost(String token, int postId) async {
