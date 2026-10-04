@@ -20,6 +20,7 @@ import 'package:record/record.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'auth_client.dart';
+import 'avatar_crop_page.dart';
 import 'post_service.dart';
 
 int? _intValue(Object? value) {
@@ -6760,6 +6761,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final service = DDPostService();
   final nickname = TextEditingController();
   XFile? image;
+  List<int>? croppedAvatar;
   bool loading = true;
   bool saving = false;
   String? error;
@@ -6795,32 +6797,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> pickAvatar() async {
     try {
-      final value = await ImagePicker()
-          .pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (value != null && mounted)
+      final value = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (value == null || !mounted) return;
+      final cropped = await Navigator.push<List<int>>(
+        context,
+        MaterialPageRoute(builder: (_) => AvatarCropPage(file: value)),
+      );
+      if (cropped != null && mounted) {
         setState(() {
+          croppedAvatar = cropped;
           image = value;
           error = null;
         });
+      }
     } catch (e) {
       if (mounted) setState(() => error = '头像选择失败：$e');
     }
   }
 
   Future<String?> _avatarObjectKey(String token) async {
-    if (image == null) return null;
+    if (croppedAvatar == null) return null;
     final response = await service.avatarUploadUrl(
       token: token,
-      fileName: image!.name,
+      fileName: 'avatar.jpg',
       contentType: 'image/jpeg',
     );
     final url = response['url'];
     final objectKey = response['objectKey'];
     if (url is! String || objectKey is! String) throw Exception('头像上传地址格式错误');
-    final bytes = await image!.readAsBytes();
     final upload = await service.uploadAvatar(
       url: url,
-      bytes: bytes,
+      bytes: croppedAvatar!,
       contentType: 'image/jpeg',
     );
     if (!upload) throw Exception('头像上传失败');
