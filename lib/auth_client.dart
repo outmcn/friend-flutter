@@ -18,7 +18,7 @@ class FriendAuthClient {
         _baseUri = baseUri ??
             Uri.parse(const String.fromEnvironment(
               'FRIEND_API_BASE_URL',
-              defaultValue: 'http://127.0.0.1:3000',
+              defaultValue: 'https://friend.outmcn.net',
             ));
 
   final http.Client _client;
