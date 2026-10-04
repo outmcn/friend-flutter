@@ -5940,7 +5940,7 @@ class CompanionProfilePage extends StatelessWidget {
                                   CircleAvatar(
                                       radius: 38,
                                       child: Icon(data.icon, size: 36)),
-                                  const Positioned(
+                                  Positioned(
                                       right: 0, bottom: 1, child: _OnlineDot())
                                 ]),
                                 const SizedBox(width: 13),
@@ -6186,6 +6186,21 @@ class _CompanionRecommendCard extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 11, color: Theme.of(context).colorScheme.primary))
           ])));
+}
+
+class _OnlineDot extends StatelessWidget {
+  const _OnlineDot();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 11,
+        height: 11,
+        decoration: BoxDecoration(
+          color: Colors.greenAccent,
+          shape: BoxShape.circle,
+          border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
+        ),
+      );
 }
 
 class _CompanionListCard extends StatelessWidget {
