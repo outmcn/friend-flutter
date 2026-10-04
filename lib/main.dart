@@ -1,50 +1,346 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tdesign_flutter_icons/tdesign_flutter_icons.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:video_player/video_player.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'auth_client.dart';
+import 'post_service.dart';
 
-void main() {
-  runApp(const FriendUiApp());
+int? _intValue(Object? value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
 }
 
-/// UI-only Flutter shell.
-///
-/// This file intentionally contains no network client, authentication,
-/// token storage, database access, OSS access, or business service calls.
-class FriendUiApp extends StatelessWidget {
-  const FriendUiApp({super.key});
+String _formatExactPostTime(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final value = parsed.toUtc().add(const Duration(hours: 8));
+  String two(int value) => value.toString().padLeft(2, '0');
+  final period = value.hour < 12 ? '上午' : '下午';
+  final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
+  return '${value.year}-${two(value.month)}-${two(value.day)} '
+      '$period ${two(hour)}:${two(value.minute)}';
+}
+
+String formatDDTime(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final value = parsed.toUtc().add(const Duration(hours: 8));
+  final now = DateTime.now().toUtc().add(const Duration(hours: 8));
+  final difference = now.difference(value);
+  if (difference.isNegative || difference.inMinutes < 1) return '刚刚';
+  if (difference.inMinutes < 60) return '${difference.inMinutes}分钟前';
+  if (difference.inHours < 24) return '${difference.inHours}小时前';
+  if (difference.inDays < 7) return '${difference.inDays}天前';
+  return '${value.year}年${value.month}月${value.day}日';
+}
+
+Future<void> syncCachedLocation(DDPostService service, String token) async {
+  const cacheAge = Duration(hours: 1);
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final cachedAt = prefs.getInt('dd.location.cachedAt');
+    var latitude = prefs.getDouble('dd.location.latitude');
+    var longitude = prefs.getDouble('dd.location.longitude');
+    final cacheValid = cachedAt != null &&
+        now - cachedAt < cacheAge.inMilliseconds &&
+        latitude != null &&
+        longitude != null;
+    if (!cacheValid) {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) return;
+      final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium);
+      latitude = position.latitude;
+      longitude = position.longitude;
+      await prefs.setDouble('dd.location.latitude', latitude);
+      await prefs.setDouble('dd.location.longitude', longitude);
+      await prefs.setInt('dd.location.cachedAt', now);
+    }
+    await service.updateLocation(
+      token: token,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  } catch (_) {
+    // Location is optional; feeds remain available without it.
+  }
+}
+
+Future<String> cachedCityLabel(DDPostService service, String token) async {
+  const cacheAge = Duration(hours: 1);
+  final prefs = await SharedPreferences.getInstance();
+  final cachedAt = prefs.getInt('dd.location.cachedAt');
+  final cachedCity = (prefs.getString('dd.location.city') ?? '').trim();
+  final fresh = cachedAt != null &&
+      DateTime.now().millisecondsSinceEpoch - cachedAt <
+          cacheAge.inMilliseconds;
+  if (fresh && cachedCity.isNotEmpty) return cachedCity;
+  try {
+    final profile = await service.fetchMe(token);
+    final city = '${profile['city'] ?? ''}'.trim();
+    if (city.isNotEmpty) await prefs.setString('dd.location.city', city);
+    return city.isEmpty ? '城市' : city;
+  } catch (_) {
+    return cachedCity.isEmpty ? '城市' : cachedCity;
+  }
+}
+
+void main() => runApp(const DDApp());
+
+class DDApp extends StatelessWidget {
+  const DDApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Friend',
+      title: 'DD',
       themeMode: ThemeMode.system,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff9b7bff),
+          seedColor: const Color(0xffa77bff),
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xfff8f6fb),
+        scaffoldBackgroundColor: const Color(0xfff7f5fb),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xffefedf4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 13,
+          ),
+          hintStyle: TextStyle(color: Colors.black54),
+          prefixIconColor: Colors.black54,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(
+              color: const Color(0xffa77bff).withValues(alpha: .72),
+            ),
+          ),
+        ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xff101010),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff9b7bff),
+          seedColor: const Color(0xffa77bff),
           brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xff111014),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xff242329),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          hintStyle: TextStyle(color: Colors.white54),
+          prefixIconColor: Colors.white70,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(
+                color: const Color(0xffa77bff).withValues(alpha: .72)),
+          ),
+        ),
       ),
-      home: const AuthPage(),
+      home: const StartupNetworkGate(),
     );
   }
 }
 
-/// Authentication screen for the new backend. The rest of the app remains
-/// UI-only until each feature receives its own backend integration.
+class StartupNetworkGate extends StatefulWidget {
+  const StartupNetworkGate({super.key, this.checker});
+  final Future<bool> Function()? checker;
+
+  @override
+  State<StartupNetworkGate> createState() => _StartupNetworkGateState();
+}
+
+class _StartupNetworkGateState extends State<StartupNetworkGate> {
+  bool checking = true;
+  bool connected = false;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    checkNetwork();
+  }
+
+  Future<bool> _probeNetwork() async {
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+    try {
+      final request = await client
+          .getUrl(Uri.parse('https://friend.outmcn.net/api'))
+          .timeout(const Duration(seconds: 10));
+      final response =
+          await request.close().timeout(const Duration(seconds: 10));
+      await response.drain<void>();
+      return response.statusCode < 500;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<void> checkNetwork() async {
+    if (mounted) {
+      setState(() {
+        checking = true;
+        error = null;
+      });
+    }
+    try {
+      final reachable = await (widget.checker ?? _probeNetwork)();
+      if (!mounted) return;
+      setState(() {
+        connected = reachable;
+        checking = false;
+        error = reachable ? null : '服务器暂时无法连接';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        connected = false;
+        checking = false;
+        error = '请检查网络连接后重试';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (checking) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 14),
+              Text('正在连接网络…'),
+            ],
+          ),
+        ),
+      );
+    }
+    if (!connected) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off_outlined, size: 48),
+                const SizedBox(height: 16),
+                const Text('网络连接失败',
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                Text(error ?? '请连接网络后重试', textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: checkNetwork,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('重新连接'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return const AuthGate();
+  }
+}
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool loading = true;
+  String? token;
+  late final FriendAuthClient auth;
+
+  @override
+  void initState() {
+    super.initState();
+    auth = FriendAuthClient();
+    _restore();
+  }
+
+  Future<void> _restore() async {
+    final restored = await auth.restoreToken();
+    if (!mounted) return;
+    setState(() {
+      token = restored;
+      loading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    auth.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return token == null
+        ? AuthPage(auth: auth, onAuthenticated: (value) => setState(() => token = value))
+        : const DDShell();
+  }
+}
+
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key});
+  const AuthPage({super.key, required this.auth, required this.onAuthenticated});
+  final FriendAuthClient auth;
+  final ValueChanged<String> onAuthenticated;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -53,67 +349,30 @@ class AuthPage extends StatefulWidget {
 class _AuthPageState extends State<AuthPage> {
   final username = TextEditingController();
   final password = TextEditingController();
-  final nickname = TextEditingController();
-  late final FriendAuthClient auth;
-  bool registerMode = false;
   bool loading = false;
-  bool restoring = true;
   String? error;
-  FriendLoginResult? session;
-
-  @override
-  void initState() {
-    super.initState();
-    auth = FriendAuthClient();
-    restoreSession();
-  }
-
-  /// Restore and validate the persisted session before showing login or app
-  /// content. This prevents a visible flash of the wrong screen on startup.
-  Future<void> restoreSession() async {
-    try {
-      final restored = await auth.restoreSession();
-      if (mounted) setState(() => session = restored);
-    } finally {
-      if (mounted) setState(() => restoring = false);
-    }
-  }
 
   @override
   void dispose() {
     username.dispose();
     password.dispose();
-    nickname.dispose();
-    auth.dispose();
     super.dispose();
   }
 
-  Future<void> submit() async {
-    if (username.text.trim().length < 3 || password.text.length < 6) {
-      setState(() => error = '账号至少3位，密码至少6位');
+  Future<void> _login() async {
+    if (username.text.trim().isEmpty || password.text.isEmpty) {
+      setState(() => error = '请输入账号和密码');
       return;
     }
-    setState(() {
-      loading = true;
-      error = null;
-    });
+    setState(() { loading = true; error = null; });
     try {
-      if (registerMode) {
-        await auth.register(
-          username: username.text,
-          password: password.text,
-          nickname: nickname.text,
-        );
-        if (mounted) setState(() => registerMode = false);
-      } else {
-        final result = await auth.login(
-          username: username.text,
-          password: password.text,
-        );
-        if (mounted) setState(() => session = result);
-      }
-    } on FriendAuthException catch (exception) {
-      if (mounted) setState(() => error = exception.message);
+      final value = await widget.auth.login(
+        username: username.text,
+        password: password.text,
+      );
+      if (mounted) widget.onAuthenticated(value);
+    } on FriendAuthException catch (e) {
+      if (mounted) setState(() => error = e.message);
     } catch (_) {
       if (mounted) setState(() => error = '无法连接新后端');
     } finally {
@@ -121,548 +380,7060 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
-  Future<void> logout() async {
-    final current = session;
-    if (current == null) return;
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '密码登录',
+        subtitle: '使用手机号和密码登录 DD',
+        child: Column(
+          children: [
+            _AuthFieldController(label: '手机号码', icon: Icons.phone_outlined, controller: username),
+            const SizedBox(height: 14),
+            _AuthFieldController(label: '密码', icon: Icons.lock_outline, controller: password, obscureText: true),
+            if (error != null) ...[
+              const SizedBox(height: 10),
+              Align(alignment: Alignment.centerLeft, child: Text(error!, style: const TextStyle(color: Colors.orange))),
+            ],
+            const SizedBox(height: 18),
+            _PrimaryAuthButton(label: loading ? '登录中…' : '登录', onTap: loading ? () {} : _login),
+            TextButton(onPressed: () {}, child: const Text('没有账号？注册')),
+          ],
+        ),
+      );
+}
+
+class _FigmaIcon extends StatelessWidget {
+  const _FigmaIcon(this.name);
+  final String name;
+  @override
+  Widget build(BuildContext context) => SvgPicture.asset(
+        'assets/icons/$name.svg',
+        width: 22,
+        height: 22,
+        color: Theme.of(context).colorScheme.onSurface,
+      );
+}
+
+Widget _tdIcon(String name, {double size = 22, Color? color}) {
+  final icons = <String, IconData>{
+    'home': TIcons.home,
+    'home-filled': TIcons.home_filled,
+    'account': TIcons.user_avatar,
+    'account-filled': TIcons.user_avatar_filled,
+    'search': TIcons.search,
+    'notification': TIcons.notification,
+    'bookmark': TIcons.bookmark,
+    'heart': TIcons.heart,
+    'comment': TIcons.chat_bubble,
+    'share': TIcons.share,
+    'link': TIcons.link,
+    'more': TIcons.more,
+    'back': TIcons.chevron_left,
+    'video': TIcons.video,
+    'video-filled': TIcons.video_filled,
+  };
+  return Icon(icons[name] ?? TIcons.help_circle, size: size, color: color);
+}
+
+Widget _iconFor(IconData icon, {double size = 22}) {
+  final map = <IconData, String>{
+    Icons.home_outlined: 'home',
+    Icons.home: 'home-filled',
+    Icons.person_outline: 'account',
+    Icons.person: 'account-filled',
+    Icons.search: 'search',
+    Icons.notifications_none: 'notification',
+    Icons.notifications: 'notification',
+    Icons.bookmark_border: 'bookmark',
+    Icons.favorite_border: 'heart',
+    Icons.favorite: 'red-heart',
+    Icons.chat_bubble_outline: 'comment',
+    Icons.share_outlined: 'share',
+    Icons.link: 'link',
+    Icons.more_horiz: 'more',
+    Icons.send: 'send',
+    Icons.arrow_back: 'back',
+    Icons.keyboard_arrow_down: 'down-arrow',
+  };
+  final name = map[icon];
+  if (name == null) return _tdIcon('unknown', size: size);
+  return _tdIcon(name, size: size, color: Colors.white);
+}
+
+class _SafeAvatar extends StatelessWidget {
+  const _SafeAvatar({required this.asset});
+  final String asset;
+  @override
+  Widget build(BuildContext context) => CircleAvatar(
+        backgroundImage: AssetImage(asset),
+        onBackgroundImageError: (_, __) {},
+        child: const Icon(Icons.person),
+      );
+}
+
+class _SafeAssetImage extends StatelessWidget {
+  const _SafeAssetImage({
+    required this.asset,
+    this.height,
+    this.width,
+    this.fit = BoxFit.cover,
+    this.borderRadius,
+  });
+  final String asset;
+  final double? height;
+  final double? width;
+  final BoxFit fit;
+  final BorderRadius? borderRadius;
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: borderRadius ?? BorderRadius.zero,
+        child: Image.asset(
+          asset,
+          height: height,
+          width: width,
+          fit: fit,
+          errorBuilder: (_, __, ___) => Container(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            alignment: Alignment.center,
+            child: TextButton(onPressed: () {}, child: const Text('重新加载')),
+          ),
+        ),
+      );
+}
+
+class OnboardingPage extends StatelessWidget {
+  const OnboardingPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Spacer(),
+              const Text(
+                'DD',
+                style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '发现有趣的人，分享真实生活。',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: .68),
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 34),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                  ),
+                  child: const Text('开始使用'),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '登录',
+        subtitle: '使用手机号登录 DD',
+        child: Column(
+          children: [
+            const _AuthField(label: '手机号码', icon: Icons.phone_outlined),
+            const SizedBox(height: 14),
+            const _AuthField(label: '验证码', icon: Icons.verified_outlined),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const PasswordLoginPage()),
+                  ),
+                  child: const Text('密码登录'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ResetPasswordPage()),
+                  ),
+                  child: const Text('找回密码'),
+                ),
+              ],
+            ),
+            _PrimaryAuthButton(
+              label: '登录',
+              onTap: () {},
+            ),
+          ],
+        ),
+      );
+}
+
+class PasswordLoginPage extends StatefulWidget {
+  const PasswordLoginPage({super.key});
+  @override
+  State<PasswordLoginPage> createState() => _PasswordLoginPageState();
+}
+
+class _PasswordLoginPageState extends State<PasswordLoginPage> {
+  final _username = TextEditingController();
+  final _password = TextEditingController();
+  final _service = DDPostService();
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _username.dispose();
+    _password.dispose();
+    _service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (_username.text.trim().isEmpty || _password.text.isEmpty) {
+      setState(() => _error = '请输入手机号和密码');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      await auth.logout(current.token);
+      await _service.login(
+        username: _username.text.trim(),
+        password: _password.text,
+      );
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DDShell()),
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error.toString().replaceFirst('Exception: ', ''),
+        );
+      }
     } finally {
-      if (mounted) setState(() => session = null);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (restoring) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-    final current = session;
-    if (current != null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(current.user.nickname),
-          actions: [
-            IconButton(onPressed: logout, icon: const Icon(Icons.logout)),
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '密码登录',
+        subtitle: '使用手机号和密码登录 DD',
+        child: Column(
+          children: [
+            _AuthFieldController(
+                label: '手机号码',
+                icon: Icons.phone_outlined,
+                controller: _username),
+            const SizedBox(height: 14),
+            _AuthFieldController(
+                label: '密码',
+                icon: Icons.lock_outline,
+                obscureText: true,
+                controller: _password),
+            if (_error != null) ...[
+              const SizedBox(height: 10),
+              Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(_error!,
+                      style: const TextStyle(color: Colors.orange))),
+            ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ResetPasswordPage()),
+                ),
+                child: const Text('找回密码'),
+              ),
+            ),
+            _PrimaryAuthButton(
+                label: _loading ? '登录中…' : '登录',
+                onTap: _loading ? () {} : _login),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('返回验证码登录')),
           ],
         ),
-        body: const AppShell(),
       );
-    }
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+}
+
+class _AuthFieldController extends StatelessWidget {
+  const _AuthFieldController(
+      {required this.label,
+      required this.icon,
+      required this.controller,
+      this.obscureText = false});
+  final String label;
+  final IconData icon;
+  final TextEditingController controller;
+  final bool obscureText;
+  @override
+  Widget build(BuildContext context) => TextField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
+      );
+}
+
+class RegisterPage extends StatelessWidget {
+  const RegisterPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '注册',
+        subtitle: '创建账号，开始你的 DD 旅程',
+        child: Column(
+          children: [
+            const _AuthField(label: '用户名', icon: Icons.person_outline),
+            const SizedBox(height: 14),
+            const _AuthField(label: '邮箱或手机号', icon: Icons.alternate_email),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 8,
                 children: [
-                  Text(
-                    registerMode ? '注册' : '登录',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: username,
-                    decoration: const InputDecoration(labelText: '账号'),
-                  ),
-                  if (registerMode) ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: nickname,
-                      decoration: const InputDecoration(labelText: '昵称（可选）'),
+                  OutlinedButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const EmailRegisterPage()),
                     ),
-                  ],
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: password,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: '密码'),
+                    child: const Text('邮箱注册'),
                   ),
-                  if (error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  OutlinedButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const PhoneRegisterPage()),
                     ),
-                  ],
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: loading ? null : submit,
-                    child: Text(loading ? '处理中…' : registerMode ? '注册' : '登录'),
-                  ),
-                  TextButton(
-                    onPressed: loading
-                        ? null
-                        : () => setState(() {
-                              registerMode = !registerMode;
-                              error = null;
-                            }),
-                    child: Text(registerMode ? '已有账号？登录' : '没有账号？注册'),
+                    child: const Text('手机注册'),
                   ),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 14),
+            const _AuthField(
+              label: '设置密码',
+              icon: Icons.lock_outline,
+              obscureText: true,
+            ),
+            const SizedBox(height: 24),
+            _PrimaryAuthButton(
+              label: '继续',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileSetupPage()),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              ),
+              child: const Text('已有账号？返回登录'),
+            ),
+          ],
         ),
-      ),
-    );
-  }
+      );
 }
 
-/// Static page shell retained for later backend integration.
-class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+class ResetPasswordPage extends StatelessWidget {
+  const ResetPasswordPage({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '找回密码',
+        subtitle: '输入绑定信息获取验证码',
+        child: Column(
+          children: [
+            const _AuthField(label: '邮箱或手机号', icon: Icons.person_outline),
+            const SizedBox(height: 14),
+            const _AuthField(label: '验证码', icon: Icons.verified_outlined),
+            const SizedBox(height: 24),
+            _PrimaryAuthButton(
+                label: '确认', onTap: () => Navigator.pop(context)),
+          ],
+        ),
+      );
 }
 
-class _AppShellState extends State<AppShell> {
-  int index = 0;
+class FilledLoginPage extends StatelessWidget {
+  const FilledLoginPage({super.key});
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '登录',
+        subtitle: '已填写账号，继续完成登录',
+        child: Column(
+          children: [
+            const _AuthField(
+              label: '邮箱或手机号',
+              icon: Icons.person,
+              initialText: 'friend@example.com',
+            ),
+            const SizedBox(height: 14),
+            const _AuthField(
+              label: '密码',
+              icon: Icons.lock_outline,
+              obscureText: true,
+              initialText: '••••••••',
+            ),
+            const SizedBox(height: 24),
+            _PrimaryAuthButton(
+              label: '登录',
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DDShell()),
+              ),
+            ),
+          ],
+        ),
+      );
+}
 
-  static const pages = <Widget>[
-    HomePage(),
-    DiscoverPage(),
-    MessagesPage(),
-    ProfilePage(),
-  ];
+class VerificationPage extends StatelessWidget {
+  const VerificationPage({super.key, required this.title});
+  final String title;
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: title,
+        subtitle: '验证码已发送，请输入验证码',
+        child: Column(
+          children: [
+            const _AuthField(label: '验证码', icon: Icons.verified_outlined),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(onPressed: () {}, child: const Text('重新获取验证码')),
+            ),
+            const SizedBox(height: 18),
+            _PrimaryAuthButton(
+                label: '确认', onTap: () => Navigator.pop(context)),
+          ],
+        ),
+      );
+}
+
+class PhoneRegisterPage extends StatelessWidget {
+  const PhoneRegisterPage({super.key});
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '手机注册',
+        subtitle: '使用手机号创建 DD 账号',
+        child: Column(
+          children: [
+            const _AuthField(label: '手机号码', icon: Icons.phone_outlined),
+            const SizedBox(height: 14),
+            const _AuthField(label: '验证码', icon: Icons.verified_outlined),
+            const SizedBox(height: 24),
+            _PrimaryAuthButton(
+              label: '下一步',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PasswordSetupPage()),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class EmailRegisterPage extends StatelessWidget {
+  const EmailRegisterPage({super.key});
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '邮箱注册',
+        subtitle: '使用邮箱创建 DD 账号',
+        child: Column(
+          children: [
+            const _AuthField(label: '邮箱地址', icon: Icons.email_outlined),
+            const SizedBox(height: 14),
+            const _AuthField(label: '邮箱验证码', icon: Icons.verified_outlined),
+            const SizedBox(height: 24),
+            _PrimaryAuthButton(
+              label: '下一步',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PasswordSetupPage()),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class PasswordSetupPage extends StatelessWidget {
+  const PasswordSetupPage({super.key});
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '设置密码',
+        subtitle: '为你的 DD 账号设置安全密码',
+        child: Column(
+          children: [
+            const _AuthField(
+              label: '设置密码',
+              icon: Icons.lock_outline,
+              obscureText: true,
+            ),
+            const SizedBox(height: 14),
+            const _AuthField(
+              label: '确认密码',
+              icon: Icons.lock_reset_outlined,
+              obscureText: true,
+            ),
+            const SizedBox(height: 24),
+            _PrimaryAuthButton(
+              label: '完成注册',
+              onTap: () => Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const DDShell()),
+                (_) => false,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class ProfileSetupPage extends StatelessWidget {
+  const ProfileSetupPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        title: '完善资料',
+        subtitle: '让大家更快认识你',
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 46,
+              backgroundImage: const AssetImage(
+                'assets/figma/profile-portrait-1.jpg',
+              ),
+              onBackgroundImageError: (_, __) {},
+              child: const Icon(Icons.add_a_photo_outlined, size: 30),
+            ),
+            const SizedBox(height: 20),
+            const _AuthField(label: '昵称', icon: Icons.badge_outlined),
+            const SizedBox(height: 14),
+            const _AuthField(label: '一句话介绍自己', icon: Icons.edit_outlined),
+            const SizedBox(height: 14),
+            const _AuthField(label: '选择兴趣标签', icon: Icons.local_offer_outlined),
+            const SizedBox(height: 24),
+            _PrimaryAuthButton(
+              label: '完成',
+              onTap: () => Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const DDShell()),
+                (_) => false,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class AuthScaffold extends StatelessWidget {
+  const AuthScaffold({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+  final String title;
+  final String subtitle;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: IndexedStack(index: index, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (value) => setState(() => index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: '首页',
+      appBar: AppBar(),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 30),
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: '发现',
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 15),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: '消息',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: '我的',
-          ),
+          const SizedBox(height: 30),
+          child,
         ],
       ),
     );
   }
+}
+
+class _AuthField extends StatelessWidget {
+  const _AuthField({
+    required this.label,
+    required this.icon,
+    this.obscureText = false,
+    this.initialText,
+  });
+  final String label;
+  final IconData icon;
+  final bool obscureText;
+  final String? initialText;
+  @override
+  Widget build(BuildContext context) => TextField(
+        obscureText: obscureText,
+        controller: initialText == null
+            ? null
+            : TextEditingController(text: initialText),
+        decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
+      );
+}
+
+class _PrimaryAuthButton extends StatelessWidget {
+  const _PrimaryAuthButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: FilledButton(
+          onPressed: onTap,
+          style: FilledButton.styleFrom(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          ),
+          child: Text(label),
+        ),
+      );
+}
+
+class ChatPage extends StatelessWidget {
+  const ChatPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+        body: SizedBox.shrink(),
+      );
+}
+
+class DDShell extends StatefulWidget {
+  const DDShell({super.key});
+  @override
+  State<DDShell> createState() => _DDShellState();
+}
+
+class _DDShellState extends State<DDShell> {
+  int index = 0;
+  late final List<Widget> pages;
+
+  @override
+  void initState() {
+    super.initState();
+    pages = const [
+      HomePage(),
+      DiscoverPage(),
+      ChatPage(),
+      DDProfilePage(),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: IndexedStack(
+          index: index,
+          children: pages,
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: index,
+          onDestinationSelected: (value) {
+            HapticFeedback.selectionClick();
+            setState(() => index = value);
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.sports_esports_outlined),
+              selectedIcon: Icon(Icons.sports_esports),
+              label: '娱乐',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.explore_outlined),
+              selectedIcon: Icon(Icons.explore),
+              label: '发现',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.chat_bubble_outline),
+              selectedIcon: Icon(Icons.chat_bubble),
+              label: '聊天',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: '我的',
+            ),
+          ],
+        ),
+      );
+}
+
+class _PageLoadState extends StatelessWidget {
+  const _PageLoadState({required this.title, required this.subtitle});
+  final String title;
+  final String subtitle;
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Text('$title\n$subtitle')),
+            ],
+          ),
+        ),
+      );
+}
+
+class _PageErrorState extends StatelessWidget {
+  const _PageErrorState(
+      {required this.title, required this.subtitle, this.onRetry});
+  final String title;
+  final String subtitle;
+  final VoidCallback? onRetry;
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          leading: const Icon(Icons.cloud_off_outlined),
+          title: Text(title),
+          subtitle: Text(subtitle),
+          trailing: TextButton(onPressed: onRetry, child: const Text('重试')),
+        ),
+      );
 }
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return _PageFrame(
-      title: '首页',
-      action: IconButton(
-        onPressed: () {},
-        icon: const Icon(Icons.notifications_none),
-      ),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: const [
-          _StoryStrip(),
-          SizedBox(height: 18),
-          _StaticPostCard(
-            title: '记录此刻的生活',
-            body: '这里保留原有内容卡片的 UI 结构，后续再接入真实数据。',
-          ),
-          _StaticPostCard(
-            title: '周末随手拍',
-            body: '当前页面只展示组件和布局，不调用任何后端接口。',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class DiscoverPage extends StatelessWidget {
-  const DiscoverPage({super.key});
+  void _unavailable(BuildContext context, String feature) {}
 
   @override
-  Widget build(BuildContext context) {
-    return _PageFrame(
-      title: '发现',
-      action: IconButton(
-        onPressed: () {},
-        icon: const Icon(Icons.search),
-      ),
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          _SectionTabs(),
-          SizedBox(height: 18),
-          _StaticPostCard(
-            title: '今日推荐',
-            body: '推荐内容卡片仅作为界面占位。',
-          ),
-          _StaticPostCard(
-            title: '认识新的朋友',
-            body: '用户、动态和互动数据将在后续对接新后端。',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class MessagesPage extends StatelessWidget {
-  const MessagesPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageFrame(
-      title: '消息',
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          _MessageTile(
-            name: '小组讨论',
-            preview: '消息列表组件占位',
-            color: Color(0xff9b7bff),
-          ),
-          _MessageTile(
-            name: '新的朋友',
-            preview: '暂未连接真实消息',
-            color: Color(0xff70b7a3),
-          ),
-          _MessageTile(
-            name: '系统消息',
-            preview: '静态列表项占位',
-            color: Color(0xffe7a467),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageFrame(
-      title: '我的',
-      action: IconButton(
-        onPressed: () {},
-        icon: const Icon(Icons.settings_outlined),
-      ),
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Row(
+  Widget build(BuildContext context) => Scaffold(
+        body: SafeArea(
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
             children: [
-              const CircleAvatar(
-                radius: 38,
-                child: Icon(Icons.person, size: 34),
+              SizedBox(
+                height: 140,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      flex: 11,
+                      child: _HomeFolderCard(
+                        icon: Icons.auto_awesome,
+                        title: '缘分匹配',
+                        subtitle: '遇见聊得来的人',
+                        meta: 'FATE',
+                        tabLabel: 'FATE',
+                        colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
+                        tabAlignment: Alignment.topRight,
+                        borderRadius: BorderRadius.circular(28),
+                        height: 140,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const FateMatchPage(),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 9,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: _HomeFolderCard(
+                              icon: Icons.mic_none,
+                              title: '语音匹配',
+                              subtitle: '遇见懂你的人',
+                              meta: '',
+                              tabLabel: 'VOICE',
+                              colors: const [
+                                Color(0xff6e4fe0),
+                                Color(0xffd46bc8)
+                              ],
+                              tabAlignment: Alignment.topLeft,
+                              borderRadius: BorderRadius.circular(24),
+                              height: 63,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const VoiceMatchPage(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: _HomeNormalCard(
+                              icon: Icons.sports_esports_outlined,
+                              title: 'Game 俱乐部',
+                              colors: const [
+                                Color(0xffff9a5a),
+                                Color(0xffff5f8f),
+                              ],
+                              height: 63,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const GameCompanionPlazaPage(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(height: 24),
+              _HomeCartoonCard(
+                icon: Icons.menu_book_outlined,
+                title: '玩剧本',
+                subtitle: '拨开迷雾，寻找真相',
+                badge: 'GO',
+                colors: const [Color(0xff352b62), Color(0xff8b4e9f)],
+                onTap: () => _unavailable(context, '玩剧本'),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.groups_2_outlined,
+                      title: '真人带本',
+                      subtitle: '52局等待中',
+                      badge: 'LIVE',
+                      colors: const [Color(0xff5a315b), Color(0xffd46b82)],
+                      onTap: () => _unavailable(context, '真人带本'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.smart_toy_outlined,
+                      title: 'AI剧本杀',
+                      subtitle: '随时开局',
+                      badge: 'AI',
+                      colors: const [Color(0xff164b68), Color(0xff3c9fa9)],
+                      onTap: () => _unavailable(context, 'AI剧本杀'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.mic_external_on_outlined,
+                      title: '嗨歌抢唱',
+                      subtitle: '轮到你开唱',
+                      badge: 'NEW',
+                      colors: const [Color(0xff713b42), Color(0xffe38d57)],
+                      onTap: () => _unavailable(context, '嗨歌抢唱'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.casino_outlined,
+                      title: '骗子酒馆',
+                      subtitle: '猜猜谁在说谎',
+                      badge: 'NEW',
+                      colors: const [Color(0xff254d72), Color(0xff63a5c5)],
+                      onTap: () => _unavailable(context, '骗子酒馆'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _HomeCartoonCard(
+                icon: Icons.flight_takeoff_outlined,
+                title: '飞行棋',
+                subtitle: '轻松玩一局',
+                badge: 'PLAY',
+                colors: const [Color(0xff2c5d3a), Color(0xff83bc67)],
+                onTap: () => _unavailable(context, '飞行棋'),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _LegacyHomePage extends StatelessWidget {
+  const _LegacyHomePage({super.key});
+
+  void _unavailable(BuildContext context, String feature) {}
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: SafeArea(
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(
+                16, 8, 16, 28 + MediaQuery.of(context).padding.bottom + 88),
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 11,
+                    child: _HomeFolderCard(
+                      icon: Icons.sports_esports_outlined,
+                      title: 'Game 俱乐部',
+                      subtitle: '开黑交友不孤单',
+                      meta: '1,236 位陪玩',
+                      tabLabel: 'PLAY',
+                      colors: const [Color(0xffff6b9d), Color(0xffa855f7)],
+                      tabAlignment: Alignment.topRight,
+                      borderRadius: BorderRadius.circular(28),
+                      height: 250,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const GameCompanionPlazaPage())),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 9,
+                    child: Column(
+                      children: [
+                        _HomeFolderCard(
+                          icon: Icons.mic_none,
+                          title: '语音匹配',
+                          subtitle: '说句话，遇见懂你的人',
+                          meta: '正在寻找声音伙伴',
+                          tabLabel: 'VOICE',
+                          colors: const [Color(0xff6e4fe0), Color(0xffd46bc8)],
+                          tabAlignment: Alignment.topLeft,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(26),
+                            bottomLeft: Radius.circular(22),
+                            bottomRight: Radius.circular(12),
+                          ),
+                          height: 119,
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const VoiceMatchPage())),
+                        ),
+                        const SizedBox(height: 12),
+                        _HomeFolderCard(
+                          icon: Icons.auto_awesome,
+                          title: '缘分匹配',
+                          subtitle: '遇见聊得来的人',
+                          meta: '正在寻找默契伙伴',
+                          tabLabel: 'FATE',
+                          colors: const [Color(0xffff9a5a), Color(0xffff5f8f)],
+                          tabAlignment: Alignment.topLeft,
+                          borderRadius: BorderRadius.circular(22),
+                          height: 119,
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const FateMatchPage())),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              _HomeCartoonCard(
+                icon: Icons.menu_book_outlined,
+                title: '玩剧本',
+                subtitle: '拨开迷雾，寻找真相',
+                badge: 'GO',
+                colors: const [Color(0xff352b62), Color(0xff8b4e9f)],
+                onTap: () => _unavailable(context, '玩剧本'),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.groups_2_outlined,
+                      title: '真人带本',
+                      subtitle: '52 局等待中',
+                      badge: 'LIVE',
+                      colors: const [Color(0xff5a315b), Color(0xffd46b82)],
+                      onTap: () => _unavailable(context, '真人带本'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.smart_toy_outlined,
+                      title: 'AI剧本杀',
+                      subtitle: '随时开局',
+                      badge: 'AI',
+                      colors: const [Color(0xff164b68), Color(0xff3c9fa9)],
+                      onTap: () => _unavailable(context, 'AI剧本杀'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.mic_external_on_outlined,
+                      title: '嗨歌抢唱',
+                      subtitle: '轮到你开唱',
+                      badge: 'NEW',
+                      colors: const [Color(0xff713b42), Color(0xffe38d57)],
+                      onTap: () => _unavailable(context, '嗨歌抢唱'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HomeCartoonCard(
+                      icon: Icons.casino_outlined,
+                      title: '骗子酒馆',
+                      subtitle: '猜猜谁在说谎',
+                      badge: 'NEW',
+                      colors: const [Color(0xff254d72), Color(0xff63a5c5)],
+                      onTap: () => _unavailable(context, '骗子酒馆'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              _HomeCartoonCard(
+                icon: Icons.flight_takeoff_outlined,
+                title: '飞行棋',
+                subtitle: '轻松玩一局',
+                badge: 'PLAY',
+                colors: const [Color(0xff2c5d3a), Color(0xff83bc67)],
+                onTap: () => _unavailable(context, '飞行棋'),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _DynamicPostCard extends StatelessWidget {
+  const _DynamicPostCard({
+    required this.post,
+    required this.onLike,
+    required this.onFavorite,
+    required this.onOpen,
+    this.onComment,
+    this.onFollow,
+    this.onDelete,
+    this.authorNavigation = true,
+    this.listMode = false,
+  });
+  final DDPost post;
+  final VoidCallback onLike;
+  final VoidCallback onFavorite;
+  final VoidCallback onOpen;
+  final VoidCallback? onComment;
+  final VoidCallback? onFollow;
+  final VoidCallback? onDelete;
+  final bool authorNavigation;
+  final bool listMode;
+  @override
+  Widget build(BuildContext context) {
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            InkWell(
+              onTap: !authorNavigation || post.userId == null
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OtherProfilePage(
+                            userId: post.userId,
+                            name: post.nickname,
+                          ),
+                        ),
+                      ),
+              borderRadius: BorderRadius.circular(24),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: post.avatar.isEmpty
+                    ? null
+                    : NetworkImage(DDPostService.mediaUrl(post.avatar)),
+                child: post.avatar.isEmpty
+                    ? const Icon(Icons.person_outline)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      InkWell(
+                        onTap: !authorNavigation || post.userId == null
+                            ? null
+                            : () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => OtherProfilePage(
+                                      userId: post.userId,
+                                      name: post.nickname,
+                                    ),
+                                  ),
+                                ),
+                        child: Text(post.nickname,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                      if (post.distanceKm != null &&
+                          post.distanceKm! <= 100) ...[
+                        const SizedBox(width: 7),
+                        _DistanceBadge(distanceKm: post.distanceKm!),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    formatDDTime(post.createdAt),
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .52),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (onDelete != null)
+              IconButton(
+                tooltip: '删除动态',
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline),
+              )
+            else if (onFollow != null && post.userId != null)
+              OutlinedButton(
+                onPressed: post.following ? null : onFollow,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.secondary,
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+                child: Text(post.following ? '已关注' : '关注'),
+              ),
+          ],
+        ),
+        if (post.content.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: onOpen,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(post.content,
+                  style: const TextStyle(fontSize: 16, height: 1.4)),
+            ),
+          ),
+        ],
+        if (post.imageUrl != null && post.imageUrl!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              onTap: onOpen,
+              borderRadius: BorderRadius.circular(16),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 500),
+                child: Image.network(
+                  post.imageUrl!,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
+          ),
+        ],
+        if (post.videoUrl != null && post.videoUrl!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _NetworkVideoPreview(url: post.videoUrl!),
+        ],
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: onLike,
+              style: TextButton.styleFrom(
+                foregroundColor: post.liked ? Colors.red : null,
+              ),
+              icon: Icon(TIcons.thumb_up_1),
+              label: Text('${post.likes}'),
+            ),
+            TextButton.icon(
+              onPressed: onComment ?? onOpen,
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: Text('${post.comments}'),
+            ),
+            TextButton.icon(
+              onPressed: onFavorite,
+              style: TextButton.styleFrom(
+                foregroundColor: post.favorited ? Colors.red : null,
+              ),
+              icon: Icon(TIcons.bookmark),
+              label: Text('${post.favorites}'),
+            ),
+          ],
+        ),
+      ],
+    );
+    if (!listMode) {
+      return Card(
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: content,
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          content,
+          const SizedBox(height: 10),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Theme.of(context).dividerColor.withValues(alpha: .5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NetworkVideoPreview extends StatefulWidget {
+  const _NetworkVideoPreview({required this.url});
+  final String url;
+
+  @override
+  State<_NetworkVideoPreview> createState() => _NetworkVideoPreviewState();
+}
+
+class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
+  late final VideoPlayerController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
+      ..initialize().then((_) {
+        if (mounted) setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!controller.value.isInitialized) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          AspectRatio(
+            aspectRatio: controller.value.aspectRatio,
+            child: VideoPlayer(controller),
+          ),
+          IconButton.filled(
+            onPressed: () {
+              setState(() {
+                controller.value.isPlaying
+                    ? controller.pause()
+                    : controller.play();
+              });
+            },
+            icon: Icon(
+                controller.value.isPlaying ? Icons.pause : Icons.play_arrow),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeQuickActions extends StatelessWidget {
+  const _HomeQuickActions({required this.onCreatePost});
+
+  final Future<void> Function() onCreatePost;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickAction(
+            icon: Icons.add_box_outlined,
+            label: '创建动态',
+            onTap: () => onCreatePost(),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickAction(
+            icon: Icons.notifications_none,
+            label: '通知中心',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatPage()),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        leading: _iconFor(icon),
+        title: Text(label, style: const TextStyle(fontSize: 13)),
+        trailing: const Icon(Icons.chevron_right, size: 18),
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _ScrollStateCard extends StatelessWidget {
+  const _ScrollStateCard();
+
+  @override
+  Widget build(BuildContext context) => const _ContentPreviewCard(
+        title: '继续浏览',
+        subtitle: '向下滑动查看更多推荐内容',
+        icon: Icons.keyboard_arrow_down,
+      );
+}
+
+class _TrendPreviewCard extends StatelessWidget {
+  const _TrendPreviewCard({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => _ContentPreviewCard(
+        title: '流行趋势',
+        subtitle: '本周正在流行的话题和内容',
+        icon: Icons.trending_up,
+        onTap: onTap,
+      );
+}
+
+class DiscoverPage extends StatefulWidget {
+  const DiscoverPage({super.key});
+  @override
+  State<DiscoverPage> createState() => _DiscoverPageState();
+}
+
+class _DiscoverPageState extends State<DiscoverPage> {
+  final DDPostService service = DDPostService();
+  static const _cacheDuration = Duration(minutes: 10);
+  List<DDPost> posts = const [];
+  bool loading = true;
+  bool _refreshing = false;
+  int selectedTab = 0;
+  bool tabLoading = false;
+  String? cityLabel;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> load({int? tab, bool fromRefresh = false}) async {
+    if (fromRefresh) HapticFeedback.mediumImpact();
+    final targetTab = tab ?? selectedTab;
+    final switchingTab = tab != null && !fromRefresh && !loading;
+    if (switchingTab) {
+      setState(() {
+        selectedTab = targetTab;
+        tabLoading = false;
+        error = null;
+      });
+    }
+    if (fromRefresh) {
+      if (_refreshing) return;
+      _refreshing = true;
+    } else if (!switchingTab) {
+      setState(() {
+        loading = true;
+        error = null;
+      });
+    }
+    try {
+      final p = await SharedPreferences.getInstance();
+      final t = p.getString('dd.auth.token') ?? '';
+      if (t.isEmpty) throw Exception('登录后加载发现内容');
+      final cacheKey = 'dd.discover.cache.$targetTab';
+      final cacheAtKey = '$cacheKey.at';
+      final cachedAt = p.getInt(cacheAtKey);
+      final cachedJson = p.getString(cacheKey);
+      final cacheFresh = !fromRefresh &&
+          cachedAt != null &&
+          cachedJson != null &&
+          DateTime.now().millisecondsSinceEpoch - cachedAt <
+              _cacheDuration.inMilliseconds;
+      final cachedPosts = cacheFresh
+          ? (jsonDecode(cachedJson!) as List)
+              .whereType<Map<String, dynamic>>()
+              .map(DDPost.fromJson)
+              .toList()
+          : <DDPost>[];
+      if (cacheFresh && mounted) {
+        setState(() {
+          posts = cachedPosts;
+          selectedTab = targetTab;
+          loading = false;
+          tabLoading = false;
+        });
+      }
+      final cachedCity = (p.getString('dd.location.city') ?? '').trim();
+      if (mounted && cachedCity.isNotEmpty && cityLabel != cachedCity) {
+        setState(() => cityLabel = cachedCity);
+      }
+      await syncCachedLocation(service, t);
+      final city = await cachedCityLabel(service, t);
+      if (mounted && cityLabel != city) setState(() => cityLabel = city);
+      final shouldFetch = fromRefresh || switchingTab || !cacheFresh;
+      final loaded = shouldFetch
+          ? (targetTab == 0
+              ? await service.fetchPosts(t)
+              : targetTab == 1
+                  ? await service.fetchNearbyPosts(t)
+                  : await service.fetchFollowingPosts(t))
+          : cachedPosts;
+      if (shouldFetch) {
+        await p.setString(
+          cacheKey,
+          jsonEncode(loaded
+              .map((item) => {
+                    'id': item.id,
+                    'userId': item.userId,
+                    'content': item.content,
+                    'createdAt': item.createdAt,
+                    'nickname': item.nickname,
+                    'avatar': item.avatar,
+                    'likes': item.likes,
+                    'favorites': item.favorites,
+                    'comments': item.comments,
+                    'following': item.following,
+                    'distanceKm': item.distanceKm,
+                    'liked': item.liked,
+                    'favorited': item.favorited,
+                    'imageURL': item.imageUrl,
+                    'videoURL': item.videoUrl,
+                    'views': item.views,
+                  })
+              .toList()),
+        );
+        await p.setInt(cacheAtKey, DateTime.now().millisecondsSinceEpoch);
+      }
+      if (mounted) {
+        setState(() {
+          posts = loaded;
+          selectedTab = targetTab;
+        });
+      }
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+          tabLoading = false;
+          _refreshing = false;
+        });
+      } else {
+        _refreshing = false;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          titleSpacing: 16,
+          title: Row(
+            children: ['推荐', cityLabel ?? '', '关注']
+                .asMap()
+                .entries
+                .map((entry) => GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        load(tab: entry.key);
+                      },
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.only(right: 20, top: 9, bottom: 6),
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
+                          Text(entry.value,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: selectedTab == entry.key
+                                    ? null
+                                    : Theme.of(context).hintColor,
+                              )),
+                          const SizedBox(height: 5),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            curve: Curves.easeOutCubic,
+                            width: selectedTab == entry.key ? 24 : 0,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ))
+                .toList(),
+          ),
+          actions: [
+            IconButton(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsPage()),
+                );
+              },
+              icon: const Icon(TIcons.notification, size: 21),
+              tooltip: '通知中心',
+            ),
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CreatePostPage(),
+                ),
+              ),
+              icon: const Icon(Icons.add_circle_outline),
+              tooltip: '创建动态',
+            ),
+          ],
+        ),
+        body: RefreshIndicator(
+            onRefresh: () => load(fromRefresh: true),
+            child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                    18, 2, 18, 28 + MediaQuery.of(context).padding.bottom + 88),
+                children: [
+                  const SizedBox(height: 2),
+                  if (loading)
+                    const _PageLoadState(
+                      title: '动态加载中',
+                      subtitle: '正在读取发现内容',
+                    ),
+                  if (!loading && error != null)
+                    _PageErrorState(
+                      title: '发现加载失败',
+                      subtitle: error!,
+                      onRetry: load,
+                    ),
+                  if (tabLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 36),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (!loading && error == null && posts.isEmpty)
+                    _EmptyStateCard(
+                      icon: selectedTab == 1
+                          ? Icons.location_off_outlined
+                          : selectedTab == 2
+                              ? Icons.person_outline
+                              : Icons.article_outlined,
+                      title: selectedTab == 1
+                          ? '暂无附近动态'
+                          : selectedTab == 2
+                              ? '暂无关注动态'
+                              : '暂无动态',
+                      subtitle: selectedTab == 1
+                          ? '授权定位并等待附近用户发布动态'
+                          : selectedTab == 2
+                              ? '关注用户后，他们的动态会显示在这里'
+                              : '暂时没有可发现的真实动态',
+                    ),
+                  if (!loading && !tabLoading && error == null)
+                    ...posts.map(
+                      (post) => Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: _DynamicPostCard(
+                          post: post,
+                          listMode: true,
+                          onLike: () async {
+                            try {
+                              final p = await SharedPreferences.getInstance();
+                              final t = p.getString('dd.auth.token') ?? '';
+                              if (t.isEmpty) throw Exception('请先登录');
+                              await service.toggleLike(t, post.id);
+                              if (mounted) {
+                                setState(() {
+                                  final index = posts
+                                      .indexWhere((item) => item.id == post.id);
+                                  if (index >= 0) {
+                                    final current = posts[index];
+                                    posts[index] = current.copyWith(
+                                      liked: !current.liked,
+                                      likes: current.likes +
+                                          (current.liked ? -1 : 1),
+                                    );
+                                  }
+                                });
+                                await DDPostService.clearProfileTabCaches();
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() => error = e
+                                    .toString()
+                                    .replaceFirst('Exception: ', ''));
+                              }
+                            }
+                          },
+                          onFavorite: () async {
+                            try {
+                              final p = await SharedPreferences.getInstance();
+                              final t = p.getString('dd.auth.token') ?? '';
+                              if (t.isEmpty) throw Exception('请先登录');
+                              await service.toggleFavorite(t, post.id);
+                              if (mounted) {
+                                setState(() {
+                                  final index = posts
+                                      .indexWhere((item) => item.id == post.id);
+                                  if (index >= 0) {
+                                    final current = posts[index];
+                                    posts[index] = current.copyWith(
+                                      favorited: !current.favorited,
+                                      favorites: current.favorites +
+                                          (current.favorited ? -1 : 1),
+                                    );
+                                  }
+                                });
+                                await DDPostService.clearProfileTabCaches();
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() => error = e
+                                    .toString()
+                                    .replaceFirst('Exception: ', ''));
+                              }
+                            }
+                          },
+                          onOpen: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  DynamicDetailPage(postId: post.id),
+                            ),
+                          ),
+                          onComment: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DynamicDetailPage(
+                                postId: post.id,
+                                focusComment: true,
+                              ),
+                            ),
+                          ),
+                          onFollow: post.userId == null
+                              ? null
+                              : () async {
+                                  final p =
+                                      await SharedPreferences.getInstance();
+                                  final t = p.getString('dd.auth.token') ?? '';
+                                  if (t.isEmpty) return;
+                                  await service.toggleFollow(t, post.userId!);
+                                  await load();
+                                },
+                        ),
+                      ),
+                    ),
+                ])),
+      );
+}
+
+class _HomeVoiceMatch extends StatelessWidget {
+  const _HomeVoiceMatch({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(26),
+        child: Ink(
+          height: 172,
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xff6e4fe0), Color(0xffd46bc8)],
+            ),
+            borderRadius: BorderRadius.circular(26),
+          ),
+          child: Row(children: [
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('语音匹配',
+                      style:
+                          TextStyle(fontSize: 23, fontWeight: FontWeight.w800)),
+                  SizedBox(height: 7),
+                  Text('说句话，遇见懂你的人'),
+                ],
+              ),
+            ),
+            Container(
+              width: 58,
+              height: 58,
+              decoration: const BoxDecoration(
+                  color: Colors.white24, shape: BoxShape.circle),
+              child: const Icon(Icons.mic_none, color: Colors.white, size: 29),
+            ),
+          ]),
+        ),
+      );
+}
+
+class _HomeCartoonCard extends StatelessWidget {
+  const _HomeCartoonCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.badge,
+    required this.colors,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String badge;
+  final List<Color> colors;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Ink(
+          height: 96,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: colors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -12,
+                bottom: -18,
+                child: Icon(icon,
+                    size: 112, color: Colors.white.withValues(alpha: .16)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .88),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        badge,
+                        style: TextStyle(
+                          color: colors.first,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(title,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 3),
+                    Text(subtitle,
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: .82),
+                            fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _HomeFolderCard extends StatelessWidget {
+  const _HomeFolderCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.meta,
+    required this.tabLabel,
+    required this.colors,
+    required this.tabAlignment,
+    required this.borderRadius,
+    this.height = 132,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String meta;
+  final String tabLabel;
+  final List<Color> colors;
+  final Alignment tabAlignment;
+  final BorderRadius borderRadius;
+  final double height;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = _FolderShape(borderRadius: borderRadius);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: shape,
+            child: Ink(
+              height: height,
+              decoration: ShapeDecoration(
+                gradient: LinearGradient(colors: colors),
+                shape: shape,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 9,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(icon, color: Colors.white, size: 27),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Align(
+          alignment: tabAlignment,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+            decoration: BoxDecoration(
+              color: colors.first.withValues(alpha: .96),
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: .14),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              tabLabel,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeNormalCard extends StatelessWidget {
+  const _HomeNormalCard({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.colors,
+    required this.height,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final List<Color> colors;
+  final double height;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Ink(
+            height: height,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: colors),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 6),
+                Icon(icon, color: Colors.white, size: 22),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _FolderShape extends ShapeBorder {
+  const _FolderShape({required this.borderRadius});
+  final BorderRadius borderRadius;
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    final r = borderRadius.resolve(textDirection);
+    final path = Path();
+    path.moveTo(rect.left + 20, rect.top);
+    path.lineTo(rect.left + 82, rect.top);
+    path.quadraticBezierTo(
+        rect.left + 92, rect.top, rect.left + 99, rect.top + 9);
+    path.lineTo(rect.right - 24, rect.top + 9);
+    path.quadraticBezierTo(rect.right, rect.top + 9, rect.right, rect.top + 33);
+    path.lineTo(rect.right, rect.bottom - r.bottomRight.y);
+    path.quadraticBezierTo(
+        rect.right, rect.bottom, rect.right - r.bottomRight.x, rect.bottom);
+    path.lineTo(rect.left + r.bottomLeft.x, rect.bottom);
+    path.quadraticBezierTo(
+        rect.left, rect.bottom, rect.left, rect.bottom - r.bottomLeft.y);
+    path.lineTo(rect.left, rect.top + r.topLeft.y);
+    path.quadraticBezierTo(rect.left, rect.top, rect.left + 20, rect.top);
+    path.close();
+    return path;
+  }
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) =>
+      getOuterPath(rect, textDirection: textDirection);
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
+
+  @override
+  ShapeBorder scale(double t) => _FolderShape(borderRadius: borderRadius * t);
+}
+
+class _HomeMiniCard extends StatelessWidget {
+  const _HomeMiniCard(
+      {required this.icon,
+      required this.title,
+      required this.subtitle,
+      required this.meta,
+      required this.onTap});
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String meta;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          height: 128,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            const Spacer(),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 3),
+            Text(subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 4),
+            Text(meta, style: Theme.of(context).textTheme.labelSmall),
+          ]),
+        ),
+      );
+}
+
+class _HomeQuickAction extends StatelessWidget {
+  const _HomeQuickAction(
+      {required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Column(children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(icon),
+            ),
+            const SizedBox(height: 7),
+            Text(label, style: Theme.of(context).textTheme.labelSmall),
+          ]),
+        ),
+      );
+}
+
+class _HomeSectionTitle extends StatelessWidget {
+  const _HomeSectionTitle({required this.title, this.live = false});
+  final String title;
+  final bool live;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 26, bottom: 13),
+        child: Row(children: [
+          if (live) ...[
+            const Icon(Icons.radio_button_checked,
+                color: Color(0xff2fd57e), size: 15),
+            const SizedBox(width: 7),
+          ],
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const Spacer(),
+          Text('全部',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          const Icon(Icons.chevron_right, size: 17),
+        ]),
+      );
+}
+
+class _HomePartyCard extends StatelessWidget {
+  const _HomePartyCard(
+      {required this.icon,
+      required this.tag,
+      required this.title,
+      required this.info});
+  final IconData icon;
+  final String tag;
+  final String title;
+  final String info;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 210,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [
+            Theme.of(context).colorScheme.primaryContainer,
+            Theme.of(context).colorScheme.secondaryContainer,
+          ]),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(icon, size: 16),
+            const SizedBox(width: 5),
+            Text(tag),
+            const Spacer(),
+            const Icon(Icons.circle, size: 8, color: Color(0xff2fd57e))
+          ]),
+          const Spacer(),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text(info, style: Theme.of(context).textTheme.labelSmall),
+        ]),
+      );
+}
+
+class _HomeCircleCard extends StatelessWidget {
+  const _HomeCircleCard(
+      {required this.icon, required this.title, required this.meta});
+  final IconData icon;
+  final String title;
+  final String meta;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: Theme.of(context).colorScheme.primary),
+          const Spacer(),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(meta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall),
+        ]),
+      );
+}
+
+class _DiscoverTile extends StatelessWidget {
+  const _DiscoverTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.only(bottom: 10),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+            leading: _iconFor(icon),
+            title: Text(title,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(subtitle),
+            trailing: const Icon(Icons.chevron_right),
+          ),
+        ),
+      );
+}
+
+class _PostLocation {
+  const _PostLocation(this.latitude, this.longitude);
+  final double latitude;
+  final double longitude;
+}
+
+class CreatePostPage extends StatefulWidget {
+  const CreatePostPage({super.key});
+  @override
+  State<CreatePostPage> createState() => _CreatePostPageState();
+}
+
+class _CreatePostPageState extends State<CreatePostPage> {
+  String? mediaType;
+  XFile? selectedImage;
+  XFile? selectedVideo;
+  String visibility = '所有人可见';
+  bool publishing = false;
+  final TextEditingController _content = TextEditingController();
+  final DDPostService _service = DDPostService();
+  String? error;
+
+  @override
+  void dispose() {
+    _content.dispose();
+    _service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final image = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image != null && mounted) {
+        setState(() {
+          selectedImage = image;
+          mediaType = '图片';
+          error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '图片选择失败：$e');
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    try {
+      final video = await ImagePicker().pickVideo(source: ImageSource.gallery);
+      if (video != null && mounted) {
+        final bytes = await video.length();
+        if (bytes > 50 * 1024 * 1024) throw Exception('视频不能超过 50MB');
+        setState(() {
+          selectedVideo = video;
+          selectedImage = null;
+          mediaType = '视频';
+          error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '视频选择失败：$e');
+    }
+  }
+  Future<String?> _imageObjectKey(String token) async {
+    if (selectedImage == null) return null;
+    final bytes = await selectedImage!.readAsBytes();
+    if (bytes.length > 8 * 1024 * 1024) throw Exception('图片不能超过 8MB');
+    final decoded = img.decodeImage(bytes);
+    final resized = decoded == null ? null : (decoded.width > 1600 ? img.copyResize(decoded, width: 1600) : decoded);
+    final compressed = resized == null ? bytes : img.encodeJpg(resized, quality: 82);
+    return _service.moderateMedia(token: token, bytes: compressed, fileName: selectedImage!.name, contentType: 'image/jpeg');
+  }
+
+  Future<String?> _videoObjectKey(String token) async {
+    if (selectedVideo == null) return null;
+    final bytes = await selectedVideo!.readAsBytes();
+    if (bytes.length > 50 * 1024 * 1024) throw Exception('视频不能超过 50MB');
+    return _service.moderateMedia(token: token, bytes: bytes, fileName: selectedVideo!.name, contentType: 'video/mp4');
+  }
+
+
+  Future<_PostLocation?> _locationForPost(String token) async {
+    const cacheAge = Duration(hours: 1);
+    final prefs = await SharedPreferences.getInstance();
+    final cachedAt = prefs.getInt('dd.location.cachedAt');
+    final cachedLatitude = prefs.getDouble('dd.location.latitude');
+    final cachedLongitude = prefs.getDouble('dd.location.longitude');
+    final now = DateTime.now().millisecondsSinceEpoch;
+    double? latitude;
+    double? longitude;
+    if (cachedAt != null &&
+        now - cachedAt < cacheAge.inMilliseconds &&
+        cachedLatitude != null &&
+        cachedLongitude != null) {
+      latitude = cachedLatitude;
+      longitude = cachedLongitude;
+    } else {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return null;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+      final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium);
+      latitude = position.latitude;
+      longitude = position.longitude;
+      await prefs.setDouble('dd.location.latitude', latitude);
+      await prefs.setDouble('dd.location.longitude', longitude);
+      await prefs.setInt('dd.location.cachedAt', now);
+    }
+    await _service.updateLocation(
+      token: token,
+      latitude: latitude,
+      longitude: longitude,
+    );
+    return _PostLocation(latitude, longitude);
+  }
+
+  void _clearImage() => setState(() {
+        selectedImage = null;
+        selectedVideo = null;
+        mediaType = null;
+      });
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close),
+          ),
+          title: const Text('发布动态'),
+          actions: [
+            TextButton(
+              onPressed: publishing
+                  ? null
+                  : () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      final token = prefs.getString('dd.auth.token') ?? '';
+                      if (token.isEmpty) {
+                        setState(() => error = '请先登录后发布动态');
+                        return;
+                      }
+                      if (_content.text.trim().isEmpty &&
+          selectedImage == null &&
+          selectedVideo == null) {
+                        setState(() => error = '请输入动态内容或选择图片');
+                        return;
+                      }
+                      setState(() {
+                        publishing = true;
+                        error = null;
+                      });
+                      try {
+                        final location = await _locationForPost(token);
+                        await _service.createPost(
+                          token: token,
+                          content: _content.text.trim(),
+                          imageDataUrl: await _imageObjectKey(token),
+                          videoUrl: await _videoObjectKey(token),
+                          visibility: visibility == '仅好友可见'
+                              ? 'friends'
+                              : visibility == '仅自己可见'
+                                  ? 'private'
+                                  : 'public',
+                          latitude: location?.latitude,
+                          longitude: location?.longitude,
+                        );
+                        await DDPostService.clearProfileTabCaches();
+                        if (mounted) {
+                          Navigator.pop(context, true);
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          setState(() {
+                            publishing = false;
+                            error =
+                                e.toString().replaceFirst('Exception: ', '');
+                          });
+                        }
+                      } finally {
+                        if (mounted) setState(() => publishing = false);
+                      }
+                    },
+              child: Text(publishing ? '发布中…' : '发布'),
+            ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            TextField(
+              controller: _content,
+              maxLines: 7,
+              maxLength: 300,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                hintText: '分享此刻的想法…',
+                alignLabelWithHint: true,
+              ),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 8),
+              Text(error!, style: const TextStyle(color: Colors.orange)),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _MediaAction(
+                  icon: Icons.photo_outlined,
+                  label: selectedImage != null ? '已选图片' : '图片',
+                  onTap: _pickImage,
+                ),
+                _MediaAction(
+                  icon: Icons.videocam_outlined,
+                  label: selectedVideo != null ? '已选视频' : '视频',
+                  onTap: _pickVideo,
+                ),
+              ],
+            ),
+            if (selectedImage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(
+                        File(selectedImage!.path),
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: IconButton.filled(
+                        onPressed: _clearImage,
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: _iconFor(Icons.public),
+              title: Text(visibility),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showModalBottomSheet<void>(
+                context: context,
+                builder: (_) => SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: ['所有人可见', '仅好友可见', '仅自己可见']
+                        .map(
+                          (item) => ListTile(
+                            title: Text(item),
+                            trailing: item == visibility
+                                ? const Icon(Icons.check)
+                                : null,
+                            onTap: () {
+                              setState(() => visibility = item);
+                              Navigator.pop(context);
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class NotificationsPage extends StatefulWidget {
+  const NotificationsPage({super.key});
+
+  @override
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<NotificationsPage> {
+  final DDPostService service = DDPostService();
+  List<DDNotification> notifications = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<String> token() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('dd.auth.token') ?? '';
+    if (value.isEmpty) throw Exception('请先登录');
+    return value;
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final t = await token();
+      final items = await service.fetchNotifications(t);
+      await service.markNotificationsRead(t);
+      if (mounted) setState(() => notifications = items);
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  String titleFor(DDNotification item) {
+    switch (item.type) {
+      case 'like':
+        return '点赞了你的动态';
+      case 'favorite':
+        return '收藏了你的动态';
+      case 'comment':
+        return '评论了你的动态';
+      case 'comment_reply':
+        return '回复了你的评论';
+      case 'comment_deleted':
+        return '你的评论被系统删除';
+      case 'post_deleted':
+        return '你的动态被系统删除';
+      case 'follow':
+        return '关注了你';
+      default:
+        return item.content;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('通知'),
+          actions: [
+            IconButton(onPressed: load, icon: const Icon(Icons.refresh)),
+          ],
+        ),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+                ? _PageErrorState(
+                    title: '通知加载失败', subtitle: error!, onRetry: load)
+                : RefreshIndicator(
+                    onRefresh: load,
+                    child: notifications.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              Padding(
+                                padding: EdgeInsets.only(top: 100),
+                                child: Center(child: Text('暂无通知')),
+                              ),
+                            ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                            itemCount: notifications.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 2),
+                            itemBuilder: (context, index) {
+                              final item = notifications[index];
+                              final actor =
+                                  item.nickname?.trim().isNotEmpty == true
+                                      ? item.nickname!
+                                      : '系统';
+                              return Card(
+                                margin: EdgeInsets.zero,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(14),
+                                  onTap: item.postId == null
+                                      ? null
+                                      : () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => DynamicDetailPage(
+                                                postId: item.postId!,
+                                                focusComment:
+                                                    item.commentId != null,
+                                              ),
+                                            ),
+                                          ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 22,
+                                          backgroundImage:
+                                              item.avatar?.isNotEmpty == true
+                                                  ? NetworkImage(item.avatar!)
+                                                  : null,
+                                          child: item.avatar?.isNotEmpty == true
+                                              ? null
+                                              : Icon(item.nickname == null
+                                                  ? Icons.shield_outlined
+                                                  : Icons.person_outline),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text('$actor ${titleFor(item)}',
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                              if (item.postContent
+                                                      ?.trim()
+                                                      .isNotEmpty ==
+                                                  true)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 5),
+                                                  child: Text(
+                                                    '动态：${item.postContent}',
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              if (item.commentContent
+                                                      ?.trim()
+                                                      .isNotEmpty ==
+                                                  true)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 3),
+                                                  child: Text(
+                                                    '评论：${item.commentContent}',
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 5),
+                                                child: Text(
+                                                  '${item.content} · ${item.createdAt}',
+                                                  style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (item.postId != null)
+                                          const Icon(Icons.chevron_right),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+      );
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  const _EmptyStateCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Column(
+            children: [
+              Icon(icon, size: 42),
+              const SizedBox(height: 10),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _StatePreviewCard extends StatelessWidget {
+  const _StatePreviewCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              CircleAvatar(child: _iconFor(icon)),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '用户昵称',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 6),
-                    const Text('个人资料组件占位'),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              OutlinedButton(
-                onPressed: () {},
-                child: const Text('编辑'),
-              ),
             ],
           ),
-          const SizedBox(height: 24),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _StatItem(value: '0', label: '关注'),
-              _StatItem(value: '0', label: '粉丝'),
-              _StatItem(value: '0', label: '获赞'),
-            ],
-          ),
-          const SizedBox(height: 28),
-          Text(
-            '我的内容',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          const _EmptyPanel(),
-        ],
-      ),
-    );
-  }
+        ),
+      );
 }
 
-class _PageFrame extends StatelessWidget {
-  const _PageFrame({required this.title, required this.child, this.action});
-  final String title;
-  final Widget child;
-  final Widget? action;
-
+class DynamicDetailPage extends StatefulWidget {
+  const DynamicDetailPage({
+    super.key,
+    required this.postId,
+    this.focusComment = false,
+  });
+  final int postId;
+  final bool focusComment;
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
-            child: Row(
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                if (action != null) action!,
-              ],
-            ),
-          ),
-          Expanded(child: child),
-        ],
-      ),
-    );
-  }
+  State<DynamicDetailPage> createState() => _DynamicDetailPageState();
 }
 
-class _StoryStrip extends StatelessWidget {
-  const _StoryStrip();
+class _DynamicDetailPageState extends State<DynamicDetailPage> {
+  final DDPostService service = DDPostService();
+  final commentController = TextEditingController();
+  final commentFocusNode = FocusNode();
+  DDComment? replyingTo;
+  DDPost? post;
+  List<DDComment> comments = const [];
+  bool loading = true;
+  bool deleting = false;
+  bool followLoading = false;
+  String? error;
+  int? currentUserId;
+  bool get isOwner => post?.userId != null && currentUserId == post!.userId;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 92,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: const [
-          _Story(label: '你的故事', add: true),
-          _Story(label: '周末'),
-          _Story(label: '旅行'),
-          _Story(label: '生活'),
-        ],
-      ),
-    );
+  void initState() {
+    super.initState();
+    load();
+    if (widget.focusComment) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) FocusScope.of(context).requestFocus(commentFocusNode);
+      });
+    }
   }
-}
-
-class _Story extends StatelessWidget {
-  const _Story({required this.label, this.add = false});
-  final String label;
-  final bool add;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 74,
-      margin: const EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              const CircleAvatar(
-                radius: 29,
-                child: Icon(Icons.person_outline),
-              ),
-              if (add)
-                const Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: CircleAvatar(
-                    radius: 10,
-                    child: Icon(Icons.add, size: 14),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12),
-          ),
-        ],
-      ),
-    );
+  void dispose() {
+    commentFocusNode.dispose();
+    commentController.dispose();
+    service.dispose();
+    super.dispose();
   }
-}
 
-class _SectionTabs extends StatelessWidget {
-  const _SectionTabs();
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<int>(
-      segments: const [
-        ButtonSegment(value: 0, label: Text('推荐')),
-        ButtonSegment(value: 1, label: Text('附近')),
-        ButtonSegment(value: 2, label: Text('关注')),
-      ],
-      selected: const {0},
-      onSelectionChanged: (_) {},
-      showSelectedIcon: false,
-    );
+  Future<String> token() async {
+    final p = await SharedPreferences.getInstance();
+    final value = p.getString('dd.auth.token') ?? '';
+    if (value.isEmpty) throw Exception('请先登录');
+    return value;
   }
-}
 
-class _StaticPostCard extends StatelessWidget {
-  const _StaticPostCard({required this.title, required this.body});
-  final String title;
-  final String body;
+  Future<void> load() async {
+    if (!mounted) return;
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final t = await token();
+      final me = await service.fetchMe(t);
+      currentUserId = _intValue(me['id']);
+      post = await service.fetchPost(t, widget.postId);
+      comments = await service.fetchComments(t, widget.postId);
+      if (post == null) throw Exception('动态不存在');
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Future<void> submitComment() async {
+    final value = commentController.text.trim();
+    if (value.isEmpty) return;
+    try {
+      await service.createComment(
+        token: await token(),
+        postId: widget.postId,
+        content: value,
+        parentId: replyingTo?.id,
+      );
+      commentController.clear();
+      if (mounted) setState(() => replyingTo = null);
+      await load();
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  List<Widget> _buildCommentTree(List<DDComment> source) {
+    final repliesByParent = <int, List<DDComment>>{};
+    for (final comment in source.where((c) => c.parentId != null)) {
+      repliesByParent.putIfAbsent(comment.parentId!, () => []).add(comment);
+    }
+    final result = <Widget>[];
+
+    void append(DDComment comment, int depth) {
+      result.add(Padding(
+        padding: EdgeInsets.only(left: depth * 42.0),
+        child: _commentTile(comment),
+      ));
+      for (final reply in repliesByParent[comment.id] ?? const <DDComment>[]) {
+        append(reply, depth + 1);
+      }
+    }
+
+    for (final root in source.where((c) => c.parentId == null)) {
+      append(root, 0);
+    }
+    return result;
+  }
+
+  Future<void> _commentMenu(DDComment comment) async {
+    final isMine = currentUserId != null && comment.userId == currentUserId;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Wrap(
           children: [
-            Container(
-              height: 150,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withValues(alpha: .65),
-              ),
-              child: const Center(
-                child: Icon(Icons.image_outlined, size: 42),
-              ),
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: const Text('复制'),
+              onTap: () => Navigator.pop(context, 'copy'),
             ),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            Text(body),
-            const SizedBox(height: 14),
-            const Row(
-              children: [
-                Icon(Icons.favorite_border, size: 18),
-                SizedBox(width: 18),
-                Icon(Icons.chat_bubble_outline, size: 18),
-                SizedBox(width: 18),
-                Icon(Icons.bookmark_border, size: 18),
-              ],
+            ListTile(
+              leading:
+                  Icon(isMine ? Icons.delete_outline : Icons.report_outlined),
+              title: Text(isMine ? '删除' : '举报'),
+              onTap: () => Navigator.pop(context, isMine ? 'delete' : 'report'),
             ),
           ],
         ),
       ),
     );
+    if (action == 'copy') {
+      await Clipboard.setData(ClipboardData(text: comment.content));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已复制')),
+        );
+      }
+    } else if (action == 'delete') {
+      try {
+        await service.deleteComment(await token(), comment.id);
+        await load();
+      } catch (e) {
+        if (mounted) {
+          setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+        }
+      }
+    } else if (action == 'report') {
+      final reason = await showModalBottomSheet<String>(
+        context: context,
+        builder: (_) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: _ReportPostPageState.reportReasons
+                .map((item) => ListTile(
+                      title: Text(item),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.pop(context, item),
+                    ))
+                .toList(),
+          ),
+        ),
+      );
+      if (reason == null) return;
+      try {
+        await service.reportComment(
+          token: await token(),
+          commentId: comment.id,
+          reason: reason,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('举报已提交')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+        }
+      }
+    }
   }
-}
 
-class _MessageTile extends StatelessWidget {
-  const _MessageTile({
-    required this.name,
-    required this.preview,
-    required this.color,
-  });
-  final String name;
-  final String preview;
-  final Color color;
+  Widget _commentTile(DDComment comment) => InkWell(
+        onTap: () {
+          setState(() => replyingTo = comment);
+          FocusScope.of(context).requestFocus(commentFocusNode);
+        },
+        onLongPress: () => _commentMenu(comment),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InkWell(
+                onTap: comment.userId == null
+                    ? null
+                    : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => OtherProfilePage(
+                              userId: comment.userId,
+                              name: comment.nickname,
+                            ),
+                          ),
+                        ),
+                borderRadius: BorderRadius.circular(20),
+                child: const CircleAvatar(
+                  radius: 20,
+                  child: Icon(Icons.person_outline, size: 18),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      comment.nickname,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(comment.content),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                formatDDTime(comment.createdAt),
+                style: const TextStyle(fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Future<void> _toggleLike() async {
+    try {
+      await service.toggleLike(await token(), widget.postId);
+      await DDPostService.clearProfileTabCaches();
+      if (mounted && post != null) {
+        setState(() {
+          post = post!.copyWith(
+            liked: !post!.liked,
+            likes: post!.likes + (post!.liked ? -1 : 1),
+          );
+        });
+      }
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    try {
+      await service.toggleFavorite(await token(), widget.postId);
+      await DDPostService.clearProfileTabCaches();
+      if (mounted && post != null) {
+        setState(() {
+          post = post!.copyWith(
+            favorited: !post!.favorited,
+            favorites: post!.favorites + (post!.favorited ? -1 : 1),
+          );
+        });
+      }
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (isOwner || post?.userId == null || followLoading) return;
+    try {
+      setState(() => followLoading = true);
+      await service.toggleFollow(await token(), post!.userId!);
+      await load();
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => followLoading = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    try {
+      setState(() => deleting = true);
+      await service.deletePost(await token(), widget.postId);
+      await DDPostService.clearProfileTabCaches();
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => deleting = false);
+    }
+  }
+
+  Future<void> _openReportPage() async {
+    if (isOwner) return;
+    final submitted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReportPostPage(
+          postId: widget.postId,
+          service: service,
+          token: token,
+        ),
+      ),
+    );
+    if (submitted == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('举报已提交')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(vertical: 6),
-      leading: CircleAvatar(
-        backgroundColor: color,
-        child: const Icon(Icons.chat, color: Colors.white),
+    final item = post;
+    return Scaffold(
+      appBar: AppBar(
+        leadingWidth: 56,
+        automaticallyImplyLeading: true,
+        title: const Text('动态详情'),
+        actions: [
+          if (item != null && !isOwner)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  ),
+                  onPressed: _openReportPage,
+                  icon: Icon(TIcons.shield_error),
+                ),
+              ),
+            ),
+          if (item != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  ),
+                  onPressed: () {},
+                  icon: const Icon(TIcons.share_1),
+                  tooltip: '分享',
+                ),
+              ),
+            ),
+          if (item != null && isOwner)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  ),
+                  onPressed: deleting ? null : _delete,
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: '删除动态',
+                ),
+              ),
+            ),
+        ],
       ),
-      title: Text(name),
-      subtitle: Text(preview),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () {},
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                  children: [
+                    if (error != null)
+                      _PageErrorState(
+                          title: '加载失败', subtitle: error!, onRetry: load),
+                    if (item != null) ...[
+                      Row(children: [
+                        InkWell(
+                          onTap: item.userId == null
+                              ? null
+                              : () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => OtherProfilePage(
+                                        userId: item.userId,
+                                        name: item.nickname,
+                                      ),
+                                    ),
+                                  ),
+                          borderRadius: BorderRadius.circular(26),
+                          child: CircleAvatar(
+                            radius: 24,
+                            backgroundImage: item.avatar.isEmpty
+                                ? null
+                                : NetworkImage(item.avatar),
+                            child: item.avatar.isEmpty
+                                ? const Icon(Icons.person_outline)
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              InkWell(
+                                onTap: item.userId == null
+                                    ? null
+                                    : () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => OtherProfilePage(
+                                              userId: item.userId,
+                                              name: item.nickname,
+                                            ),
+                                          ),
+                                        ),
+                                child: Text(item.nickname,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 17)),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(formatDDTime(item.createdAt),
+                                  style: TextStyle(
+                                      color: Theme.of(context).hintColor,
+                                      fontSize: 12))
+                            ])),
+                        if (!isOwner)
+                          OutlinedButton(
+                            onPressed: followLoading || item.following
+                                ? null
+                                : _toggleFollow,
+                            child: Text(followLoading
+                                ? '处理中…'
+                                : (item.following ? '私聊' : '关注')),
+                          ),
+                      ]),
+                      const SizedBox(height: 18),
+                      if (item.content.trim().isNotEmpty)
+                        Text(item.content,
+                            style: const TextStyle(fontSize: 18, height: 1.5)),
+                      if (item.imageUrl != null &&
+                          item.imageUrl!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _PostImageHolder(url: item.imageUrl!)
+                      ],
+                      if (item.videoUrl != null &&
+                          item.videoUrl!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _NetworkVideoPreview(url: item.videoUrl!),
+                      ],
+                      const SizedBox(height: 18),
+                      Row(children: [
+                        _DetailAction(
+                            icon: TIcons.thumb_up_1,
+                            label: '${item.likes}',
+                            active: item.liked,
+                            onTap: _toggleLike),
+                        const SizedBox(width: 24),
+                        _DetailAction(
+                            icon: TIcons.chat,
+                            label: '${comments.length}',
+                            onTap: () {}),
+                        const SizedBox(width: 24),
+                        _DetailAction(
+                            icon: TIcons.bookmark,
+                            label: '${item.favorites}',
+                            active: item.favorited,
+                            onTap: _toggleFavorite),
+                      ]),
+                      const Divider(height: 32),
+                      const Text('评论',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 8),
+                      if (comments.isEmpty)
+                        const _EmptyStateCard(
+                            icon: TIcons.chat,
+                            title: '暂无评论',
+                            subtitle: '成为第一个评论的人')
+                      else
+                        ..._buildCommentTree(comments),
+                    ],
+                  ]),
+            ),
+      bottomNavigationBar: item == null || loading
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  child: TextField(
+                    controller: commentController,
+                    focusNode: commentFocusNode,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => submitComment(),
+                    decoration: InputDecoration(
+                      filled: true,
+                      hintText: replyingTo == null
+                          ? '写下你的评论…'
+                          : '回复 ${replyingTo!.nickname}…',
+                      suffixIcon: IconButton(
+                        onPressed: deleting ? null : submitComment,
+                        icon: const Icon(Icons.send),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
 
-class _StatItem extends StatelessWidget {
-  const _StatItem({required this.value, required this.label});
-  final String value;
+class _PostImageHolder extends StatelessWidget {
+  const _PostImageHolder({required this.url});
+  final String url;
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 400),
+          child: Image.network(
+            url,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            loadingBuilder: (_, child, progress) => progress == null
+                ? child
+                : const SizedBox(
+                    height: 260,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+            errorBuilder: (_, __, ___) => Container(
+              height: 220,
+              color: Colors.black12,
+              alignment: Alignment.center,
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.broken_image_outlined, size: 42),
+                  SizedBox(height: 8),
+                  Text('图片加载失败'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+class _DetailAction extends StatelessWidget {
+  const _DetailAction(
+      {required this.icon,
+      required this.label,
+      required this.onTap,
+      this.active = false});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: active ? Colors.pinkAccent : null),
+              const SizedBox(width: 5),
+              Text(label),
+            ],
+          ),
+        ),
+      );
+}
+
+class ReportPostPage extends StatefulWidget {
+  const ReportPostPage({
+    super.key,
+    required this.postId,
+    required this.service,
+    required this.token,
+  });
+  final int postId;
+  final DDPostService service;
+  final Future<String> Function() token;
+
+  @override
+  State<ReportPostPage> createState() => _ReportPostPageState();
+}
+
+class _ReportPostPageState extends State<ReportPostPage> {
+  static const reportReasons = [
+    '低俗色情',
+    '攻击辱骂',
+    '涉嫌诈骗',
+    '未成年人',
+    '政治敏感',
+    '网络谣言',
+    '违法信息',
+    '血腥暴力',
+    '广告引流',
+    '网乞相关',
+    '恶意诱导到其他平台',
+    '其他',
+  ];
+
+  String? reason;
+  bool submitting = false;
+  String? error;
+
+  Future<void> submit() async {
+    if (reason == null || submitting) return;
+    try {
+      setState(() {
+        submitting = true;
+        error = null;
+      });
+      await widget.service.reportPost(
+        token: await widget.token(),
+        postId: widget.postId,
+        reason: reason!,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          submitting = false;
+          error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('举报动态')),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            const Text(
+              '请选择举报原因',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            ...reportReasons.map(
+              (item) => RadioListTile<String>(
+                value: item,
+                groupValue: reason,
+                title: Text(item),
+                secondary: const Icon(Icons.chevron_right),
+                onChanged: submitting
+                    ? null
+                    : (value) => setState(() => reason = value),
+              ),
+            ),
+            if (error != null)
+              Text(error!, style: const TextStyle(color: Colors.orange)),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: reason == null || submitting ? null : submit,
+              child: Text(submitting ? '提交中…' : '提交举报'),
+            ),
+          ],
+        ),
+      );
+}
+
+class OtherProfilePage extends StatefulWidget {
+  const OtherProfilePage({
+    super.key,
+    this.name = '推荐用户',
+    this.avatarAsset = 'assets/figma/profile-portrait-2.jpg',
+    this.userId,
+  });
+  final String name;
+  final String? avatarAsset;
+  final int? userId;
+  @override
+  State<OtherProfilePage> createState() => _OtherProfilePageState();
+}
+
+class _OtherProfilePageState extends State<OtherProfilePage> {
+  final DDPostService service = DDPostService();
+  final ScrollController _profileScrollController = ScrollController();
+  final AudioPlayer _sonicPlayer = AudioPlayer();
+  Map<String, dynamic>? profile;
+  List<DDPost> posts = const [];
+  bool loading = true;
+  bool actionLoading = false;
+  bool isFollowing = false;
+  bool isProfileLiked = false;
+  int profileLikes = 0;
+  int selectedContentTab = 0;
+  bool _showStickyNickname = false;
+  bool _sonicPlaying = false;
+  String? _sonicUrl;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileScrollController.addListener(_handleProfileScroll);
+    load();
+  }
+
+  void _handleProfileScroll() {
+    final show = _profileScrollController.hasClients &&
+        _profileScrollController.offset >= 58;
+    if (show != _showStickyNickname && mounted) {
+      setState(() => _showStickyNickname = show);
+    }
+  }
+
+  @override
+  void dispose() {
+    _profileScrollController.removeListener(_handleProfileScroll);
+    _profileScrollController.dispose();
+    _sonicPlayer.dispose();
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) {
+        throw Exception('请先登录');
+      }
+      if (widget.userId == null) {
+        throw Exception('用户信息不存在');
+      }
+      final data = await service.fetchUserProfile(token, widget.userId!);
+      final rawProfile = data['profile'];
+      final loadedProfile = rawProfile is Map
+          ? rawProfile.cast<String, dynamic>()
+          : <String, dynamic>{...data};
+      final followingState = data['following'] == true;
+      profile = loadedProfile;
+      isFollowing = followingState;
+      isProfileLiked = data['liked'] == true;
+      profileLikes = _intValue(loadedProfile['likes']) ?? 0;
+      _sonicUrl = DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
+      final raw = data['posts'];
+      posts = raw is List
+          ? raw.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList()
+          : const [];
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _toggleSonic() async {
+    final url = _sonicUrl;
+    if (url == null || url.isEmpty) return;
+    if (_sonicPlaying) {
+      await _sonicPlayer.pause();
+    } else {
+      await _sonicPlayer.play(UrlSource(url));
+    }
+    if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
+  }
+
+  Future<void> toggleFollow() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty || widget.userId == null) throw Exception('请先登录');
+      setState(() => actionLoading = true);
+      await service.toggleFollow(token, widget.userId!);
+      await load();
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => actionLoading = false);
+    }
+  }
+
+  Future<void> toggleProfileLike() async {
+    final userId = widget.userId;
+    if (userId == null || actionLoading) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      setState(() => actionLoading = true);
+      final result = await service.toggleProfileLike(token, userId);
+      if (mounted) {
+        setState(() {
+          isProfileLiked = result['liked'] == true;
+          profileLikes += isProfileLiked ? 1 : -1;
+          if (profileLikes < 0) profileLikes = 0;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => actionLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = profile;
+    final following = isFollowing;
+    return Scaffold(
+      appBar: AppBar(
+        title: _showStickyNickname
+            ? Text(
+                '${p?['nickname'] ?? widget.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            : const SizedBox.shrink(),
+        actions: [
+          if (!loading)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: _ProfileLikePill(
+                liked: isProfileLiked,
+                count: profileLikes,
+                onTap: actionLoading ? null : toggleProfileLike,
+              ),
+            ),
+          IconButton(
+            onPressed: () => _showProfileMenu(context),
+            icon: _tdIcon('more'),
+          ),
+        ],
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: ListView(
+                controller: _profileScrollController,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 108),
+                children: [
+                  if (error != null)
+                    _PageErrorState(
+                        title: '主页加载失败', subtitle: error!, onRetry: load),
+                  Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 40,
+                                    backgroundImage:
+                                        (p?['avatar']?.toString() ?? '')
+                                                .trim()
+                                                .isEmpty
+                                            ? null
+                                            : NetworkImage(
+                                                DDPostService.mediaUrl(
+                                                    p?['avatar']?.toString())),
+                                    child: (p?['avatar']?.toString() ?? '')
+                                            .trim()
+                                            .isEmpty
+                                        ? const Icon(Icons.person_outline,
+                                            size: 34)
+                                        : null,
+                                  ),
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: -12,
+                                    child: Align(
+                                      alignment: Alignment.center,
+                                      child: _SonicProfileButton(
+                                        playing: _sonicPlaying,
+                                        enabled: _sonicUrl?.isNotEmpty == true,
+                                        onTap: () async {
+                                          await Navigator.push<bool>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => _VoiceRecordPage(
+                                                currentUrl: _sonicUrl,
+                                              ),
+                                            ),
+                                          );
+                                          if (mounted) load();
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            '${p?['nickname'] ?? widget.name}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 25,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _ProfileTag(
+                                            text: '${p?['city'] ?? '未知'}'),
+                                        const SizedBox(width: 4),
+                                        _ProfileTag(
+                                            text: '${p?['activeDays'] ?? 0}天'),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        _InlineProfileStat(
+                                          label: '关注',
+                                          value: '${p?['following'] ?? 0}',
+                                        ),
+                                        const SizedBox(width: 18),
+                                        _InlineProfileStat(
+                                          label: '粉丝',
+                                          value: '${p?['followers'] ?? 0}',
+                                        ),
+                                        const SizedBox(width: 18),
+                                        _InlineProfileStat(
+                                          label: '魅力',
+                                          value: '$profileLikes',
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    SizedBox(
+                                      height: 32,
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          children: [
+                                            _ProfileTag(text: '+'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '声优'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '御姐'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '忧郁'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '旅游'),
+                                            const SizedBox(width: 6),
+                                            _ProfileTag(text: '电影'),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: actionLoading ? null : toggleFollow,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .secondary,
+                                    side: BorderSide(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                    ),
+                                  ),
+                                  icon: Icon(
+                                    following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined,
+                                  ),
+                                  label: Text(
+                                    actionLoading
+                                        ? '处理中…'
+                                        : (following ? '取消关注' : '关注'),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _MyProfileIconTabs(
+                    selectedTab: selectedContentTab,
+                    onSelect: (tab) => setState(() => selectedContentTab = tab),
+                  ),
+                  const SizedBox(height: 12),
+                  if (posts.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 42),
+                      child: Center(child: Text('暂无内容')),
+                    )
+                  else
+                    _MyProfileGrid(posts: posts),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24, bottom: 12),
+                    child: Center(
+                      child: Text(
+                        '暂时没有更多了',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  void _showProfileMenu(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (_) => const SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(leading: _FigmaIcon('link'), title: Text('分享主页')),
+              ListTile(
+                leading: const Icon(Icons.report_gmailerrorred_outlined),
+                title: const Text('举报用户'),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class DDProfilePage extends StatefulWidget {
+  const DDProfilePage({super.key});
+  @override
+  State<DDProfilePage> createState() => _DDProfilePageState();
+}
+
+class _DDProfilePageState extends State<DDProfilePage> {
+  final DDPostService service = DDPostService();
+  Map<String, dynamic>? profile;
+  List<DDPost> posts = [];
+  int selectedTab = 0;
+  bool loading = true;
+  bool tabLoading = false;
+  final Map<int, List<DDPost>> tabPosts = {};
+  final AudioPlayer _sonicPlayer = AudioPlayer();
+  final ScrollController _profileScrollController = ScrollController();
+  bool _showStickyNickname = false;
+  bool _sonicPlaying = false;
+  String? _sonicUrl;
+  String? error;
+  List<String> _tags = const ['声优', '御姐', '忧郁', '旅游', '电影'];
+
+  @override
+  void initState() {
+    super.initState();
+    _profileScrollController.addListener(_handleProfileScroll);
+    load();
+  }
+
+  void _handleProfileScroll() {
+    final shouldShow = _profileScrollController.hasClients &&
+        _profileScrollController.offset >= 58;
+    if (shouldShow != _showStickyNickname && mounted) {
+      setState(() => _showStickyNickname = shouldShow);
+    }
+  }
+
+  @override
+  void dispose() {
+    _profileScrollController.removeListener(_handleProfileScroll);
+    _profileScrollController.dispose();
+    _sonicPlayer.dispose();
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleSonic() async {
+    final url = _sonicUrl;
+    if (url == null || url.isEmpty) return;
+    if (_sonicPlaying) {
+      await _sonicPlayer.pause();
+    } else {
+      await _sonicPlayer.play(UrlSource(url));
+    }
+    if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
+  }
+
+  static const _profileTabCachePrefix = 'dd.profile.tab.cache.';
+  static const _profileTabCacheAtPrefix = 'dd.profile.tab.cache.at.';
+  static const _profileMediaRefreshAge = Duration(minutes: 12);
+
+  Future<void> _saveTabCache(int tab, List<DDPost> value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      '$_profileTabCachePrefix$tab',
+      jsonEncode(value.map((post) => post.toJson()).toList()),
+    );
+    await prefs.setInt(
+      '$_profileTabCacheAtPrefix$tab',
+      DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  Future<List<DDPost>?> _readTabCache(int tab, {bool requireFreshMedia = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('$_profileTabCachePrefix$tab');
+    if (raw == null || raw.isEmpty) return null;
+    final cachedAt = prefs.getInt('$_profileTabCacheAtPrefix$tab');
+    if (requireFreshMedia &&
+        (cachedAt == null ||
+            DateTime.now().millisecondsSinceEpoch - cachedAt >=
+                _profileMediaRefreshAge.inMilliseconds)) {
+      return null;
+    }
+    try {
+      final data = jsonDecode(raw) as List;
+      return data
+          .whereType<Map>()
+          .map((item) => DDPost.fromJson(item.cast<String, dynamic>()))
+          .toList();
+    } catch (_) {
+      await prefs.remove('$_profileTabCachePrefix$tab');
+      return null;
+    }
+  }
+
+  Future<void> _invalidateProfileCacheAndReload() async {
+    await DDPostService.clearProfileTabCaches();
+    tabPosts.clear();
+    await load(tab: selectedTab, forceRefresh: true);
+  }
+
+  Future<void> load({int? tab, bool forceRefresh = false}) async {
+    final targetTab = tab ?? selectedTab;
+    final isTabSwitch = tab != null && !loading && !forceRefresh;
+    if (mounted) {
+      setState(() {
+        error = null;
+        if (isTabSwitch) {
+          selectedTab = targetTab;
+          tabLoading = false;
+          final cached = tabPosts[targetTab];
+          if (cached != null) posts = cached;
+        } else {
+          loading = true;
+        }
+      });
+    }
+    try {
+      final p = await SharedPreferences.getInstance();
+      final t = p.getString('dd.auth.token') ?? '';
+      if (t.isEmpty) throw Exception('请先登录');
+      final needProfile = profile == null || !isTabSwitch;
+      Map<String, dynamic> loadedProfile = profile ?? {};
+      if (needProfile) {
+        loadedProfile = await service.fetchMe(t);
+        _sonicUrl =
+            DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
+      }
+      final cached = forceRefresh
+          ? null
+          : await _readTabCache(targetTab, requireFreshMedia: true);
+      if (cached != null && !forceRefresh) {
+        tabPosts[targetTab] = cached;
+        if (mounted) {
+          setState(() {
+            profile = loadedProfile;
+            posts = cached;
+            selectedTab = targetTab;
+          });
+        }
+        return;
+      }
+      final loadedPosts = targetTab == 0
+          ? await service.fetchMyPosts(t)
+          : targetTab == 1
+              ? await service.fetchFavoritedPosts(t)
+              : await service.fetchLikedPosts(t);
+      tabPosts[targetTab] = loadedPosts;
+      await _saveTabCache(targetTab, loadedPosts);
+      if (!mounted) return;
+      setState(() {
+        profile = loadedProfile;
+        posts = loadedPosts;
+        selectedTab = targetTab;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+          tabLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = profile;
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: _showStickyNickname
+            ? Text(
+                '${p?['nickname'] ?? 'DD 用户'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            : const SizedBox.shrink(),
+        leading: IconButton(
+          tooltip: '编辑资料',
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EditProfilePage()),
+            );
+            if (mounted) load();
+          },
+          icon: const Icon(Icons.edit_outlined),
+        ),
+        actions: [
+          IconButton(
+            tooltip: '浏览记录',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const _HistoryRecordsPage()),
+            ),
+            icon: const Icon(Icons.history),
+          ),
+          IconButton(
+            tooltip: '更多',
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              showDragHandle: true,
+              builder: (_) => const SafeArea(
+                child: Wrap(
+                  children: [
+                    ListTile(
+                      leading: Icon(Icons.share_outlined),
+                      title: Text('分享主页'),
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.settings_outlined),
+                      title: Text('设置'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.menu),
+          ),
+        ],
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: () => load(forceRefresh: true),
+              child: ListView(
+                controller: _profileScrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                children: [
+                  if (error != null)
+                    _PageErrorState(
+                      title: '资料加载失败',
+                      subtitle: error!,
+                      onRetry: load,
+                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 25 * 5,
+                                  child: Text(
+                                    '${p?['nickname'] ?? 'DD 用户'}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 25,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _ProfileTag(text: '${p?['city'] ?? '未知'}'),
+                                const SizedBox(width: 4),
+                                _ProfileTag(text: '${p?['activeDays'] ?? 0}天'),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                _InlineProfileStat(
+                                  label: '关注',
+                                  value: '${p?['following'] ?? 0}',
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const _UserRelationListPage(
+                                        relation: 'following',
+                                        title: '关注',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 18),
+                                _InlineProfileStat(
+                                  label: '粉丝',
+                                  value: '${p?['followers'] ?? 0}',
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const _UserRelationListPage(
+                                        relation: 'followers',
+                                        title: '粉丝',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 18),
+                                _InlineProfileStat(
+                                  label: '魅力',
+                                  value: '${p?['likes'] ?? 0}',
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const _UserRelationListPage(
+                                        relation: 'likers',
+                                        title: '获赞',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundImage:
+                                (p?['avatar']?.toString() ?? '').trim().isEmpty
+                                    ? null
+                                    : NetworkImage(
+                                        DDPostService.mediaUrl(p?['avatar'])),
+                            child:
+                                (p?['avatar']?.toString() ?? '').trim().isEmpty
+                                    ? const Icon(Icons.person, size: 42)
+                                    : null,
+                          ),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: -12,
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: _SonicProfileButton(
+                                playing: _sonicPlaying,
+                                enabled: _sonicUrl?.isNotEmpty == true,
+                                onTap: () async {
+                                  await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => _VoiceRecordPage(
+                                        currentUrl: _sonicUrl,
+                                      ),
+                                    ),
+                                  );
+                                  if (mounted) load();
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 32,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () async {
+                              final selected =
+                                  await Navigator.push<List<String>>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => _ProfileTagEditorPage(
+                                    selectedTags: _tags,
+                                  ),
+                                ),
+                              );
+                              if (selected != null && mounted) {
+                                setState(() => _tags = selected);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 9, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Text(
+                                '+',
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
+                            ),
+                          ),
+                          ..._tags.map((tag) => Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: _ProfileTag(text: tag),
+                              )),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  _MyProfileIconTabs(
+                    selectedTab: selectedTab,
+                    onSelect: (tab) => load(tab: tab),
+                  ),
+                  const SizedBox(height: 12),
+                  if (error != null)
+                    _PageErrorState(
+                      title: '动态加载失败',
+                      subtitle: error!,
+                      onRetry: () => load(tab: selectedTab),
+                    )
+                  else if (tabLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 38),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else
+                    _MyProfileGrid(
+                      posts: posts,
+                      onChanged: _invalidateProfileCacheAndReload,
+                    ),
+                  if (!tabLoading && error == null)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 24, bottom: 12),
+                      child: Center(
+                        child: Text(
+                          '暂时没有更多了',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _HistoryRecordsPage extends _UserRelationListPage {
+  const _HistoryRecordsPage() : super(relation: 'history', title: '历史访客');
+}
+
+class _UserRelationListPage extends StatefulWidget {
+  const _UserRelationListPage({required this.relation, required this.title});
+  final String relation;
+  final String title;
+
+  @override
+  State<_UserRelationListPage> createState() => _UserRelationListPageState();
+}
+
+class _UserRelationListPageState extends State<_UserRelationListPage> {
+  final DDPostService service = DDPostService();
+  List<Map<String, dynamic>> users = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final loaded = await service.fetchUsers(token, relation: widget.relation);
+      if (mounted) setState(() => users = loaded);
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text(widget.title)),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+                ? _PageErrorState(
+                    title: '加载失败', subtitle: error!, onRetry: load)
+                : RefreshIndicator(
+                    onRefresh: load,
+                    child: users.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              Padding(
+                                padding: EdgeInsets.only(top: 100),
+                                child: Center(child: Text('暂无用户')),
+                              ),
+                            ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                            itemCount: users.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final user = users[index];
+                              final userId = _intValue(user['id']);
+                              return Card(
+                                margin: EdgeInsets.zero,
+                                child: ListTile(
+                                  onTap: userId == null
+                                      ? null
+                                      : () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => OtherProfilePage(
+                                                userId: userId,
+                                                name:
+                                                    '${user['nickname'] ?? '用户'}',
+                                              ),
+                                            ),
+                                          ),
+                                  leading: CircleAvatar(
+                                    backgroundImage: '${user['avatar'] ?? ''}'
+                                            .isNotEmpty
+                                        ? NetworkImage(DDPostService.mediaUrl(
+                                            '${user['avatar']}'))
+                                        : null,
+                                    child: '${user['avatar'] ?? ''}'.isEmpty
+                                        ? const Icon(Icons.person_outline)
+                                        : null,
+                                  ),
+                                  title: Text('${user['nickname'] ?? '用户'}'),
+                                  subtitle: Text(
+                                      '${user['city'] ?? '未知地区'} · 在线 ${user['activeDays'] ?? 0}天'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+      );
+}
+
+class _VoiceRecordPage extends StatefulWidget {
+  const _VoiceRecordPage({required this.currentUrl});
+  final String? currentUrl;
+
+  @override
+  State<_VoiceRecordPage> createState() => _VoiceRecordPageState();
+}
+
+class _VoiceRecordPageState extends State<_VoiceRecordPage> {
+  final AudioRecorder recorder = AudioRecorder();
+  final AudioPlayer player = AudioPlayer();
+  final DDPostService service = DDPostService();
+  bool recording = false;
+  bool saving = false;
+  bool playing = false;
+  Timer? _recordingTimer;
+  int recordingSeconds = 0;
+  String? recordingPath;
+  String? error;
+
+  @override
+  void dispose() {
+    _recordingTimer?.cancel();
+    recorder.dispose();
+    player.dispose();
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _record() async {
+    try {
+      final active = await recorder.isRecording();
+      if (active) {
+        final path = await recorder.stop();
+        if (path == null || path.isEmpty) throw Exception('停止录音失败，未生成音频文件');
+        final file = File(path);
+        if (!await file.exists() || await file.length() == 0) throw Exception('录音文件为空');
+        if (mounted) setState(() { recording = false; recordingPath = path; error = null; });
+        _recordingTimer?.cancel();
+        return;
+      }
+      final permission = await recorder.hasPermission();
+      if (!permission) throw Exception('没有麦克风权限，请在设置中允许 DD 使用麦克风');
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/friend_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          numChannels: 1,
+          sampleRate: 44100,
+          bitRate: 128000,
+          autoGain: true,
+          echoCancel: true,
+          noiseSuppress: true,
+        ),
+        path: path,
+      );
+      if (!await recorder.isRecording()) throw Exception('录音启动失败');
+      recordingSeconds = 0;
+      _recordingTimer?.cancel();
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+        if (!mounted) return;
+        recordingSeconds++;
+        if (recordingSeconds >= 15) {
+          _recordingTimer?.cancel();
+          await _record();
+        } else {
+          setState(() {});
+        }
+      });
+      if (mounted) setState(() { recording = true; error = null; });
+    } catch (e) {
+      if (mounted) setState(() { recording = false; error = e.toString().replaceFirst('Exception: ', ''); });
+    }
+  }
+
+  Future<void> _preview() async {
+    final localPath = recordingPath;
+    final url = widget.currentUrl;
+    if ((localPath == null || localPath.isEmpty) && (url == null || url.isEmpty)) {
+      setState(() => error = '请先录制声音');
+      return;
+    }
+    if (playing) {
+      await player.pause();
+    } else {
+      if (localPath != null && localPath.isNotEmpty) {
+        await player.play(DeviceFileSource(localPath));
+      } else {
+        await player.play(UrlSource(url!));
+      }
+    }
+    if (mounted) setState(() => playing = !playing);
+  }
+
+  Future<void> _save() async {
+    if (recordingPath == null && (widget.currentUrl?.isEmpty ?? true)) {
+      setState(() => error = '声音上传功能已关闭');
+      return;
+    }
+    setState(() => saving = false);
+    if (mounted) setState(() => error = '当前版本不支持保存声音');
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('声音录制')),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              Icon(TIcons.sonic,
+                  size: 72, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 24),
+              Text(recording ? '正在录音… ${recordingSeconds}s / 15s' : '录制你的声音名片'),
+              const SizedBox(height: 24),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Colors.orange)),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: saving ? null : _record,
+                icon: Icon(recording ? Icons.stop : Icons.mic),
+                label: Text(recording ? '停止录音' : '开始录音'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _preview,
+                icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                label: const Text('试听'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                  onPressed: saving ? null : _save,
+                  child: Text(saving ? '保存中…' : '保存')),
+            ],
+          ),
+        ),
+      );
+}
+
+class _SonicProfileButton extends StatelessWidget {
+  const _SonicProfileButton({
+    required this.playing,
+    required this.enabled,
+    required this.onTap,
+  });
+  final bool playing;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .primary
+                .withValues(alpha: enabled ? .14 : .07),
+            borderRadius: BorderRadius.circular(99),
+          ),
+          child: Icon(
+            playing ? Icons.pause : TIcons.sonic,
+            size: 18,
+            color: enabled
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).disabledColor,
+          ),
+        ),
+      );
+}
+
+class _MyProfileIconTabs extends StatelessWidget {
+  const _MyProfileIconTabs({required this.selectedTab, required this.onSelect});
+  final int selectedTab;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          _tab(context, 0, Icons.blur_on),
+          _tab(context, 1, Icons.bookmark_border),
+          _tab(context, 2, Icons.favorite_border),
+        ],
+      );
+
+  Widget _tab(BuildContext context, int index, IconData icon) => Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onSelect(index),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Column(
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: selectedTab == index
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Theme.of(context).hintColor,
+                ),
+                const SizedBox(height: 7),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: selectedTab == index ? 28 : 0,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _MyProfileGrid extends StatelessWidget {
+  const _MyProfileGrid({required this.posts, this.onChanged});
+  final List<DDPost> posts;
+  final VoidCallback? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (posts.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 48),
+        child: Center(child: Text('暂无内容')),
+      );
+    }
+    return MasonryGridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 18,
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return _MyProfilePostCard(
+          post: post,
+          onTap: () async {
+            final changed = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DynamicDetailPage(postId: post.id),
+              ),
+            );
+            if (changed == true) onChanged?.call();
+          },
+        );
+      },
+    );
+  }
+}
+
+class _MyProfilePostCard extends StatelessWidget {
+  const _MyProfilePostCard({required this.post, required this.onTap});
+  final DDPost post;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final image = post.imageUrl?.trim();
+    final video = post.videoUrl?.trim();
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Card(
+          margin: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (image != null && image.isNotEmpty)
+                LayoutBuilder(
+                  builder: (context, constraints) => ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 400),
+                    child: Image.network(
+                      DDPostService.mediaUrl(image),
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 180,
+                        color: scheme.surfaceContainerHighest,
+                        child: const Icon(Icons.broken_image_outlined),
+                      ),
+                    ),
+                  ),
+                )
+              else if (video != null && video.isNotEmpty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 400),
+                  child: _NetworkVideoPreview(url: video),
+                )
+              else
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    color: scheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      post.content.trim().isEmpty ? '暂无动态内容' : post.content.trim(),
+                      maxLines: 8,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: scheme.onSurface,
+                        fontSize: 16,
+                        height: 1.45,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              if (post.content.trim().isNotEmpty &&
+                  ((image != null && image.isNotEmpty) ||
+                      (video != null && video.isNotEmpty)))
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                  child: Text(
+                    post.content.trim(),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15, height: 1.4),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Row(
+                  children: [
+                    Icon(TIcons.thumb_up_1,
+                        size: 16,
+                        color: post.liked ? Colors.red : scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('${post.likes}'),
+                    const SizedBox(width: 12),
+                    Icon(Icons.bookmark_border,
+                        size: 16, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('${post.favorites}'),
+                    const Spacer(),
+                    Icon(Icons.visibility_outlined,
+                        size: 16, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('${post.views}'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MyProfileVoiceCard extends StatelessWidget {
+  const _MyProfileVoiceCard({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: const Icon(Icons.play_arrow, color: Colors.white),
+          ),
+          title: Text(name),
+          subtitle: const Text('声音名片 · ，'),
+          trailing: const Text('00:16'),
+        ),
+      );
+}
+
+class _MyPostList extends StatelessWidget {
+  const _MyPostList({
+    required this.posts,
+    required this.emptyLabel,
+  });
+  final List<DDPost> posts;
+  final String emptyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    if (posts.isEmpty) return _ProfileEmptyTab(label: emptyLabel);
+    return Column(
+      children: posts
+          .map((post) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _MyProfilePostCard(
+                  post: post,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DynamicDetailPage(postId: post.id),
+                    ),
+                  ),
+                ),
+              ))
+          .toList(),
+    );
+  }
+}
+
+class _MyPostWaterfall extends StatelessWidget {
+  const _MyPostWaterfall({
+    required this.posts,
+    required this.emptyLabel,
+  });
+  final List<DDPost> posts;
+  final String emptyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    if (posts.isEmpty) return _ProfileEmptyTab(label: emptyLabel);
+    return Column(
+      children: posts
+          .map((post) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _MyProfilePostCard(
+                  post: post,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DynamicDetailPage(postId: post.id),
+                    ),
+                  ),
+                ),
+              ))
+          .toList(),
+    );
+  }
+}
+
+class _MyListCard extends StatelessWidget {
+  const _MyListCard({required this.post});
+  final DDPost post;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DynamicDetailPage(postId: post.id),
+          ),
+        ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _formatExactPostTime(post.createdAt),
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .55),
+                    ),
+                  ),
+                  Text(
+                    '浏览 ${post.views}',
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .55),
+                    ),
+                  ),
+                ],
+              ),
+              if (post.imageUrl?.trim().isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 500),
+                      child: Image.network(
+                        DDPostService.mediaUrl(post.imageUrl),
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
+              if (post.videoUrl?.trim().isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: _NetworkVideoPreview(url: post.videoUrl!),
+                ),
+              const Divider(height: 20),
+            ],
+          ),
+        ),
+      );
+}
+
+class _ProfileEmptyTab extends StatelessWidget {
+  const _ProfileEmptyTab({required this.label});
   final String label;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(fontWeight: FontWeight.bold),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 46),
+        child: Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.inbox_outlined, size: 38),
+            const SizedBox(height: 10),
+            Text('暂无$label内容'),
+          ]),
         ),
-        const SizedBox(height: 4),
-        Text(label),
-      ],
-    );
-  }
+      );
 }
 
-class _EmptyPanel extends StatelessWidget {
-  const _EmptyPanel();
+class _ProfileLikePill extends StatelessWidget {
+  const _ProfileLikePill({
+    required this.liked,
+    required this.count,
+    required this.onTap,
+  });
+  final bool liked;
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: BoxDecoration(
+              color: liked
+                  ? Colors.pinkAccent.withValues(alpha: .16)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  liked ? Icons.favorite : Icons.favorite_border,
+                  color: liked ? Colors.pinkAccent : null,
+                  size: 17,
+                ),
+                const SizedBox(width: 4),
+                Text('$count'),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _InlineProfileStat extends StatelessWidget {
+  const _InlineProfileStat({
+    required this.label,
+    required this.value,
+    this.onTap,
+  });
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 180,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: .35),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Column(
-        mainAxisSize: MainAxisSize.min,
+    final child = RichText(
+      text: TextSpan(
+        style: DefaultTextStyle.of(context).style,
         children: [
-          Icon(Icons.photo_library_outlined, size: 36),
-          SizedBox(height: 8),
-          Text('暂无内容'),
+          TextSpan(
+            text: '$value ',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          TextSpan(
+            text: label,
+            style: TextStyle(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: .65),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+    return onTap == null
+        ? child
+        : GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: child,
+            ),
+          );
+  }
+}
+
+class _OtherProfileVoiceCard extends StatelessWidget {
+  const _OtherProfileVoiceCard({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: const Icon(Icons.play_arrow, color: Colors.white),
+          ),
+          title: Text(name),
+          subtitle: const Text('声音名片 · ，'),
+          trailing: const Text('00:16'),
+        ),
+      );
+}
+
+class MyQrCodePage extends StatelessWidget {
+  const MyQrCodePage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('我的二维码')),
+        body: ListView(
+          padding: const EdgeInsets.all(28),
+          children: [
+            const Text(
+              'DD 用户',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 22),
+            Container(
+              height: 260,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Center(
+                child: Icon(Icons.qr_code_2, size: 190, color: Colors.black),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text('扫一扫，添加我为好友', textAlign: TextAlign.center),
+            const SizedBox(height: 18),
+            OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.ios_share),
+              label: const Text('保存或分享二维码'),
+            ),
+          ],
+        ),
+      );
+}
+
+class ListenTogetherPage extends StatefulWidget {
+  const ListenTogetherPage({super.key});
+  @override
+  State<ListenTogetherPage> createState() => _ListenTogetherPageState();
+}
+
+class _ListenTogetherPageState extends State<ListenTogetherPage> {
+  bool playing = true;
+  bool liked = false;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xff0c0a14),
+        appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            title: const Text('一起听'),
+            actions: [
+              IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
+            ]),
+        body: Stack(children: [
+          Positioned.fill(
+              child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                      gradient: RadialGradient(
+                          center: Alignment.topRight,
+                          radius: 1.4,
+                          colors: [Color(0xff542c91), Color(0xff0c0a14)])))),
+          Column(children: [
+            const SizedBox(height: 26),
+            Container(
+                width: 235,
+                height: 235,
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xff1a1620),
+                    border: Border.all(color: Colors.white12, width: 8),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black54, blurRadius: 30)
+                    ]),
+                child: Center(
+                    child: Container(
+                        width: 92,
+                        height: 92,
+                        decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(colors: [
+                              Color(0xff7c3aed),
+                              Color(0xffe8558c)
+                            ])),
+                        child: const Icon(Icons.music_note,
+                            size: 40, color: Colors.white)))),
+            const SizedBox(height: 28),
+            const Text('夜空中最亮的星',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800)),
+            const SizedBox(height: 7),
+            const Text('逃跑计划 · 和 苏念 一起听',
+                style: TextStyle(color: Colors.white54)),
+            Padding(
+                padding: const EdgeInsets.fromLTRB(32, 26, 32, 0),
+                child: Column(children: [
+                  LinearProgressIndicator(
+                      value: .42,
+                      minHeight: 4,
+                      borderRadius: BorderRadius.circular(9)),
+                  const SizedBox(height: 6),
+                  const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('01:42',
+                            style:
+                                TextStyle(color: Colors.white54, fontSize: 11)),
+                        Text('04:12',
+                            style:
+                                TextStyle(color: Colors.white54, fontSize: 11))
+                      ])
+                ])),
+            const Spacer(),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              IconButton(
+                  onPressed: () => setState(() => liked = !liked),
+                  icon: Icon(liked ? Icons.favorite : Icons.favorite_border,
+                      color: liked ? Colors.pinkAccent : Colors.white)),
+              IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.skip_previous,
+                      color: Colors.white, size: 33)),
+              Container(
+                  width: 62,
+                  height: 62,
+                  decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                          colors: [Color(0xff7c3aed), Color(0xffe8558c)])),
+                  child: IconButton(
+                      onPressed: () => setState(() => playing = !playing),
+                      icon: Icon(playing ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white, size: 32))),
+              IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.skip_next,
+                      color: Colors.white, size: 33)),
+              IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.queue_music, color: Colors.white))
+            ]),
+            const SizedBox(height: 34),
+          ]),
+        ]),
+      );
+}
+
+class VoiceMatchPage extends StatefulWidget {
+  const VoiceMatchPage({super.key});
+  @override
+  State<VoiceMatchPage> createState() => _VoiceMatchPageState();
+}
+
+class _VoiceMatchPageState extends State<VoiceMatchPage> {
+  bool matching = true;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xff0f0a1a),
+        appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            title: Text(matching ? '语音匹配' : '匹配成功')),
+        body: Stack(children: [
+          Positioned.fill(
+              child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                      gradient: RadialGradient(
+                          center: Alignment.topRight,
+                          radius: 1.4,
+                          colors: [Color(0xff673a8c), Color(0xff0f0a1a)])))),
+          Center(
+              child: matching
+                  ? _VoiceMatchingContent(
+                      onSuccess: () => setState(() => matching = false))
+                  : _VoiceMatchSuccess(
+                      onRestart: () => setState(() => matching = true))),
+        ]),
+      );
+}
+
+class _VoiceMatchingContent extends StatelessWidget {
+  const _VoiceMatchingContent({required this.onSuccess});
+  final VoidCallback onSuccess;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const _VoiceUiNotice(),
+        const SizedBox(height: 32),
+        Stack(alignment: Alignment.center, children: [
+          for (final size in [290.0, 225.0, 160.0])
+            Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: Colors.purpleAccent.withValues(alpha: .35)))),
+          Container(
+              width: 108,
+              height: 108,
+              decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                      colors: [Color(0xffa855f7), Color(0xffff6b9d)])),
+              child: const Icon(Icons.mic, color: Colors.white, size: 45))
+        ]),
+        const SizedBox(height: 48),
+        const Text('正在寻找有趣的声音',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w800)),
+        const SizedBox(height: 10),
+        const Text('戴上耳机，和陌生人聊聊吧', style: TextStyle(color: Colors.white54)),
+        const SizedBox(height: 22),
+        const Text('等待 00:12', style: TextStyle(color: Colors.white70)),
+        const SizedBox(height: 42),
+        FilledButton(onPressed: onSuccess, child: const Text('模拟匹配成功')),
+        const SizedBox(height: 12),
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: const Text('取消匹配')),
+      ]));
+}
+
+class _VoiceMatchSuccess extends StatelessWidget {
+  const _VoiceMatchSuccess({required this.onRestart});
+  final VoidCallback onRestart;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const _VoiceUiNotice(),
+        const SizedBox(height: 32),
+        const CircleAvatar(
+            radius: 66, child: Icon(Icons.face_3_outlined, size: 62)),
+        const SizedBox(height: 24),
+        const Text('林小满',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.w800)),
+        const SizedBox(height: 9),
+        const Text('已为你匹配到一位声音伙伴', style: TextStyle(color: Colors.white60)),
+        const SizedBox(height: 14),
+        Wrap(spacing: 8, children: const [
+          Chip(label: Text('音乐')),
+          Chip(label: Text('旅行')),
+          Chip(label: Text('在线'))
+        ]),
+        const SizedBox(height: 28),
+        const Text('通话 00:03', style: TextStyle(color: Colors.white70)),
+        const SizedBox(height: 26),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.mic_none, color: Colors.white)),
+          IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.volume_up_outlined, color: Colors.white)),
+          IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon:
+                  const Icon(Icons.call_end, color: Colors.redAccent, size: 34))
+        ]),
+        const SizedBox(height: 18),
+        TextButton(onPressed: onRestart, child: const Text('重新模拟匹配')),
+      ]));
+}
+
+class _VoiceUiNotice extends StatelessWidget {
+  const _VoiceUiNotice();
+  @override
+  Widget build(BuildContext context) => const Text('语音匹配',
+      textAlign: TextAlign.center,
+      style: TextStyle(color: Colors.white60, fontSize: 11));
+}
+
+class GameCompanionPlazaPage extends StatefulWidget {
+  const GameCompanionPlazaPage({super.key});
+  @override
+  State<GameCompanionPlazaPage> createState() => _GameCompanionPlazaPageState();
+}
+
+class CompanionProfile {
+  const CompanionProfile(
+      {required this.name,
+      required this.game,
+      required this.price,
+      required this.rating,
+      required this.icon,
+      required this.tags,
+      required this.voice});
+  final String name;
+  final String game;
+  final String price;
+  final String rating;
+  final IconData icon;
+  final List<String> tags;
+  final String voice;
+}
+
+class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
+  final search = TextEditingController();
+  int game = 0;
+  int type = 0;
+  final games = const ['王者荣耀', '英雄联盟', '和平精英', '原神', '更多'];
+  final types = const ['全部', '上分陪玩', '娱乐开黑', '语音陪伴', '新手教学'];
+  final companions = const [
+    CompanionProfile(
+        name: '小鹿',
+        game: '王者荣耀',
+        price: '39',
+        rating: '4.9',
+        icon: Icons.face_3_outlined,
+        tags: ['声音好听', '国服打野', '秒回'],
+        voice: '温柔声线 · 试听 16 秒'),
+    CompanionProfile(
+        name: '苏念',
+        game: '英雄联盟',
+        price: '49',
+        rating: '5.0',
+        icon: Icons.music_note,
+        tags: ['氛围感', '可连麦', '晚间在线'],
+        voice: '甜妹音 · 试听 12 秒'),
+    CompanionProfile(
+        name: '桃子',
+        game: '和平精英',
+        price: '35',
+        rating: '4.8',
+        icon: Icons.favorite_outline,
+        tags: ['带萌新', '不压力', '情绪价值'],
+        voice: '元气音 · 试听 18 秒'),
+    CompanionProfile(
+        name: '北辰',
+        game: '原神',
+        price: '45',
+        rating: '4.9',
+        icon: Icons.auto_awesome_outlined,
+        tags: ['探索陪伴', '任务带做', '耐心'],
+        voice: '治愈音 · 试听 14 秒'),
+  ];
+  @override
+  void dispose() {
+    search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = search.text.trim();
+    final visible = companions
+        .where((c) =>
+            q.isEmpty ||
+            c.name.contains(q) ||
+            c.game.contains(q) ||
+            c.tags.any((tag) => tag.contains(q)))
+        .toList();
+    return Scaffold(
+      appBar: AppBar(title: const Text('陪玩广场'), actions: [
+        IconButton(
+            onPressed: () => _notice('陪玩订单'),
+            icon: const Icon(Icons.receipt_long_outlined))
+      ]),
+      body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
+          children: [
+            const _CompanionNotice(),
+            const SizedBox(height: 12),
+            TextField(
+                controller: search,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                    hintText: '搜索游戏、声音或陪玩', prefixIcon: Icon(Icons.search))),
+            const SizedBox(height: 13),
+            _GameFilterRow(
+                labels: games,
+                selected: game,
+                onSelected: (v) => setState(() => game = v),
+                icon: Icons.sports_esports_outlined),
+            const SizedBox(height: 9),
+            _GameFilterRow(
+                labels: types,
+                selected: type,
+                onSelected: (v) => setState(() => type = v)),
+            const _CompanionSection(title: '今日推荐'),
+            SizedBox(
+                height: 208,
+                child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: companions
+                        .take(3)
+                        .map((c) => _CompanionRecommendCard(
+                            data: c, onTap: () => _open(c)))
+                        .toList())),
+            const _CompanionSection(title: '在线陪玩'),
+            ...visible.map((c) => _CompanionListCard(
+                data: c, onTap: () => _open(c), onOrder: _showFakeOrderDialog)),
+          ]),
+      bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: FilledButton.icon(
+                  onPressed: () => _notice('发布陪玩需求'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('发布陪玩需求')))),
+    );
+  }
+
+  void _open(CompanionProfile c) => Navigator.push(context,
+      MaterialPageRoute(builder: (_) => CompanionProfilePage(data: c)));
+  Future<void> _showFakeOrderDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('胡进正在伪装，请稍后……'),
+        content: const Text('当前进度：正在插入变声器'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('知道了'),
+          ),
         ],
       ),
     );
   }
+
+  void _notice(String feature) {}
+}
+
+class CompanionProfilePage extends StatelessWidget {
+  const CompanionProfilePage({super.key, required this.data});
+  final CompanionProfile data;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: Stack(children: [
+          Container(
+              height: 270,
+              decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: [Color(0xff4a2a6b), Color(0xffe05ca8)]))),
+          SafeArea(
+              child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white))),
+          ListView(
+              padding: const EdgeInsets.fromLTRB(16, 220, 16, 108),
+              children: [
+                const _CompanionNotice(),
+                const SizedBox(height: 12),
+                Card(
+                    child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                Stack(children: [
+                                  CircleAvatar(
+                                      radius: 38,
+                                      child: Icon(data.icon, size: 36)),
+                                  Positioned(
+                                      right: 0, bottom: 1, child: _OnlineDot())
+                                ]),
+                                const SizedBox(width: 13),
+                                Expanded(
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                      Row(children: [
+                                        Text(data.name,
+                                            style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w800)),
+                                        const SizedBox(width: 6),
+                                        const Icon(Icons.verified,
+                                            color: Colors.lightBlue, size: 17)
+                                      ]),
+                                      const SizedBox(height: 5),
+                                      Text('${data.game} · ★ ${data.rating}',
+                                          style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary)),
+                                      const SizedBox(height: 4),
+                                      Text('在线5 分钟内响应',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall)
+                                    ]))
+                              ]),
+                              const SizedBox(height: 14),
+                              const Text('喜欢轻松聊天和开黑，一起享受游戏的快乐吧～'),
+                              const Divider(height: 28),
+                              const Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _GameProfileStat(
+                                        value: '99%', label: '好评率'),
+                                    _GameProfileStat(
+                                        value: '6分钟', label: '平均响应'),
+                                    _GameProfileStat(
+                                        value: '1,286', label: '接单数')
+                                  ]),
+                            ]))),
+                const _CompanionSection(title: '声音名片'),
+                _CompanionVoiceCard(text: data.voice),
+                const _CompanionSection(title: '陪玩服务'),
+                _GameProfileServiceRow(
+                    game: data.game, title: '娱乐开黑 · 语音陪伴', price: data.price),
+                _GameProfileServiceRow(
+                    game: data.game, title: '上分陪玩 · 全程连麦', price: '59'),
+                const _CompanionSection(title: '标签与评价'),
+                Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children:
+                        data.tags.map((t) => Chip(label: Text(t))).toList()),
+                const SizedBox(height: 12),
+                const _GameReview(name: '小橘', text: '声音很好听，开黑很开心。'),
+              ]),
+        ]),
+        bottomNavigationBar: SafeArea(
+            top: false,
+            child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: FilledButton(
+                    onPressed: () => ScaffoldMessenger.of(context)
+                        .showSnackBar(const SnackBar(content: Text(''))),
+                    child: Text('¥ ${data.price} 起 · 立即约玩')))),
+      );
+}
+
+class VoiceRoomPage extends StatefulWidget {
+  const VoiceRoomPage({super.key});
+  @override
+  State<VoiceRoomPage> createState() => _VoiceRoomPageState();
+}
+
+class _VoiceRoomPageState extends State<VoiceRoomPage> {
+  bool muted = false;
+  bool joined = false;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xff1a1224),
+        appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            title: const Text('深夜电台 · 一起听'),
+            actions: [
+              IconButton(onPressed: () {}, icon: const Icon(Icons.ios_share)),
+              IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
+            ]),
+        body: Stack(children: [
+          Positioned.fill(
+              child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                      gradient: RadialGradient(
+                          center: Alignment.topRight,
+                          radius: 1.4,
+                          colors: [Color(0xff673a8c), Color(0xff1a1224)])))),
+          ListView(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+              children: [
+                const _VoiceRoomNotice(),
+                const SizedBox(height: 18),
+                Center(
+                    child: Column(children: [
+                  Stack(alignment: Alignment.center, children: [
+                    Container(
+                      width: 118,
+                      height: 118,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: Colors.purpleAccent, width: 2)),
+                    ),
+                    const CircleAvatar(
+                        radius: 41, child: Icon(Icons.mic, size: 38)),
+                  ]),
+                  const SizedBox(height: 12),
+                  const Text('苏念  房主',
+                      style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white)),
+                  const SizedBox(height: 5),
+                  const Chip(
+                      label: Text('正在说话'),
+                      avatar: Icon(Icons.graphic_eq, size: 15))
+                ])),
+                const SizedBox(height: 28),
+                const Text('麦位  ·  128 人在听',
+                    style: TextStyle(
+                        color: Colors.white70, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 14),
+                GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 18,
+                    children: const [
+                      _VoiceSeat(icon: Icons.music_note, name: '小鹿'),
+                      _VoiceSeat(icon: Icons.favorite_outline, name: '桃子'),
+                      _VoiceSeat(
+                          icon: Icons.sports_esports_outlined, name: '北辰'),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
+                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true)
+                    ]),
+                const SizedBox(height: 24),
+                const Text('房间消息',
+                    style: TextStyle(
+                        color: Colors.white70, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 10),
+                const _VoiceRoomMessage(name: '小鹿', text: '这首歌好好听～'),
+                const _VoiceRoomMessage(name: '桃子', text: '新来的朋友晚上好'),
+              ]),
+        ]),
+        bottomNavigationBar: SafeArea(
+            top: false,
+            child: Container(
+                color: const Color(0xff21172e),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(children: [
+                  IconButton(
+                      onPressed: () => setState(() => muted = !muted),
+                      icon: Icon(muted ? Icons.mic_off : Icons.mic_none,
+                          color: Colors.white)),
+                  Expanded(
+                      child: FilledButton(
+                          onPressed: () => setState(() => joined = !joined),
+                          child: Text(joined ? '已上麦（UI）' : '申请上麦'))),
+                  IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.card_giftcard_outlined,
+                          color: Colors.white))
+                ]))),
+      );
+}
+
+class _CompanionNotice extends StatelessWidget {
+  const _CompanionNotice();
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(12)),
+      child: Text('陪玩广场', style: Theme.of(context).textTheme.labelSmall));
+}
+
+class _VoiceRoomNotice extends StatelessWidget {
+  const _VoiceRoomNotice();
+  @override
+  Widget build(BuildContext context) => const Center(
+      child: Text('语音房、麦位和房间消息',
+          style: TextStyle(color: Colors.white70, fontSize: 11)));
+}
+
+class _CompanionSection extends StatelessWidget {
+  const _CompanionSection({required this.title});
+  final String title;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.only(top: 22, bottom: 11),
+      child: Text(title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)));
+}
+
+class _CompanionRecommendCard extends StatelessWidget {
+  const _CompanionRecommendCard({required this.data, required this.onTap});
+  final CompanionProfile data;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+          width: 150,
+          margin: const EdgeInsets.only(right: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(18)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+                child: Center(
+                    child: CircleAvatar(
+                        radius: 34, child: Icon(data.icon, size: 30)))),
+            Text(data.name,
+                style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(data.voice,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 5),
+            Text('¥${data.price}/局 · ★${data.rating}',
+                style: TextStyle(
+                    fontSize: 11, color: Theme.of(context).colorScheme.primary))
+          ])));
+}
+
+class _OnlineDot extends StatelessWidget {
+  const _OnlineDot();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 11,
+        height: 11,
+        decoration: BoxDecoration(
+          color: Colors.greenAccent,
+          shape: BoxShape.circle,
+          border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
+        ),
+      );
+}
+
+class _CompanionListCard extends StatelessWidget {
+  const _CompanionListCard(
+      {required this.data, required this.onTap, required this.onOrder});
+  final CompanionProfile data;
+  final VoidCallback onTap;
+  final VoidCallback onOrder;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Stack(children: [
+                  CircleAvatar(radius: 26, child: Icon(data.icon, size: 25)),
+                  Positioned(right: 0, bottom: 0, child: _OnlineDot()),
+                ]),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(data.name,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 4),
+                      Text('${data.game} · ★${data.rating} · 在线',
+                          style: Theme.of(context).textTheme.labelSmall),
+                    ])),
+                FilledButton(onPressed: onOrder, child: const Text('约玩')),
+              ]),
+              const SizedBox(height: 10),
+              Text(data.voice,
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.primary)),
+              const SizedBox(height: 9),
+              Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: data.tags
+                      .map((t) => Chip(
+                          label: Text(t), visualDensity: VisualDensity.compact))
+                      .toList()),
+              const Divider(height: 24),
+              Row(children: [
+                Text('¥ ${data.price}/局起',
+                    style: const TextStyle(
+                        fontSize: 20,
+                        color: Color(0xffff4d8a),
+                        fontWeight: FontWeight.w800)),
+                const Spacer(),
+                const Text('已服务 1,286 次',
+                    style: TextStyle(fontSize: 11, color: Colors.grey)),
+              ]),
+            ]),
+          ),
+        ),
+      );
+}
+
+class _CompanionVoiceCard extends StatelessWidget {
+  const _CompanionVoiceCard({required this.text});
+  final String text;
+  @override
+  Widget build(BuildContext context) => Card(
+      child: ListTile(
+          leading: const CircleAvatar(child: Icon(Icons.play_arrow)),
+          title: Text(text),
+          subtitle: const Text('声音名片 · '),
+          trailing: const Text('00:16')));
+}
+
+class _VoiceSeat extends StatelessWidget {
+  const _VoiceSeat(
+      {required this.icon, required this.name, this.empty = false});
+  final IconData icon;
+  final String name;
+  final bool empty;
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        CircleAvatar(
+            radius: 27,
+            backgroundColor: empty ? Colors.white10 : null,
+            child: Icon(icon, color: empty ? Colors.white38 : null)),
+        const SizedBox(height: 5),
+        Text(name,
+            style: TextStyle(
+                fontSize: 11, color: empty ? Colors.white38 : Colors.white70),
+            overflow: TextOverflow.ellipsis)
+      ]);
+}
+
+class _VoiceRoomMessage extends StatelessWidget {
+  const _VoiceRoomMessage({required this.name, required this.text});
+  final String name;
+  final String text;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: RichText(
+          text: TextSpan(
+              style: const TextStyle(fontSize: 13, color: Colors.white70),
+              children: [
+            TextSpan(
+                text: '$name  ',
+                style: const TextStyle(
+                    color: Color(0xffe8b8ff), fontWeight: FontWeight.w700)),
+            TextSpan(text: text)
+          ])));
+}
+
+class FateMatchPage extends StatefulWidget {
+  const FateMatchPage({super.key});
+  @override
+  State<FateMatchPage> createState() => _FateMatchPageState();
+}
+
+class _FateMatchPageState extends State<FateMatchPage> {
+  bool matching = false;
+  bool matched = false;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xff191019),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          title: const Text('缘分匹配'),
+        ),
+        body: Stack(children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topRight,
+                  radius: 1.4,
+                  colors: [Color(0xffff6f9a), Color(0xff191019)],
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(26),
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('缘分匹配',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white60, fontSize: 11)),
+                    const SizedBox(height: 36),
+                    Stack(alignment: Alignment.center, children: [
+                      for (final size in [250.0, 190.0, 132.0])
+                        Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color:
+                                    Colors.pinkAccent.withValues(alpha: .36)),
+                          ),
+                        ),
+                      CircleAvatar(
+                        radius: 53,
+                        backgroundColor: const Color(0xffff5f8f),
+                        child: Icon(
+                          matched ? Icons.favorite : Icons.auto_awesome,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ]),
+                    const SizedBox(height: 36),
+                    Text(
+                      matched
+                          ? '遇见了 林小满'
+                          : (matching ? '正在寻找有缘人…' : '开启一段新的缘分'),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      matched ? '音乐 · 旅行 · 聊得来' : '填写兴趣后，寻找默契的聊天伙伴',
+                      style: const TextStyle(color: Colors.white60),
+                    ),
+                    const SizedBox(height: 32),
+                    if (matched)
+                      Wrap(spacing: 10, children: [
+                        FilledButton(
+                          onPressed: () => ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(content: Text(''))),
+                          child: const Text('开始聊天'),
+                        ),
+                        OutlinedButton(
+                          onPressed: () => setState(() {
+                            matched = false;
+                            matching = false;
+                          }),
+                          child: const Text('重新匹配'),
+                        ),
+                      ])
+                    else
+                      FilledButton.icon(
+                        onPressed: matching
+                            ? null
+                            : () => setState(() {
+                                  matching = true;
+                                  matched = true;
+                                }),
+                        icon: const Icon(Icons.favorite_outline),
+                        label: Text(matching ? '匹配中…' : '开始匹配'),
+                      ),
+                  ]),
+            ),
+          ),
+        ]),
+      );
+}
+
+class _GameFilterRow extends StatelessWidget {
+  const _GameFilterRow(
+      {required this.labels,
+      required this.selected,
+      required this.onSelected,
+      this.icon});
+  final List<String> labels;
+  final int selected;
+  final ValueChanged<int> onSelected;
+  final IconData? icon;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: 38,
+        child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: labels
+                .asMap()
+                .entries
+                .map((entry) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        avatar: icon != null && entry.key == selected
+                            ? Icon(icon, size: 15)
+                            : null,
+                        label: Text(entry.value),
+                        selected: selected == entry.key,
+                        onSelected: (_) => onSelected(entry.key),
+                      ),
+                    ))
+                .toList()),
+      );
+}
+
+class _GameProfileStat extends StatelessWidget {
+  const _GameProfileStat({required this.value, required this.label});
+  final String value;
+  final String label;
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        Text(value,
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text(label, style: Theme.of(context).textTheme.labelSmall),
+      ]);
+}
+
+class _GameProfileServiceRow extends StatelessWidget {
+  const _GameProfileServiceRow(
+      {required this.game, required this.title, required this.price});
+  final String game;
+  final String title;
+  final String price;
+  @override
+  Widget build(BuildContext context) => Card(
+          child: ListTile(
+        leading: const Icon(Icons.sports_esports_outlined),
+        title: Text(title),
+        subtitle: Text(game),
+        trailing: Text('¥$price 起',
+            style: const TextStyle(
+                color: Color(0xffff4d6a), fontWeight: FontWeight.w800)),
+      ));
+}
+
+class _GameReview extends StatelessWidget {
+  const _GameReview({required this.name, required this.text});
+  final String name;
+  final String text;
+  @override
+  Widget build(BuildContext context) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+        title: Text(name),
+        subtitle: Text(text),
+        trailing: const Text('★ 5.0'),
+      );
+}
+
+class EventsPage extends StatelessWidget {
+  const EventsPage({super.key});
+  @override
+  Widget build(BuildContext context) => _SimpleListPage(
+        title: '活动中心',
+        items: const ['周末线下见面会', '城市摄影活动', '兴趣交友派对', '创作者交流会'],
+      );
+}
+
+class TrendsPage extends StatelessWidget {
+  const TrendsPage({super.key});
+  @override
+  Widget build(BuildContext context) => _SimpleListPage(
+        title: '趋势榜单',
+        items: const ['本周热门动态', '最受欢迎用户', '热门兴趣圈', '城市热度排行'],
+      );
+}
+
+class MyPostsPage extends StatefulWidget {
+  const MyPostsPage({super.key});
+  @override
+  State<MyPostsPage> createState() => _MyPostsPageState();
+}
+
+class _MyPostsPageState extends State<MyPostsPage> {
+  final service = DDPostService();
+  List<DDPost> posts = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      posts = await service.fetchMyPosts(token);
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _deletePost(DDPost post) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('确认删除这条动态？删除后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final token =
+          (await SharedPreferences.getInstance()).getString('dd.auth.token') ??
+              '';
+      if (token.isEmpty) throw Exception('请先登录');
+      await service.deletePost(token, post.id);
+      await DDPostService.clearProfileTabCaches();
+      await load();
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('动态已删除')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('我的动态')),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    12,
+                    16,
+                    24 + MediaQuery.of(context).padding.bottom + 88,
+                  ),
+                  children: [
+                    if (error != null)
+                      _PageErrorState(
+                        title: '动态加载失败',
+                        subtitle: error!,
+                        onRetry: load,
+                      )
+                    else if (posts.isEmpty)
+                      const _EmptyStateCard(
+                        icon: Icons.article_outlined,
+                        title: '暂无动态',
+                        subtitle: '发布你的第一条动态吧',
+                      )
+                    else
+                      ...posts.map(
+                        (post) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _DynamicPostCard(
+                            post: post,
+                            authorNavigation: false,
+                            onDelete: () => _deletePost(post),
+                            onLike: () async {
+                              final token =
+                                  (await SharedPreferences.getInstance())
+                                          .getString('dd.auth.token') ??
+                                      '';
+                              if (token.isNotEmpty) {
+                                await service.toggleLike(token, post.id);
+                                await load();
+                              }
+                            },
+                            onFavorite: () async {
+                              final token =
+                                  (await SharedPreferences.getInstance())
+                                          .getString('dd.auth.token') ??
+                                      '';
+                              if (token.isNotEmpty) {
+                                await service.toggleFavorite(token, post.id);
+                                await load();
+                              }
+                            },
+                            onOpen: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    DynamicDetailPage(postId: post.id),
+                              ),
+                            ),
+                            onComment: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DynamicDetailPage(
+                                  postId: post.id,
+                                  focusComment: true,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+      );
+}
+
+class EditProfilePage extends StatefulWidget {
+  const EditProfilePage({super.key});
+  @override
+  State<EditProfilePage> createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State<EditProfilePage> {
+  final service = DDPostService();
+  final nickname = TextEditingController();
+  XFile? image;
+  bool loading = true;
+  bool saving = false;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    nickname.dispose();
+    super.dispose();
+  }
+
+  Future<void> load() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      final token = p.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final data = await service.fetchMe(token);
+      nickname.text = '${data['nickname'] ?? ''}';
+    } catch (e) {
+      if (mounted) error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> pickAvatar() async {
+    try {
+      final value = await ImagePicker()
+          .pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (value != null && mounted)
+        setState(() {
+          image = value;
+          error = null;
+        });
+    } catch (e) {
+      if (mounted) setState(() => error = '头像选择失败：$e');
+    }
+  }
+
+  Future<String?> _avatarDataUrl() async {
+    if (image == null) return null;
+    final bytes = await image!.readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    final resized =
+        decoded == null ? null : img.copyResize(decoded, width: 512);
+    final compressed =
+        resized == null ? bytes : img.encodeJpg(resized, quality: 86);
+    return 'data:image/jpeg;base64,${base64Encode(compressed)}';
+  }
+
+  Future<void> save() async {
+    try {
+      setState(() => saving = true);
+      final p = await SharedPreferences.getInstance();
+      final token = p.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final avatar = await _avatarDataUrl();
+      await service.updateMe(
+          token: token, nickname: nickname.text.trim(), avatar: avatar);
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('编辑资料'), actions: [
+          TextButton(
+              onPressed: loading || saving ? null : save,
+              child: Text(saving ? '保存中…' : '保存'))
+        ]),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(padding: const EdgeInsets.all(18), children: [
+                GestureDetector(
+                    onTap: pickAvatar,
+                    child: CircleAvatar(
+                        radius: 48,
+                        backgroundImage:
+                            image == null ? null : FileImage(File(image!.path)),
+                        child: image == null
+                            ? const Icon(Icons.add_a_photo_outlined, size: 30)
+                            : null)),
+                const SizedBox(height: 22),
+                if (error != null)
+                  Text(error!, style: const TextStyle(color: Colors.orange)),
+                TextField(
+                    controller: nickname,
+                    maxLength: 5,
+                    decoration: const InputDecoration(labelText: '昵称')),
+              ]),
+      );
+}
+
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('账户设置')),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            const _SettingsGroup(
+              title: '账号与安全',
+              items: ['账号信息', '修改密码', '绑定邮箱和手机号'],
+            ),
+            _SettingsGroup(
+              title: '隐私与通知',
+              items: const ['隐私设置', '通知设置', '黑名单'],
+              onItemTap: (item) {
+                if (item == '通知设置') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationSettingsPage(),
+                    ),
+                  );
+                }
+              },
+            ),
+            const _SettingsGroup(title: '其他', items: ['清理缓存', '关于 DD', '退出登录']),
+          ],
+        ),
+      );
+}
+
+class NotificationSettingsPage extends StatefulWidget {
+  const NotificationSettingsPage({super.key});
+  @override
+  State<NotificationSettingsPage> createState() =>
+      _NotificationSettingsPageState();
+}
+
+class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
+  bool likes = true;
+  bool comments = true;
+  bool follows = true;
+  bool system = true;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('通知设置')),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            SwitchListTile(
+              title: const Text('点赞通知'),
+              subtitle: const Text('有人点赞你的内容时通知'),
+              value: likes,
+              onChanged: (v) => setState(() => likes = v),
+            ),
+            SwitchListTile(
+              title: const Text('评论通知'),
+              subtitle: const Text('有人评论你的内容时通知'),
+              value: comments,
+              onChanged: (v) => setState(() => comments = v),
+            ),
+            SwitchListTile(
+              title: const Text('关注通知'),
+              subtitle: const Text('有人关注你时通知'),
+              value: follows,
+              onChanged: (v) => setState(() => follows = v),
+            ),
+            SwitchListTile(
+              title: const Text('系统通知'),
+              subtitle: const Text('接收 DD 系统消息'),
+              value: system,
+              onChanged: (v) => setState(() => system = v),
+            ),
+          ],
+        ),
+      );
+}
+
+class AccountSwitchPage extends StatelessWidget {
+  const AccountSwitchPage({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('切换账户')),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            const ListTile(
+              leading: CircleAvatar(child: Icon(Icons.person)),
+              title: Text('DD 用户'),
+              trailing: Icon(Icons.check_circle),
+            ),
+            ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.add)),
+              title: const Text('添加其他账户'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({
+    required this.title,
+    required this.items,
+    this.onItemTap,
+  });
+  final String title;
+  final List<String> items;
+  final ValueChanged<String>? onItemTap;
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 14, bottom: 8),
+            child: Text(
+              title,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Card(
+            child: Column(
+              children: items
+                  .map(
+                    (item) => ListTile(
+                      onTap: onItemTap == null ? null : () => onItemTap!(item),
+                      title: Text(item),
+                      trailing: const Icon(Icons.chevron_right),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ],
+      );
+}
+
+class _SimpleListPage extends StatelessWidget {
+  const _SimpleListPage({required this.title, required this.items});
+  final String title;
+  final List<String> items;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: ListView.separated(
+          padding: const EdgeInsets.all(18),
+          itemCount: items.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (_, index) => Card(
+            child: ListTile(
+              leading: CircleAvatar(child: Text('${index + 1}')),
+              title: Text(items[index]),
+              subtitle: const Text('内容'),
+              trailing: const Icon(Icons.chevron_right),
+            ),
+          ),
+        ),
+      );
+}
+
+class RecommendationFeedPage extends StatelessWidget {
+  const RecommendationFeedPage({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('为你推荐')),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            const _ContentPreviewCard(
+              title: '推荐动态 01',
+              subtitle: '静态推荐内容',
+              icon: Icons.auto_awesome,
+              imageAsset: 'assets/figma/post-thumbnail-4.jpg',
+            ),
+            const _ContentPreviewCard(
+              title: '推荐动态 02',
+              subtitle: '更多生活方式分享',
+              icon: Icons.photo_outlined,
+              imageAsset: 'assets/figma/post-thumbnail-5.jpg',
+            ),
+            const _EmptyStateCard(
+              icon: Icons.play_circle_outline,
+              title: '推荐动态',
+              subtitle: '登录后显示真实推荐动态',
+            ),
+          ],
+        ),
+      );
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title, required this.action, this.onTap});
+  final String title;
+  final String action;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 14, bottom: 10),
+        child: Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: onTap,
+              child: Text(
+                action,
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _ContentPreviewCard extends StatelessWidget {
+  const _ContentPreviewCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.onTap,
+    this.imageAsset,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final String? imageAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 3,
+          ),
+          leading: imageAsset == null
+              ? _iconFor(icon)
+              : CircleAvatar(backgroundImage: AssetImage(imageAsset!)),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text(subtitle),
+          trailing: const Icon(Icons.chevron_right),
+        ),
+      ),
+    );
+  }
+}
+
+class _CreatorChip extends StatelessWidget {
+  const _CreatorChip({required this.index});
+  final int index;
+  static const _images = [
+    'assets/figma/profile-portrait-1.jpg',
+    'assets/figma/profile-portrait-2.jpg',
+    'assets/figma/profile-portrait-3.jpg',
+    'assets/figma/profile-portrait-4.jpg',
+    'assets/figma/profile-portrait-5.jpg',
+  ];
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: null,
+        child: SizedBox(
+          width: 76,
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 31,
+                backgroundImage: AssetImage(_images[index % _images.length]),
+              ),
+              const SizedBox(height: 7),
+              Text('用户${index + 1}', overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      );
+}
+
+class _FeaturePostCard extends StatelessWidget {
+  const _FeaturePostCard({this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 190,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            image: const DecorationImage(
+              image: AssetImage('assets/figma/post-thumbnail-3.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: Colors.black54,
+              child: const Text(
+                '今天也要发现一点小惊喜',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+// Kept for the reference-detail routes.
+// ignore: unused_element
+class _RecommendationRow extends StatelessWidget {
+  const _RecommendationRow();
+  @override
+  Widget build(BuildContext context) => const ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(child: Icon(Icons.person)),
+        title: Text('推荐用户'),
+        subtitle: Text('分享了新的生活动态'),
+        trailing: Icon(Icons.chevron_right),
+      );
+}
+
+class _NotificationRow extends StatelessWidget {
+  const _NotificationRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  @override
+  Widget build(BuildContext context) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(child: Icon(icon)),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right),
+      );
+}
+
+class _MediaAction extends StatelessWidget {
+  const _MediaAction({required this.icon, required this.label, this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Column(
+          children: [
+            IconButton.filledTonal(onPressed: onTap, icon: Icon(icon)),
+            Text(label),
+          ],
+        ),
+      );
+}
+
+class _DistanceBadge extends StatelessWidget {
+  const _DistanceBadge({required this.distanceKm});
+  final double distanceKm;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              TIcons.location,
+              size: 13,
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              '${distanceKm.toStringAsFixed(2)} km',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
+        ),
+      );
+}
+
+class _ProfileTagEditorPage extends StatefulWidget {
+  const _ProfileTagEditorPage({required this.selectedTags});
+  final List<String> selectedTags;
+
+  @override
+  State<_ProfileTagEditorPage> createState() => _ProfileTagEditorPageState();
+}
+
+class _ProfileTagEditorPageState extends State<_ProfileTagEditorPage> {
+  static const allTags = [
+    '声优',
+    '御姐',
+    '忧郁',
+    '旅游',
+    '电影',
+    '游戏',
+    '音乐',
+    '美食',
+    '旅行',
+    '摄影'
+  ];
+  late final Set<String> selected = {...widget.selectedTags};
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('标签编辑'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, selected.toList()),
+              child: const Text('保存'),
+            ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const Text('选择你的兴趣标签'),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: allTags.map((tag) {
+                final active = selected.contains(tag);
+                return FilterChip(
+                  label: Text(tag),
+                  selected: active,
+                  onSelected: (value) => setState(() {
+                    if (value) {
+                      selected.add(tag);
+                    } else {
+                      selected.remove(tag);
+                    }
+                  }),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      );
+}
+
+class _ProfileTag extends StatelessWidget {
+  const _ProfileTag({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Text(text, style: Theme.of(context).textTheme.labelSmall),
+      );
+}
+
+class _ProfileShortcuts extends StatelessWidget {
+  const _ProfileShortcuts({required this.onEdit});
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = <Map<String, dynamic>>[
+      {'icon': Icons.auto_awesome_outlined, 'label': '会员中心'},
+      {'icon': Icons.storefront_outlined, 'label': '个性商城'},
+      {'icon': Icons.collections_bookmark_outlined, 'label': '数字藏馆'},
+    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: entries
+            .map((entry) => Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: entry['label'] == '个性商城' ? onEdit : () {},
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(entry['icon'] as IconData, size: 23),
+                        const SizedBox(height: 6),
+                        Text(entry['label'] as String,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelSmall),
+                      ]),
+                    ),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.value, required this.label});
+  final String value;
+  final String label;
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+          ),
+          Text(label,
+              style: TextStyle(color: Colors.white.withValues(alpha: .6))),
+        ],
+      );
+}
+
+class _ProfileAction extends StatelessWidget {
+  const _ProfileAction({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          onTap: onTap,
+          leading: _iconFor(icon),
+          title: Text(title),
+          trailing: const Icon(Icons.chevron_right),
+        ),
+      );
 }
