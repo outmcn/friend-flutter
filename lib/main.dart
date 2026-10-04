@@ -4011,6 +4011,29 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
+  Future<void> toggleProfileLike() async {
+    final userId = widget.userId;
+    if (userId == null || actionLoading) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('dd.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      setState(() => actionLoading = true);
+      final result = await service.toggleProfileLike(token, userId);
+      if (mounted) {
+        setState(() {
+          isProfileLiked = result['liked'] == true;
+          profileLikes += isProfileLiked ? 1 : -1;
+          if (profileLikes < 0) profileLikes = 0;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => actionLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -6185,7 +6208,7 @@ class _CompanionListCard extends StatelessWidget {
               Row(children: [
                 Stack(children: [
                   CircleAvatar(radius: 26, child: Icon(data.icon, size: 25)),
-                  const Positioned(right: 0, bottom: 0, child: _OnlineDot()),
+                  Positioned(right: 0, bottom: 0, child: _OnlineDot()),
                 ]),
                 const SizedBox(width: 12),
                 Expanded(
