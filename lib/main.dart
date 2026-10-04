@@ -6794,7 +6794,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final token = p.getString('dd.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       final data = await service.fetchMe(token);
-      nickname.text = '${data['nickname'] ?? ''}';
+      final profile = data['user'] is Map<String, dynamic>
+          ? data['user'] as Map<String, dynamic>
+          : data;
+      nickname.text = '${profile['nickname'] ?? ''}';
     } catch (e) {
       if (mounted) error = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -6816,15 +6819,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<String?> _avatarDataUrl() async {
+  Future<String?> _avatarObjectKey(String token) async {
     if (image == null) return null;
+    final response = await service.avatarUploadUrl(
+      token: token,
+      fileName: image!.name,
+      contentType: 'image/jpeg',
+    );
+    final url = response['url'];
+    final objectKey = response['objectKey'];
+    if (url is! String || objectKey is! String) throw Exception('头像上传地址格式错误');
     final bytes = await image!.readAsBytes();
-    final decoded = img.decodeImage(bytes);
-    final resized =
-        decoded == null ? null : img.copyResize(decoded, width: 512);
-    final compressed =
-        resized == null ? bytes : img.encodeJpg(resized, quality: 86);
-    return 'data:image/jpeg;base64,${base64Encode(compressed)}';
+    final upload = await service.uploadAvatar(
+      url: url,
+      bytes: bytes,
+      contentType: 'image/jpeg',
+    );
+    if (!upload) throw Exception('头像上传失败');
+    return objectKey;
   }
 
   Future<void> save() async {
@@ -6833,9 +6845,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final p = await SharedPreferences.getInstance();
       final token = p.getString('dd.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
-      final avatar = await _avatarDataUrl();
+      final avatarKey = await _avatarObjectKey(token);
       await service.updateMe(
-          token: token, nickname: nickname.text.trim(), avatar: avatar);
+        token: token,
+        nickname: nickname.text.trim(),
+        avatarKey: avatarKey,
+      );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted)

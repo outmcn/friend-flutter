@@ -478,41 +478,78 @@ class DDPostService {
   Future<List<Map<String, dynamic>>> fetchHistory(String token) =>
       fetchUsers(token, relation: 'history');
 
-  Future<Map<String, dynamic>> fetchMe(String token) async {
-    final data = await _fetchObject(token, '/api/me');
-    return {
-      ...data,
-      'nickname': data['displayName'] ?? '',
-      'avatar': data['avatarUrl'] ?? '',
-      'voiceUrl': data['ringtoneUrl'],
-      'activeDays': data['onlineDays'] ?? 0,
-    };
+  Future<Map<String, dynamic>> avatarUploadUrl({
+    required String token,
+    required String fileName,
+    required String contentType,
+  }) async {
+    final uri = _api('/api/media/avatar/upload-url').replace(queryParameters: {
+      'fileName': fileName,
+      'contentType': contentType,
+    });
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+      throw Exception('头像上传地址获取失败');
+    }
+    return decoded;
   }
 
-  Future<Map<String, dynamic>> updateMe(
-      {required String token,
-      String? nickname,
-      String? city,
-      String? avatar,
-      String? voiceUrl}) async {
-    final response = await _client.patch(
+  Future<bool> uploadAvatar({
+    required String url,
+    required List<int> bytes,
+    required String contentType,
+  }) async {
+    final response = await _client.put(
+      Uri.parse(url),
+      headers: {'Content-Type': contentType},
+      body: bytes,
+    );
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
+  Future<String> avatarUrl(String token, String objectKey) async {
+    final uri = _api('/api/media/avatar/url').replace(queryParameters: {'key': objectKey});
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic> || decoded['url'] is! String) {
+      throw Exception('头像地址获取失败');
+    }
+    return decoded['url'] as String;
+  }
+  Future<Map<String, dynamic>> fetchMe(String token) async {
+    final data = await _fetchObject(token, '/api/me');
+    final user = data['user'];
+    return user is Map<String, dynamic> ? user : data;
+  }
+
+  Future<Map<String, dynamic>> updateMe({
+    required String token,
+    String? nickname,
+    String? gender,
+    String? city,
+    String? avatarKey,
+  }) async {
+    final response = await _client.put(
       _base.resolve('/api/me'),
       headers: {
         'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: jsonEncode({
         if (nickname != null) 'nickname': nickname,
+        if (gender != null) 'gender': gender,
         if (city != null) 'city': city,
-        if (avatar != null) 'avatar': avatar,
-        if (voiceUrl != null) 'voiceUrl': voiceUrl,
+        if (avatarKey != null) 'avatarKey': avatarKey,
       }),
     );
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final decoded = jsonDecode(response.body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('${decoded['error'] ?? '资料保存失败'}');
     }
-    return decoded;
+    return decoded['user'] is Map<String, dynamic>
+        ? (decoded['user'] as Map<String, dynamic>)
+        : decoded as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> updateLocation(
