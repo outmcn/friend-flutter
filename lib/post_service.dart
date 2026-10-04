@@ -470,10 +470,9 @@ class DDPostService {
       _api('/api/users/search?q='),
       headers: {'Authorization': 'Bearer $token'},
     );
-    final decoded = await _decodeResponse(response, '用户列表加载失败');
-    final data = decoded;
-    if (data is! List) throw Exception('用户列表数据格式错误');
-    return data.whereType<Map<String, dynamic>>().toList();
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) throw Exception('用户列表数据格式错误');
+    return decoded.whereType<Map<String, dynamic>>().toList();
   }
 
   Future<List<Map<String, dynamic>>> fetchHistory(String token) =>
