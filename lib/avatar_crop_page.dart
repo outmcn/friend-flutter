@@ -71,6 +71,25 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
     return img.encodeJpg(resized, quality: 88);
   }
 
+  /// Clamps translation so the transformed image always covers the crop
+  /// viewport and cannot expose a blank edge.
+  Offset _clampOffset({required double nextScale, required Offset nextOffset}) {
+    final image = source;
+    if (image == null) return Offset.zero;
+    final baseScale = math.max(
+      _viewportSize / image.width,
+      _viewportSize / image.height,
+    );
+    final renderedWidth = image.width * baseScale * nextScale;
+    final renderedHeight = image.height * baseScale * nextScale;
+    final maxX = math.max(0.0, (renderedWidth - _viewportSize) / 2);
+    final maxY = math.max(0.0, (renderedHeight - _viewportSize) / 2);
+    return Offset(
+      nextOffset.dx.clamp(-maxX, maxX),
+      nextOffset.dy.clamp(-maxY, maxY),
+    );
+  }
+
   Future<void> _confirm() async {
     if (source == null || exporting) return;
     setState(() => exporting = true);
@@ -101,9 +120,16 @@ class _AvatarCropPageState extends State<AvatarCropPage> {
                         if (start == null) return;
                         // Only transform values change during the gesture;
                         // Image.memory and JPEG encoding are not recreated.
+                        final nextScale =
+                            (startScale * details.scale).clamp(.8, 4.0);
+                        final nextOffset =
+                            startOffset + details.focalPoint - start;
                         setState(() {
-                          scale = (startScale * details.scale).clamp(.8, 4.0);
-                          offset = startOffset + details.focalPoint - start;
+                          scale = nextScale;
+                          offset = _clampOffset(
+                            nextScale: nextScale,
+                            nextOffset: nextOffset,
+                          );
                         });
                       },
                       child: ClipOval(
