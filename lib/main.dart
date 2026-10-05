@@ -1495,22 +1495,13 @@ class _TextPostGradient extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const palettes = [
-      [Color(0xff4f46e5), Color(0xffa855f7)],
-      [Color(0xff0f766e), Color(0xff38bdf8)],
-      [Color(0xffc2410c), Color(0xfff59e0b)],
-      [Color(0xffbe123c), Color(0xfffb7185)],
-      [Color(0xff334155), Color(0xff64748b)],
-    ];
-    final colors = palettes[seed.abs() % palettes.length];
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(maxHeight: 360),
       padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
-          colors: colors,
+          colors: const [Color(0xff4b5563), Color(0xff9ca3af)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1519,8 +1510,6 @@ class _TextPostGradient extends StatelessWidget {
       child: Text(
         content.trim(),
         textAlign: TextAlign.center,
-        maxLines: 8,
-        overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 22,
