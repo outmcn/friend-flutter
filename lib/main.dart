@@ -4590,8 +4590,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   ),
                   const SizedBox(height: 14),
                   _MyProfileIconTabs(
-                    selectedTab: selectedContentTab,
-                    onSelect: (tab) => setState(() => selectedContentTab = tab),
+                    selectedTab: 0,
+                    onSelect: (_) {},
+                    postsOnly: true,
                   ),
                   const SizedBox(height: 12),
                   if (posts.isEmpty)
@@ -5368,16 +5369,19 @@ class _SonicProfileButton extends StatelessWidget {
 }
 
 class _MyProfileIconTabs extends StatelessWidget {
-  const _MyProfileIconTabs({required this.selectedTab, required this.onSelect});
+  const _MyProfileIconTabs({required this.selectedTab, required this.onSelect, this.postsOnly = false});
   final int selectedTab;
   final ValueChanged<int> onSelect;
+  final bool postsOnly;
 
   @override
   Widget build(BuildContext context) => Row(
         children: [
           _tab(context, 0, Icons.blur_on),
-          _tab(context, 1, Icons.bookmark_border),
-          _tab(context, 2, Icons.favorite_border),
+          if (!postsOnly) ...[
+            _tab(context, 1, Icons.bookmark_border),
+            _tab(context, 2, Icons.favorite_border),
+          ],
         ],
       );
 
