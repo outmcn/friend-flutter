@@ -5347,16 +5347,14 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                       widget.relation == 'history'
                                           ? '${user['city'] ?? '未知地区'} · 访问 ${user['visitCount'] ?? 1} 次'
                                           : '${user['city'] ?? '未知地区'}'),
-                                  trailing: widget.relation == 'following'
-                                      ? Text(
-                                          user['followedByViewer'] == true
-                                              ? '好友'
-                                              : user['followingByViewer'] == true
-                                                  ? '已关注'
-                                                  : '回关',
-                                          style: const TextStyle(fontSize: 12),
-                                        )
-                                      : const Icon(Icons.chevron_right),
+                                  trailing: Text(
+                                    user['followedByViewer'] == true
+                                        ? '好友'
+                                        : user['followingByViewer'] == true
+                                            ? '已关注'
+                                            : '回关',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
                                 ),
                               );
                             },
