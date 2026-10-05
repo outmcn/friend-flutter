@@ -5251,7 +5251,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                 ],
               ),
             ),
-      ),
     );
   }
 }
