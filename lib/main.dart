@@ -1637,6 +1637,7 @@ class _DynamicPostCard extends StatelessWidget {
                 onPressed: post.following ? onChat : onFollow,
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, 34),
+                  fixedSize: const Size(78, 34),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   visualDensity: const VisualDensity(horizontal: -1, vertical: -1),
                   padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
