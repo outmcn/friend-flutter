@@ -4771,6 +4771,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           isProfileLiked = data['likedByViewer'] == true;
           isSelfProfile = '${data['id']}' == '${me['id']}';
           profileLikes = int.tryParse('${data['receivedLikes'] ?? 0}') ?? 0;
+          _sonicUrl = DDPostService.mediaUrl(data['voiceUrl']?.toString());
           _avatarUrl = DDPostService.mediaUrl(data['avatar']?.toString());
         });
       }
