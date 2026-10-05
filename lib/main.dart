@@ -1486,41 +1486,6 @@ class _LegacyHomePage extends StatelessWidget {
       );
 }
 
-/// 纯文字动态的视觉卡片：不生成图片文件，只用渐变背景承载文字。
-class _TextPostGradient extends StatelessWidget {
-  const _TextPostGradient({required this.content, this.seed = 0});
-
-  final String content;
-  final int seed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: const [Color(0xff4b5563), Color(0xff9ca3af)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        content.trim(),
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          height: 1.45,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
 class _DynamicPostCard extends StatelessWidget {
   const _DynamicPostCard({
     required this.post,
@@ -1654,14 +1619,7 @@ class _DynamicPostCard extends StatelessWidget {
               ),
           ],
         ),
-        if (_isTextOnly) ...[
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: onOpen,
-            borderRadius: BorderRadius.circular(8),
-            child: _TextPostGradient(content: post.content, seed: post.id),
-          ),
-        ] else if (post.content.trim().isNotEmpty) ...[
+        if (post.content.trim().isNotEmpty) ...[
           const SizedBox(height: 6),
           InkWell(
             onTap: onOpen,
