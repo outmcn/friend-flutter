@@ -1644,11 +1644,11 @@ class _DynamicPostCard extends StatelessWidget {
                   textStyle: const TextStyle(fontSize: 13, height: 1.15),
                   foregroundColor: post.following
                       ? Theme.of(context).colorScheme.onSurface
-                      : Theme.of(context).colorScheme.secondary,
+                      : Colors.red,
                   side: BorderSide(
                     color: post.following
                         ? Theme.of(context).colorScheme.outlineVariant
-                        : Theme.of(context).colorScheme.secondary,
+                        : Colors.red,
                   ),
                   backgroundColor: Colors.transparent,
                 ),
