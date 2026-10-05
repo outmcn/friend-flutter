@@ -1607,11 +1607,7 @@ class _DynamicPostCard extends StatelessWidget {
                       ? Theme.of(context).colorScheme.primary
                       : null,
                 ),
-                child: Text(
-                  post.following
-                      ? (post.followedByViewer ? '互相关注' : '已关注')
-                      : '关注',
-                ),
+                child: Text(post.following ? '私聊' : '关注'),
               ),
           ],
         ),
