@@ -5714,23 +5714,34 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
                 ),
                 const SizedBox(height: 12),
               ],
-              FilledButton.icon(
-                onPressed: saving ? null : _record,
-                icon: Icon(recording ? Icons.stop : Icons.mic),
-                label: Text(recording ? '停止录音' : '开始录音'),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: saving ? null : _record,
+                      icon: Icon(recording ? Icons.stop : Icons.mic),
+                      label: Text(recording ? '停止录音' : '开始录音'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: saving ? null : _preview,
+                      icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                      label: const Text('本地试听'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: saving ? null : _save,
+                      icon: const Icon(Icons.cloud_upload_outlined),
+                      label: Text(saving ? '保存中…' : '保存声音'),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: saving ? null : _preview,
-                icon: Icon(playing ? Icons.pause : Icons.play_arrow),
-                label: const Text('本地试听'),
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: saving ? null : _save,
-                icon: const Icon(Icons.cloud_upload_outlined),
-                label: Text(saving ? '保存中…' : '保存声音'),
-              ),            ],
+            ],
           ),
         ),
       );
