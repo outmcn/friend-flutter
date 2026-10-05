@@ -4043,7 +4043,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                 ),
               ),
             ),
-          if (item != null && isOwner)
+          if (item != null)
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: SizedBox(
