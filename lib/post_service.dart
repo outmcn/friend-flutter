@@ -593,17 +593,22 @@ class DDPostService {
         : decoded as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> updateLocation(
-      {required String token,
+  Future<Map<String, dynamic>> updateLocation({
+      required String token,
       required double latitude,
-      required double longitude}) async {
+      required double longitude,
+      String? city}) async {
     final response = await _client.put(
       _base.resolve('/api/me'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'latitude': latitude, 'longitude': longitude}),
+      body: jsonEncode({
+        'latitude': latitude,
+        'longitude': longitude,
+        if (city != null && city.trim().isNotEmpty) 'city': city.trim(),
+      }),
     );
     return _decodeResponse(response, '定位更新失败');
   }

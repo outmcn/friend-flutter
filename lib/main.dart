@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -87,6 +88,24 @@ Future<void> syncCachedLocation(DDPostService service, String token) async {
       latitude: latitude,
       longitude: longitude,
     );
+    try {
+      final marks = await placemarkFromCoordinates(latitude, longitude);
+      final mark = marks.isNotEmpty ? marks.first : null;
+      final resolvedCity = (mark?.locality ?? mark?.subAdministrativeArea ?? '')
+          .replaceAll('市', '')
+          .trim();
+      if (resolvedCity.isNotEmpty) {
+        await prefs.setString('dd.location.city', resolvedCity);
+        await service.updateLocation(
+          token: token,
+          latitude: latitude,
+          longitude: longitude,
+          city: resolvedCity,
+        );
+      }
+    } catch (_) {
+      // Reverse geocoding is optional; coordinates remain usable if unavailable.
+    }
   } catch (_) {
     // Location is optional; feeds remain available without it.
   }
@@ -100,6 +119,7 @@ Future<String> cachedCityLabel(DDPostService service, String token) async {
   final fresh = cachedAt != null &&
       DateTime.now().millisecondsSinceEpoch - cachedAt <
           cacheAge.inMilliseconds;
+  // Do not trust an old manually saved city; coordinates are the source of truth.
   if (fresh && cachedCity.isNotEmpty) return cachedCity;
   try {
     final profile = await service.fetchMe(token);
