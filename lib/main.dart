@@ -1763,7 +1763,7 @@ class _DynamicPostCard extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 12, 0, 10),
+      padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onOpen,
@@ -1771,7 +1771,7 @@ class _DynamicPostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           content,
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
           Divider(
             height: 1,
             thickness: 1,
@@ -2234,7 +2234,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
             child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
-                    18, 2, 18, 28 + MediaQuery.of(context).padding.bottom + 88),
+                    18, 0, 18, 28 + MediaQuery.of(context).padding.bottom),
                 children: [
                   const SizedBox(height: 2),
                   if (loading)
