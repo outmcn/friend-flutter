@@ -5303,6 +5303,26 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
   bool loading = true;
   String? error;
 
+  String _relationLabel(Map<String, dynamic> user) {
+    if (user['followedByViewer'] == true) return '好友';
+    if (user['followingByViewer'] == true) return '已关注';
+    return '回关';
+  }
+
+  Future<void> _toggleRelation(int index) async {
+    final userId = _intValue(users[index]['id']);
+    if (userId == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      await service.toggleFollow(token, userId);
+      await load();
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -5389,13 +5409,11 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                       widget.relation == 'history'
                                           ? '${user['city'] ?? '未知地区'} · 访问 ${user['visitCount'] ?? 1} 次'
                                           : '${user['city'] ?? '未知地区'}'),
-                                  trailing: Text(
-                                    user['followedByViewer'] == true
-                                        ? '好友'
-                                        : user['followingByViewer'] == true
-                                            ? '已关注'
-                                            : '回关',
-                                    style: const TextStyle(fontSize: 12),
+                                  trailing: TextButton(
+                                    onPressed: userId == null
+                                        ? null
+                                        : () => _toggleRelation(index),
+                                    child: Text(_relationLabel(user)),
                                   ),
                                 ),
                               );
