@@ -2098,7 +2098,7 @@ class DiscoverPage extends StatefulWidget {
 class _DiscoverPageState extends State<DiscoverPage>
     with WidgetsBindingObserver {
   final DDPostService service = DDPostService();
-  static const _cacheDuration = Duration(minutes: 10);
+  static const _cacheDuration = Duration(minutes: 30);
   List<DDPost> posts = const [];
   bool loading = true;
   bool _refreshing = false;
@@ -2106,6 +2106,7 @@ class _DiscoverPageState extends State<DiscoverPage>
   bool tabLoading = false;
   String? cityLabel;
   String? error;
+  DateTime? _backgroundedAt;
   bool _loadingMore = false;
   bool _hasMore = true;
   final ScrollController _discoverScrollController = ScrollController();
@@ -2119,8 +2120,14 @@ class _DiscoverPageState extends State<DiscoverPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      load();
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _backgroundedAt = DateTime.now();
+    } else if (state == AppLifecycleState.resumed && _backgroundedAt != null) {
+      final wasAway = DateTime.now().difference(_backgroundedAt!);
+      _backgroundedAt = null;
+      if (wasAway > const Duration(seconds: 2)) {
+        _refreshInBackground();
+      }
     }
   }
 
@@ -2212,7 +2219,7 @@ class _DiscoverPageState extends State<DiscoverPage>
           (targetTab == 2 ||
               (cachedAt != null &&
                   DateTime.now().millisecondsSinceEpoch - cachedAt <
-                      const Duration(minutes: 30).inMilliseconds));
+                      _cacheDuration.inMilliseconds));
       final cachedPosts = cacheFresh
           ? (jsonDecode(cachedJson!) as List)
               .whereType<Map<String, dynamic>>()
@@ -2227,7 +2234,6 @@ class _DiscoverPageState extends State<DiscoverPage>
           tabLoading = false;
         });
         if (!backgroundRefresh) {
-          _refreshInBackground();
           return;
         }
       }
@@ -2238,7 +2244,7 @@ class _DiscoverPageState extends State<DiscoverPage>
       await syncCachedLocation(service, t);
       final city = await cachedCityLabel(service, t);
       if (mounted && cityLabel != city) setState(() => cityLabel = city);
-      final shouldFetch = fromRefresh || switchingTab || !cacheFresh;
+      final shouldFetch = fromRefresh || backgroundRefresh || switchingTab || !cacheFresh;
       final loaded = shouldFetch
           ? (targetTab == 0
               ? await service.fetchRecommendedPosts(t, offset: 0)
