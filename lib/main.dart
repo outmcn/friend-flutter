@@ -1627,9 +1627,8 @@ class _DynamicPostCard extends StatelessWidget {
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: InkWell(
+            child: GestureDetector(
               onTap: onOpen,
-              borderRadius: BorderRadius.circular(16),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 500),
                 child: Image.network(
@@ -1646,9 +1645,8 @@ class _DynamicPostCard extends StatelessWidget {
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: InkWell(
+            child: GestureDetector(
               onTap: onOpen,
-              borderRadius: BorderRadius.circular(16),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -1703,7 +1701,8 @@ class _DynamicPostCard extends StatelessWidget {
     if (!listMode) {
       return Card(
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: onOpen,
           child: Padding(
             padding: const EdgeInsets.all(14),
@@ -1714,7 +1713,8 @@ class _DynamicPostCard extends StatelessWidget {
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 12, 0, 10),
-      child: InkWell(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onOpen,
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1808,7 +1808,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
     if (active == null || !active.value.isInitialized) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: InkWell(
+        child: GestureDetector(
           onTap: _play,
           child: Stack(
             alignment: Alignment.center,
