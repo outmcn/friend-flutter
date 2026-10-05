@@ -5127,27 +5127,26 @@ class _DDProfilePageState extends State<DDProfilePage> {
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: _InlineProfileStat(
-                                      label: '关注',
-                                      value: '${p?['following'] ?? 0}',
-                                      onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const _UserRelationListPage(
-                                            relation: 'following',
-                                            title: '关注',
-                                          ),
+                                SizedBox(
+                                  width: 68,
+                                  child: _InlineProfileStat(
+                                    label: '关注',
+                                    value: '${p?['following'] ?? 0}',
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const _UserRelationListPage(
+                                          relation: 'following',
+                                          title: '关注',
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                                Expanded(
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 68,
                                   child: _InlineProfileStat(
                                     label: '粉丝',
                                     value: '${p?['followers'] ?? 0}',
@@ -5163,7 +5162,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                     ),
                                   ),
                                 ),
-                                Expanded(
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 68,
                                   child: _InlineProfileStat(
                                     label: '获赞',
                                     value: '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
@@ -5187,8 +5188,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+                      Stack(
+                        clipBehavior: Clip.none,
                         children: [
                           CircleAvatar(
                             radius: 40,
@@ -5199,8 +5200,17 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ? const Icon(Icons.person, size: 42)
                                 : null,
                           ),
-                          const SizedBox(height: 6),
-                          _ProfileTag(text: '${p?['city'] ?? '未知'}'),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: -12,
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: _ProfileTag(
+                                text: '${p?['city'] ?? '未知'}',
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ],
