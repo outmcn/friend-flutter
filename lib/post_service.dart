@@ -402,10 +402,15 @@ class DDPostService {
       _api('/comments/$commentId'),
       headers: {'Authorization': 'Bearer $token'},
     );
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('${decoded['error'] ?? '删除评论失败'}');
+      final body = response.body.trim();
+      final decoded = body.isEmpty ? null : jsonDecode(body);
+      final message = decoded is Map<String, dynamic>
+          ? decoded['error'] ?? '删除评论失败'
+          : '删除评论失败';
+      throw Exception('$message（${response.statusCode}）');
     }
+    // 删除接口允许返回 204 空响应，成功时不再解析响应体。
   }
 
   Future<void> reportComment({

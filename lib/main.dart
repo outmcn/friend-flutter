@@ -3594,8 +3594,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
     void append(DDComment comment, int depth, String? replyTo) {
       result.add(Padding(
-        // 三级评论与二级评论保持同一左侧对齐。
-        padding: EdgeInsets.only(left: depth >= 2 ? 42.0 : depth * 42.0),
+        // 三级评论保留额外的左侧空隙，与二级评论错开。
+        padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : depth * 42.0),
         child: _commentTile(comment, depth: depth, replyTo: replyTo),
       ));
       // 三级评论仍可回复；回复它的内容继续按三级样式显示，
@@ -3641,9 +3641,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         );
       }
     } else if (action == 'delete') {
-      try {
-        await service.deleteComment(await token(), comment.id);
-        await load();
+    // 删除评论后只刷新动态与评论数据，不保留上一次的错误提示。
+    try {
+      await service.deleteComment(await token(), comment.id);
+      await load();
       } catch (e) {
         if (mounted) {
           setState(() => error = e.toString().replaceFirst('Exception: ', ''));
