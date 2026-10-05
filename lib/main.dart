@@ -4340,13 +4340,20 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
   Future<void> _toggleSonic() async {
     final url = _sonicUrl;
-    if (url == null || url.isEmpty) return;
-    if (_sonicPlaying) {
-      await _sonicPlayer.pause();
-    } else {
-      await _sonicPlayer.play(UrlSource(url));
+    if (url == null || url.isEmpty || actionLoading) return;
+    try {
+      setState(() => actionLoading = true);
+      if (_sonicPlaying) {
+        await _sonicPlayer.pause();
+      } else {
+        await _sonicPlayer.play(UrlSource(url));
+      }
+      if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
+    } catch (_) {
+      if (mounted) setState(() => error = '声音播放失败');
+    } finally {
+      if (mounted) setState(() => actionLoading = false);
     }
-    if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
   }
 
   Future<void> toggleFollow() async {
@@ -4467,17 +4474,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                       child: _SonicProfileButton(
                                         playing: _sonicPlaying,
                                         enabled: _sonicUrl?.isNotEmpty == true,
-                                        onTap: () async {
-                                          await Navigator.push<bool>(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => _VoiceRecordPage(
-                                                currentUrl: _sonicUrl,
-                                              ),
-                                            ),
-                                          );
-                                          if (mounted) load();
-                                        },
+                                        label: '#我的声音',
+                                        onTap: _toggleSonic,
                                       ),
                                     ),
                                   ),
@@ -5377,10 +5375,12 @@ class _SonicProfileButton extends StatelessWidget {
   const _SonicProfileButton({
     required this.playing,
     required this.enabled,
+    required this.label,
     required this.onTap,
   });
   final bool playing;
   final bool enabled;
+  final String label;
   final VoidCallback onTap;
 
   @override
@@ -5395,12 +5395,19 @@ class _SonicProfileButton extends StatelessWidget {
                 .withValues(alpha: enabled ? .14 : .07),
             borderRadius: BorderRadius.circular(99),
           ),
-          child: Icon(
-            playing ? Icons.pause : TIcons.sonic,
-            size: 18,
-            color: enabled
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).disabledColor,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                playing ? Icons.pause : TIcons.sonic,
+                size: 18,
+                color: enabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).disabledColor,
+              ),
+              const SizedBox(width: 4),
+              Text(label),
+            ],
           ),
         ),
       );
