@@ -1610,7 +1610,19 @@ class _DynamicPostCard extends StatelessWidget {
         ],
         if (post.videoUrl != null && post.videoUrl!.trim().isNotEmpty) ...[
           const SizedBox(height: 12),
-          _NetworkVideoPreview(url: post.videoUrl!),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              onTap: onOpen,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                height: 180,
+                color: Colors.black26,
+                alignment: Alignment.center,
+                child: const Icon(Icons.play_circle_outline, size: 56),
+              ),
+            ),
+          ),
         ],
         const SizedBox(height: 6),
         Row(
@@ -1667,6 +1679,19 @@ class _DynamicPostCard extends StatelessWidget {
   }
 }
 
+class _VideoPlaybackRegistry {
+  static final Set<_NetworkVideoPreviewState> _players = <_NetworkVideoPreviewState>{};
+
+  static void register(_NetworkVideoPreviewState player) => _players.add(player);
+  static void unregister(_NetworkVideoPreviewState player) => _players.remove(player);
+
+  static void stopAll() {
+    for (final player in List<_NetworkVideoPreviewState>.from(_players)) {
+      player.stopPlayback();
+    }
+  }
+}
+
 class _NetworkVideoPreview extends StatefulWidget {
   const _NetworkVideoPreview({required this.url});
   final String url;
@@ -1681,14 +1706,22 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
   @override
   void initState() {
     super.initState();
+    _VideoPlaybackRegistry.register(this);
     controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
       ..initialize().then((_) {
         if (mounted) setState(() {});
       });
   }
 
+  void stopPlayback() {
+    if (controller.value.isPlaying) {
+      controller.pause();
+    }
+  }
+
   @override
   void dispose() {
+    _VideoPlaybackRegistry.unregister(this);
     controller.dispose();
     super.dispose();
   }
@@ -3762,7 +3795,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                         const SizedBox(height: 16),
                         _PostImageHolder(url: item.imageUrl!)
                       ],
-                      if (item.videoUrl != null &&
+          if (item.videoUrl != null &&
                           item.videoUrl!.trim().isNotEmpty) ...[
                         const SizedBox(height: 16),
                         _NetworkVideoPreview(url: item.videoUrl!),
@@ -5229,9 +5262,14 @@ class _MyProfilePostCard extends StatelessWidget {
                   ),
                 )
               else if (video != null && video.isNotEmpty)
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 400),
-                  child: _NetworkVideoPreview(url: video),
+                InkWell(
+                  onTap: onTap,
+                  child: Container(
+                    height: 180,
+                    color: scheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.play_circle_outline, size: 56),
+                  ),
                 )
               else
                 AspectRatio(
@@ -5434,7 +5472,15 @@ class _MyListCard extends StatelessWidget {
               if (post.videoUrl?.trim().isNotEmpty == true)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: _NetworkVideoPreview(url: post.videoUrl!),
+                  child: InkWell(
+                    onTap: onTap,
+                    child: Container(
+                      height: 180,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.play_circle_outline, size: 56),
+                    ),
+                  ),
                 ),
               const Divider(height: 20),
             ],
