@@ -3596,7 +3596,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       result.add(Padding(
         // 三级评论保留额外的左侧空隙，与二级评论错开。
         padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : depth * 42.0),
-        child: _commentTile(comment, depth: depth, replyTo: replyTo),
+        child: _commentTile(
+          comment,
+          depth: depth,
+          replyTo: depth >= 2 ? replyTo : null,
+        ),
       ));
       // 三级评论仍可回复；回复它的内容继续按三级样式显示，
       // 不再增加缩进，也不显示第四级层级。
