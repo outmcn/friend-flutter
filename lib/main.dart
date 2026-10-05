@@ -3592,21 +3592,21 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
     final result = <Widget>[];
 
-    void append(DDComment comment, int depth) {
+    void append(DDComment comment, int depth, String? replyTo) {
       result.add(Padding(
         // 三级评论与二级评论保持同一左侧对齐。
         padding: EdgeInsets.only(left: depth >= 2 ? 42.0 : depth * 42.0),
-        child: _commentTile(comment, depth: depth),
+        child: _commentTile(comment, depth: depth, replyTo: replyTo),
       ));
       // 三级评论仍可回复；回复它的内容继续按三级样式显示，
       // 不再增加缩进，也不显示第四级层级。
       for (final reply in repliesByParent[comment.id] ?? const <DDComment>[]) {
-        append(reply, depth >= 2 ? 2 : depth + 1);
+        append(reply, depth >= 2 ? 2 : depth + 1, comment.nickname);
       }
     }
 
     for (final root in source.where((c) => c.parentId == null)) {
-      append(root, 0);
+      append(root, 0, null);
     }
     return result;
   }
@@ -3685,7 +3685,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
-  Widget _commentTile(DDComment comment, {required int depth}) => InkWell(
+  Widget _commentTile(
+    DDComment comment, {
+    required int depth,
+    required String? replyTo,
+  }) => InkWell(
         onTap: () {
           setState(() => replyingTo = comment);
           FocusScope.of(context).requestFocus(commentFocusNode);
@@ -3720,7 +3724,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      depth >= 2 ? '回复 ${comment.nickname}' : comment.nickname,
+                      depth >= 2
+                          ? '${comment.nickname} 回复 ${replyTo ?? comment.nickname}'
+                          : comment.nickname,
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
