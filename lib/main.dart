@@ -5084,9 +5084,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                        child: SizedBox(
+                          height: 80,
+                          child: Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                             Row(
                               children: [
                                 SizedBox(
@@ -5176,7 +5181,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ),
                               ],
                             ),
-                          ],
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
