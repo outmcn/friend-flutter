@@ -1651,12 +1651,15 @@ class _DynamicPostCard extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   if (post.thumbnailUrl != null && post.thumbnailUrl!.isNotEmpty)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 400),
-                      child: Image.network(
-                        post.thumbnailUrl!,
-                        width: double.infinity,
-                        fit: BoxFit.contain,
+                    SizedBox(
+                      width: double.infinity,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 400),
+                        child: Image.network(
+                          post.thumbnailUrl!,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     )
                   else
@@ -3750,6 +3753,25 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   }
 
   Future<void> _delete() async {
+    if (deleting) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认删除动态'),
+        content: const Text('删除后动态及其媒体文件将无法恢复，确定继续吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     try {
       setState(() => deleting = true);
       await service.deletePost(await token(), widget.postId);
@@ -4052,7 +4074,7 @@ class _PostImageHolder extends StatelessWidget {
             child: Image.network(
               url,
               width: double.infinity,
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
               loadingBuilder: (_, child, progress) => progress == null
                   ? child
                   : const SizedBox(
@@ -5456,13 +5478,16 @@ class _MyProfilePostCard extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       if (post.thumbnailUrl != null && post.thumbnailUrl!.isNotEmpty)
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 400),
-                          child: Image.network(
-                            post.thumbnailUrl!,
-                            width: double.infinity,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 400),
+                            child: Image.network(
+                              post.thumbnailUrl!,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            ),
                           ),
                         )
                       else
@@ -5659,18 +5684,7 @@ class _MyListCard extends StatelessWidget {
               if (post.imageUrl?.trim().isNotEmpty == true)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 500),
-                      child: Image.network(
-                        DDPostService.mediaUrl(post.imageUrl),
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
-                    ),
-                  ),
+                  child: _PostImageHolder(url: DDPostService.mediaUrl(post.imageUrl)),
                 ),
               if (post.videoUrl?.trim().isNotEmpty == true)
                 Padding(
