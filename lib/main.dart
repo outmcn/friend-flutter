@@ -4617,9 +4617,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                         const SizedBox(width: 8),
                                         _ProfileTag(
                                             text: '${p?['city'] ?? '未知'}'),
-                                        const SizedBox(width: 4),
-                                        _ProfileTag(
-                                            text: '${p?['activeDays'] ?? 0}天'),
+
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -5022,8 +5020,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ),
                                 const SizedBox(width: 8),
                                 _ProfileTag(text: '${p?['city'] ?? '未知'}'),
-                                const SizedBox(width: 4),
-                                _ProfileTag(text: '${p?['activeDays'] ?? 0}天'),
+
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -5304,8 +5301,7 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                         : null,
                                   ),
                                   title: Text('${user['nickname'] ?? '用户'}'),
-                                  subtitle: Text(
-                                      '${user['city'] ?? '未知地区'} · 在线 ${user['activeDays'] ?? 0}天'),
+                                  subtitle: Text('${user['city'] ?? '未知地区'}'),
                                   trailing: const Icon(Icons.chevron_right),
                                 ),
                               );
