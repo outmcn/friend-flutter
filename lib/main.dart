@@ -1859,17 +1859,6 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
               );
             },
           ),
-          IconButton.filled(
-            onPressed: () {
-              if (active.value.isPlaying) {
-                active.pause();
-              } else {
-                active.play();
-              }
-              setState(() {});
-            },
-            icon: Icon(active.value.isPlaying ? Icons.pause : Icons.play_arrow),
-          ),
         ],
       ),
     );
@@ -3950,7 +3939,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                       color: Theme.of(context).hintColor,
                                       fontSize: 12))
                             ])),
-                        if (!isOwner)
+                          if (!isOwner && !isSelfProfile)
                           OutlinedButton(
                             onPressed: followLoading
                                 ? null
@@ -4270,6 +4259,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool actionLoading = false;
   bool isFollowing = false;
   bool isProfileLiked = false;
+  bool isSelfProfile = false;
   int profileLikes = 0;
   int selectedContentTab = 0;
   bool _showStickyNickname = false;
@@ -4317,6 +4307,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         throw Exception('用户信息不存在');
       }
       final data = await service.fetchUserProfile(token, widget.userId!);
+      final me = await service.fetchMe(token);
       final loadedPosts = (data['posts'] is List)
           ? (data['posts'] as List)
               .whereType<Map>()
@@ -4329,6 +4320,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           posts = loadedPosts;
           isFollowing = data['followingByViewer'] == true;
           isProfileLiked = data['likedByViewer'] == true;
+          isSelfProfile = '${data['id']}' == '${me['id']}';
           profileLikes = int.tryParse('${data['receivedLikes'] ?? 0}') ?? 0;
           _avatarUrl = DDPostService.mediaUrl(data['avatar']?.toString());
         });
@@ -4410,7 +4402,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               )
             : const SizedBox.shrink(),
         actions: [
-          if (!loading)
+          if (!loading && !isSelfProfile)
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: _ProfileLikePill(
