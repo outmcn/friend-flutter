@@ -3566,8 +3566,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   bool loading = true;
   bool deleting = false;
   bool followLoading = false;
-  // 默认只显示三条二级评论，点击“显示更多”后每次增加十条。
-  int visibleReplyCount = 3;
+  // 一级评论默认显示 30 条；每层回复默认隐藏，点击后每次增加 3 条。
+  int visibleRootCount = 30;
+  final Map<int, int> visibleReplyCounts = <int, int>{};
   String? error;
   int? currentUserId;
   bool get isOwner => post?.userId != null && currentUserId == post!.userId;
@@ -3610,7 +3611,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       currentUserId = _intValue(me['id']);
       post = await service.fetchPost(t, widget.postId);
       comments = await service.fetchComments(t, widget.postId);
-      visibleReplyCount = 3;
+      visibleRootCount = 30;
+      visibleReplyCounts.clear();
       if (post == null) throw Exception('动态不存在');
     } catch (e) {
       if (mounted)
@@ -3646,71 +3648,44 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
     final result = <Widget>[];
     final roots = source.where((c) => c.parentId == null).toList();
-    final directReplies = <Map<String, dynamic>>[];
-    final nestedReplies = <Map<String, dynamic>>[];
 
-    void collectNested(DDComment parent, int rootId, int parentDepth) {
-      for (final reply in repliesByParent[parent.id] ?? const <DDComment>[]) {
-        // 纯三级评论不显示“回复某某”；只有回复三级评论时才显示。
-        nestedReplies.add({
-          'comment': reply,
-          'replyTo': parentDepth >= 2 ? parent.nickname : null,
-          'rootId': rootId,
-          'depth': 2,
-        });
-        collectNested(reply, rootId, parentDepth + 1);
-      }
-    }
-
-    // 先收集全部二级评论，再收集三级及更深回复，确保首次不会提前显示三级评论。
-    for (final root in roots) {
-      for (final reply in repliesByParent[root.id] ?? const <DDComment>[]) {
-        directReplies.add({
-          'comment': reply,
-          'replyTo': null,
-          'rootId': root.id,
-          'depth': 1,
-        });
-      }
-    }
-    for (final reply in directReplies) {
-      collectNested(
-        reply['comment'] as DDComment,
-        reply['rootId'] as int,
-        1,
-      );
-    }
-
-    final visibleReplies = visibleReplyCount <= 3
-        ? directReplies.take(3).toList()
-        : [...directReplies, ...nestedReplies]
-            .take(visibleReplyCount)
-            .toList();
-    for (final root in roots) {
-      result.add(Padding(
-        padding: const EdgeInsets.only(left: 0),
-        child: _commentTile(root, depth: 0, replyTo: null),
-      ));
-      for (final item in visibleReplies.where((item) => item['rootId'] == root.id)) {
-        // 仅当评论是回复三级评论时显示“某某 回复 某某”。
+    void appendReplies(DDComment parent, int depth) {
+      final replies = repliesByParent[parent.id] ?? const <DDComment>[];
+      final visible = visibleReplyCounts[parent.id] ?? 0;
+      for (final reply in replies.take(visible)) {
         result.add(Padding(
-          padding: EdgeInsets.only(
-            left: item['depth'] == 2 ? 84.0 : 42.0,
-          ),
+          padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : 42.0),
           child: _commentTile(
-            item['comment'] as DDComment,
-            depth: item['depth'] as int,
-            replyTo: item['replyTo'] as String?,
+            reply,
+            depth: depth,
+            // 只有回复三级评论时显示“某某 回复 某某”。
+            replyTo: depth >= 2 ? parent.nickname : null,
+          ),
+        ));
+        appendReplies(reply, depth + 1);
+      }
+      if (replies.isNotEmpty && visible < replies.length) {
+        result.add(Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: () => setState(() {
+              visibleReplyCounts[parent.id] = visible + 3;
+            }),
+            child: const Text('显示更多'),
           ),
         ));
       }
     }
-    final totalReplies = directReplies.length + nestedReplies.length;
-    if (visibleReplies.length < totalReplies) {
+
+    for (final root in roots.take(visibleRootCount)) {
+      result.add(_commentTile(root, depth: 0, replyTo: null));
+      appendReplies(root, 1);
+    }
+    if (visibleRootCount < roots.length) {
       result.add(Align(
         alignment: Alignment.centerLeft,
         child: TextButton(
-          onPressed: () => setState(() => visibleReplyCount += 10),
+          onPressed: () => setState(() => visibleRootCount += 30),
           child: const Text('显示更多'),
         ),
       ));
