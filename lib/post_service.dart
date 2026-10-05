@@ -349,18 +349,15 @@ class DDPostService {
 
   Future<List<DDComment>> fetchComments(String token, int postId) async {
     final response = await _client.get(
-      _api('/api/social/posts/$postId/comments'),
+      _api('/posts/$postId/comments'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('评论加载失败');
+      throw Exception('评论加载失败（${response.statusCode}）');
     }
     final decoded = jsonDecode(response.body);
     if (decoded is! List) throw Exception('评论数据格式错误');
-    return decoded
-        .whereType<Map<String, dynamic>>()
-        .map(DDComment.fromJson)
-        .toList();
+    return decoded.whereType<Map<String, dynamic>>().map(DDComment.fromJson).toList();
   }
 
   Future<void> createComment(
@@ -369,7 +366,7 @@ class DDPostService {
       required String content,
       int? parentId}) async {
     final response = await _client.post(
-      _api('/api/social/posts/$postId/comments'),
+      _api('/posts/$postId/comments'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json'
