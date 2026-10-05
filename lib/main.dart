@@ -3594,14 +3594,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
     void append(DDComment comment, int depth) {
       result.add(Padding(
-        // 第三级与第二级保持同一左侧对齐，不继续向右缩进。
+        // 三级评论与二级评论保持同一左侧对齐。
         padding: EdgeInsets.only(left: depth >= 2 ? 42.0 : depth * 42.0),
         child: _commentTile(comment, depth: depth),
       ));
-      // 只渲染三级评论；三级评论不再继续生成第四级。
-      if (depth >= 2) return;
+      // 三级评论仍可回复；回复它的内容继续按三级样式显示，
+      // 不再增加缩进，也不显示第四级层级。
       for (final reply in repliesByParent[comment.id] ?? const <DDComment>[]) {
-        append(reply, depth + 1);
+        append(reply, depth >= 2 ? 2 : depth + 1);
       }
     }
 
@@ -3686,9 +3686,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   }
 
   Widget _commentTile(DDComment comment, {required int depth}) => InkWell(
-        onTap: depth >= 2
-            ? null
-            : () {
+        onTap: () {
           setState(() => replyingTo = comment);
           FocusScope.of(context).requestFocus(commentFocusNode);
         },
