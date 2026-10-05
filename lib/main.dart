@@ -3594,9 +3594,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
     void append(DDComment comment, int depth) {
       result.add(Padding(
-        padding: EdgeInsets.only(left: depth * 42.0),
-        child: _commentTile(comment),
+        // 第三级与第二级保持同一左侧对齐，不继续向右缩进。
+        padding: EdgeInsets.only(left: depth >= 2 ? 42.0 : depth * 42.0),
+        child: _commentTile(comment, depth: depth),
       ));
+      // 只渲染三级评论；三级评论不再继续生成第四级。
+      if (depth >= 2) return;
       for (final reply in repliesByParent[comment.id] ?? const <DDComment>[]) {
         append(reply, depth + 1);
       }
@@ -3682,8 +3685,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
-  Widget _commentTile(DDComment comment) => InkWell(
-        onTap: () {
+  Widget _commentTile(DDComment comment, {required int depth}) => InkWell(
+        onTap: depth >= 2
+            ? null
+            : () {
           setState(() => replyingTo = comment);
           FocusScope.of(context).requestFocus(commentFocusNode);
         },
@@ -3717,7 +3722,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      comment.nickname,
+                      depth >= 2 ? '回复 ${comment.nickname}' : comment.nickname,
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
