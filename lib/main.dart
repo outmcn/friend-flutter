@@ -4674,8 +4674,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                         scrollDirection: Axis.horizontal,
                                         child: Row(
                                           children: [
-                                            _ProfileTag(text: '+'),
-                                            const SizedBox(width: 6),
                                             _ProfileTag(text: '声优'),
                                             const SizedBox(width: 6),
                                             _ProfileTag(text: '御姐'),
