@@ -2167,7 +2167,15 @@ class _DiscoverPageState extends State<DiscoverPage>
     service.dispose();
     super.dispose();
   }
-  Future<void> load({int? tab, bool fromRefresh = false}) async {
+  Future<void> _refreshInBackground() async {
+    await load(backgroundRefresh: true);
+  }
+
+  Future<void> load({
+    int? tab,
+    bool fromRefresh = false,
+    bool backgroundRefresh = false,
+  }) async {
     if (fromRefresh) HapticFeedback.mediumImpact();
     final targetTab = tab ?? selectedTab;
     final switchingTab = tab != null && !fromRefresh && !loading;
@@ -2181,7 +2189,7 @@ class _DiscoverPageState extends State<DiscoverPage>
     if (fromRefresh) {
       if (_refreshing) return;
       _refreshing = true;
-    } else if (!switchingTab) {
+    } else if (!switchingTab && !backgroundRefresh) {
       setState(() {
         loading = true;
         error = null;
@@ -2197,6 +2205,7 @@ class _DiscoverPageState extends State<DiscoverPage>
       final cachedJson = p.getString(cacheKey);
       final cacheHasData = cachedJson != null && cachedJson.isNotEmpty;
       final cacheFresh = !fromRefresh &&
+          !backgroundRefresh &&
           cacheHasData &&
           cachedAt != null &&
           DateTime.now().millisecondsSinceEpoch - cachedAt <
@@ -2214,6 +2223,10 @@ class _DiscoverPageState extends State<DiscoverPage>
           loading = false;
           tabLoading = false;
         });
+        if (!backgroundRefresh) {
+          _refreshInBackground();
+          return;
+        }
       }
       final cachedCity = (p.getString('dd.location.city') ?? '').trim();
       if (mounted && cachedCity.isNotEmpty && cityLabel != cachedCity) {
