@@ -7422,29 +7422,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 GestureDetector(
                   onTap: pickAvatar,
                   child: ClipOval(
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                      child: croppedAvatar != null
-                          ? Image.memory(
-                              Uint8List.fromList(croppedAvatar!),
-                              width: 96,
-                              height: 96,
-                              fit: BoxFit.contain,
-                            )
-                          : (_avatarPreviewUrl == null
-                              ? const Icon(Icons.add_a_photo_outlined, size: 30)
-                              : Image.network(
-                                  _avatarPreviewUrl!,
-                                  width: 96,
-                                  height: 96,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) =>
-                                      const Icon(Icons.broken_image_outlined),
-                                )),
+                    child: SizedBox.square(
+                      dimension: 96,
+                      child: Container(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        child: croppedAvatar != null
+                            ? Image.memory(
+                                Uint8List.fromList(croppedAvatar!),
+                                fit: BoxFit.contain,
+                              )
+                            : (_avatarPreviewUrl == null
+                                ? const Icon(Icons.add_a_photo_outlined, size: 30)
+                                : Image.network(
+                                    _avatarPreviewUrl!,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) =>
+                                        const Icon(Icons.broken_image_outlined),
+                                  )),
+                      ),
                     ),
                   ),
                 ),
