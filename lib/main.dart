@@ -3595,8 +3595,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
     final result = <Widget>[];
     final roots = source.where((c) => c.parentId == null).toList();
-    final directReplies = <({DDComment comment, String? replyTo, int rootId})>[];
-    final nestedReplies = <({DDComment comment, String? replyTo, int rootId})>[];
+    final directReplies = <({DDComment comment, String? replyTo, int rootId, int depth})>[];
+    final nestedReplies = <({DDComment comment, String? replyTo, int rootId, int depth})>[];
 
     void collectNested(DDComment parent, int rootId, int parentDepth) {
       for (final reply in repliesByParent[parent.id] ?? const <DDComment>[]) {
@@ -3606,6 +3606,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
             comment: reply,
             replyTo: parentDepth >= 2 ? parent.nickname : null,
             rootId: rootId,
+            depth: 2,
           ),
         );
         collectNested(reply, rootId, parentDepth + 1);
@@ -3615,7 +3616,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     // 先收集全部二级评论，再收集三级及更深回复，确保首次不会提前显示三级评论。
     for (final root in roots) {
       for (final reply in repliesByParent[root.id] ?? const <DDComment>[]) {
-        directReplies.add((comment: reply, replyTo: null, rootId: root.id));
+        directReplies.add(
+          (comment: reply, replyTo: null, rootId: root.id, depth: 1),
+        );
       }
     }
     for (final reply in directReplies) {
@@ -3634,12 +3637,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       ));
       for (final item in visibleReplies.where((item) => item.rootId == root.id)) {
         // 仅当评论是回复三级评论时显示“某某 回复 某某”。
-        final depth = item.replyTo == null ? 1 : 2;
         result.add(Padding(
-          padding: EdgeInsets.only(left: depth == 2 ? 84.0 : 42.0),
+          padding: EdgeInsets.only(left: item.depth == 2 ? 84.0 : 42.0),
           child: _commentTile(
             comment: item.comment,
-            depth: depth,
+            depth: item.depth,
             replyTo: item.replyTo,
           ),
         ));
