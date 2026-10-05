@@ -5459,10 +5459,19 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                       widget.relation == 'history'
                                           ? '${user['city'] ?? '未知地区'} · 访问 ${user['visitCount'] ?? 1} 次'
                                           : '${user['city'] ?? '未知地区'}'),
-                                  trailing: TextButton(
+                                  trailing: OutlinedButton(
                                     onPressed: userId == null
                                         ? null
                                         : () => _toggleRelation(index),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(0, 36),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      side: BorderSide(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outline,
+                                      ),
+                                    ),
                                     child: Text(_relationLabel(user)),
                                   ),
                                 ),
