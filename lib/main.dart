@@ -4110,11 +4110,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                           ),
                       ]),
                       const SizedBox(height: 18),
-                      if (item.content.trim().isNotEmpty &&
-                          (item.imageUrl == null || item.imageUrl!.trim().isEmpty) &&
-                          (item.videoUrl == null || item.videoUrl!.trim().isEmpty))
-                        _TextPostGradient(content: item.content, seed: item.id)
-                      else if (item.content.trim().isNotEmpty)
+                      if (item.content.trim().isNotEmpty)
                         Text(item.content,
                             style: const TextStyle(fontSize: 18, height: 1.5)),
                       if (item.imageUrl != null &&
