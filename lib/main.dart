@@ -4474,7 +4474,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                       child: _SonicProfileButton(
                                         playing: _sonicPlaying,
                                         enabled: _sonicUrl?.isNotEmpty == true,
-                                        label: '#我的声音',
                                         onTap: _toggleSonic,
                                       ),
                                     ),
@@ -4987,7 +4986,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               child: _SonicProfileButton(
                                 playing: _sonicPlaying,
                                 enabled: _sonicUrl?.isNotEmpty == true,
-                                label: '#我的声音',
                                 onTap: () async {
                                   await Navigator.push<bool>(
                                     context,
@@ -5298,6 +5296,20 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
     if (mounted) setState(() => playing = !playing);
   }
 
+  Future<void> _toggleSonic() async {
+    final url = widget.currentUrl;
+    if (url == null || url.isEmpty) {
+      if (mounted) setState(() => error = '还没有保存的声音');
+      return;
+    }
+    if (playing) {
+      await player.pause();
+    } else {
+      await player.play(UrlSource(url));
+    }
+    if (mounted) setState(() => playing = !playing);
+  }
+
   Future<void> _save() async {
     final localPath = recordingPath;
     if (localPath == null || localPath.isEmpty) {
@@ -5358,9 +5370,9 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: _preview,
-                icon: Icon(playing ? Icons.pause : Icons.play_arrow),
-                label: const Text('试听'),
+                onPressed: saving ? null : _toggleSonic,
+                icon: Icon(_sonicPlaying ? Icons.pause : Icons.cloud_outlined),
+                label: const Text('我的声音'),
               ),
               const SizedBox(height: 12),
               FilledButton(
