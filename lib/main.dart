@@ -6014,19 +6014,13 @@ class _ProfileLikePill extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-            decoration: BoxDecoration(
-              color: liked
-                  ? Colors.pinkAccent.withValues(alpha: .16)
-                  : Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(18),
-            ),
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
             child: Icon(
               liked ? Icons.favorite : Icons.favorite_border,
               color: liked ? Colors.pinkAccent : null,
-              size: 17,
+              size: 24,
             ),
           ),
         ),
