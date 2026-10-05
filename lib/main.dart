@@ -1648,7 +1648,7 @@ class _DynamicPostCard extends StatelessWidget {
           ],
         ),
         if (post.content.trim().isNotEmpty) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           InkWell(
             onTap: onOpen,
             borderRadius: BorderRadius.circular(8),
@@ -1660,7 +1660,7 @@ class _DynamicPostCard extends StatelessWidget {
           ),
         ],
         if (post.imageUrl != null && post.imageUrl!.trim().isNotEmpty) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: GestureDetector(
@@ -1678,7 +1678,7 @@ class _DynamicPostCard extends StatelessWidget {
           ),
         ],
         if (post.videoUrl != null && post.videoUrl!.trim().isNotEmpty) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: GestureDetector(
@@ -1710,7 +1710,7 @@ class _DynamicPostCard extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 6),
+        const SizedBox(height: 10),
         Row(
           children: [
             TextButton.icon(
@@ -1752,7 +1752,7 @@ class _DynamicPostCard extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
+      padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onOpen,
@@ -1760,7 +1760,7 @@ class _DynamicPostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           content,
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Divider(
             height: 1,
             thickness: 1,
@@ -2851,7 +2851,7 @@ class _HomePartyCard extends StatelessWidget {
           ]),
           const Spacer(),
           Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Text(info, style: Theme.of(context).textTheme.labelSmall),
         ]),
       );
@@ -6474,7 +6474,7 @@ class _ListenTogetherPageState extends State<ListenTogetherPage> {
                       value: .42,
                       minHeight: 4,
                       borderRadius: BorderRadius.circular(9)),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -8287,7 +8287,7 @@ class _ProfileShortcuts extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
                         Icon(entry['icon'] as IconData, size: 23),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 10),
                         Text(entry['label'] as String,
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.labelSmall),
