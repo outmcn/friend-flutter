@@ -1509,6 +1509,8 @@ class _DynamicPostCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final bool authorNavigation;
   final bool listMode;
+
+  bool _isOwnPost() => post.userId == null || post.userId == 1;
   @override
   Widget build(BuildContext context) {
     final content = Column(
@@ -1589,7 +1591,7 @@ class _DynamicPostCard extends StatelessWidget {
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline),
               )
-            else if (onFollow != null && post.userId != null)
+            else if (onFollow != null && post.userId != null && !_isOwnPost())
               OutlinedButton(
                 onPressed: post.following ? onChat : onFollow,
                 style: OutlinedButton.styleFrom(
@@ -2284,15 +2286,23 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               ),
                             ),
                           ),
-                          onFollow: post.userId == null
+                          onFollow: post.userId == null || post.userId == 1
                               ? null
                               : () async {
-                                  final p =
-                                      await SharedPreferences.getInstance();
-                                  final t = p.getString('friend.auth.token') ?? '';
-                                  if (t.isEmpty) return;
-                                  await service.toggleFollow(t, post.userId!);
-                                  await load();
+                                  if (!mounted) return;
+                                  try {
+                                    final p = await SharedPreferences.getInstance();
+                                    final t = p.getString('friend.auth.token') ?? '';
+                                    if (t.isEmpty) throw Exception('请先登录');
+                                    await service.toggleFollow(t, post.userId!);
+                                    await load(fromRefresh: true);
+                                  } catch (e) {
+                                    if (mounted) {
+                                      setState(() => error = e
+                                          .toString()
+                                          .replaceFirst('Exception: ', ''));
+                                    }
+                                  }
                                 },
                           onChat: () => ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('私聊功能暂未接入')),
