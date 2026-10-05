@@ -5300,12 +5300,40 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
   }
 
   Future<void> _save() async {
-    if (recordingPath == null && (widget.currentUrl?.isEmpty ?? true)) {
-      setState(() => error = '声音上传功能已关闭');
+    final localPath = recordingPath;
+    if (localPath == null || localPath.isEmpty) {
+      setState(() => error = '请先录制声音');
       return;
     }
-    setState(() => saving = false);
-    if (mounted) setState(() => error = '当前版本不支持保存声音');
+    try {
+      setState(() { saving = true; error = null; });
+      final token = await _token();
+      final bytes = await File(localPath).readAsBytes();
+      final signed = await service.voiceUploadUrl(
+        token: token,
+        fileName: 'voice.m4a',
+        contentType: 'audio/mp4',
+      );
+      final url = signed['url'];
+      final key = signed['objectKey'];
+      if (url is! String || key is! String) throw Exception('声音上传地址格式错误');
+      if (!await service.uploadAvatar(url: url, bytes: bytes, contentType: 'audio/mp4')) {
+        throw Exception('声音上传失败');
+      }
+      await service.updateMe(token: token, voiceKey: key);
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  Future<String> _token() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('friend.auth.token') ?? '';
+    if (value.isEmpty) throw Exception('请先登录');
+    return value;
   }
 
   @override

@@ -515,6 +515,24 @@ class DDPostService {
     return decoded['url'] as String;
   }
 
+  Future<Map<String, dynamic>> voiceUploadUrl({
+    required String token,
+    required String fileName,
+    required String contentType,
+  }) async {
+    final uri = _api('/media/voice/upload-url').replace(queryParameters: {
+      'fileName': fileName,
+      'contentType': contentType,
+    });
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+      throw Exception('声音上传地址获取失败');
+    }
+    return decoded;
+  }
+
+
   Future<Map<String, dynamic>> avatarUploadUrl({
     required String token,
     required String fileName,
@@ -572,6 +590,7 @@ class DDPostService {
     String? gender,
     String? city,
     String? avatarKey,
+    String? voiceKey,
   }) async {
     final response = await _client.put(
       _base.resolve('/api/me'),
@@ -584,6 +603,7 @@ class DDPostService {
         if (gender != null) 'gender': gender,
         if (city != null) 'city': city,
         if (avatarKey != null) 'avatarKey': avatarKey,
+        if (voiceKey != null) 'voiceKey': voiceKey,
       }),
     );
     final decoded = jsonDecode(response.body);
