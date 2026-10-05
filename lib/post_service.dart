@@ -244,9 +244,17 @@ class DDPostService {
 
   Future<void> markNotificationsRead(String token) async {}
 
-  Future<List<DDPost>> fetchPosts(String token) async {
+  Future<List<DDPost>> fetchPosts(
+    String token, {
+    int offset = 0,
+    int limit = 30,
+  }) async {
+    final uri = _api('/posts').replace(queryParameters: {
+      'offset': '$offset',
+      'limit': '$limit',
+    });
     final response = await _client.get(
-      _api('/posts'),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body);
@@ -257,8 +265,16 @@ class DDPostService {
     if (rows is! List) throw Exception('动态数据格式错误');
     return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
   }
-  Future<List<DDPost>> fetchNearbyPosts(String token) => fetchPosts(token);
-  Future<List<DDPost>> fetchFollowingPosts(String token) => fetchPosts(token);
+  Future<List<DDPost>> fetchNearbyPosts(
+    String token, {
+    int offset = 0,
+    int limit = 30,
+  }) => fetchPosts(token, offset: offset, limit: limit);
+  Future<List<DDPost>> fetchFollowingPosts(
+    String token, {
+    int offset = 0,
+    int limit = 30,
+  }) => fetchPosts(token, offset: offset, limit: limit);
 
   Future<DDPost> fetchPost(String token, int postId) async {
     final response = await _client.get(

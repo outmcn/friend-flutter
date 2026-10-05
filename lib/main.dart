@@ -2095,7 +2095,8 @@ class DiscoverPage extends StatefulWidget {
   State<DiscoverPage> createState() => _DiscoverPageState();
 }
 
-class _DiscoverPageState extends State<DiscoverPage> {
+class _DiscoverPageState extends State<DiscoverPage>
+    with WidgetsBindingObserver {
   final DDPostService service = DDPostService();
   static const _cacheDuration = Duration(minutes: 10);
   List<DDPost> posts = const [];
@@ -2105,18 +2106,67 @@ class _DiscoverPageState extends State<DiscoverPage> {
   bool tabLoading = false;
   String? cityLabel;
   String? error;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  final ScrollController _discoverScrollController = ScrollController();
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _discoverScrollController.addListener(_handleDiscoverScroll);
     load();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      load();
+    }
+  }
+
+  void _handleDiscoverScroll() {
+    if (_discoverScrollController.hasClients &&
+        _discoverScrollController.position.extentAfter < 500) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || selectedTab > 1) return;
+    _loadingMore = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      final batch = selectedTab == 0
+          ? await service.fetchPosts(token, offset: posts.length)
+          : await service.fetchNearbyPosts(token, offset: posts.length);
+      if (!mounted) return;
+      final ids = posts.map((item) => item.id).toSet();
+      final additions = batch.where((item) => ids.add(item.id)).toList();
+      setState(() {
+        posts = [...posts, ...additions];
+        _hasMore = batch.length >= 30;
+      });
+      await _saveDiscoverCache(selectedTab);
+    } finally {
+      _loadingMore = false;
+    }
+  }
+
+  Future<void> _saveDiscoverCache(int tab) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'dd.discover.cache.v2.$tab';
+    await prefs.setString(key, jsonEncode(posts.map((item) => item.toJson()).toList()));
+    await prefs.setInt('$key.at', DateTime.now().millisecondsSinceEpoch);
+  }
+
+  @override
   void dispose() {
+    _discoverScrollController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     service.dispose();
     super.dispose();
   }
-
   Future<void> load({int? tab, bool fromRefresh = false}) async {
     if (fromRefresh) HapticFeedback.mediumImpact();
     final targetTab = tab ?? selectedTab;
@@ -2146,7 +2196,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final cachedAt = p.getInt(cacheAtKey);
       final cachedJson = p.getString(cacheKey);
       final cacheHasData = cachedJson != null && cachedJson.isNotEmpty;
-      final cacheFresh = !fromRefresh && cacheHasData;
+      final cacheFresh = !fromRefresh &&
+          cacheHasData &&
+          cachedAt != null &&
+          DateTime.now().millisecondsSinceEpoch - cachedAt <
+              const Duration(minutes: 30).inMilliseconds;
       final cachedPosts = cacheFresh
           ? (jsonDecode(cachedJson!) as List)
               .whereType<Map<String, dynamic>>()
@@ -2294,6 +2348,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         body: RefreshIndicator(
             onRefresh: () => load(fromRefresh: true),
             child: ListView(
+                controller: _discoverScrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
                     18, 0, 18, 28 + MediaQuery.of(context).padding.bottom),
