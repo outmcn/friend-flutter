@@ -1648,16 +1648,14 @@ class _DynamicPostCard extends StatelessWidget {
                 onPressed: post.following ? onChat : onFollow,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: post.following
-                      ? Colors.white
+                      ? Theme.of(context).colorScheme.onSurface
                       : Theme.of(context).colorScheme.secondary,
                   side: BorderSide(
                     color: post.following
-                        ? Theme.of(context).colorScheme.primary
+                        ? Theme.of(context).colorScheme.outlineVariant
                         : Theme.of(context).colorScheme.secondary,
                   ),
-                  backgroundColor: post.following
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
+                  backgroundColor: Colors.transparent,
                 ),
                 child: Text(post.following ? '私聊' : '关注'),
               ),
