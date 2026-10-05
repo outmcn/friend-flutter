@@ -1661,15 +1661,20 @@ class _DynamicPostCard extends StatelessWidget {
     if (!listMode) {
       return Card(
         clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: content,
+        child: InkWell(
+          onTap: onOpen,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: content,
+          ),
         ),
       );
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 12, 0, 10),
-      child: Column(
+      child: InkWell(
+        onTap: onOpen,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           content,
@@ -1680,6 +1685,7 @@ class _DynamicPostCard extends StatelessWidget {
             color: Theme.of(context).dividerColor.withValues(alpha: .5),
           ),
         ],
+        ),
       ),
     );
   }
@@ -4171,7 +4177,23 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       if (widget.userId == null) {
         throw Exception('用户信息不存在');
       }
-      throw UnsupportedError('新后端暂未提供其他用户资料接口');
+      final data = await service.fetchUserProfile(token, widget.userId!);
+      final loadedPosts = (data['posts'] is List)
+          ? (data['posts'] as List)
+              .whereType<Map>()
+              .map((item) => DDPost.fromJson(item.cast<String, dynamic>()))
+              .toList()
+          : <DDPost>[];
+      if (mounted) {
+        setState(() {
+          profile = data;
+          posts = loadedPosts;
+          isFollowing = data['followingByViewer'] == true;
+          isProfileLiked = data['likedByViewer'] == true;
+          profileLikes = int.tryParse('${data['receivedLikes'] ?? 0}') ?? 0;
+          _avatarUrl = DDPostService.mediaUrl(data['avatar']?.toString());
+        });
+      }
     } on UnsupportedError catch (e) {
       if (mounted) {
         setState(() => error = e.message);
