@@ -1642,9 +1642,16 @@ class _DynamicPostCard extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   if (post.thumbnailUrl != null && post.thumbnailUrl!.isNotEmpty)
-                    Image.network(post.thumbnailUrl!, width: double.infinity, height: 180, fit: BoxFit.cover)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 400),
+                      child: Image.network(
+                        post.thumbnailUrl!,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                      ),
+                    )
                   else
-                    Container(height: 180, color: Colors.black26),
+                    const SizedBox(height: 225, child: ColoredBox(color: Colors.black26)),
                   const Icon(Icons.play_circle_outline, size: 56),
                 ],
               ),
@@ -1787,19 +1794,24 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              if (widget.thumbnailUrl?.isNotEmpty == true)
-                Image.network(
-                  widget.thumbnailUrl!,
+              LayoutBuilder(
+                builder: (context, constraints) => Container(
                   width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 220,
-                    color: Colors.black26,
-                  ),
-                )
-              else
-                Container(height: 220, color: Colors.black26),
+                  color: Colors.black26,
+                  alignment: Alignment.center,
+                  child: widget.thumbnailUrl?.isNotEmpty == true
+                      ? ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 400),
+                          child: Image.network(
+                            widget.thumbnailUrl!,
+                            width: constraints.maxWidth,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        )
+                      : const SizedBox(height: 225),
+                },
+              ),
               loading
                   ? const CircularProgressIndicator()
                   : const Icon(Icons.play_circle_outline, size: 64),
@@ -1813,9 +1825,16 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          AspectRatio(
-            aspectRatio: active.value.aspectRatio,
-            child: VideoPlayer(active),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final height = math.min(400, width / active.value.aspectRatio);
+              return SizedBox(
+                width: width,
+                height: height,
+                child: VideoPlayer(active),
+              );
+            },
           ),
           IconButton.filled(
             onPressed: () {
@@ -5386,20 +5405,19 @@ class _MyProfilePostCard extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       if (post.thumbnailUrl != null && post.thumbnailUrl!.isNotEmpty)
-                        Image.network(
-                          post.thumbnailUrl!,
-                          width: double.infinity,
-                          height: 180,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 180,
-                            color: scheme.surfaceContainerHighest,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 400),
+                          child: Image.network(
+                            post.thumbnailUrl!,
+                            width: double.infinity,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                           ),
                         )
                       else
-                        Container(
-                          height: 180,
-                          color: scheme.surfaceContainerHighest,
+                        const SizedBox(
+                          height: 225,
+                          child: ColoredBox(color: Colors.black26),
                         ),
                       const Icon(Icons.play_circle_outline, size: 56),
                     ],
@@ -5606,11 +5624,25 @@ class _MyListCard extends StatelessWidget {
               if (post.videoUrl?.trim().isNotEmpty == true)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Container(
-                    height: 180,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Stack(
                     alignment: Alignment.center,
-                    child: const Icon(Icons.play_circle_outline, size: 56),
+                    children: [
+                      if (post.thumbnailUrl?.trim().isNotEmpty == true)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 400),
+                          child: Image.network(
+                            DDPostService.mediaUrl(post.thumbnailUrl),
+                            width: double.infinity,
+                            fit: BoxFit.contain,
+                          ),
+                        )
+                      else
+                        const SizedBox(
+                          height: 225,
+                          child: ColoredBox(color: Colors.black26),
+                        ),
+                      const Icon(Icons.play_circle_outline, size: 56),
+                    ],
                   ),
                 ),
               const Divider(height: 20),
