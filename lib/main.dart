@@ -2209,9 +2209,10 @@ class _DiscoverPageState extends State<DiscoverPage>
       final cacheFresh = !fromRefresh &&
           !backgroundRefresh &&
           cacheHasData &&
-          cachedAt != null &&
-          DateTime.now().millisecondsSinceEpoch - cachedAt <
-              const Duration(minutes: 30).inMilliseconds;
+          (targetTab == 2 ||
+              (cachedAt != null &&
+                  DateTime.now().millisecondsSinceEpoch - cachedAt <
+                      const Duration(minutes: 30).inMilliseconds));
       final cachedPosts = cacheFresh
           ? (jsonDecode(cachedJson!) as List)
               .whereType<Map<String, dynamic>>()
