@@ -1767,7 +1767,7 @@ class _DynamicPostCard extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTap: onOpen,
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
             child: content,
           ),
         ),
