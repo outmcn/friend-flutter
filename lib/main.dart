@@ -4501,6 +4501,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   }
 }
 
+}
+
 class _PostImageHolder extends StatelessWidget {
   const _PostImageHolder({required this.url, this.unlimitedHeight = false});
   final String url;
