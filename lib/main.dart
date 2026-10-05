@@ -3998,24 +3998,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                 ),
               ),
             ),
-          if (item != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: SizedBox(
-                width: 48,
-                height: 48,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 48,
-                    height: 48,
-                  ),
-                  onPressed: () {},
-                  icon: const Icon(TIcons.share_1),
-                  tooltip: '分享',
-                ),
-              ),
-            ),
           if (item != null && isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -4031,6 +4013,24 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                   onPressed: deleting ? null : _delete,
                   icon: const Icon(Icons.delete_outline),
                   tooltip: '删除动态',
+                ),
+              ),
+            ),
+          if (item != null && isOwner)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  ),
+                  onPressed: () {},
+                  icon: const Icon(TIcons.share_1),
+                  tooltip: '分享',
                 ),
               ),
             ),
