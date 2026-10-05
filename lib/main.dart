@@ -5150,16 +5150,19 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 const SizedBox(width: 8),
                                 SizedBox(
                                   width: 68,
-                                  child: _InlineProfileStat(
-                                    label: '粉丝',
-                                    value: '${p?['followers'] ?? 0}',
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const _UserRelationListPage(
-                                          relation: 'followers',
-                                          title: '粉丝',
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: _InlineProfileStat(
+                                      label: '粉丝',
+                                      value: '${p?['followers'] ?? 0}',
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const _UserRelationListPage(
+                                            relation: 'followers',
+                                            title: '粉丝',
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -5168,16 +5171,19 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 const SizedBox(width: 8),
                                 SizedBox(
                                   width: 68,
-                                  child: _InlineProfileStat(
-                                    label: '获赞',
-                                    value: '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const _UserRelationListPage(
-                                          relation: 'likers',
-                                          title: '获赞',
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: _InlineProfileStat(
+                                      label: '获赞',
+                                      value: '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const _UserRelationListPage(
+                                            relation: 'likers',
+                                            title: '获赞',
+                                          ),
                                         ),
                                       ),
                                     ),
