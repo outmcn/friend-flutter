@@ -5011,7 +5011,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               child: _SonicProfileButton(
                                 playing: _sonicPlaying,
                                 enabled: _sonicUrl?.isNotEmpty == true,
-                                label: '我的声音',
                                 onTap: () async {
                                   await Navigator.push<bool>(
                                     context,
