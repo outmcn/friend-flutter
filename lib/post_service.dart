@@ -271,7 +271,20 @@ class DDPostService {
     String token, {
     int offset = 0,
     int limit = 30,
-  }) => fetchPosts(token, offset: offset, limit: limit);
+  }) async {
+    final uri = _api('/posts/local').replace(queryParameters: {
+      'offset': '$offset',
+      'limit': '$limit',
+    });
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+      throw Exception('本地动态加载失败');
+    }
+    final rows = decoded['posts'];
+    if (rows is! List) throw Exception('本地动态数据格式错误');
+    return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+  }
 
   Future<List<DDPost>> fetchFollowingPosts(
     String token, {
