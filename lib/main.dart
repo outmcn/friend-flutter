@@ -223,8 +223,9 @@ class _KeyboardDismissBehavior extends StatefulWidget {
 
 class _KeyboardDismissBehaviorState extends State<_KeyboardDismissBehavior> {
   @override
-  Widget build(BuildContext context) => Listener(
-        onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+  Widget build(BuildContext context) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: NotificationListener<ScrollNotification>(
           onNotification: (notification) {
             if (notification is ScrollStartNotification) {
