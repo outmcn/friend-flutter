@@ -5004,11 +5004,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: () => load(forceRefresh: true),
-              child: ListView(
+              child: CustomScrollView(
                 controller: _profileScrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                children: [
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
                   if (error != null)
                     _PageErrorState(
                       title: '资料加载失败',
@@ -5177,27 +5180,26 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 22),
-                  _MyProfileIconTabs(
-                    selectedTab: selectedTab,
-                    onSelect: (tab) => load(tab: tab),
-                  ),
-                  const SizedBox(height: 12),
-                  if (error != null)
-                    _PageErrorState(
-                      title: '动态为空',
-                      subtitle: '新后端暂未提供动态接口',
-                      onRetry: () => load(tab: selectedTab),
-                    )
-                  else if (tabLoading)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 38),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else
-                    _MyProfileGrid(
-                      posts: posts,
-                      onChanged: _invalidateProfileCacheAndReload,
+                  ]),
                     ),
+                  ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _ProfileTabsHeaderDelegate(
+                      child: _MyProfileIconTabs(
+                        selectedTab: selectedTab,
+                        onSelect: (tab) => load(tab: tab),
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                  _MyProfileGrid(
+                    posts: posts,
+                    onChanged: _invalidateProfileCacheAndReload,
+                  ),
                   if (!tabLoading && error == null)
                     const Padding(
                       padding: EdgeInsets.only(top: 24, bottom: 12),
@@ -5208,12 +5210,44 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         ),
                       ),
                     ),
+                      ]),
+                    ),
+                  ),
                 ],
               ),
             ),
       ),
     );
   }
+}
+
+class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _ProfileTabsHeaderDelegate({required this.child});
+  final Widget child;
+
+  @override
+  double get minExtent => 56;
+
+  @override
+  double get maxExtent => 56;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => Material(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        elevation: overlapsContent ? 2 : 0,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: child,
+        ),
+      );
+
+  @override
+  bool shouldRebuild(covariant _ProfileTabsHeaderDelegate oldDelegate) =>
+      oldDelegate.child != child;
 }
 
 class _HistoryRecordsPage extends _UserRelationListPage {
