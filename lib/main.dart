@@ -4075,15 +4075,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                     : _toggleFollow,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: item.following
-                                  ? Colors.white
-                                  : Theme.of(context).colorScheme.secondary,
-                              backgroundColor: item.following
-                                  ? Theme.of(context).colorScheme.primary
-                                  : null,
+                                  ? Theme.of(context).colorScheme.onSurface
+                                  : Colors.white,
+                              backgroundColor:
+                                  item.following ? Colors.transparent : Colors.red,
                               side: BorderSide(
                                 color: item.following
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.secondary,
+                                    ? Theme.of(context).colorScheme.outlineVariant
+                                    : Colors.red,
                               ),
                             ),
                             child: Text(followLoading
@@ -4680,8 +4679,16 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 child: OutlinedButton.icon(
                                   onPressed: actionLoading ? null : toggleFollow,
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: Theme.of(context).colorScheme.secondary,
-                                    side: BorderSide(color: Theme.of(context).colorScheme.secondary),
+                                    foregroundColor: following
+                                        ? Theme.of(context).colorScheme.onSurface
+                                        : Colors.white,
+                                    backgroundColor:
+                                        following ? Colors.transparent : Colors.red,
+                                    side: BorderSide(
+                                      color: following
+                                          ? Theme.of(context).colorScheme.outlineVariant
+                                          : Colors.red,
+                                    ),
                                   ),
                                   icon: Icon(
                                     following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined,
