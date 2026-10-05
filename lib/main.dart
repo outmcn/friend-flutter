@@ -6843,7 +6843,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (cropped != null && mounted) {
         setState(() {
           croppedAvatar = cropped;
-          image = value;
+          image = null;
           error = null;
         });
       }
@@ -6906,12 +6906,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     onTap: pickAvatar,
                     child: CircleAvatar(
                         radius: 48,
-                        backgroundImage: image != null
-                            ? FileImage(File(image!.path)) as ImageProvider
+                        backgroundImage: croppedAvatar != null
+                            ? MemoryImage(Uint8List.fromList(croppedAvatar!))
                             : (_avatarPreviewUrl == null
                                 ? null
                                 : NetworkImage(_avatarPreviewUrl!)),
-                        child: image == null && _avatarPreviewUrl == null
+                        child: croppedAvatar == null && _avatarPreviewUrl == null
                             ? const Icon(Icons.add_a_photo_outlined, size: 30)
                             : null)),
                 const SizedBox(height: 22),
