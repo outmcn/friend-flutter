@@ -5339,11 +5339,27 @@ class _MyProfilePostCard extends StatelessWidget {
               else if (video != null && video.isNotEmpty)
                 InkWell(
                   onTap: onTap,
-                  child: Container(
-                    height: 180,
-                    color: scheme.surfaceContainerHighest,
+                  child: Stack(
                     alignment: Alignment.center,
-                    child: const Icon(Icons.play_circle_outline, size: 56),
+                    children: [
+                      if (post.thumbnailUrl != null && post.thumbnailUrl!.isNotEmpty)
+                        Image.network(
+                          post.thumbnailUrl!,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            height: 180,
+                            color: scheme.surfaceContainerHighest,
+                          ),
+                        )
+                      else
+                        Container(
+                          height: 180,
+                          color: scheme.surfaceContainerHighest,
+                        ),
+                      const Icon(Icons.play_circle_outline, size: 56),
+                    ],
                   ),
                 )
               else
