@@ -4734,7 +4734,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                           ? '处理中…'
                                           : following
                                               ? (p?['followedByViewer'] == true ? '好友' : '已关注')
-                                              : '关注',
+                                              : (p?['followedByViewer'] == true ? '回关' : '关注'),
                                     ),
                                 ),
                               ),
