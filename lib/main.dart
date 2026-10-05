@@ -6039,26 +6039,24 @@ class _InlineProfileStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = RichText(
-      text: TextSpan(
-        style: DefaultTextStyle.of(context).style,
-        children: [
-          TextSpan(
-            text: '$value ',
-            style: const TextStyle(fontWeight: FontWeight.w800),
+    final child = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: .65),
+            fontSize: 12,
           ),
-          TextSpan(
-            text: label,
-            style: TextStyle(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: .65),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
     return onTap == null
         ? child
