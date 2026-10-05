@@ -6907,7 +6907,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     child: CircleAvatar(
                         radius: 48,
                         backgroundImage: croppedAvatar != null
-                            ? MemoryImage(Uint8List.fromList(croppedAvatar!))
+                            ? MemoryImage(Uint8List.fromList(croppedAvatar!)) as ImageProvider
                             : (_avatarPreviewUrl == null
                                 ? null
                                 : NetworkImage(_avatarPreviewUrl!)),
