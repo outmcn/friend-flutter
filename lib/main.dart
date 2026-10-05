@@ -5473,14 +5473,11 @@ class _MyListCard extends StatelessWidget {
               if (post.videoUrl?.trim().isNotEmpty == true)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: InkWell(
-                    onTap: onTap,
-                    child: Container(
-                      height: 180,
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.play_circle_outline, size: 56),
-                    ),
+                  child: Container(
+                    height: 180,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.play_circle_outline, size: 56),
                   ),
                 ),
               const Divider(height: 20),
