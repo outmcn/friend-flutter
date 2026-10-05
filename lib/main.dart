@@ -1074,6 +1074,7 @@ class _DDShellState extends State<DDShell> {
           selectedIndex: index,
           onDestinationSelected: (value) {
             HapticFeedback.selectionClick();
+            _VideoPlaybackRegistry.stopAll();
             setState(() => index = value);
           },
           destinations: const [
