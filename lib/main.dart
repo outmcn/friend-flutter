@@ -4008,10 +4008,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         );
       }
     } else if (action == 'delete') {
-    // 删除评论后只刷新动态与评论数据，不保留上一次的错误提示。
-    try {
-      await service.deleteComment(await token(), comment.id);
-      await load();
+      try {
+        await service.deleteComment(await token(), comment.id);
+        await load();
       } catch (e) {
         if (mounted) {
           setState(() => error = e.toString().replaceFirst('Exception: ', ''));
