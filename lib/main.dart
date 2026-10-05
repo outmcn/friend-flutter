@@ -4414,7 +4414,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               padding: const EdgeInsets.only(right: 6),
               child: _ProfileLikePill(
                 liked: isProfileLiked,
-                count: profileLikes,
                 onTap: actionLoading ? null : toggleProfileLike,
               ),
             ),
@@ -5817,11 +5816,9 @@ class _ProfileEmptyTab extends StatelessWidget {
 class _ProfileLikePill extends StatelessWidget {
   const _ProfileLikePill({
     required this.liked,
-    required this.count,
     required this.onTap,
   });
   final bool liked;
-  final int count;
   final VoidCallback? onTap;
 
   @override
@@ -5838,17 +5835,10 @@ class _ProfileLikePill extends StatelessWidget {
                   : Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(18),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  liked ? Icons.favorite : Icons.favorite_border,
-                  color: liked ? Colors.pinkAccent : null,
-                  size: 17,
-                ),
-                const SizedBox(width: 4),
-                Text('$count'),
-              ],
+            child: Icon(
+              liked ? Icons.favorite : Icons.favorite_border,
+              color: liked ? Colors.pinkAccent : null,
+              size: 17,
             ),
           ),
         ),
