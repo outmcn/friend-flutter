@@ -4563,23 +4563,29 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 child: OutlinedButton.icon(
                                   onPressed: actionLoading ? null : toggleFollow,
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .secondary,
-                                    side: BorderSide(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .secondary,
-                                    ),
+                                    foregroundColor: Theme.of(context).colorScheme.secondary,
+                                    side: BorderSide(color: Theme.of(context).colorScheme.secondary),
                                   ),
                                   icon: Icon(
                                     following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined,
                                   ),
                                   label: Text(
-                                    actionLoading
-                                        ? '处理中…'
-                                        : (following ? '取消关注' : '关注'),
+                                    actionLoading ? '处理中…' : (following ? '取消关注' : '关注'),
                                   ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('私聊功能暂未接入')),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Theme.of(context).colorScheme.primary,
+                                    side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                                  ),
+                                  icon: const Icon(Icons.chat_bubble_outline),
+                                  label: const Text('私聊'),
                                 ),
                               ),
                             ],
