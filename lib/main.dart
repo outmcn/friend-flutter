@@ -1714,7 +1714,11 @@ class _DynamicPostCard extends StatelessWidget {
                     )
                   else
                     const SizedBox(height: 225, child: ColoredBox(color: Colors.black26)),
-                  const Icon(Icons.play_circle_outline, size: 56),
+                  const Icon(
+                    Icons.play_circle_outline,
+                    size: 56,
+                    color: Colors.white,
+                  ),
                 ],
               ),
             ),
@@ -1906,7 +1910,11 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
               ),
               loading
                   ? const CircularProgressIndicator()
-                  : const Icon(Icons.play_circle_outline, size: 64),
+                  : const Icon(
+                      Icons.play_circle_outline,
+                      size: 64,
+                      color: Colors.white,
+                    ),
             ],
           ),
         ),
@@ -5762,7 +5770,11 @@ class _MyProfilePostCard extends StatelessWidget {
                           height: 225,
                           child: ColoredBox(color: Colors.black26),
                         ),
-                      const Icon(Icons.play_circle_outline, size: 56),
+                  const Icon(
+                    Icons.play_circle_outline,
+                    size: 56,
+                    color: Colors.white,
+                  ),
                     ],
                   ),
                 )
@@ -5973,7 +5985,11 @@ class _MyListCard extends StatelessWidget {
                           height: 225,
                           child: ColoredBox(color: Colors.black26),
                         ),
-                      const Icon(Icons.play_circle_outline, size: 56),
+                  const Icon(
+                    Icons.play_circle_outline,
+                    size: 56,
+                    color: Colors.white,
+                  ),
                     ],
                   ),
                 ),
