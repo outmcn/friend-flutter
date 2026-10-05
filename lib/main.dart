@@ -5018,17 +5018,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                 overflow: TextOverflow.ellipsis,
               )
             : const SizedBox.shrink(),
-        leading: IconButton(
-          tooltip: '编辑资料',
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const EditProfilePage()),
-            );
-            if (mounted) load();
-          },
-          icon: const Icon(Icons.edit_outlined),
-        ),
         actions: [
           IconButton(
             tooltip: '浏览记录',
@@ -5104,6 +5093,28 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                       fontSize: 25,
                                       fontWeight: FontWeight.w900,
                                     ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  tooltip: '编辑资料',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 32,
+                                    height: 32,
+                                  ),
+                                  onPressed: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const EditProfilePage(),
+                                      ),
+                                    );
+                                    if (mounted) load();
+                                  },
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 18,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
