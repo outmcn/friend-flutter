@@ -4676,7 +4676,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 const SizedBox(width: 18),
                                 _InlineProfileStat(
                                   label: '魅力',
-                                  value: '${p?['likes'] ?? 0}',
+                                  value: '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
                                   onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
