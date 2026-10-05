@@ -4594,10 +4594,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                     bottom: -12,
                                     child: Align(
                                       alignment: Alignment.center,
-                                      child: _SonicProfileButton(
-                                        playing: _sonicPlaying,
-                                        enabled: _sonicUrl?.isNotEmpty == true,
-                                        onTap: _toggleSonic,
+                                      child: _ProfileTag(
+                                        text: '${p?['city'] ?? '未知'}',
                                       ),
                                     ),
                                   ),
@@ -4622,8 +4620,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        _ProfileTag(
-                                            text: '${p?['city'] ?? '未知'}'),
+                                        _SonicProfileButton(
+                                          playing: _sonicPlaying,
+                                          enabled: _sonicUrl?.isNotEmpty == true,
+                                          onTap: _toggleSonic,
+                                        ),
 
                                       ],
                                     ),
@@ -5043,7 +5044,22 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ),
                                 const SizedBox(width: 8),
                                 _ProfileTag(text: '${p?['city'] ?? '未知'}'),
-
+                                const SizedBox(width: 8),
+                                _SonicProfileButton(
+                                  playing: _sonicPlaying,
+                                  enabled: _sonicUrl?.isNotEmpty == true,
+                                  onTap: () async {
+                                    await Navigator.push<bool>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => _VoiceRecordPage(
+                                          currentUrl: _sonicUrl,
+                                        ),
+                                      ),
+                                    );
+                                    if (mounted) load();
+                                  },
+                                ),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -5115,29 +5131,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ? const Icon(Icons.person, size: 42)
                                 : null,
                           ),
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: -12,
-                            child: Align(
-                              alignment: Alignment.center,
-                              child: _SonicProfileButton(
-                                playing: _sonicPlaying,
-                                enabled: _sonicUrl?.isNotEmpty == true,
-                                onTap: () async {
-                                  await Navigator.push<bool>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => _VoiceRecordPage(
-                                        currentUrl: _sonicUrl,
-                                      ),
-                                    ),
-                                  );
-                                  if (mounted) load();
-                                },
-                              ),
-                            ),
-                          ),
+
                         ],
                       ),
                     ],
