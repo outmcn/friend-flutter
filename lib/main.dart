@@ -1486,6 +1486,52 @@ class _LegacyHomePage extends StatelessWidget {
       );
 }
 
+/// 纯文字动态的视觉卡片：不生成图片文件，只用渐变背景承载文字。
+class _TextPostGradient extends StatelessWidget {
+  const _TextPostGradient({required this.content, this.seed = 0});
+
+  final String content;
+  final int seed;
+
+  @override
+  Widget build(BuildContext context) {
+    const palettes = [
+      [Color(0xff4f46e5), Color(0xffa855f7)],
+      [Color(0xff0f766e), Color(0xff38bdf8)],
+      [Color(0xffc2410c), Color(0xfff59e0b)],
+      [Color(0xffbe123c), Color(0xfffb7185)],
+      [Color(0xff334155), Color(0xff64748b)],
+    ];
+    final colors = palettes[seed.abs() % palettes.length];
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 190, maxHeight: 360),
+      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 30),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        content.trim(),
+        textAlign: TextAlign.center,
+        maxLines: 8,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 22,
+          height: 1.45,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
 class _DynamicPostCard extends StatelessWidget {
   const _DynamicPostCard({
     required this.post,
@@ -1511,6 +1557,12 @@ class _DynamicPostCard extends StatelessWidget {
   final bool listMode;
 
   bool _isOwnPost() => post.userId == null || post.userId == 1;
+
+  bool get _isTextOnly =>
+      post.content.trim().isNotEmpty &&
+      (post.imageUrl == null || post.imageUrl!.trim().isEmpty) &&
+      (post.videoUrl == null || post.videoUrl!.trim().isEmpty);
+
   @override
   Widget build(BuildContext context) {
     final content = Column(
@@ -1611,7 +1663,14 @@ class _DynamicPostCard extends StatelessWidget {
               ),
           ],
         ),
-        if (post.content.trim().isNotEmpty) ...[
+        if (_isTextOnly) ...[
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: onOpen,
+            borderRadius: BorderRadius.circular(8),
+            child: _TextPostGradient(content: post.content, seed: post.id),
+          ),
+        ] else if (post.content.trim().isNotEmpty) ...[
           const SizedBox(height: 12),
           InkWell(
             onTap: onOpen,
@@ -4052,7 +4111,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                           ),
                       ]),
                       const SizedBox(height: 18),
-                      if (item.content.trim().isNotEmpty)
+                      if (item.content.trim().isNotEmpty &&
+                          (item.imageUrl == null || item.imageUrl!.trim().isEmpty) &&
+                          (item.videoUrl == null || item.videoUrl!.trim().isEmpty))
+                        _TextPostGradient(content: item.content, seed: item.id)
+                      else if (item.content.trim().isNotEmpty)
                         Text(item.content,
                             style: const TextStyle(fontSize: 18, height: 1.5)),
                       if (item.imageUrl != null &&
