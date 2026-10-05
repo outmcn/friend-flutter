@@ -265,10 +265,7 @@ class DDPostService {
   }
 
   Future<List<DDPost>> fetchMyPosts(String token) async {
-    final posts = await fetchPosts(token);
-    final me = await fetchMe(token);
-    final myId = _intValue(me['id']);
-    return myId == null ? const [] : posts.where((post) => post.userId == myId).toList();
+    return _fetchProfilePosts(token, '/me/posts');
   }
 
   Future<List<DDPost>> fetchLikedPosts(String token) async {

@@ -4698,7 +4698,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
     if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
   }
 
-  static const _profileTabCachePrefix = 'dd.profile.tab.cache.';
+  static const _profileTabCachePrefix = 'dd.profile.tab.cache.v2.';
   static const _profileTabCacheAtPrefix = 'dd.profile.tab.cache.at.';
   static const _profileMediaRefreshAge = Duration(minutes: 12);
 
