@@ -3923,13 +3923,20 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                               : displayName,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: isMine
-                                ? Colors.red
-                                : isPostAuthor
-                                    ? Colors.green
-                                    : null,
+                            color: isMine ? Colors.red : null,
                           ),
                         ),
+                        if (isPostAuthor && !isMine)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 6),
+                            child: Text(
+                              '作者',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                         if (comment.city.trim().isNotEmpty) ...[
                           const SizedBox(width: 6),
                           _ProfileTag(text: comment.city.trim()),
