@@ -5129,16 +5129,19 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               children: [
                                 SizedBox(
                                   width: 68,
-                                  child: _InlineProfileStat(
-                                    label: '关注',
-                                    value: '${p?['following'] ?? 0}',
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const _UserRelationListPage(
-                                          relation: 'following',
-                                          title: '关注',
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: _InlineProfileStat(
+                                      label: '关注',
+                                      value: '${p?['following'] ?? 0}',
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const _UserRelationListPage(
+                                            relation: 'following',
+                                            title: '关注',
+                                          ),
                                         ),
                                       ),
                                     ),
