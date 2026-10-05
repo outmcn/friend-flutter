@@ -2132,14 +2132,16 @@ class _DiscoverPageState extends State<DiscoverPage>
   }
 
   Future<void> _loadMore() async {
-    if (_loadingMore || !_hasMore || selectedTab > 1) return;
+    if (_loadingMore || !_hasMore) return;
     _loadingMore = true;
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
       final batch = selectedTab == 0
           ? await service.fetchPosts(token, offset: posts.length)
-          : await service.fetchNearbyPosts(token, offset: posts.length);
+          : selectedTab == 1
+              ? await service.fetchNearbyPosts(token, offset: posts.length)
+              : await service.fetchFollowingPosts(token, offset: posts.length);
       if (!mounted) return;
       final ids = posts.map((item) => item.id).toSet();
       final additions = batch.where((item) => ids.add(item.id)).toList();

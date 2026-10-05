@@ -248,10 +248,12 @@ class DDPostService {
     String token, {
     int offset = 0,
     int limit = 30,
+    bool followingFeed = false,
   }) async {
     final uri = _api('/posts').replace(queryParameters: {
       'offset': '$offset',
       'limit': '$limit',
+      if (followingFeed) 'following': '1',
     });
     final response = await _client.get(
       uri,
@@ -270,11 +272,12 @@ class DDPostService {
     int offset = 0,
     int limit = 30,
   }) => fetchPosts(token, offset: offset, limit: limit);
+
   Future<List<DDPost>> fetchFollowingPosts(
     String token, {
     int offset = 0,
     int limit = 30,
-  }) => fetchPosts(token, offset: offset, limit: limit);
+  }) => fetchPosts(token, offset: offset, limit: limit, followingFeed: true);
 
   Future<DDPost> fetchPost(String token, int postId) async {
     final response = await _client.get(
