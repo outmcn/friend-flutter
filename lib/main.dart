@@ -4499,7 +4499,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                       child: _SonicProfileButton(
                                         playing: _sonicPlaying,
                                         enabled: _sonicUrl?.isNotEmpty == true,
-                                        label: '声音',
                                         onTap: _toggleSonic,
                                       ),
                                     ),
@@ -5390,6 +5389,12 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
               if (error != null)
                 Text(error!, style: const TextStyle(color: Colors.orange)),
               const Spacer(),
+              OutlinedButton.icon(
+                onPressed: saving ? null : _toggleSonic,
+                icon: Icon(playing ? Icons.pause : Icons.cloud_outlined),
+                label: const Text('云端声音'),
+              ),
+              const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: saving ? null : _record,
                 icon: Icon(recording ? Icons.stop : Icons.mic),
@@ -5397,15 +5402,16 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: saving ? null : _toggleSonic,
-                icon: Icon(playing ? Icons.pause : Icons.cloud_outlined),
-                label: const Text('我的声音'),
+                onPressed: saving ? null : _preview,
+                icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                label: const Text('本地试听'),
               ),
               const SizedBox(height: 12),
-              FilledButton(
-                  onPressed: saving ? null : _save,
-                  child: Text(saving ? '保存中…' : '保存')),
-            ],
+              FilledButton.icon(
+                onPressed: saving ? null : _save,
+                icon: const Icon(Icons.cloud_upload_outlined),
+                label: Text(saving ? '保存中…' : '保存声音'),
+              ),            ],
           ),
         ),
       );
@@ -5415,12 +5421,10 @@ class _SonicProfileButton extends StatelessWidget {
   const _SonicProfileButton({
     required this.playing,
     required this.enabled,
-    required this.label,
     required this.onTap,
   });
   final bool playing;
   final bool enabled;
-  final String label;
   final VoidCallback onTap;
 
   @override
@@ -5435,19 +5439,12 @@ class _SonicProfileButton extends StatelessWidget {
                 .withValues(alpha: enabled ? .14 : .07),
             borderRadius: BorderRadius.circular(99),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                playing ? Icons.pause : TIcons.sonic,
-                size: 18,
-                color: enabled
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).disabledColor,
-              ),
-              const SizedBox(width: 4),
-              Text(label),
-            ],
+          child: Icon(
+            playing ? Icons.pause : TIcons.sonic,
+            size: 18,
+            color: enabled
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).disabledColor,
           ),
         ),
       );
