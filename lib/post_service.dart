@@ -627,9 +627,9 @@ class DDPostService {
   Future<void> deletePost(String token, int postId) async {
     final response = await _client.delete(_api('/posts/$postId'),
         headers: {'Authorization': 'Bearer $token'});
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('${decoded['error'] ?? '退出登录失败'}');
+      final decoded = response.body.trim().isEmpty ? <String, dynamic>{} : jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception('${decoded['error'] ?? '删除动态失败'}');
     }
   }
 
