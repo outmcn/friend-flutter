@@ -1505,7 +1505,7 @@ class _TextPostGradient extends StatelessWidget {
     final colors = palettes[seed.abs() % palettes.length];
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 190, maxHeight: 360),
+      constraints: const BoxConstraints(maxHeight: 360),
       padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 30),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
