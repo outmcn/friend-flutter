@@ -5343,7 +5343,10 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                         : null,
                                   ),
                                   title: Text('${user['nickname'] ?? '用户'}'),
-                                  subtitle: Text('${user['city'] ?? '未知地区'}'),
+                                  subtitle: Text(
+                                      widget.relation == 'history'
+                                          ? '${user['city'] ?? '未知地区'} · 访问 ${user['visitCount'] ?? 1} 次'
+                                          : '${user['city'] ?? '未知地区'}'),
                                   trailing: const Icon(Icons.chevron_right),
                                 ),
                               );
