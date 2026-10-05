@@ -7420,32 +7420,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ? const Center(child: CircularProgressIndicator())
             : ListView(padding: const EdgeInsets.all(18), children: [
                 GestureDetector(
-                    onTap: pickAvatar,
-                    child: ClipOval(
-                      child: Container(
-                        width: 96,
-                        height: 96,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        child: croppedAvatar != null
-                            ? Image.memory(
-                                Uint8List.fromList(croppedAvatar!),
-                                width: 96,
-                                height: 96,
-                                fit: BoxFit.contain,
-                              )
-                            : (_avatarPreviewUrl == null
-                                ? const Icon(Icons.add_a_photo_outlined, size: 30)
-                                : Image.network(
-                                    _avatarPreviewUrl!,
-                                    width: 96,
-                                    height: 96,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) =>
-                                        const Icon(Icons.broken_image_outlined),
-                                  )),
+                  onTap: pickAvatar,
+                  child: ClipOval(
+                    child: Container(
+                      width: 96,
+                      height: 96,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      child: croppedAvatar != null
+                          ? Image.memory(
+                              Uint8List.fromList(croppedAvatar!),
+                              width: 96,
+                              height: 96,
+                              fit: BoxFit.contain,
+                            )
+                          : (_avatarPreviewUrl == null
+                              ? const Icon(Icons.add_a_photo_outlined, size: 30)
+                              : Image.network(
+                                  _avatarPreviewUrl!,
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) =>
+                                      const Icon(Icons.broken_image_outlined),
+                                )),
                     ),
+                  ),
+                ),
                 const SizedBox(height: 22),
                 if (error != null)
                   Text(error!, style: const TextStyle(color: Colors.orange)),
