@@ -259,14 +259,27 @@ class DDPostService {
     return DDPost.fromJson((decoded['post'] as Map).cast<String, dynamic>());
   }
 
-  Future<List<DDPost>> fetchMyPosts(String token) async {
-    final posts = await fetchPosts(token);
-    final me = await fetchMe(token);
-    final myId = _intValue(me['id']);
-    return myId == null ? const [] : posts.where((post) => post.userId == myId).toList();
+  Future<List<DDPost>> fetchLikedPosts(String token) async {
+    return _fetchProfilePosts(token, '/me/liked-posts');
   }
-  Future<List<DDPost>> fetchLikedPosts(String token) async => const [];
-  Future<List<DDPost>> fetchFavoritedPosts(String token) async => const [];
+
+  Future<List<DDPost>> fetchFavoritedPosts(String token) async {
+    return _fetchProfilePosts(token, '/me/favorited-posts');
+  }
+
+  Future<List<DDPost>> _fetchProfilePosts(String token, String path) async {
+    final response = await _client.get(
+      _api(path),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+      throw Exception('我的动态加载失败');
+    }
+    final rows = decoded['posts'];
+    if (rows is! List) throw Exception('动态数据格式错误');
+    return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+  }
 
   Future<List<DDPost>> _fetchList(String token, String path) async {
     return const [];

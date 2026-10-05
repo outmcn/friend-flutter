@@ -4519,7 +4519,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
       }
       final loadedPosts = targetTab == 0
           ? await service.fetchMyPosts(t)
-          : const <DDPost>[];
+          : targetTab == 1
+              ? await service.fetchFavoritedPosts(t)
+              : await service.fetchLikedPosts(t);
       tabPosts[targetTab] = loadedPosts;
       await _saveTabCache(targetTab, loadedPosts);
       if (!mounted) return;
