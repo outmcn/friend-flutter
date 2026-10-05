@@ -33,6 +33,7 @@ class DDPost {
     required this.favorited,
     this.imageUrl,
     this.videoUrl,
+    this.thumbnailUrl,
     required this.views,
   });
 
@@ -51,6 +52,7 @@ class DDPost {
   final bool favorited;
   final String? imageUrl;
   final String? videoUrl;
+  final String? thumbnailUrl;
   final int views;
   DDPost copyWith({
     bool? liked,
@@ -74,6 +76,7 @@ class DDPost {
         favorited: favorited ?? this.favorited,
         imageUrl: imageUrl,
         videoUrl: videoUrl,
+        thumbnailUrl: thumbnailUrl,
         views: views,
       );
 
@@ -93,6 +96,7 @@ class DDPost {
         'favorited': favorited,
         'imageUrl': imageUrl,
         'videoUrl': videoUrl,
+        'thumbnailUrl': thumbnailUrl,
         'views': views,
       };
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
@@ -111,6 +115,7 @@ class DDPost {
         favorited: json['favorited'] == true,
         imageUrl: DDPostService.mediaUrl(json['imageUrl']?.toString()),
         videoUrl: DDPostService.mediaUrl(json['videoUrl']?.toString()),
+        thumbnailUrl: DDPostService.mediaUrl(json['thumbnailUrl']?.toString()),
         views: _intValue(json['views']) ?? 0,
       );
 }
@@ -316,6 +321,7 @@ class DDPostService {
       required String content,
       String? imageDataUrl,
       String? videoUrl,
+      String? thumbnailUrl,
       String visibility = 'public',
       double? latitude,
       double? longitude}) async {
@@ -332,6 +338,9 @@ class DDPostService {
     }
     if (videoUrl != null && videoUrl.isNotEmpty) {
       body['videoKey'] = videoUrl;
+    }
+    if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+      body['thumbnailKey'] = thumbnailUrl;
     }
     final response = await _client.post(
       _api('/posts'),

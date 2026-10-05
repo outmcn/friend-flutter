@@ -14,6 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
@@ -1616,11 +1617,15 @@ class _DynamicPostCard extends StatelessWidget {
             child: InkWell(
               onTap: onOpen,
               borderRadius: BorderRadius.circular(16),
-              child: Container(
-                height: 180,
-                color: Colors.black26,
+              child: Stack(
                 alignment: Alignment.center,
-                child: const Icon(Icons.play_circle_outline, size: 56),
+                children: [
+                  if (post.thumbnailUrl != null && post.thumbnailUrl!.isNotEmpty)
+                    Image.network(post.thumbnailUrl!, width: double.infinity, height: 180, fit: BoxFit.cover)
+                  else
+                    Container(height: 180, color: Colors.black26),
+                  const Icon(Icons.play_circle_outline, size: 56),
+                ],
               ),
             ),
           ),
@@ -2836,6 +2841,30 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
 
+  Future<String?> _videoThumbnailKey(String token) async {
+    if (selectedVideo == null) return null;
+    final bytes = await VideoThumbnail.thumbnailData(
+      video: selectedVideo!.path,
+      imageFormat: ImageFormat.JPEG,
+      maxWidth: 720,
+      quality: 82,
+    );
+    if (bytes == null || bytes.isEmpty) throw Exception('视频预览图生成失败');
+    final signed = await _service.postMediaUploadUrl(
+      token: token,
+      fileName: 'thumbnail.jpg',
+      contentType: 'image/jpeg',
+      kind: 'image',
+    );
+    final url = signed['url'];
+    final key = signed['objectKey'];
+    if (url is! String || key is! String) throw Exception('视频预览图上传地址格式错误');
+    if (!await _service.uploadAvatar(url: url, bytes: bytes, contentType: 'image/jpeg')) {
+      throw Exception('视频预览图上传失败');
+    }
+    return key;
+  }
+
   Future<_PostLocation?> _locationForPost(String token) async {
     const cacheAge = Duration(hours: 1);
     final prefs = await SharedPreferences.getInstance();
@@ -2915,11 +2944,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
                       });
                       try {
                         final location = await _locationForPost(token);
+                        final videoKey = await _videoObjectKey(token);
+                        final thumbnailKey = await _videoThumbnailKey(token);
                         await _service.createPost(
                           token: token,
                           content: _content.text.trim(),
                           imageDataUrl: await _imageObjectKey(token),
-                          videoUrl: await _videoObjectKey(token),
+                          videoUrl: videoKey,
+                          thumbnailUrl: thumbnailKey,
                           visibility: visibility == '仅好友可见'
                               ? 'friends'
                               : visibility == '仅自己可见'
