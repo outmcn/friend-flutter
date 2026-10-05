@@ -1642,15 +1642,13 @@ class _DynamicPostCard extends StatelessWidget {
                   visualDensity: const VisualDensity(horizontal: -1, vertical: -1),
                   padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
                   textStyle: const TextStyle(fontSize: 13, height: 1.15),
-                  foregroundColor: post.following
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Colors.red,
+                  foregroundColor: post.following ? Theme.of(context).colorScheme.onSurface : Colors.white,
                   side: BorderSide(
                     color: post.following
                         ? Theme.of(context).colorScheme.outlineVariant
                         : Colors.red,
                   ),
-                  backgroundColor: Colors.transparent,
+                  backgroundColor: post.following ? Colors.transparent : Colors.red,
                 ),
                 child: Text(post.following ? '私聊' : '关注'),
               ),
