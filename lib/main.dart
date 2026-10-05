@@ -3918,13 +3918,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                     const SizedBox(height: 2),
                     Text(comment.content),
                     const SizedBox(height: 5),
+                    Text(
+                      formatDDTime(comment.createdAt),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    const SizedBox(height: 5),
                     Row(
                       children: [
-                        Text(
-                          formatDDTime(comment.createdAt),
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                        const SizedBox(width: 10),
                         InkWell(
                           onTap: () => _toggleCommentLike(comment),
                           child: Icon(
