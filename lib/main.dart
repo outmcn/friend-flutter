@@ -4770,6 +4770,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   final AudioPlayer _sonicPlayer = AudioPlayer();
   final ScrollController _profileScrollController = ScrollController();
   bool _showStickyNickname = false;
+  bool _showStickyTabs = false;
   bool _sonicPlaying = false;
   String? _sonicUrl;
   String? _avatarUrl;
@@ -4788,6 +4789,11 @@ class _DDProfilePageState extends State<DDProfilePage> {
         _profileScrollController.offset >= 58;
     if (shouldShow != _showStickyNickname && mounted) {
       setState(() => _showStickyNickname = shouldShow);
+    }
+    final showTabs = _profileScrollController.hasClients &&
+        _profileScrollController.offset >= 300;
+    if (showTabs != _showStickyTabs && mounted) {
+      setState(() => _showStickyTabs = showTabs);
     }
   }
 
@@ -4982,9 +4988,11 @@ class _DDProfilePageState extends State<DDProfilePage> {
           ),
         ],
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+      body: Stack(
+        children: [
+          loading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
               onRefresh: () => load(forceRefresh: true),
               child: ListView(
                 controller: _profileScrollController,
@@ -5196,6 +5204,25 @@ class _DDProfilePageState extends State<DDProfilePage> {
                 ],
               ),
             ),
+          if (_showStickyTabs)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Material(
+                elevation: 2,
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: _MyProfileIconTabs(
+                    selectedTab: selectedTab,
+                    onSelect: (tab) => load(tab: tab),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
