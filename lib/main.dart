@@ -4473,6 +4473,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                       child: _SonicProfileButton(
                                         playing: _sonicPlaying,
                                         enabled: _sonicUrl?.isNotEmpty == true,
+                                        label: '声音',
                                         onTap: _toggleSonic,
                                       ),
                                     ),
@@ -4985,6 +4986,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               child: _SonicProfileButton(
                                 playing: _sonicPlaying,
                                 enabled: _sonicUrl?.isNotEmpty == true,
+                                label: '我的声音',
                                 onTap: () async {
                                   await Navigator.push<bool>(
                                     context,
@@ -5370,7 +5372,7 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: saving ? null : _toggleSonic,
-                icon: Icon(_sonicPlaying ? Icons.pause : Icons.cloud_outlined),
+                icon: Icon(playing ? Icons.pause : Icons.cloud_outlined),
                 label: const Text('我的声音'),
               ),
               const SizedBox(height: 12),
