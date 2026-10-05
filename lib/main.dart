@@ -3657,20 +3657,18 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
     final result = <Widget>[];
     final roots = source.where((c) => c.parentId == null).toList();
-    final directReplies = <({DDComment comment, String? replyTo, int rootId, int depth})>[];
-    final nestedReplies = <({DDComment comment, String? replyTo, int rootId, int depth})>[];
+    final directReplies = <Map<String, dynamic>>[];
+    final nestedReplies = <Map<String, dynamic>>[];
 
     void collectNested(DDComment parent, int rootId, int parentDepth) {
       for (final reply in repliesByParent[parent.id] ?? const <DDComment>[]) {
         // 纯三级评论不显示“回复某某”；只有回复三级评论时才显示。
-        nestedReplies.add(
-          (
-            comment: reply,
-            replyTo: parentDepth >= 2 ? parent.nickname : null,
-            rootId: rootId,
-            depth: 2,
-          ),
-        );
+        nestedReplies.add({
+          'comment': reply,
+          'replyTo': parentDepth >= 2 ? parent.nickname : null,
+          'rootId': rootId,
+          'depth': 2,
+        });
         collectNested(reply, rootId, parentDepth + 1);
       }
     }
@@ -3678,13 +3676,20 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     // 先收集全部二级评论，再收集三级及更深回复，确保首次不会提前显示三级评论。
     for (final root in roots) {
       for (final reply in repliesByParent[root.id] ?? const <DDComment>[]) {
-        directReplies.add(
-          (comment: reply, replyTo: null, rootId: root.id, depth: 1),
-        );
+        directReplies.add({
+          'comment': reply,
+          'replyTo': null,
+          'rootId': root.id,
+          'depth': 1,
+        });
       }
     }
     for (final reply in directReplies) {
-      collectNested(reply.comment, reply.rootId, 1);
+      collectNested(
+        reply['comment'] as DDComment,
+        reply['rootId'] as int,
+        1,
+      );
     }
 
     final visibleReplies = visibleReplyCount <= 3
@@ -3695,16 +3700,18 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     for (final root in roots) {
       result.add(Padding(
         padding: const EdgeInsets.only(left: 0),
-        child: _commentTile(comment: root, depth: 0, replyTo: null),
+        child: _commentTile(root, depth: 0, replyTo: null),
       ));
-      for (final item in visibleReplies.where((item) => item.rootId == root.id)) {
+      for (final item in visibleReplies.where((item) => item['rootId'] == root.id)) {
         // 仅当评论是回复三级评论时显示“某某 回复 某某”。
         result.add(Padding(
-          padding: EdgeInsets.only(left: item.depth == 2 ? 84.0 : 42.0),
+          padding: EdgeInsets.only(
+            left: item['depth'] == 2 ? 84.0 : 42.0,
+          ),
           child: _commentTile(
-            comment: item.comment,
-            depth: item.depth,
-            replyTo: item.replyTo,
+            item['comment'] as DDComment,
+            depth: item['depth'] as int,
+            replyTo: item['replyTo'] as String?,
           ),
         ));
       }
@@ -7438,7 +7445,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     errorBuilder: (_, __, ___) =>
                                         const Icon(Icons.broken_image_outlined),
                                   )),
-                      ),
                     ),
                 const SizedBox(height: 22),
                 if (error != null)
