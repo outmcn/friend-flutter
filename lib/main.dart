@@ -2138,7 +2138,7 @@ class _DiscoverPageState extends State<DiscoverPage>
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
       final batch = selectedTab == 0
-          ? await service.fetchPosts(token, offset: posts.length)
+          ? await service.fetchRecommendedPosts(token, offset: posts.length)
           : selectedTab == 1
               ? await service.fetchNearbyPosts(token, offset: posts.length)
               : await service.fetchFollowingPosts(token, offset: posts.length);
@@ -2241,7 +2241,7 @@ class _DiscoverPageState extends State<DiscoverPage>
       final shouldFetch = fromRefresh || switchingTab || !cacheFresh;
       final loaded = shouldFetch
           ? (targetTab == 0
-              ? await service.fetchPosts(t)
+              ? await service.fetchRecommendedPosts(t, offset: 0)
               : targetTab == 1
                   ? await service.fetchNearbyPosts(t)
                   : await service.fetchFollowingPosts(t))

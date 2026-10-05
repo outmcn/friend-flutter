@@ -279,6 +279,24 @@ class DDPostService {
     int limit = 30,
   }) => fetchPosts(token, offset: offset, limit: limit, followingFeed: true);
 
+  Future<List<DDPost>> fetchRecommendedPosts(
+    String token, {
+    int offset = 0,
+    int limit = 30,
+  }) async {
+    final uri = _api('/posts/recommended').replace(queryParameters: {
+      'offset': '$offset',
+      'limit': '$limit',
+    });
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+      throw Exception('推荐动态加载失败');
+    }
+    final rows = decoded['posts'];
+    if (rows is! List) throw Exception('推荐动态数据格式错误');
+    return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+  }
   Future<DDPost> fetchPost(String token, int postId) async {
     final response = await _client.get(
       _api('/posts/$postId'),
