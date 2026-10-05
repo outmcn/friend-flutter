@@ -1941,7 +1941,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final p = await SharedPreferences.getInstance();
       final t = p.getString('friend.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
-      final cacheKey = 'dd.discover.cache.$targetTab';
+      final cacheKey = 'dd.discover.cache.v2.$targetTab';
       final cacheAtKey = '$cacheKey.at';
       final cachedAt = p.getInt(cacheAtKey);
       final cachedJson = p.getString(cacheKey);
