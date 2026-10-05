@@ -7473,26 +7473,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
             : ListView(padding: const EdgeInsets.all(18), children: [
                 GestureDetector(
                   onTap: pickAvatar,
-                  child: ClipOval(
-                    child: SizedBox.square(
-                      dimension: 96,
-                      child: Container(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        child: croppedAvatar != null
-                            ? Image.memory(
-                                Uint8List.fromList(croppedAvatar!),
-                                fit: BoxFit.contain,
-                              )
-                            : (_avatarPreviewUrl == null
-                                ? const Icon(Icons.add_a_photo_outlined, size: 30)
-                                : Image.network(
-                                    _avatarPreviewUrl!,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) =>
-                                        const Icon(Icons.broken_image_outlined),
-                                  )),
+                  child: Center(
+                    child: SizedBox(
+                      width: 96,
+                      height: 96,
+                      child: ClipPath(
+                        clipper: _FixedCircleClipper(),
+                        child: ColoredBox(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          child: croppedAvatar != null
+                              ? Image.memory(
+                                  Uint8List.fromList(croppedAvatar!),
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.contain,
+                                )
+                              : (_avatarPreviewUrl == null
+                                  ? const Icon(Icons.add_a_photo_outlined, size: 30)
+                                  : Image.network(
+                                      _avatarPreviewUrl!,
+                                      width: 96,
+                                      height: 96,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.broken_image_outlined),
+                                    )),
+                        ),
                       ),
                     ),
                   ),
@@ -7506,6 +7514,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: const InputDecoration(labelText: '昵称')),
               ]),
       );
+}
+
+class _FixedCircleClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final diameter = size.shortestSide;
+    final left = (size.width - diameter) / 2;
+    final top = (size.height - diameter) / 2;
+    return Path()..addOval(Rect.fromLTWH(left, top, diameter, diameter));
+  }
+
+  @override
+  bool shouldReclip(covariant _FixedCircleClipper oldClipper) => false;
 }
 
 class SettingsPage extends StatelessWidget {
