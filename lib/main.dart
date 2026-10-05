@@ -1763,6 +1763,24 @@ class _NetworkVideoPreview extends StatefulWidget {
 class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
   VideoPlayerController? controller;
   bool loading = false;
+  bool ended = false;
+
+  void _onVideoChanged() {
+    final active = controller;
+    if (!mounted || active == null || !active.value.isInitialized) return;
+    final duration = active.value.duration;
+    final position = active.value.position;
+    final isEnded = duration > Duration.zero && position >= duration;
+    if (ended != isEnded) setState(() => ended = isEnded);
+  }
+
+  Future<void> _replay() async {
+    final active = controller;
+    if (active == null) return;
+    await active.seekTo(Duration.zero);
+    setState(() => ended = false);
+    await active.play();
+  }
 
   @override
   void initState() {
@@ -1784,7 +1802,9 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
       setState(() {
         controller = next;
         loading = false;
+        ended = false;
       });
+      next.addListener(_onVideoChanged);
     } catch (_) {
       await next.dispose();
       if (mounted) setState(() => loading = false);
@@ -1798,6 +1818,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
   @override
   void dispose() {
     _VideoPlaybackRegistry.unregister(this);
+    controller?.removeListener(_onVideoChanged);
     controller?.dispose();
     super.dispose();
   }
@@ -1859,6 +1880,11 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
               );
             },
           ),
+          if (ended)
+            GestureDetector(
+              onTap: _replay,
+              child: const Icon(Icons.replay_circle_filled, size: 64, color: Colors.white),
+            ),
         ],
       ),
     );
