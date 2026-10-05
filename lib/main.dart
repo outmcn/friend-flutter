@@ -5482,6 +5482,42 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
     if (mounted) setState(() => playing = !playing);
   }
 
+  Future<void> _deleteCloudVoice() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除云端声音'),
+        content: const Text('删除后将无法恢复，确定删除吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      setState(() {
+        saving = true;
+        error = null;
+      });
+      await player.stop();
+      await service.updateMe(token: await _token(), voiceKey: '');
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
   Future<void> _save() async {
     final localPath = recordingPath;
     if (localPath == null || localPath.isEmpty) {
@@ -5535,12 +5571,28 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
               if (error != null)
                 Text(error!, style: const TextStyle(color: Colors.orange)),
               const Spacer(),
-              OutlinedButton.icon(
-                onPressed: saving ? null : _toggleSonic,
-                icon: Icon(playing ? Icons.pause : Icons.cloud_outlined),
-                label: const Text('云端声音'),
-              ),
-              const SizedBox(height: 12),
+              if (widget.currentUrl?.trim().isNotEmpty == true) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: saving ? null : _toggleSonic,
+                        icon: Icon(playing ? Icons.pause : Icons.cloud_outlined),
+                        label: const Text('云端声音'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: saving ? null : _deleteCloudVoice,
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('删除云端'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
               FilledButton.icon(
                 onPressed: saving ? null : _record,
                 icon: Icon(recording ? Icons.stop : Icons.mic),
