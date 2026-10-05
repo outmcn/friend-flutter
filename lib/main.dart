@@ -1663,7 +1663,7 @@ class _DynamicPostCard extends StatelessWidget {
             child: _TextPostGradient(content: post.content, seed: post.id),
           ),
         ] else if (post.content.trim().isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           InkWell(
             onTap: onOpen,
             borderRadius: BorderRadius.circular(8),
@@ -1675,7 +1675,7 @@ class _DynamicPostCard extends StatelessWidget {
           ),
         ],
         if (post.imageUrl != null && post.imageUrl!.trim().isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: GestureDetector(
@@ -1693,7 +1693,7 @@ class _DynamicPostCard extends StatelessWidget {
           ),
         ],
         if (post.videoUrl != null && post.videoUrl!.trim().isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: GestureDetector(
@@ -1763,7 +1763,7 @@ class _DynamicPostCard extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
+      padding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onOpen,
@@ -1771,7 +1771,7 @@ class _DynamicPostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           content,
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Divider(
             height: 1,
             thickness: 1,
@@ -2236,7 +2236,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 padding: EdgeInsets.fromLTRB(
                     18, 0, 18, 28 + MediaQuery.of(context).padding.bottom),
                 children: [
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 6),
                   if (loading)
                     const _PageLoadState(
                       title: '动态加载中',
