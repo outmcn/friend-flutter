@@ -5102,8 +5102,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                _ProfileTag(text: '${p?['city'] ?? '未知'}'),
-                                const SizedBox(width: 8),
                                 _SonicProfileButton(
                                   playing: _sonicPlaying,
                                   enabled: _sonicUrl?.isNotEmpty == true,
@@ -5182,8 +5180,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Stack(
-                        clipBehavior: Clip.none,
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           CircleAvatar(
                             radius: 40,
@@ -5194,7 +5192,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ? const Icon(Icons.person, size: 42)
                                 : null,
                           ),
-
+                          const SizedBox(height: 6),
+                          _ProfileTag(text: '${p?['city'] ?? '未知'}'),
                         ],
                       ),
                     ],
