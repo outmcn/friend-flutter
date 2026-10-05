@@ -480,12 +480,18 @@ class DDPostService {
 
   Future<List<Map<String, dynamic>>> fetchUsers(String token,
       {required String relation}) async {
+    final uri = _api('/users/search').replace(queryParameters: {
+      'q': '',
+      'relation': relation,
+    });
     final response = await _client.get(
-      _api('/users/search?q='),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('用户列表加载失败');
     }
     final rows = decoded['users'];
