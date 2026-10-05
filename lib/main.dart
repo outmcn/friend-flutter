@@ -1647,11 +1647,11 @@ class _DynamicPostCard extends StatelessWidget {
               OutlinedButton(
                 onPressed: post.following ? onChat : onFollow,
                 style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 30),
+                  minimumSize: const Size(0, 34),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
-                  textStyle: const TextStyle(fontSize: 12, height: 1.1),
+                  visualDensity: const VisualDensity(horizontal: -1, vertical: -1),
+                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+                  textStyle: const TextStyle(fontSize: 13, height: 1.15),
                   foregroundColor: post.following
                       ? Theme.of(context).colorScheme.onSurface
                       : Theme.of(context).colorScheme.secondary,
