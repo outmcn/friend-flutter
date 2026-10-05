@@ -3168,7 +3168,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               maxLength: 300,
               onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
-                hintText: '发一条动态吧～。',
+                hintText: '发一条动态吧～',
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
