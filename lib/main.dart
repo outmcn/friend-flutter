@@ -1999,6 +1999,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                     'favorited': item.favorited,
                     'imageUrl': item.imageUrl,
                     'videoUrl': item.videoUrl,
+                    'thumbnailUrl': item.thumbnailUrl,
                     'views': item.views,
                   })
               .toList()),
