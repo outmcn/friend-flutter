@@ -141,6 +141,8 @@ class DDApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      builder: (context, child) =>
+          _KeyboardDismissBehavior(child: child ?? const SizedBox.shrink()),
       title: 'DD',
       themeMode: ThemeMode.system,
       theme: ThemeData(
@@ -208,6 +210,31 @@ class DDApp extends StatelessWidget {
       home: const StartupNetworkGate(),
     );
   }
+}
+
+class _KeyboardDismissBehavior extends StatefulWidget {
+  const _KeyboardDismissBehavior({required this.child});
+  final Widget child;
+
+  @override
+  State<_KeyboardDismissBehavior> createState() =>
+      _KeyboardDismissBehaviorState();
+}
+
+class _KeyboardDismissBehaviorState extends State<_KeyboardDismissBehavior> {
+  @override
+  Widget build(BuildContext context) => Listener(
+        onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification is ScrollStartNotification) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
+            return false;
+          },
+          child: widget.child,
+        ),
+      );
 }
 
 class StartupNetworkGate extends StatefulWidget {
