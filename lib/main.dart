@@ -3515,6 +3515,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   bool loading = true;
   bool deleting = false;
   bool followLoading = false;
+  // 默认只显示三条二级评论，点击“显示更多”后每次增加十条。
+  int visibleReplyCount = 3;
   String? error;
   int? currentUserId;
   bool get isOwner => post?.userId != null && currentUserId == post!.userId;
@@ -3557,6 +3559,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       currentUserId = _intValue(me['id']);
       post = await service.fetchPost(t, widget.postId);
       comments = await service.fetchComments(t, widget.postId);
+      visibleReplyCount = 3;
       if (post == null) throw Exception('动态不存在');
     } catch (e) {
       if (mounted)
@@ -3591,26 +3594,66 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       repliesByParent.putIfAbsent(comment.parentId!, () => []).add(comment);
     }
     final result = <Widget>[];
+    final roots = source.where((c) => c.parentId == null).toList();
+    final directReplies = <({DDComment comment, String? replyTo, int rootId})>[];
+    final nestedReplies = <({DDComment comment, String? replyTo, int rootId})>[];
 
-    void append(DDComment comment, int depth, String? replyTo) {
-      result.add(Padding(
-        // 三级评论保留额外的左侧空隙，与二级评论错开。
-        padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : depth * 42.0),
-        child: _commentTile(
-          comment,
-          depth: depth,
-          replyTo: depth >= 2 ? replyTo : null,
-        ),
-      ));
-      // 三级评论仍可回复；回复它的内容继续按三级样式显示，
-      // 不再增加缩进，也不显示第四级层级。
-      for (final reply in repliesByParent[comment.id] ?? const <DDComment>[]) {
-        append(reply, depth >= 2 ? 2 : depth + 1, comment.nickname);
+    void collectNested(DDComment parent, int rootId, int parentDepth) {
+      for (final reply in repliesByParent[parent.id] ?? const <DDComment>[]) {
+        // 纯三级评论不显示“回复某某”；只有回复三级评论时才显示。
+        nestedReplies.add(
+          (
+            comment: reply,
+            replyTo: parentDepth >= 2 ? parent.nickname : null,
+            rootId: rootId,
+          ),
+        );
+        collectNested(reply, rootId, parentDepth + 1);
       }
     }
 
-    for (final root in source.where((c) => c.parentId == null)) {
-      append(root, 0, null);
+    // 先收集全部二级评论，再收集三级及更深回复，确保首次不会提前显示三级评论。
+    for (final root in roots) {
+      for (final reply in repliesByParent[root.id] ?? const <DDComment>[]) {
+        directReplies.add((comment: reply, replyTo: null, rootId: root.id));
+      }
+    }
+    for (final reply in directReplies) {
+      collectNested(reply.comment, reply.rootId, 1);
+    }
+
+    final visibleReplies = visibleReplyCount <= 3
+        ? directReplies.take(3).toList()
+        : [...directReplies, ...nestedReplies]
+            .take(visibleReplyCount)
+            .toList();
+    for (final root in roots) {
+      result.add(Padding(
+        padding: const EdgeInsets.only(left: 0),
+        child: _commentTile(comment: root, depth: 0, replyTo: null),
+      ));
+      for (final item in visibleReplies.where((item) => item.rootId == root.id)) {
+        // 仅当评论是回复三级评论时显示“某某 回复 某某”。
+        final depth = item.replyTo == null ? 1 : 2;
+        result.add(Padding(
+          padding: EdgeInsets.only(left: depth == 2 ? 84.0 : 42.0),
+          child: _commentTile(
+            comment: item.comment,
+            depth: depth,
+            replyTo: item.replyTo,
+          ),
+        ));
+      }
+    }
+    final totalReplies = directReplies.length + nestedReplies.length;
+    if (visibleReplies.length < totalReplies) {
+      result.add(Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton(
+          onPressed: () => setState(() => visibleReplyCount += 10),
+          child: const Text('显示更多'),
+        ),
+      ));
     }
     return result;
   }
