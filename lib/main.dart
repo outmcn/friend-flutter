@@ -1494,6 +1494,7 @@ class _DynamicPostCard extends StatelessWidget {
     required this.onOpen,
     this.onComment,
     this.onFollow,
+    this.onChat,
     this.onDelete,
     this.authorNavigation = true,
     this.listMode = false,
@@ -1504,6 +1505,7 @@ class _DynamicPostCard extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback? onComment;
   final VoidCallback? onFollow;
+  final VoidCallback? onChat;
   final VoidCallback? onDelete;
   final bool authorNavigation;
   final bool listMode;
@@ -1589,14 +1591,21 @@ class _DynamicPostCard extends StatelessWidget {
               )
             else if (onFollow != null && post.userId != null)
               OutlinedButton(
-                onPressed: post.following ? null : onFollow,
+                onPressed: post.following ? onChat : onFollow,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: post.following
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.secondary,
                   side: BorderSide(
-                    color: Theme.of(context).colorScheme.secondary,
+                    color: post.following
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.secondary,
                   ),
+                  backgroundColor: post.following
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
                 ),
-                child: Text(post.following ? '已关注' : '关注'),
+                child: Text(post.following ? '私聊' : '关注'),
               ),
           ],
         ),
@@ -2273,6 +2282,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                   await service.toggleFollow(t, post.userId!);
                                   await load();
                                 },
+                          onChat: () => ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('私聊功能暂未接入')),
+                          ),
                         ),
                       ),
                     ),
@@ -3899,9 +3911,26 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                             ])),
                         if (!isOwner)
                           OutlinedButton(
-                            onPressed: followLoading || item.following
+                            onPressed: followLoading
                                 ? null
-                                : _toggleFollow,
+                                : item.following
+                                    ? () => ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('私聊功能暂未接入')),
+                                        )
+                                    : _toggleFollow,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: item.following
+                                  ? Colors.white
+                                  : Theme.of(context).colorScheme.secondary,
+                              backgroundColor: item.following
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                              side: BorderSide(
+                                color: item.following
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
                             child: Text(followLoading
                                 ? '处理中…'
                                 : (item.following ? '私聊' : '关注')),
@@ -3994,32 +4023,54 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 class _PostImageHolder extends StatelessWidget {
   const _PostImageHolder({required this.url});
   final String url;
+
+  Future<void> _showViewer(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (_) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(context).pop(),
+        child: Center(
+          child: InteractiveViewer(
+            minScale: 1,
+            maxScale: 5,
+            child: Image.network(url, fit: BoxFit.contain),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 400),
-          child: Image.network(
-            url,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            loadingBuilder: (_, child, progress) => progress == null
-                ? child
-                : const SizedBox(
-                    height: 260,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-            errorBuilder: (_, __, ___) => Container(
-              height: 220,
-              color: Colors.black12,
-              alignment: Alignment.center,
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.broken_image_outlined, size: 42),
-                  SizedBox(height: 8),
-                  Text('图片加载失败'),
-                ],
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: () => _showViewer(context),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 400),
+            child: Image.network(
+              url,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              loadingBuilder: (_, child, progress) => progress == null
+                  ? child
+                  : const SizedBox(
+                      height: 260,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+              errorBuilder: (_, __, ___) => Container(
+                height: 220,
+                color: Colors.black12,
+                alignment: Alignment.center,
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.broken_image_outlined, size: 42),
+                    SizedBox(height: 8),
+                    Text('图片加载失败'),
+                  ],
+                ),
               ),
             ),
           ),
