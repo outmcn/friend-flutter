@@ -20,11 +20,81 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:http/http.dart' as http;
 
 import 'auth_client.dart';
 import 'avatar_crop_page.dart';
 import 'post_service.dart';
 
+class _PermanentImageCache {
+  static final Map<String, String> _localPaths = <String, String>{};
+  static final Map<String, Future<String?>> _pending = <String, Future<String?>>{};
+
+  static Future<String?> get(String url) async {
+    final normalized = url.trim();
+    if (normalized.isEmpty) return null;
+    final existing = _localPaths[normalized];
+    if (existing != null && await File(existing).exists()) return existing;
+    return _pending.putIfAbsent(normalized, () async {
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final cacheDirectory = Directory('${directory.path}/friend_media_cache');
+        await cacheDirectory.create(recursive: true);
+        final fileName = base64Url.encode(utf8.encode(normalized)).replaceAll('=', '');
+        final file = File('${cacheDirectory.path}/$fileName');
+        if (!await file.exists()) {
+          final response = await http.get(Uri.parse(normalized));
+          if (response.statusCode < 200 || response.statusCode >= 300) return null;
+          await file.writeAsBytes(response.bodyBytes, flush: true);
+        }
+        _localPaths[normalized] = file.path;
+        return file.path;
+      } catch (_) {
+        return null;
+      } finally {
+        _pending.remove(normalized);
+      }
+    });
+  }
+}
+
+class _PermanentCachedImage extends StatefulWidget {
+  const _PermanentCachedImage({required this.url, this.fit = BoxFit.cover});
+  final String url;
+  final BoxFit fit;
+
+  @override
+  State<_PermanentCachedImage> createState() => _PermanentCachedImageState();
+}
+
+class _PermanentCachedImageState extends State<_PermanentCachedImage> {
+  String? localPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PermanentCachedImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) _load();
+  }
+
+  Future<void> _load() async {
+    final path = await _PermanentImageCache.get(widget.url);
+    if (mounted) setState(() => localPath = path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final path = localPath;
+    return path == null
+        ? const ColoredBox(color: Colors.black12)
+        : Image.file(File(path), fit: widget.fit);
+  }
+}
 int? _intValue(Object? value) {
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value);
@@ -1567,12 +1637,14 @@ class _DynamicPostCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               child: CircleAvatar(
                 radius: 20,
-                backgroundImage: post.avatar.isEmpty
-                    ? null
-                    : NetworkImage(DDPostService.mediaUrl(post.avatar)),
                 child: post.avatar.isEmpty
                     ? const Icon(Icons.person_outline)
-                    : null,
+                    : ClipOval(
+                        child: _PermanentCachedImage(
+                          url: post.avatar,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 10),
@@ -2073,11 +2145,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final cacheAtKey = '$cacheKey.at';
       final cachedAt = p.getInt(cacheAtKey);
       final cachedJson = p.getString(cacheKey);
-      final cacheFresh = !fromRefresh &&
-          cachedAt != null &&
-          cachedJson != null &&
-          DateTime.now().millisecondsSinceEpoch - cachedAt <
-              _cacheDuration.inMilliseconds;
+      final cacheHasData = cachedJson != null && cachedJson.isNotEmpty;
+      final cacheFresh = !fromRefresh && cacheHasData;
       final cachedPosts = cacheFresh
           ? (jsonDecode(cachedJson!) as List)
               .whereType<Map<String, dynamic>>()
@@ -4993,13 +5062,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('$_profileTabCachePrefix$tab');
     if (raw == null || raw.isEmpty) return null;
-    final cachedAt = prefs.getInt('$_profileTabCacheAtPrefix$tab');
-    if (requireFreshMedia &&
-        (cachedAt == null ||
-            DateTime.now().millisecondsSinceEpoch - cachedAt >=
-                _profileMediaRefreshAge.inMilliseconds)) {
-      return null;
-    }
     try {
       final data = jsonDecode(raw) as List;
       return data
@@ -5295,12 +5357,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         children: [
                           CircleAvatar(
                             radius: 40,
-                            backgroundImage: _avatarUrl == null
-                                ? null
-                                : NetworkImage(_avatarUrl!),
                             child: _avatarUrl == null
                                 ? const Icon(Icons.person, size: 42)
-                                : null,
+                                : ClipOval(
+                                    child: _PermanentCachedImage(
+                                      url: _avatarUrl!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
                           ),
                           Positioned(
                             left: 0,
