@@ -132,13 +132,17 @@ class DDComment {
       required this.parentId,
       required this.nickname,
       required this.content,
-      required this.createdAt});
+      required this.createdAt,
+      this.likes = 0,
+      this.liked = false});
   final int id;
   final int? userId;
   final int? parentId;
   final String nickname;
   final String content;
   final String createdAt;
+  final int likes;
+  final bool liked;
   factory DDComment.fromJson(Map<String, dynamic> json) => DDComment(
         id: _intValue(json['id']) ?? 0,
         userId: _intValue(json['userId']),
@@ -146,6 +150,8 @@ class DDComment {
         nickname: '${json['nickname'] ?? '用户'}',
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
+        likes: _intValue(json['likes']) ?? 0,
+        liked: json['liked'] == true,
       );
 }
 
@@ -397,6 +403,17 @@ class DDPostService {
     }
   }
 
+  Future<bool> toggleCommentLike(String token, int commentId) async {
+    final response = await _client.post(
+      _api('/comments/$commentId/like'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('${decoded['error'] ?? '评论点赞失败'}');
+    }
+    return decoded['liked'] == true;
+  }
   Future<void> deleteComment(String token, int commentId) async {
     final response = await _client.delete(
       _api('/comments/$commentId'),

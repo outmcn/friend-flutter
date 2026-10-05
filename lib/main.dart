@@ -3635,7 +3635,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   bool loading = true;
   bool deleting = false;
   bool followLoading = false;
-  // 一级评论默认显示 30 条；每层回复默认隐藏，点击后每次增加 3 条。
+  // 默认只显示每个父评论的 1 条直接回复，点击“显示更多”后每次增加 3 条。
   int visibleRootCount = 30;
   final Map<int, int> visibleReplyCounts = <int, int>{};
   String? error;
@@ -3720,7 +3720,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
     void appendReplies(DDComment parent, int depth) {
       final replies = repliesByParent[parent.id] ?? const <DDComment>[];
-      final visible = visibleReplyCounts[parent.id] ?? 0;
+      final visible = visibleReplyCounts[parent.id] ?? 1;
       for (final reply in replies.take(visible)) {
         result.add(Padding(
           padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : 42.0),
@@ -3762,6 +3762,28 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     return result;
   }
 
+  Future<void> _toggleCommentLike(DDComment comment) async {
+    try {
+      final liked = await service.toggleCommentLike(await token(), comment.id);
+      final index = comments.indexWhere((item) => item.id == comment.id);
+      if (index == -1 || !mounted) return;
+      setState(() {
+        comments[index] = DDComment(
+          id: comment.id,
+          userId: comment.userId,
+          parentId: comment.parentId,
+          nickname: comment.nickname,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          likes: comment.likes + (liked == comment.liked ? 0 : (liked ? 1 : -1)),
+          liked: liked,
+        );
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
   Future<void> _commentMenu(DDComment comment) async {
     final isMine = currentUserId != null && comment.userId == currentUserId;
     final action = await showModalBottomSheet<String>(
@@ -3770,21 +3792,33 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         child: Wrap(
           children: [
             ListTile(
+              leading: Icon(comment.liked ? Icons.thumb_up : Icons.thumb_up_outlined),
+              title: const Text('点赞'),
+              onTap: () => Navigator.pop(context, 'like'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.report_outlined),
+              title: const Text('举报'),
+              onTap: () => Navigator.pop(context, 'report'),
+            ),
+            ListTile(
               leading: const Icon(Icons.copy_outlined),
               title: const Text('复制'),
               onTap: () => Navigator.pop(context, 'copy'),
             ),
-            ListTile(
-              leading:
-                  Icon(isMine ? Icons.delete_outline : Icons.report_outlined),
-              title: Text(isMine ? '删除' : '举报'),
-              onTap: () => Navigator.pop(context, isMine ? 'delete' : 'report'),
-            ),
+            if (isMine)
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('删除'),
+                onTap: () => Navigator.pop(context, 'delete'),
+              ),
           ],
         ),
       ),
     );
-    if (action == 'copy') {
+    if (action == 'like') {
+      await _toggleCommentLike(comment);
+    } else if (action == 'copy') {
       await Clipboard.setData(ClipboardData(text: comment.content));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3883,13 +3917,32 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                     ),
                     const SizedBox(height: 2),
                     Text(comment.content),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Text(
+                          formatDDTime(comment.createdAt),
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        const SizedBox(width: 10),
+                        InkWell(
+                          onTap: () => _toggleCommentLike(comment),
+                          child: Icon(
+                            comment.liked
+                                ? Icons.thumb_up
+                                : Icons.thumb_up_outlined,
+                            size: 16,
+                            color: comment.liked
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).hintColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text('${comment.likes}', style: const TextStyle(fontSize: 12)),
+                      ],
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                formatDDTime(comment.createdAt),
-                style: const TextStyle(fontSize: 11),
               ),
             ],
           ),
