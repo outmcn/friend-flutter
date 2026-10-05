@@ -91,8 +91,8 @@ class DDPost {
         'distanceKm': distanceKm,
         'liked': liked,
         'favorited': favorited,
-        'imageURL': imageUrl,
-        'videoURL': videoUrl,
+        'imageUrl': imageUrl,
+        'videoUrl': videoUrl,
         'views': views,
       };
   factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
@@ -109,8 +109,8 @@ class DDPost {
         distanceKm: _doubleValue(json['distanceKm']),
         liked: json['liked'] == true,
         favorited: json['favorited'] == true,
-        imageUrl: DDPostService.mediaUrl(json['imageURL']?.toString()),
-        videoUrl: DDPostService.mediaUrl(json['videoURL']?.toString()),
+        imageUrl: DDPostService.mediaUrl(json['imageUrl']?.toString()),
+        videoUrl: DDPostService.mediaUrl(json['videoUrl']?.toString()),
         views: _intValue(json['views']) ?? 0,
       );
 }

@@ -1917,8 +1917,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
                     'distanceKm': item.distanceKm,
                     'liked': item.liked,
                     'favorited': item.favorited,
-                    'imageURL': item.imageUrl,
-                    'videoURL': item.videoUrl,
+                    'imageUrl': item.imageUrl,
+                    'videoUrl': item.videoUrl,
                     'views': item.views,
                   })
               .toList()),
