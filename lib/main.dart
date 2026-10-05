@@ -4017,6 +4017,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           setState(() => error = e.toString().replaceFirst('Exception: ', ''));
         }
       }
+    }
     } else if (action == 'report') {
       final reason = await showModalBottomSheet<String>(
         context: context,
