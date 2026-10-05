@@ -1745,9 +1745,14 @@ class _VideoPlaybackRegistry {
 }
 
 class _NetworkVideoPreview extends StatefulWidget {
-  const _NetworkVideoPreview({required this.url, this.thumbnailUrl});
+  const _NetworkVideoPreview({
+    required this.url,
+    this.thumbnailUrl,
+    this.unlimitedHeight = false,
+  });
   final String url;
   final String? thumbnailUrl;
+  final bool unlimitedHeight;
 
   @override
   State<_NetworkVideoPreview> createState() => _NetworkVideoPreviewState();
@@ -1813,7 +1818,9 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
                   alignment: Alignment.center,
                   child: widget.thumbnailUrl?.isNotEmpty == true
                       ? ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 400),
+                          constraints: widget.unlimitedHeight
+                              ? const BoxConstraints()
+                              : const BoxConstraints(maxHeight: 400),
                           child: Image.network(
                             widget.thumbnailUrl!,
                             width: constraints.maxWidth,
@@ -1840,7 +1847,9 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
           LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
-              final height = math.min(400.0, width / active.value.aspectRatio);
+              final height = widget.unlimitedHeight
+                  ? width / active.value.aspectRatio
+                  : math.min(400.0, width / active.value.aspectRatio);
               return SizedBox(
                 width: width,
                 height: height,
@@ -3965,12 +3974,16 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                       if (item.imageUrl != null &&
                           item.imageUrl!.trim().isNotEmpty) ...[
                         const SizedBox(height: 16),
-                        _PostImageHolder(url: item.imageUrl!)
+                        _PostImageHolder(url: item.imageUrl!, unlimitedHeight: true)
                       ],
           if (item.videoUrl != null &&
                           item.videoUrl!.trim().isNotEmpty) ...[
                         const SizedBox(height: 16),
-                        _NetworkVideoPreview(url: item.videoUrl!, thumbnailUrl: item.thumbnailUrl),
+                        _NetworkVideoPreview(
+                          url: item.videoUrl!,
+                          thumbnailUrl: item.thumbnailUrl,
+                          unlimitedHeight: true,
+                        ),
                       ],
                       const SizedBox(height: 18),
                       Row(children: [
@@ -4043,8 +4056,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 }
 
 class _PostImageHolder extends StatelessWidget {
-  const _PostImageHolder({required this.url});
+  const _PostImageHolder({required this.url, this.unlimitedHeight = false});
   final String url;
+  final bool unlimitedHeight;
 
   Future<void> _showViewer(BuildContext context) async {
     await showDialog<void>(
@@ -4070,7 +4084,9 @@ class _PostImageHolder extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 400),
+            constraints: unlimitedHeight
+                ? const BoxConstraints()
+                : const BoxConstraints(maxHeight: 400),
             child: Image.network(
               url,
               width: double.infinity,
