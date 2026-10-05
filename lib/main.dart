@@ -1810,7 +1810,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
                           ),
                         )
                       : const SizedBox(height: 225),
-                },
+                ),
               ),
               loading
                   ? const CircularProgressIndicator()
@@ -1828,7 +1828,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
           LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
-              final height = math.min(400, width / active.value.aspectRatio);
+              final height = math.min(400.0, width / active.value.aspectRatio);
               return SizedBox(
                 width: width,
                 height: height,
