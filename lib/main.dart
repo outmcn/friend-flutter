@@ -4518,7 +4518,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
         return;
       }
       final loadedPosts = targetTab == 0
-          ? const <DDPost>[]
+          ? await service.fetchMyPosts(t)
           : const <DDPost>[];
       tabPosts[targetTab] = loadedPosts;
       await _saveTabCache(targetTab, loadedPosts);

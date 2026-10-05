@@ -260,7 +260,12 @@ class DDPostService {
     return DDPost.fromJson(data.cast<String, dynamic>());
   }
 
-  Future<List<DDPost>> fetchMyPosts(String token) async => const [];
+  Future<List<DDPost>> fetchMyPosts(String token) async {
+    final posts = await fetchPosts(token);
+    final me = await fetchMe(token);
+    final myId = _intValue(me['id']);
+    return myId == null ? const [] : posts.where((post) => post.userId == myId).toList();
+  }
   Future<List<DDPost>> fetchLikedPosts(String token) async => const [];
   Future<List<DDPost>> fetchFavoritedPosts(String token) async => const [];
 
