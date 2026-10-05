@@ -89,7 +89,8 @@ Future<void> syncCachedLocation(DDPostService service, String token) async {
       longitude: longitude,
     );
     try {
-      final marks = await placemarkFromCoordinates(latitude, longitude);
+      final geocoder = Geocoding();
+      final marks = await geocoder.placemarkFromCoordinates(latitude, longitude);
       final mark = marks.isNotEmpty ? marks.first : null;
       final resolvedCity = (mark?.locality ?? mark?.subAdministrativeArea ?? '')
           .replaceAll('市', '')
