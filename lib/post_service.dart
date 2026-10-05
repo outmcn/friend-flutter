@@ -256,13 +256,17 @@ class DDPostService {
       _api('/posts/$postId'),
       headers: {'Authorization': 'Bearer $token'},
     );
-    final decoded = jsonDecode(response.body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      final decoded = response.body.trim().isEmpty ? null : jsonDecode(response.body);
       final message = decoded is Map<String, dynamic>
           ? decoded['error'] ?? '动态加载失败'
           : '动态加载失败';
       throw Exception('$message（${response.statusCode}）');
     }
+    if (response.body.trim().isEmpty) {
+      throw Exception('动态加载失败：服务器返回空响应');
+    }
+    final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic> || decoded['post'] is! Map) {
       throw Exception('动态数据格式错误');
     }
@@ -365,6 +369,7 @@ class DDPostService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('评论加载失败（${response.statusCode}）');
     }
+    if (response.body.trim().isEmpty) return const [];
     final decoded = jsonDecode(response.body);
     if (decoded is! List) throw Exception('评论数据格式错误');
     return decoded.whereType<Map<String, dynamic>>().map(DDComment.fromJson).toList();
