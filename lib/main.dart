@@ -1506,7 +1506,7 @@ class _TextPostGradient extends StatelessWidget {
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(maxHeight: 360),
-      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
