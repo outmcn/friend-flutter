@@ -119,8 +119,8 @@ Future<String> cachedCityLabel(DDPostService service, String token) async {
   final fresh = cachedAt != null &&
       DateTime.now().millisecondsSinceEpoch - cachedAt <
           cacheAge.inMilliseconds;
-  // Do not trust an old manually saved city; coordinates are the source of truth.
-  if (fresh && cachedCity.isNotEmpty) return cachedCity;
+  // Always read the server city after coordinate synchronization so stale cached
+  // city names cannot override the current device location.
   try {
     final profile = await service.fetchMe(token);
     final city = '${profile['city'] ?? ''}'.trim();
