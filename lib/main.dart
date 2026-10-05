@@ -4697,7 +4697,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                       actionLoading
                                           ? '处理中…'
                                           : following
-                                              ? (p?['followedByViewer'] == true ? '好友' : '取消关注')
+                                              ? (p?['followedByViewer'] == true ? '好友' : '已关注')
                                               : '关注',
                                     ),
                                 ),
@@ -5347,7 +5347,16 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                       widget.relation == 'history'
                                           ? '${user['city'] ?? '未知地区'} · 访问 ${user['visitCount'] ?? 1} 次'
                                           : '${user['city'] ?? '未知地区'}'),
-                                  trailing: const Icon(Icons.chevron_right),
+                                  trailing: widget.relation == 'following'
+                                      ? Text(
+                                          user['followedByViewer'] == true
+                                              ? '好友'
+                                              : user['followingByViewer'] == true
+                                                  ? '已关注'
+                                                  : '回关',
+                                          style: const TextStyle(fontSize: 12),
+                                        )
+                                      : const Icon(Icons.chevron_right),
                                 ),
                               );
                             },
