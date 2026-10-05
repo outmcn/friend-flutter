@@ -445,7 +445,7 @@ class DDPostService {
     return decoded;
   }
 
-  Future<void> toggleFollow(String token, int userId) async {
+  Future<bool> toggleFollow(String token, int userId) async {
     final response = await _client.post(
       _api('/users/$userId/follow'),
       headers: {'Authorization': 'Bearer $token'},
@@ -454,6 +454,7 @@ class DDPostService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('${decoded['error'] ?? '关注操作失败'}');
     }
+    return decoded['followed'] == true;
   }
 
   Future<void> logout(String token) async {

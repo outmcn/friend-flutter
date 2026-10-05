@@ -5354,9 +5354,12 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
   String? error;
 
   String _relationLabel(Map<String, dynamic> user) {
-    if (user['followedByViewer'] == true) return '好友';
-    if (user['followingByViewer'] == true) return '已关注';
-    return '回关';
+    final followingByViewer = user['followingByViewer'] == true;
+    final followedByViewer = user['followedByViewer'] == true;
+    if (followingByViewer && followedByViewer) return '好友';
+    if (followingByViewer) return '已关注';
+    if (followedByViewer) return '回关';
+    return '关注';
   }
 
   Future<void> _toggleRelation(int index) async {
@@ -5366,7 +5369,16 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
-      await service.toggleFollow(token, userId);
+      final followed = await service.toggleFollow(token, userId);
+      if (!mounted) return;
+      setState(() {
+        final current = Map<String, dynamic>.from(users[index]);
+        current['followingByViewer'] = followed;
+        current['followedByViewer'] =
+            current['followedByViewer'] == true;
+        users[index] = current;
+        error = null;
+      });
       await load();
     } catch (e) {
       if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
