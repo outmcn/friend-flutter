@@ -3939,7 +3939,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                       color: Theme.of(context).hintColor,
                                       fontSize: 12))
                             ])),
-                          if (!isOwner && !isSelfProfile)
+                          if (!isOwner)
                           OutlinedButton(
                             onPressed: followLoading
                                 ? null
