@@ -3815,17 +3815,51 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     return value;
   }
 
+  String _detailCacheKey(int postId) => 'dd.detail.post.cache.$postId';
+  String _detailCacheAtKey(int postId) => 'dd.detail.post.cache.$postId.at';
+
+  Future<DDPost?> _readDetailCache(int postId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_detailCacheKey(postId));
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return DDPost.fromJson((jsonDecode(raw) as Map).cast<String, dynamic>());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _saveDetailCache(DDPost value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_detailCacheKey(value.id), jsonEncode(value.toJson()));
+    await prefs.setInt(_detailCacheAtKey(value.id), DateTime.now().millisecondsSinceEpoch);
+  }
+
   Future<void> load() async {
-    if (!mounted) return;
-    setState(() {
-      loading = true;
-      error = null;
-    });
     try {
       final t = await token();
       final me = await service.fetchMe(t);
       currentUserId = _intValue(me['id']);
-      post = await service.fetchPost(t, widget.postId);
+      final cached = await _readDetailCache(widget.postId);
+      if (cached != null && mounted) {
+        final cachedOwner = cached.userId == currentUserId;
+        final cachedAt = (await SharedPreferences.getInstance()).getInt(_detailCacheAtKey(widget.postId));
+        final valid = cachedOwner ||
+            (cachedAt != null && DateTime.now().millisecondsSinceEpoch - cachedAt <
+                const Duration(minutes: 30).inMilliseconds);
+        if (valid) {
+          post = cached;
+          loading = false;
+          setState(() {});
+          if (!cachedOwner) {
+            comments = await service.fetchComments(t, widget.postId);
+            return;
+          }
+        }
+      }
+      final freshPost = await service.fetchPost(t, widget.postId);
+      post = freshPost;
+      await _saveDetailCache(freshPost);
       comments = await service.fetchComments(t, widget.postId);
       visibleRootCount = 30;
       visibleReplyCounts.clear();
