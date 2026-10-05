@@ -5933,7 +5933,7 @@ class _MyProfilePostCard extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
                   child: Text(
                     post.content.trim(),
-                    maxLines: 6,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 15, height: 1.4),
                   ),
