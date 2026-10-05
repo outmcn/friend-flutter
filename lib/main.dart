@@ -2992,6 +2992,31 @@ class _CreatePostPageState extends State<CreatePostPage> {
       if (mounted) setState(() => error = '视频选择失败：$e');
     }
   }
+  Future<void> _pickMedia() async {
+    final type = await showModalBottomSheet<String>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_outlined),
+              title: const Text('添加图片'),
+              onTap: () => Navigator.pop(context, 'image'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam_outlined),
+              title: const Text('添加视频'),
+              onTap: () => Navigator.pop(context, 'video'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (type == 'image') await _pickImage();
+    if (type == 'video') await _pickVideo();
+  }
+
   Future<String?> _imageObjectKey(String token) async {
     if (selectedImage == null) return null;
     final bytes = await selectedImage!.readAsBytes();
@@ -3180,12 +3205,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
           children: [
             TextField(
               controller: _content,
+              autofocus: true,
               maxLines: 7,
               maxLength: 300,
               onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
-                hintText: '分享此刻的想法…',
+                hintText: '发一条动态吧～。',
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
                 alignLabelWithHint: true,
+                contentPadding: EdgeInsets.zero,
               ),
             ),
             if (error != null) ...[
@@ -3193,19 +3224,22 @@ class _CreatePostPageState extends State<CreatePostPage> {
               Text(error!, style: const TextStyle(color: Colors.orange)),
             ],
             const SizedBox(height: 16),
-            Row(
-              children: [
-                _MediaAction(
-                  icon: Icons.photo_outlined,
-                  label: selectedImage != null ? '已选图片' : '图片',
-                  onTap: _pickImage,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                onTap: _pickMedia,
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.add, size: 28),
                 ),
-                _MediaAction(
-                  icon: Icons.videocam_outlined,
-                  label: selectedVideo != null ? '已选视频' : '视频',
-                  onTap: _pickVideo,
-                ),
-              ],
+              ),
             ),
             if (selectedImage != null)
               Padding(
@@ -3232,6 +3266,49 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   ],
                 ),
               ),
+            if (selectedVideo != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Stack(
+                  children: [
+                    FutureBuilder<Uint8List?>(
+                      future: VideoThumbnail.thumbnailData(
+                        video: selectedVideo!.path,
+                        imageFormat: ImageFormat.JPEG,
+                        maxWidth: 720,
+                        quality: 82,
+                      ),
+                      builder: (context, snapshot) => ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: SizedBox(
+                          height: 180,
+                          width: double.infinity,
+                          child: snapshot.data == null
+                              ? const ColoredBox(color: Colors.black26)
+                              : Image.memory(snapshot.data!, fit: BoxFit.cover),
+                        ),
+                      ),
+                    ),
+                    const Positioned.fill(
+                      child: Center(
+                        child: Icon(
+                          Icons.play_circle_outline,
+                          size: 56,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: IconButton.filled(
+                        onPressed: _clearImage,
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 8),
             ListTile(
               leading: _iconFor(Icons.public),
@@ -3242,7 +3319,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 builder: (_) => SafeArea(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: ['所有人可见', '仅好友可见', '仅自己可见']
+                    children: ['所有人可见', '仅主页可见', '仅陌生人可见', '仅自己可见']
                         .map(
                           (item) => ListTile(
                             title: Text(item),
