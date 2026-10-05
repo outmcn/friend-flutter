@@ -3777,6 +3777,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           createdAt: comment.createdAt,
           likes: comment.likes + (liked == comment.liked ? 0 : (liked ? 1 : -1)),
           liked: liked,
+          city: comment.city,
         );
       });
     } catch (e) {
@@ -3875,7 +3876,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     DDComment comment, {
     required int depth,
     required String? replyTo,
-  }) => InkWell(
+  }) {
+    final isMine = currentUserId != null && comment.userId == currentUserId;
+    final isPostAuthor = post?.userId != null && comment.userId == post!.userId;
+    final displayName = isMine ? '我' : comment.nickname;
+    return InkWell(
         onTap: () {
           setState(() => replyingTo = comment);
           FocusScope.of(context).requestFocus(commentFocusNode);
@@ -3909,11 +3914,27 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      depth >= 2
-                          ? '${comment.nickname} 回复 ${replyTo ?? comment.nickname}'
-                          : comment.nickname,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          depth >= 2
+                              ? '${displayName} 回复 ${replyTo ?? (isPostAuthor ? '作者' : comment.nickname)}'
+                              : displayName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: isMine
+                                ? Colors.red
+                                : isPostAuthor
+                                    ? Colors.green
+                                    : null,
+                          ),
+                        ),
+                        if (comment.city.trim().isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          _ProfileTag(text: comment.city.trim()),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(comment.content),

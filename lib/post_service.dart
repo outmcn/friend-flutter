@@ -134,7 +134,8 @@ class DDComment {
       required this.content,
       required this.createdAt,
       this.likes = 0,
-      this.liked = false});
+      this.liked = false,
+      this.city = ''});
   final int id;
   final int? userId;
   final int? parentId;
@@ -143,6 +144,7 @@ class DDComment {
   final String createdAt;
   final int likes;
   final bool liked;
+  final String city;
   factory DDComment.fromJson(Map<String, dynamic> json) => DDComment(
         id: _intValue(json['id']) ?? 0,
         userId: _intValue(json['userId']),
@@ -152,6 +154,7 @@ class DDComment {
         createdAt: '${json['createdAt'] ?? ''}',
         likes: _intValue(json['likes']) ?? 0,
         liked: json['liked'] == true,
+        city: '${json['city'] ?? ''}',
       );
 }
 
