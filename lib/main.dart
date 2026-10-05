@@ -1699,45 +1699,86 @@ class _VideoPlaybackRegistry {
 }
 
 class _NetworkVideoPreview extends StatefulWidget {
-  const _NetworkVideoPreview({required this.url});
+  const _NetworkVideoPreview({required this.url, this.thumbnailUrl});
   final String url;
+  final String? thumbnailUrl;
 
   @override
   State<_NetworkVideoPreview> createState() => _NetworkVideoPreviewState();
 }
 
 class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
-  late final VideoPlayerController controller;
+  VideoPlayerController? controller;
+  bool loading = false;
 
   @override
   void initState() {
     super.initState();
     _VideoPlaybackRegistry.register(this);
-    controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
-      ..initialize().then((_) {
-        if (mounted) setState(() {});
+  }
+
+  Future<void> _play() async {
+    if (loading) return;
+    setState(() => loading = true);
+    final next = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    try {
+      await next.initialize();
+      await next.play();
+      if (!mounted) {
+        await next.dispose();
+        return;
+      }
+      setState(() {
+        controller = next;
+        loading = false;
       });
+    } catch (_) {
+      await next.dispose();
+      if (mounted) setState(() => loading = false);
+    }
   }
 
   void stopPlayback() {
-    if (controller.value.isPlaying) {
-      controller.pause();
-    }
+    controller?.pause();
   }
 
   @override
   void dispose() {
     _VideoPlaybackRegistry.unregister(this);
-    controller.dispose();
+    controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!controller.value.isInitialized) {
-      return const SizedBox(
-        height: 180,
-        child: Center(child: CircularProgressIndicator()),
+    final active = controller;
+    if (active == null || !active.value.isInitialized) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: _play,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (widget.thumbnailUrl?.isNotEmpty == true)
+                Image.network(
+                  widget.thumbnailUrl!,
+                  width: double.infinity,
+                  height: 220,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 220,
+                    color: Colors.black26,
+                  ),
+                )
+              else
+                Container(height: 220, color: Colors.black26),
+              loading
+                  ? const CircularProgressIndicator()
+                  : const Icon(Icons.play_circle_outline, size: 64),
+            ],
+          ),
+        ),
       );
     }
     return ClipRRect(
@@ -1746,19 +1787,19 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
         alignment: Alignment.center,
         children: [
           AspectRatio(
-            aspectRatio: controller.value.aspectRatio,
-            child: VideoPlayer(controller),
+            aspectRatio: active.value.aspectRatio,
+            child: VideoPlayer(active),
           ),
           IconButton.filled(
             onPressed: () {
-              setState(() {
-                controller.value.isPlaying
-                    ? controller.pause()
-                    : controller.play();
-              });
+              if (active.value.isPlaying) {
+                active.pause();
+              } else {
+                active.play();
+              }
+              setState(() {});
             },
-            icon: Icon(
-                controller.value.isPlaying ? Icons.pause : Icons.play_arrow),
+            icon: Icon(active.value.isPlaying ? Icons.pause : Icons.play_arrow),
           ),
         ],
       ),
@@ -3831,7 +3872,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           if (item.videoUrl != null &&
                           item.videoUrl!.trim().isNotEmpty) ...[
                         const SizedBox(height: 16),
-                        _NetworkVideoPreview(url: item.videoUrl!),
+                        _NetworkVideoPreview(url: item.videoUrl!, thumbnailUrl: item.thumbnailUrl),
                       ],
                       const SizedBox(height: 18),
                       Row(children: [
