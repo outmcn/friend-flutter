@@ -4675,11 +4675,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                           label: '粉丝',
                                           value: '${p?['followers'] ?? 0}',
                                         ),
-                                        const SizedBox(width: 18),
-                                        _InlineProfileStat(
-                                          label: '访客',
-                                          value: '${p?['visitors'] ?? 0}',
-                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -5112,21 +5107,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                           const _UserRelationListPage(
                                         relation: 'likers',
                                         title: '获赞',
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 18),
-                                _InlineProfileStat(
-                                  label: '访客',
-                                  value: '${p?['visitors'] ?? 0}',
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const _UserRelationListPage(
-                                        relation: 'history',
-                                        title: '历史访客',
                                       ),
                                     ),
                                   ),
