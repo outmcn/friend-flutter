@@ -8091,18 +8091,29 @@ class _ProfileTagEditorPage extends StatefulWidget {
 
 class _ProfileTagEditorPageState extends State<_ProfileTagEditorPage> {
   static const allTags = [
-    '声优',
-    '御姐',
-    '忧郁',
-    '旅游',
-    '电影',
-    '游戏',
-    '音乐',
-    '美食',
-    '旅行',
-    '摄影'
+    'INTJ',
+    'INTP',
+    'ENTJ',
+    'ENTP',
+    'INFJ',
+    'INFP',
+    'ENFJ',
+    'ENFP',
+    'ISTJ',
+    'ISFJ',
+    'ESTJ',
+    'ESFJ',
+    'ISTP',
+    'ISFP',
+    'ESTP',
+    'ESFP',
   ];
-  late final Set<String> selected = {...widget.selectedTags};
+  late String? selected = widget.selectedTags.isEmpty
+      ? null
+      : widget.selectedTags.firstWhere(
+          allTags.contains,
+          orElse: () => widget.selectedTags.first,
+        );
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -8110,7 +8121,10 @@ class _ProfileTagEditorPageState extends State<_ProfileTagEditorPage> {
           title: const Text('标签编辑'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, selected.toList()),
+              onPressed: () => Navigator.pop(
+                context,
+                selected == null ? <String>[] : <String>[selected!],
+              ),
               child: const Text('保存'),
             ),
           ],
@@ -8124,16 +8138,11 @@ class _ProfileTagEditorPageState extends State<_ProfileTagEditorPage> {
               spacing: 8,
               runSpacing: 8,
               children: allTags.map((tag) {
-                final active = selected.contains(tag);
-                return FilterChip(
+                return ChoiceChip(
                   label: Text(tag),
-                  selected: active,
+                  selected: selected == tag,
                   onSelected: (value) => setState(() {
-                    if (value) {
-                      selected.add(tag);
-                    } else {
-                      selected.remove(tag);
-                    }
+                    selected = value ? tag : null;
                   }),
                 );
               }).toList(),
