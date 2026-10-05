@@ -28,6 +28,7 @@ class DDPost {
     required this.favorites,
     required this.comments,
     required this.following,
+    this.followedByViewer = false,
     this.distanceKm,
     required this.liked,
     required this.favorited,
@@ -47,6 +48,7 @@ class DDPost {
   final int favorites;
   final int comments;
   final bool following;
+  final bool followedByViewer;
   final double? distanceKm;
   final bool liked;
   final bool favorited;
@@ -71,6 +73,7 @@ class DDPost {
         favorites: favorites ?? this.favorites,
         comments: comments,
         following: following,
+        followedByViewer: followedByViewer,
         distanceKm: distanceKm,
         liked: liked ?? this.liked,
         favorited: favorited ?? this.favorited,
@@ -91,6 +94,7 @@ class DDPost {
         'favorites': favorites,
         'comments': comments,
         'following': following,
+        'followedByViewer': followedByViewer,
         'distanceKm': distanceKm,
         'liked': liked,
         'favorited': favorited,
@@ -110,6 +114,7 @@ class DDPost {
         favorites: _intValue(json['favorites']) ?? 0,
         comments: _intValue(json['comments']) ?? 0,
         following: json['following'] == true,
+        followedByViewer: json['followedByViewer'] == true,
         distanceKm: _doubleValue(json['distanceKm']),
         liked: json['liked'] == true,
         favorited: json['favorited'] == true,

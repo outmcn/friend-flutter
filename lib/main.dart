@@ -1607,7 +1607,11 @@ class _DynamicPostCard extends StatelessWidget {
                       ? Theme.of(context).colorScheme.primary
                       : null,
                 ),
-                child: Text(post.following ? '私聊' : '关注'),
+                child: Text(
+                  post.following
+                      ? (post.followedByViewer ? '互相关注' : '已关注')
+                      : '关注',
+                ),
               ),
           ],
         ),
@@ -4569,9 +4573,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                   icon: Icon(
                                     following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined,
                                   ),
-                                  label: Text(
-                                    actionLoading ? '处理中…' : (following ? '取消关注' : '关注'),
-                                  ),
+                                    label: Text(
+                                      actionLoading
+                                          ? '处理中…'
+                                          : following
+                                              ? (p?['followedByViewer'] == true ? '互相关注' : '取消关注')
+                                              : '关注',
+                                    ),
                                 ),
                               ),
                               const SizedBox(width: 12),
