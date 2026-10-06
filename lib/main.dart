@@ -1859,7 +1859,7 @@ class _DynamicPostCard extends StatelessWidget {
                 post.content.trim(),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14, height: 1.35),
+                style: const TextStyle(fontSize: 18, height: 1.35),
               ),
             ),
           const SizedBox(height: 8),
@@ -1956,19 +1956,21 @@ class _DiscoverProfileCard extends StatelessWidget {
       child: InkWell(
         onTap: onOpen,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (image != null && image.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    image,
-                    width: double.infinity,
+                  child: SizedBox(
                     height: 300,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    child: Image.network(
+                      image,
+                      width: double.infinity,
+                      fit: BoxFit.fitWidth,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
                   ),
                 )
               else if (video != null && video.isNotEmpty)
@@ -1981,9 +1983,8 @@ class _DiscoverProfileCard extends StatelessWidget {
                         Image.network(
                           post.thumbnailUrl!,
                           width: double.infinity,
-                          height: 300,
-                          fit: BoxFit.cover,
-                        )
+                          fit: BoxFit.fitWidth,
+                        ),
                       else
                         const SizedBox(
                           height: 300,
@@ -2027,55 +2028,56 @@ class _DiscoverProfileCard extends StatelessWidget {
                   (image != null && image.isNotEmpty ||
                       video != null && video.isNotEmpty))
                 Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
                   child: Text(
                     post.content.trim(),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14, height: 1.35),
+                    style: const TextStyle(fontSize: 18, height: 1.35),
                   ),
                 ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  ClipOval(
-                    child: post.avatar.trim().isEmpty
-                        ? const Icon(Icons.person_outline, size: 22)
-                        : Image.network(
-                            post.avatar,
-                            width: 22,
-                            height: 22,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                const Icon(Icons.person_outline, size: 22),
-                          ),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      post.nickname,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Row(
+                  children: [
+                    ClipOval(
+                      child: post.avatar.trim().isEmpty
+                          ? const Icon(Icons.person_outline, size: 22)
+                          : Image.network(
+                              post.avatar,
+                              width: 22,
+                              height: 22,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.person_outline, size: 22),
+                            ),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        post.nickname,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: onLike,
-                    iconSize: 17,
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 24, height: 24),
-                    color: post.liked ? Colors.red : null,
-                    icon: Icon(TIcons.thumb_up_1),
-                  ),
-                  Text('${post.likes}',
-                      style: const TextStyle(fontSize: 12)),
-                ],
+                    IconButton(
+                      onPressed: onLike,
+                      iconSize: 17,
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints.tightFor(width: 24, height: 24),
+                      color: post.liked ? Colors.red : null,
+                      icon: Icon(TIcons.thumb_up_1),
+                    ),
+                    Text('${post.likes}',
+                        style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
               ),
-            ],
           ),
         ),
       ),
