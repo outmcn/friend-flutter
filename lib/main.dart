@@ -30,39 +30,52 @@ class _PermanentImageCache {
   static final Map<String, String> _localPaths = <String, String>{};
   static final Map<String, Future<String?>> _pending = <String, Future<String?>>{};
 
+  static String identity(String url) {
+    final normalized = url.trim();
+    if (normalized.isEmpty) return '';
+    try {
+      final uri = Uri.parse(normalized);
+      final path = uri.path;
+      if (path.isNotEmpty) return path;
+    } catch (_) {}
+    return normalized.split('?').first;
+  }
+
+  static String? peek(String url) {
+    final path = _localPaths[identity(url)];
+    return path;
+  }
+
   static Future<String?> get(String url) async {
     final normalized = url.trim();
-    if (normalized.isEmpty) return null;
-    final existing = _localPaths[normalized];
+    final key = identity(normalized);
+    if (normalized.isEmpty || key.isEmpty) return null;
+    final existing = _localPaths[key];
     if (existing != null && await File(existing).exists()) return existing;
-    return _pending.putIfAbsent(normalized, () async {
+    return _pending.putIfAbsent(key, () async {
       try {
         final directory = await getApplicationDocumentsDirectory();
         final cacheDirectory = Directory('${directory.path}/friend_media_cache');
         await cacheDirectory.create(recursive: true);
-        final fileName = base64Url.encode(utf8.encode(normalized)).replaceAll('=', '');
+        final fileName = base64Url.encode(utf8.encode(key)).replaceAll('=', '');
         final file = File('${cacheDirectory.path}/$fileName');
         if (await file.exists() && await file.length() > 0) {
-          _localPaths[normalized] = file.path;
+          _localPaths[key] = file.path;
           return file.path;
         }
-        if (await file.exists()) {
-          await file.delete();
-        }
-        {
-          final response = await http.get(Uri.parse(normalized));
-          if (response.statusCode < 200 || response.statusCode >= 300) return null;
-          if (response.bodyBytes.isEmpty) return null;
-          final temporary = File('${file.path}.part');
-          await temporary.writeAsBytes(response.bodyBytes, flush: true);
-          await temporary.rename(file.path);
-        }
-        _localPaths[normalized] = file.path;
+        if (await file.exists()) await file.delete();
+        final response = await http.get(Uri.parse(normalized));
+        if (response.statusCode < 200 || response.statusCode >= 300) return null;
+        if (response.bodyBytes.isEmpty) return null;
+        final temporary = File('${file.path}.part');
+        await temporary.writeAsBytes(response.bodyBytes, flush: true);
+        await temporary.rename(file.path);
+        _localPaths[key] = file.path;
         return file.path;
       } catch (_) {
         return null;
       } finally {
-        _pending.remove(normalized);
+        _pending.remove(key);
       }
     });
   }
@@ -84,14 +97,15 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   @override
   void initState() {
     super.initState();
+    localPath = _PermanentImageCache.peek(widget.url);
     _load();
   }
 
   @override
   void didUpdateWidget(covariant _PermanentCachedImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url) {
-      localPath = null;
+    if (_PermanentImageCache.identity(oldWidget.url) !=
+        _PermanentImageCache.identity(widget.url)) {
       failed = false;
       _load();
     }
@@ -4175,16 +4189,19 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
   Future<void> load() async {
     try {
+      final cached = await _readDetailCache(widget.postId);
+      if (cached != null && mounted) {
+        // Render cached business data immediately. Network identity, signatures,
+        // current-user state, and comments are refreshed without blocking the page.
+        post = cached;
+        loading = false;
+        setState(() {});
+      }
       final t = await token();
       final me = await service.fetchMe(t);
       currentUserId = _intValue(me['id']);
-      final cached = await _readDetailCache(widget.postId);
       if (cached != null && mounted) {
-        final resigned = await _resignDetailMedia(t, cached);
-        post = resigned;
-        loading = false;
-        setState(() {});
-        await _loadComments(t);
+        unawaited(_refreshCachedDetail(t, cached));
         return;
       }
       final freshPost = await service.fetchPost(t, widget.postId);
@@ -4199,6 +4216,16 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       }
     } finally {
       if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _refreshCachedDetail(String t, DDPost cached) async {
+    try {
+      final resigned = await _resignDetailMedia(t, cached);
+      if (mounted) setState(() => post = resigned);
+      await _loadComments(t);
+    } catch (_) {
+      // Cached content remains visible when background refresh fails.
     }
   }
 
@@ -4661,7 +4688,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
             ),
         ],
       ),
-      body: loading
+      body: loading && item == null
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: load,
@@ -5229,7 +5256,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   Card(
                     clipBehavior: Clip.antiAlias,
                     child: Padding(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -5332,20 +5359,47 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                       child: SingleChildScrollView(
                                         scrollDirection: Axis.horizontal,
                                         child: Row(
-                                          children: [
-                                            _ProfileTag(text: '声优'),
-                                            const SizedBox(width: 6),
-                                            _ProfileTag(text: '御姐'),
-                                            const SizedBox(width: 6),
-                                            _ProfileTag(text: '忧郁'),
-                                            const SizedBox(width: 6),
-                                            _ProfileTag(text: '旅游'),
-                                            const SizedBox(width: 6),
-                                            _ProfileTag(text: '电影'),
-                                          ],
+                                          children: (profile?['tags'] is List
+                                                  ? (profile!['tags'] as List)
+                                                      .map((value) => '$value')
+                                                      .where((value) => value.trim().isNotEmpty)
+                                                      .toList()
+                                                  : <String>[])
+                                              .map((tag) => Padding(
+                                                    padding: const EdgeInsets.only(right: 6),
+                                                    child: _ProfileTag(text: tag),
+                                                  ))
+                                              .toList(),
                                         ),
                                       ),
                                     ),
+                                    if ('${p?['clubName'] ?? p?['club'] ?? ''}'.trim().isNotEmpty) ...[
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.groups_outlined, size: 20),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                '${p?['clubName'] ?? p?['club']}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontWeight: FontWeight.w700),
+                                              ),
+                                            ),
+                                            if ('${p?['clubMemberCount'] ?? ''}'.trim().isNotEmpty)
+                                              Text('${p?['clubMemberCount']}', style: TextStyle(color: Theme.of(context).hintColor)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
