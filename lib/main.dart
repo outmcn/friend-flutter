@@ -5621,9 +5621,13 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                       color: Colors.black12,
                                       child: Icon(Icons.person, size: 42),
                                     )
-                                  : _PermanentCachedImage(
-                                      url: _avatarUrl!,
+                                  : Image.network(
+                                      _avatarUrl!,
                                       fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const ColoredBox(
+                                        color: Colors.black12,
+                                        child: Icon(Icons.person, size: 42),
+                                      ),
                                     ),
                             ),
                           ),
