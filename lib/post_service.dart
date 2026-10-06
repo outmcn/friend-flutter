@@ -16,6 +16,17 @@ double? _doubleValue(Object? value) {
   return null;
 }
 
+String _mediaValue(Object? value, bool preserveKeys) {
+  final raw = '${value ?? ''}';
+  return preserveKeys ? raw : DDPostService.mediaUrl(raw);
+}
+
+String? _nullableMediaValue(Object? value, bool preserveKeys) {
+  if (value == null) return null;
+  final raw = '${value}';
+  return raw.trim().isEmpty ? null : (preserveKeys ? raw : DDPostService.mediaUrl(raw));
+}
+
 class DDPost {
   const DDPost({
     required this.id,
@@ -103,13 +114,16 @@ class DDPost {
         'thumbnailUrl': thumbnailUrl,
         'views': views,
       };
-  factory DDPost.fromJson(Map<String, dynamic> json) => DDPost(
+  factory DDPost.fromJson(
+    Map<String, dynamic> json, {
+    bool preserveMediaKeys = false,
+  }) => DDPost(
         id: _intValue(json['id']) ?? 0,
         userId: _intValue(json['userId']),
         content: '${json['content'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
         nickname: '${json['nickname'] ?? '用户'}',
-        avatar: DDPostService.mediaUrl(json['avatar']?.toString()),
+        avatar: _mediaValue(json['avatar'], preserveMediaKeys),
         likes: _intValue(json['likes']) ?? 0,
         favorites: _intValue(json['favorites']) ?? 0,
         comments: _intValue(json['comments']) ?? 0,
@@ -118,11 +132,12 @@ class DDPost {
         distanceKm: _doubleValue(json['distanceKm']),
         liked: json['liked'] == true,
         favorited: json['favorited'] == true,
-        imageUrl: DDPostService.mediaUrl(json['imageUrl']?.toString()),
-        videoUrl: DDPostService.mediaUrl(json['videoUrl']?.toString()),
-        thumbnailUrl: DDPostService.mediaUrl(json['thumbnailUrl']?.toString()),
+        imageUrl: _nullableMediaValue(json['imageUrl'], preserveMediaKeys),
+        videoUrl: _nullableMediaValue(json['videoUrl'], preserveMediaKeys),
+        thumbnailUrl: _nullableMediaValue(json['thumbnailUrl'], preserveMediaKeys),
         views: _intValue(json['views']) ?? 0,
       );
+
 }
 
 class DDComment {

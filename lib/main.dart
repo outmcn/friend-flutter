@@ -42,10 +42,20 @@ class _PermanentImageCache {
         await cacheDirectory.create(recursive: true);
         final fileName = base64Url.encode(utf8.encode(normalized)).replaceAll('=', '');
         final file = File('${cacheDirectory.path}/$fileName');
-        if (!await file.exists()) {
+        if (await file.exists() && await file.length() > 0) {
+          _localPaths[normalized] = file.path;
+          return file.path;
+        }
+        if (await file.exists()) {
+          await file.delete();
+        }
+        {
           final response = await http.get(Uri.parse(normalized));
           if (response.statusCode < 200 || response.statusCode >= 300) return null;
-          await file.writeAsBytes(response.bodyBytes, flush: true);
+          if (response.bodyBytes.isEmpty) return null;
+          final temporary = File('${file.path}.part');
+          await temporary.writeAsBytes(response.bodyBytes, flush: true);
+          await temporary.rename(file.path);
         }
         _localPaths[normalized] = file.path;
         return file.path;
@@ -80,7 +90,11 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   @override
   void didUpdateWidget(covariant _PermanentCachedImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url) _load();
+    if (oldWidget.url != widget.url) {
+      localPath = null;
+      failed = false;
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -3885,7 +3899,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     final raw = prefs.getString(_detailCacheKey(postId));
     if (raw == null || raw.isEmpty) return null;
     try {
-      return DDPost.fromJson((jsonDecode(raw) as Map).cast<String, dynamic>());
+      return DDPost.fromJson(
+        (jsonDecode(raw) as Map).cast<String, dynamic>(),
+        preserveMediaKeys: true,
+      );
     } catch (_) {
       return null;
     }
@@ -3893,10 +3910,17 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
   Future<void> _saveDetailCache(DDPost value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_detailCacheKey(value.id), jsonEncode(value.toJson()));
+    // 详情缓存只保留业务数据；签名 URL 会过期，不能作为长期媒体身份保存。
+    final json = value.toJson();
+    for (final key in <String>['avatar', 'imageUrl', 'videoUrl', 'thumbnailUrl']) {
+      final raw = json[key];
+      if (raw is String && raw.startsWith('http')) {
+        json[key] = Uri.parse(raw).pathSegments.join('/');
+      }
+    }
+    await prefs.setString(_detailCacheKey(value.id), jsonEncode(json));
     await prefs.setInt(_detailCacheAtKey(value.id), DateTime.now().millisecondsSinceEpoch);
-    final expiry = _postMediaExpiryMillis(value.toJson());
-    if (expiry != null) await prefs.setInt('${_detailCacheAtKey(value.id)}.urlExpiresAt', expiry);
+    await prefs.remove('${_detailCacheAtKey(value.id)}.urlExpiresAt');
   }
 
   Future<List<DDComment>> _loadComments(String t) async {
@@ -3912,6 +3936,32 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     return value;
   }
 
+  Future<DDPost> _resignDetailMedia(String t, DDPost value) async {
+    Future<String> sign(String raw, {required bool avatar}) async {
+      final source = raw.trim();
+      if (source.isEmpty) return '';
+      final key = source.startsWith('http')
+          ? Uri.parse(source).pathSegments.join('/')
+          : source;
+      if (key.isEmpty) return '';
+      if (avatar) return (await service.resolveAvatarUrl(t, key)) ?? '';
+      return service.mediaUrlForKey(t, key);
+    }
+
+    return DDPost(
+      id: value.id, userId: value.userId, content: value.content,
+      createdAt: value.createdAt, nickname: value.nickname,
+      avatar: await sign(value.avatar, avatar: true), likes: value.likes,
+      favorites: value.favorites, comments: value.comments,
+      following: value.following, followedByViewer: value.followedByViewer,
+      distanceKm: value.distanceKm, liked: value.liked, favorited: value.favorited,
+      imageUrl: value.imageUrl == null ? null : await sign(value.imageUrl!, avatar: false),
+      videoUrl: value.videoUrl == null ? null : await sign(value.videoUrl!, avatar: false),
+      thumbnailUrl: value.thumbnailUrl == null ? null : await sign(value.thumbnailUrl!, avatar: false),
+      views: value.views,
+    );
+  }
+
   Future<void> load() async {
     try {
       final t = await token();
@@ -3919,20 +3969,16 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       currentUserId = _intValue(me['id']);
       final cached = await _readDetailCache(widget.postId);
       if (cached != null && mounted) {
-        final cachedUrlExpiry = (await SharedPreferences.getInstance())
-            .getInt('${_detailCacheAtKey(widget.postId)}.urlExpiresAt');
-        final valid = cachedUrlExpiry == null ||
-            DateTime.now().millisecondsSinceEpoch < cachedUrlExpiry;
-        if (valid) {
-          post = cached;
-          loading = false;
-          setState(() {});
-          await _loadComments(t);
-          return;
-        }
+        final resigned = await _resignDetailMedia(t, cached);
+        post = resigned;
+        loading = false;
+        setState(() {});
+        await _loadComments(t);
+        return;
       }
       final freshPost = await service.fetchPost(t, widget.postId);
-      post = freshPost;
+      final resigned = await _resignDetailMedia(t, freshPost);
+      post = resigned;
       await _saveDetailCache(freshPost);
       await _loadComments(t);
       if (post == null) throw Exception('动态不存在');
