@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,10 +42,7 @@ class _PermanentImageCache {
     return normalized.split('?').first;
   }
 
-  static String? peek(String url) {
-    final path = _localPaths[identity(url)];
-    return path;
-  }
+  static String? peek(String url) => _localPaths[identity(url)];
 
   static Future<String?> get(String url) async {
     final normalized = url.trim();
@@ -82,9 +80,18 @@ class _PermanentImageCache {
 }
 
 class _PermanentCachedImage extends StatefulWidget {
-  const _PermanentCachedImage({required this.url, this.fit = BoxFit.cover});
+  const _PermanentCachedImage({
+    required this.url,
+    this.fit = BoxFit.cover,
+    this.width,
+    this.height,
+    this.placeholder,
+  });
   final String url;
   final BoxFit fit;
+  final double? width;
+  final double? height;
+  final Widget? placeholder;
 
   @override
   State<_PermanentCachedImage> createState() => _PermanentCachedImageState();
@@ -106,7 +113,8 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
     super.didUpdateWidget(oldWidget);
     if (_PermanentImageCache.identity(oldWidget.url) !=
         _PermanentImageCache.identity(widget.url)) {
-      localPath = _PermanentImageCache.peek(widget.url);
+      final cached = _PermanentImageCache.peek(widget.url);
+      if (cached != null) localPath = cached;
       failed = false;
       _load();
     }
@@ -114,21 +122,30 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
 
   Future<void> _load() async {
     final path = await _PermanentImageCache.get(widget.url);
-    if (mounted) setState(() {
-      localPath = path;
-      failed = path == null;
+    if (!mounted) return;
+    setState(() {
+      // A failed background refresh must never erase an image already on screen.
+      if (path != null) localPath = path;
+      failed = path == null && localPath == null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final path = localPath;
-    return path == null
-        ? const ColoredBox(
-            color: Colors.transparent,
-            child: Icon(Icons.person_outline),
-          )
-        : Image.file(File(path), fit: widget.fit);
+    if (path != null) {
+      return Image.file(
+        File(path),
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
+      );
+    }
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: widget.placeholder ?? const SizedBox.shrink(),
+    );
   }
 }
 int? _intValue(Object? value) {
@@ -1694,9 +1711,16 @@ class _DynamicPostCard extends StatelessWidget {
               child: post.avatar.trim().isEmpty
                   ? const Icon(Icons.person_outline)
                   : ClipOval(
-                      child: _PermanentCachedImage(
-                        url: post.avatar,
-                        fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: _PermanentCachedImage(
+                          url: post.avatar,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          placeholder: const Icon(Icons.person_outline),
+                        ),
                       ),
                     ),
             ),
@@ -1792,10 +1816,11 @@ class _DynamicPostCard extends StatelessWidget {
               onTap: onOpen,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 500),
-                child: _PermanentCachedImage(
-                  url: post.imageUrl!,
-                  fit: BoxFit.cover,
-                ),
+                      child: _PermanentCachedImage(
+                        url: post.imageUrl!,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
               ),
             ),
           ),
@@ -1969,6 +1994,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: _PermanentCachedImage(
                     url: image,
+                    width: double.infinity,
                     fit: BoxFit.fitWidth,
                   ),
                 )
@@ -1981,6 +2007,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       post.thumbnailUrl?.isNotEmpty == true
                           ? _PermanentCachedImage(
                               url: post.thumbnailUrl!,
+                              width: double.infinity,
                               fit: BoxFit.fitWidth,
                             )
                           : const SizedBox(
@@ -2043,9 +2070,16 @@ class _DiscoverProfileCard extends StatelessWidget {
                     ClipOval(
                       child: post.avatar.trim().isEmpty
                           ? const Icon(Icons.person_outline, size: 22)
-                          : _PermanentCachedImage(
-                              url: post.avatar,
-                              fit: BoxFit.cover,
+                          : SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: _PermanentCachedImage(
+                                url: post.avatar,
+                                width: 22,
+                                height: 22,
+                                fit: BoxFit.cover,
+                                placeholder: const Icon(Icons.person_outline, size: 22),
+                              ),
                             ),
                     ),
                     const SizedBox(width: 5),
@@ -5228,13 +5262,15 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                   child: _avatarUrl == null || _avatarUrl!.isEmpty
                                       ? const Icon(Icons.person_outline, size: 34)
                                       : ClipOval(
-                                          child: Image.network(
-                                            _avatarUrl!,
+                                          child: _PermanentCachedImage(
+                                            url: _avatarUrl!,
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                const Icon(Icons.person_outline, size: 34),
+                                            placeholder: const ColoredBox(
+                                              color: Colors.black12,
+                                              child: Icon(Icons.person, size: 42),
+                                            ),
                                           ),
                                         ),
                                   ),
@@ -5717,7 +5753,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                            Row(
+                                Row(
                               children: [
                                 SizedBox(
                                   width: 25 * 5,
@@ -5856,12 +5892,16 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                       color: Colors.black12,
                                       child: Icon(Icons.person, size: 42),
                                     )
-                                  : Image.network(
-                                      _avatarUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const ColoredBox(
-                                        color: Colors.black12,
-                                        child: Icon(Icons.person, size: 42),
+                                  : ClipOval(
+                                      child: _PermanentCachedImage(
+                                        url: _avatarUrl!,
+                                        width: 80,
+                                        height: 80,
+                                        fit: BoxFit.cover,
+                                        placeholder: const ColoredBox(
+                                          color: Colors.black12,
+                                          child: Icon(Icons.person, size: 42),
+                                        ),
                                       ),
                                     ),
                             ),
