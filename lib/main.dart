@@ -2107,58 +2107,58 @@ class _DiscoverPageState extends State<DiscoverPage>
   String? cityLabel;
   String? error;
   DateTime? _backgroundedAt;
-  bool _loadingMore = false;
-  bool _hasMore = true;
-  final ScrollController _discoverScrollController = ScrollController();
+  final List<bool> _loadingMoreByTab = [false, false, false];
+  final List<bool> _hasMoreByTab = [true, true, true];
+  int _activeLoadGeneration = 0;
+  final List<ScrollController> _discoverScrollControllers =
+      List<ScrollController>.generate(3, (_) => ScrollController());
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _discoverScrollController.addListener(_handleDiscoverScroll);
+    for (final controller in _discoverScrollControllers) {
+      controller.addListener(_handleDiscoverScroll);
+    }
     load();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _backgroundedAt = DateTime.now();
-    } else if (state == AppLifecycleState.resumed && _backgroundedAt != null) {
-      final wasAway = DateTime.now().difference(_backgroundedAt!);
-      _backgroundedAt = null;
-      if (wasAway > const Duration(seconds: 2)) {
-        _refreshInBackground();
-      }
-    }
+    // 切到后台再回来不刷新；只有进程被系统结束后重新创建页面，initState 才会加载。
   }
 
   void _handleDiscoverScroll() {
-    if (_discoverScrollController.hasClients &&
-        _discoverScrollController.position.extentAfter < 500) {
+    final controller = _discoverScrollControllers[selectedTab];
+    if (controller.hasClients && controller.position.extentAfter < 500) {
       _loadMore();
     }
   }
 
   Future<void> _loadMore() async {
-    if (_loadingMore || !_hasMore) return;
-    _loadingMore = true;
+    final tabAtRequest = selectedTab;
+    if (_loadingMoreByTab[tabAtRequest] || !_hasMoreByTab[tabAtRequest]) return;
+    _loadingMoreByTab[tabAtRequest] = true;
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
-      final batch = selectedTab == 0
-          ? await service.fetchRecommendedPosts(token, offset: posts.length)
-          : selectedTab == 1
-              ? await service.fetchNearbyPosts(token, offset: posts.length)
-              : await service.fetchFollowingPosts(token, offset: posts.length);
-      if (!mounted) return;
+      final controller = _discoverScrollControllers[tabAtRequest];
+      if (!controller.hasClients || controller.position.extentAfter >= 500) return;
+      final postsAtRequest = posts;
+      final batch = tabAtRequest == 0
+          ? await service.fetchRecommendedPosts(token, offset: postsAtRequest.length)
+          : tabAtRequest == 1
+              ? await service.fetchNearbyPosts(token, offset: postsAtRequest.length)
+              : await service.fetchFollowingPosts(token, offset: postsAtRequest.length);
+      if (!mounted || selectedTab != tabAtRequest) return;
       final ids = posts.map((item) => item.id).toSet();
       final additions = batch.where((item) => ids.add(item.id)).toList();
       setState(() {
         posts = [...posts, ...additions];
-        _hasMore = batch.length >= 30;
+        _hasMoreByTab[tabAtRequest] = batch.length >= 30;
       });
-      await _saveDiscoverCache(selectedTab);
+      await _saveDiscoverCache(tabAtRequest);
     } finally {
-      _loadingMore = false;
+      _loadingMoreByTab[tabAtRequest] = false;
     }
   }
 
@@ -2171,13 +2171,15 @@ class _DiscoverPageState extends State<DiscoverPage>
 
   @override
   void dispose() {
-    _discoverScrollController.dispose();
+    for (final controller in _discoverScrollControllers) {
+      controller.dispose();
+    }
     WidgetsBinding.instance.removeObserver(this);
     service.dispose();
     super.dispose();
   }
   Future<void> _refreshInBackground() async {
-    await load(backgroundRefresh: true);
+    // 保留显式入口，当前不由 AppLifecycleState 自动调用。
   }
 
   Future<void> load({
@@ -2186,6 +2188,7 @@ class _DiscoverPageState extends State<DiscoverPage>
     bool backgroundRefresh = false,
   }) async {
     if (fromRefresh) HapticFeedback.mediumImpact();
+    final generation = ++_activeLoadGeneration;
     final targetTab = tab ?? selectedTab;
     final switchingTab = tab != null && !fromRefresh && !loading;
     if (switchingTab) {
@@ -2226,16 +2229,14 @@ class _DiscoverPageState extends State<DiscoverPage>
               .map(DDPost.fromJson)
               .toList()
           : <DDPost>[];
-      if (cacheFresh && mounted) {
+      if (!mounted || generation != _activeLoadGeneration) return;
+      if (cacheFresh) {
         setState(() {
           posts = cachedPosts;
-          selectedTab = targetTab;
           loading = false;
           tabLoading = false;
         });
-        if (!backgroundRefresh) {
-          return;
-        }
+        if (!backgroundRefresh) return;
       }
       final cachedCity = (p.getString('dd.location.city') ?? '').trim();
       if (mounted && cachedCity.isNotEmpty && cityLabel != cachedCity) {
@@ -2245,6 +2246,7 @@ class _DiscoverPageState extends State<DiscoverPage>
       final city = await cachedCityLabel(service, t);
       if (mounted && cityLabel != city) setState(() => cityLabel = city);
       final shouldFetch = fromRefresh || backgroundRefresh || switchingTab || !cacheFresh;
+      if (!mounted || generation != _activeLoadGeneration) return;
       final loaded = shouldFetch
           ? (targetTab == 0
               ? await service.fetchRecommendedPosts(t, offset: 0)
@@ -2252,6 +2254,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                   ? await service.fetchNearbyPosts(t)
                   : await service.fetchFollowingPosts(t))
           : cachedPosts;
+      if (!mounted || generation != _activeLoadGeneration) return;
       if (shouldFetch) {
         await p.setString(
           cacheKey,
@@ -2279,25 +2282,27 @@ class _DiscoverPageState extends State<DiscoverPage>
         );
         await p.setInt(cacheAtKey, DateTime.now().millisecondsSinceEpoch);
       }
+      if (!mounted || generation != _activeLoadGeneration) return;
       if (mounted) {
         setState(() {
           posts = loaded;
           selectedTab = targetTab;
         });
       }
-    } catch (e) {
-      if (mounted)
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) {
-        setState(() {
-          loading = false;
-          tabLoading = false;
+      } catch (e) {
+        if (mounted && generation == _activeLoadGeneration) {
+          setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+        }
+      } finally {
+        if (mounted && generation == _activeLoadGeneration) {
+          setState(() {
+            loading = false;
+            tabLoading = false;
+            _refreshing = false;
+          });
+        } else {
           _refreshing = false;
-        });
-      } else {
-        _refreshing = false;
-      }
+        }
     }
   }
 
@@ -2370,7 +2375,7 @@ class _DiscoverPageState extends State<DiscoverPage>
         body: RefreshIndicator(
             onRefresh: () => load(fromRefresh: true),
             child: ListView(
-                controller: _discoverScrollController,
+                controller: _discoverScrollControllers[selectedTab],
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
                     18, 0, 18, 28 + MediaQuery.of(context).padding.bottom),
@@ -5219,6 +5224,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
         _sonicUrl =
             DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
         _avatarUrl = await service.resolveAvatarUrl(t, loadedProfile['avatarKey']);
+        final profileTags = loadedProfile['tags'];
+        _tags = profileTags is List
+            ? profileTags.map((value) => '$value').where((value) => value.trim().isNotEmpty).toList()
+            : <String>[];
       }
       final cached = forceRefresh
           ? null
@@ -5513,7 +5522,23 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                 ),
                               );
                               if (selected != null && mounted) {
-                                setState(() => _tags = selected);
+                                try {
+                                  final t = await _token();
+                                  final updated = await service.updateMe(
+                                    token: t,
+                                    tags: selected,
+                                  );
+                                  setState(() {
+                                    _tags = selected;
+                                    profile = {
+                                      ...(profile ?? <String, dynamic>{}),
+                                      ...updated,
+                                      'tags': selected,
+                                    };
+                                  });
+                                } catch (e) {
+                                  setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+                                }
                               }
                             },
                             child: Container(
