@@ -5121,13 +5121,20 @@ class _DDProfilePageState extends State<DDProfilePage> {
   String? _sonicUrl;
   String? _avatarUrl;
   String? error;
-  List<String> _tags = const ['声优', '御姐', '忧郁', '旅游', '电影'];
+  List<String> _tags = <String>[];
 
   @override
   void initState() {
     super.initState();
     _profileScrollController.addListener(_handleProfileScroll);
     load();
+  }
+
+  Future<String> _token() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('friend.auth.token') ?? '';
+    if (value.isEmpty) throw Exception('请先登录');
+    return value;
   }
 
   void _handleProfileScroll() {
