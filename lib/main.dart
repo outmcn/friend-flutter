@@ -4156,6 +4156,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           ),
         ),
       );
+  }
 
   Future<void> _toggleLike() async {
     try {
@@ -4499,8 +4500,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
             ),
     );
   }
-}
-
 }
 
 class _PostImageHolder extends StatelessWidget {
