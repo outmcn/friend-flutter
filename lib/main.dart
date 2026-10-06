@@ -5728,11 +5728,13 @@ class _DDProfilePageState extends State<DDProfilePage> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : DecoratedBox(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xffdff5ff), Color(0xfffafcff)],
+                  colors: Theme.of(context).brightness == Brightness.dark
+                      ? const [Color(0xff11131d), Color(0xff0b0c12)]
+                      : const [Color(0xffdff5ff), Color(0xfffafcff)],
                 ),
               ),
               child: RefreshIndicator(
@@ -5894,126 +5896,27 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  if ('${p?['clubName'] ?? p?['club'] ?? ''}'.trim().isNotEmpty)
-                    Card(
-                      margin: EdgeInsets.zero,
-                      color: Colors.white.withValues(alpha: .72),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                        leading: const Icon(Icons.groups_rounded, color: Color(0xffe6a51a)),
-                        title: Text(
-                          '${p?['clubName'] ?? p?['club']}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: Text('${p?['clubMemberCount'] ?? p?['clubCount'] ?? ''}'.trim()),
-                        trailing: const Icon(Icons.chevron_right),
+                  Card(
+                    margin: EdgeInsets.zero,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : Colors.white.withValues(alpha: .72),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                      leading: const Icon(Icons.groups_rounded, color: Color(0xffe6a51a)),
+                      title: Text(
+                        '${p?['clubName'] ?? p?['club'] ?? 'Free-Out地下说唱成员'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                    ),
-                  const SizedBox(height: 14),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '动态',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                      subtitle: Text(
+                        '${p?['clubMemberCount'] ?? p?['clubCount'] ?? '28/30'}',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
                     ),
                   ),
-                  const SizedBox(height: 10),
-
-                  SizedBox(
-                    height: 32,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () async {
-                              final selected =
-                                  await Navigator.push<List<String>>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => _ProfileTagEditorPage(
-                                    selectedTags: _tags,
-                                  ),
-                                ),
-                              );
-                              if (selected != null && mounted) {
-                                try {
-                                  final t = await _token();
-                                  final updated = await service.updateMe(
-                                    token: t,
-                                    tags: selected,
-                                  );
-                                  setState(() {
-                                    _tags = selected;
-                                    profile = {
-                                      ...(profile ?? <String, dynamic>{}),
-                                      ...updated,
-                                      'tags': selected,
-                                    };
-                                  });
-                                } catch (e) {
-                                  setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-                                }
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 9, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .secondaryContainer,
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                              child: Text(
-                                '+',
-                                style: Theme.of(context).textTheme.labelSmall,
-                              ),
-                            ),
-                          ),
-                          ..._tags.map((tag) => Padding(
-                                padding: const EdgeInsets.only(left: 6),
-                                child: _ProfileTag(text: tag),
-                              )),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
                   ]),
-                    ),
-                  ),
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _ProfileTabsHeaderDelegate(
-                      child: _MyProfileIconTabs(
-                        selectedTab: selectedTab,
-                        onSelect: (tab) => load(tab: tab),
-                      ),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(6, 12, 6, 28),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                  _MyProfileGrid(
-                    posts: posts,
-                    onChanged: _invalidateProfileCacheAndReload,
-                  ),
-                  if (!tabLoading && error == null)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 24, bottom: 12),
-                      child: Center(
-                        child: Text(
-                          '暂时没有更多了',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                      ]),
                     ),
                   ),
                 ],
@@ -6040,7 +5943,9 @@ class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) => Material(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).scaffoldBackgroundColor,
         elevation: overlapsContent ? 2 : 0,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
