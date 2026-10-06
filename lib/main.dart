@@ -2077,6 +2077,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
           ),
         ),
       ),
