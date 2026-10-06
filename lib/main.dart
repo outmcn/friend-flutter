@@ -42,6 +42,16 @@ class _PermanentImageCache {
     return normalized.split('?').first;
   }
 
+  static Future<String?> _diskPath(String url) async {
+    final key = identity(url);
+    if (key.isEmpty) return null;
+    final directory = await getApplicationDocumentsDirectory();
+    final cacheDirectory = Directory('${directory.path}/friend_media_cache');
+    final fileName = base64Url.encode(utf8.encode(key)).replaceAll('=', '');
+    final file = File('${cacheDirectory.path}/$fileName');
+    return await file.exists() && await file.length() > 0 ? file.path : null;
+  }
+
   static String? peek(String url) => _localPaths[identity(url)];
 
   static Future<String?> get(String url) async {
@@ -104,7 +114,6 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   @override
   void initState() {
     super.initState();
-    localPath = _PermanentImageCache.peek(widget.url);
     _load();
   }
 
@@ -121,10 +130,23 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   }
 
   Future<void> _load() async {
+    final memoryPath = _PermanentImageCache.peek(widget.url);
+    if (memoryPath != null && mounted) {
+      setState(() => localPath = memoryPath);
+      return;
+    }
+    final diskPath = await _PermanentImageCache._diskPath(widget.url);
+    if (diskPath != null && mounted) {
+      setState(() {
+        localPath = diskPath;
+        failed = false;
+      });
+      return;
+    }
     final path = await _PermanentImageCache.get(widget.url);
     if (!mounted) return;
     setState(() {
-      // A failed background refresh must never erase an image already on screen.
+      // Never erase a previously rendered image during a failed refresh.
       if (path != null) localPath = path;
       failed = path == null && localPath == null;
     });
@@ -502,6 +524,8 @@ class _AuthGateState extends State<AuthGate> {
   void initState() {
     super.initState();
     auth = FriendAuthClient();
+    // Render the shell immediately; token restoration continues in the background.
+    // A valid token will keep the user on the main page without a startup spinner.
     _restore();
   }
 
@@ -522,12 +546,14 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
+    if (token != null) return const DDShell();
     if (loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const DDShell();
     }
-    return token == null
-        ? AuthPage(auth: auth, onAuthenticated: (value) => setState(() => token = value))
-        : const DDShell();
+    return AuthPage(
+      auth: auth,
+      onAuthenticated: (value) => setState(() => token = value),
+    );
   }
 }
 
@@ -2695,13 +2721,14 @@ class _DiscoverPageState extends State<DiscoverPage>
                               }
                             }
                           },
-                          onOpen: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  DynamicDetailPage(postId: post.id),
-                            ),
-                          ),
+                          onOpen: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DynamicDetailPage(postId: post.id),
+                              ),
+                            );
+                          },
                           onComment: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -4100,7 +4127,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   final Set<int> expandedThirdLevelParents = <int>{};
   String? error;
   int? currentUserId;
-  bool get isOwner => post?.userId != null && currentUserId == post!.userId;
+  bool ownerResolved = false;
+  bool get isOwner => ownerResolved && post?.userId != null && currentUserId == post!.userId;
 
   @override
   void initState() {
@@ -4181,20 +4209,33 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           ? Uri.parse(source).pathSegments.join('/')
           : source;
       if (key.isEmpty) return '';
-      if (avatar) return (await service.resolveAvatarUrl(t, key)) ?? '';
-      return service.mediaUrlForKey(t, key);
+      try {
+        if (avatar) return (await service.resolveAvatarUrl(t, key)) ?? '';
+        return await service.mediaUrlForKey(t, key);
+      } catch (_) {
+        // Keep a valid existing URL when a background re-sign fails.
+        return source.startsWith('http') ? source : '';
+      }
     }
 
+    final avatar = await sign(value.avatar, avatar: true);
+    final image = value.imageUrl == null
+        ? null
+        : await sign(value.imageUrl!, avatar: false);
+    final video = value.videoUrl == null
+        ? null
+        : await sign(value.videoUrl!, avatar: false);
+    final thumbnail = value.thumbnailUrl == null
+        ? null
+        : await sign(value.thumbnailUrl!, avatar: false);
     return DDPost(
       id: value.id, userId: value.userId, content: value.content,
       createdAt: value.createdAt, nickname: value.nickname,
-      avatar: await sign(value.avatar, avatar: true), likes: value.likes,
-      favorites: value.favorites, comments: value.comments,
-      following: value.following, followedByViewer: value.followedByViewer,
-      distanceKm: value.distanceKm, liked: value.liked, favorited: value.favorited,
-      imageUrl: value.imageUrl == null ? null : await sign(value.imageUrl!, avatar: false),
-      videoUrl: value.videoUrl == null ? null : await sign(value.videoUrl!, avatar: false),
-      thumbnailUrl: value.thumbnailUrl == null ? null : await sign(value.thumbnailUrl!, avatar: false),
+      avatar: avatar, likes: value.likes, favorites: value.favorites,
+      comments: value.comments, following: value.following,
+      followedByViewer: value.followedByViewer, distanceKm: value.distanceKm,
+      liked: value.liked, favorited: value.favorited,
+      imageUrl: image, videoUrl: video, thumbnailUrl: thumbnail,
       views: value.views,
     );
   }
@@ -4212,8 +4253,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       final t = await token();
       final me = await service.fetchMe(t);
       currentUserId = _intValue(me['id']);
+      ownerResolved = true;
       if (cached != null && mounted) {
-        unawaited(_refreshCachedDetail(t, cached));
+        final refreshed = await _resignDetailMedia(t, cached);
+        if (mounted) setState(() => post = refreshed);
+        await _loadComments(t);
         return;
       }
       final freshPost = await service.fetchPost(t, widget.postId);
@@ -4234,7 +4278,36 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Future<void> _refreshCachedDetail(String t, DDPost cached) async {
     try {
       final resigned = await _resignDetailMedia(t, cached);
-      if (mounted) setState(() => post = resigned);
+      if (mounted) {
+        // Replace cached object keys with signed URLs only when signing succeeds.
+        final next = resigned;
+        setState(() {
+          if (next.avatar.isNotEmpty || post?.avatar.trim().isEmpty == true) {
+            post = next;
+          } else {
+            post = DDPost(
+              id: next.id,
+              userId: next.userId,
+              content: next.content,
+              createdAt: next.createdAt,
+              nickname: next.nickname,
+              avatar: post!.avatar,
+              likes: next.likes,
+              favorites: next.favorites,
+              comments: next.comments,
+              following: next.following,
+              followedByViewer: next.followedByViewer,
+              distanceKm: next.distanceKm,
+              liked: next.liked,
+              favorited: next.favorited,
+              imageUrl: next.imageUrl ?? post!.imageUrl,
+              videoUrl: next.videoUrl ?? post!.videoUrl,
+              thumbnailUrl: next.thumbnailUrl ?? post!.thumbnailUrl,
+              views: next.views,
+            );
+          }
+        });
+      }
       await _loadComments(t);
     } catch (_) {
       // Cached content remains visible when background refresh fails.
@@ -4645,7 +4718,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         automaticallyImplyLeading: true,
         title: const Text('动态详情'),
         actions: [
-          if (item != null && !isOwner)
+          if (item != null && ownerResolved && !isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 4),
               child: SizedBox(
@@ -4728,9 +4801,16 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                           child: item.avatar.trim().isEmpty
                               ? const Icon(Icons.person_outline)
                               : ClipOval(
-                                  child: _PermanentCachedImage(
-                                    url: item.avatar,
-                                    fit: BoxFit.cover,
+                                  child: SizedBox(
+                                    width: 48,
+                                    height: 48,
+                                    child: _PermanentCachedImage(
+                                      url: item.avatar,
+                                      width: 48,
+                                      height: 48,
+                                      fit: BoxFit.cover,
+                                      placeholder: const Icon(Icons.person_outline),
+                                    ),
                                   ),
                                 ),
                         ),
@@ -4762,7 +4842,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                       color: Theme.of(context).hintColor,
                                       fontSize: 12))
                             ])),
-                          if (!isOwner)
+                          if (ownerResolved && !isOwner)
                           OutlinedButton(
                             onPressed: followLoading
                                 ? null
@@ -5933,15 +6013,19 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   ]),
                     ),
                   ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _ProfileTabsHeaderDelegate(
+                      child: _MyProfileIconTabs(
+                        selectedTab: selectedTab,
+                        onSelect: (tab) => load(tab: tab),
+                      ),
+                    ),
+                  ),
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(6, 14, 6, 28),
+                    padding: const EdgeInsets.fromLTRB(6, 12, 6, 28),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        _MyProfileIconTabs(
-                          selectedTab: selectedTab,
-                          onSelect: (tab) => load(tab: tab),
-                        ),
-                        const SizedBox(height: 12),
                         _MyProfileGrid(
                           posts: posts,
                           onChanged: _invalidateProfileCacheAndReload,
