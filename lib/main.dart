@@ -1993,8 +1993,39 @@ class _DiscoverProfileCard extends StatelessWidget {
                           size: 42, color: Colors.white),
                     ],
                   ),
+                )
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: double.infinity,
+                    height: 150,
+                    padding: const EdgeInsets.all(14),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xff6556d9), Color(0xffdf76b8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      post.content.trim(),
+                      maxLines: 5,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        height: 1.4,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
-              if (post.content.trim().isNotEmpty)
+              if (post.content.trim().isNotEmpty &&
+                  (image != null && image.isNotEmpty ||
+                      video != null && video.isNotEmpty))
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
@@ -2526,7 +2557,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                 controller: _discoverScrollControllers[tab],
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
-                    18, 0, 18, 28 + MediaQuery.of(context).padding.bottom),
+                    6, 0, 6, 28 + MediaQuery.of(context).padding.bottom),
                 children: [
                   const SizedBox(height: 6),
                   if (loading)
@@ -2565,12 +2596,12 @@ class _DiscoverPageState extends State<DiscoverPage>
                     ),
                   if (!loading && !tabLoading && error == null)
                     Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
+                      spacing: 6,
+                      runSpacing: 6,
                       children: _postsByTab[tab]
                           .map(
                             (post) => SizedBox(
-                              width: (MediaQuery.of(context).size.width - 54) / 2,
+                              width: (MediaQuery.of(context).size.width - 18) / 2,
                               child: _DiscoverProfileCard(
                                 post: post,
                                 onLike: () async {
@@ -5910,7 +5941,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     ),
                   ),
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+                    padding: const EdgeInsets.fromLTRB(6, 12, 6, 28),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                   _MyProfileGrid(
@@ -6476,8 +6507,8 @@ class _MyProfileGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 18,
+      crossAxisSpacing: 6,
+      mainAxisSpacing: 6,
       itemCount: posts.length,
       itemBuilder: (context, index) {
         final post = posts[index];
