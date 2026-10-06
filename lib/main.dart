@@ -5098,16 +5098,22 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                               _InlineProfileStat(
                                                 label: '关注',
                                                 value: '${p?['following'] ?? 0}',
+                                                valueFontSize: 18,
+                                                labelFontSize: 14,
                                               ),
                                               const SizedBox(width: 18),
                                               _InlineProfileStat(
                                                 label: '粉丝',
                                                 value: '${p?['followers'] ?? 0}',
+                                                valueFontSize: 18,
+                                                labelFontSize: 14,
                                               ),
                                               const SizedBox(width: 18),
                                               _InlineProfileStat(
                                                 label: '获赞',
                                                 value: '${p?['receivedLikes'] ?? 0}',
+                                                valueFontSize: 18,
+                                                labelFontSize: 14,
                                               ),
                                             ],
                                           ),
@@ -6661,10 +6667,14 @@ class _InlineProfileStat extends StatelessWidget {
     required this.label,
     required this.value,
     this.onTap,
+    this.valueFontSize = 16,
+    this.labelFontSize = 13,
   });
   final String label;
   final String value;
   final VoidCallback? onTap;
+  final double valueFontSize;
+  final double labelFontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -6676,9 +6686,9 @@ class _InlineProfileStat extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
-            fontSize: 16,
+            fontSize: valueFontSize,
           ),
         ),
         Text(
@@ -6688,7 +6698,7 @@ class _InlineProfileStat extends StatelessWidget {
                 .colorScheme
                 .onSurface
                 .withValues(alpha: .65),
-            fontSize: 13,
+            fontSize: labelFontSize,
           ),
         ),
       ],
