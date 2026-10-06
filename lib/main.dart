@@ -69,6 +69,7 @@ class _PermanentCachedImage extends StatefulWidget {
 
 class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   String? localPath;
+  bool failed = false;
 
   @override
   void initState() {
@@ -84,14 +85,20 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
 
   Future<void> _load() async {
     final path = await _PermanentImageCache.get(widget.url);
-    if (mounted) setState(() => localPath = path);
+    if (mounted) setState(() {
+      localPath = path;
+      failed = path == null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final path = localPath;
     return path == null
-        ? const ColoredBox(color: Colors.black12)
+        ? const ColoredBox(
+            color: Colors.transparent,
+            child: Icon(Icons.person_outline),
+          )
         : Image.file(File(path), fit: widget.fit);
   }
 }
@@ -99,6 +106,37 @@ int? _intValue(Object? value) {
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value);
   return null;
+}
+
+int? _signedUrlExpiryMillis(String raw) {
+  try {
+    final uri = Uri.parse(raw);
+    final query = <String, String>{
+      for (final entry in uri.queryParameters.entries)
+        entry.key.toLowerCase(): entry.value,
+    };
+    final absolute = int.tryParse(query['expires'] ?? '');
+    if (absolute != null) return absolute < 10000000000 ? absolute * 1000 : absolute;
+    final duration = int.tryParse(query['x-oss-expires'] ?? '');
+    final signedAt = query['x-oss-date'] ?? query['date'];
+    if (duration != null && signedAt != null) {
+      final compact = signedAt.length >= 15
+          ? '${signedAt.substring(0, 8)}T${signedAt.substring(8)}Z'
+          : signedAt;
+      final parsed = DateTime.tryParse(compact);
+      if (parsed != null) return parsed.millisecondsSinceEpoch + duration * 1000;
+    }
+  } catch (_) {}
+  return null;
+}
+
+int? _postMediaExpiryMillis(Map<String, dynamic> json) {
+  final values = [json['avatar'], json['imageUrl'], json['videoUrl'], json['thumbnailUrl']]
+      .whereType<String>()
+      .map(_signedUrlExpiryMillis)
+      .whereType<int>()
+      .toList();
+  return values.isEmpty ? null : values.reduce((a, b) => a < b ? a : b);
 }
 
 String _formatExactPostTime(String raw) {
@@ -1626,14 +1664,7 @@ class _DynamicPostCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               child: CircleAvatar(
                 radius: 20,
-                child: post.avatar.isEmpty
-                    ? const Icon(Icons.person_outline)
-                    : ClipOval(
-                        child: _PermanentCachedImage(
-                          url: post.avatar,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                child: _avatarWidget(post.avatar),
               ),
             ),
             const SizedBox(width: 10),
@@ -2088,6 +2119,7 @@ class _DiscoverPageState extends State<DiscoverPage>
     with WidgetsBindingObserver {
   final DDPostService service = DDPostService();
   static const _cacheDuration = Duration(hours: 1);
+  static const _discoverCacheVersion = 'v4';
   final List<List<DDPost>> _postsByTab = [<DDPost>[], <DDPost>[], <DDPost>[]];
   List<DDPost> get _currentPosts => _postsByTab[selectedTab];
   bool loading = true;
@@ -2157,9 +2189,14 @@ class _DiscoverPageState extends State<DiscoverPage>
 
   Future<void> _saveDiscoverCache(int tab) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = 'dd.discover.cache.v2.$tab';
+    final key = 'dd.discover.cache.$_discoverCacheVersion.$tab';
     await prefs.setString(key, jsonEncode(_postsByTab[tab].map((item) => item.toJson()).toList()));
+    final expiries = _postsByTab[tab]
+        .map((item) => _signedUrlExpiryMillis(item.avatar))
+        .whereType<int>()
+        .toList();
     await prefs.setInt('$key.at', DateTime.now().millisecondsSinceEpoch);
+    if (expiries.isNotEmpty) await prefs.setInt('$key.urlExpiresAt', expiries.reduce((a, b) => a < b ? a : b));
   }
 
   @override
@@ -2204,17 +2241,16 @@ class _DiscoverPageState extends State<DiscoverPage>
       final p = await SharedPreferences.getInstance();
       final t = p.getString('friend.auth.token') ?? '';
       if (t.isEmpty) throw Exception('登录后加载发现内容');
-      final cacheKey = 'dd.discover.cache.v2.$targetTab';
+      final cacheKey = 'dd.discover.cache.$_discoverCacheVersion.$targetTab';
       final cacheAtKey = '$cacheKey.at';
       final cachedAt = p.getInt(cacheAtKey);
       final cachedJson = p.getString(cacheKey);
       final cacheHasData = cachedJson != null && cachedJson.isNotEmpty;
+      final cachedUrlExpiry = p.getInt('$cacheKey.urlExpiresAt');
       final cacheFresh = !fromRefresh &&
           !backgroundRefresh &&
           cacheHasData &&
-          (cachedAt != null &&
-              DateTime.now().millisecondsSinceEpoch - cachedAt <
-                  _cacheDuration.inMilliseconds);
+          (cachedUrlExpiry == null || DateTime.now().millisecondsSinceEpoch < cachedUrlExpiry);
       final cachedPosts = cacheFresh
           ? (jsonDecode(cachedJson!) as List)
               .whereType<Map<String, dynamic>>()
@@ -2446,6 +2482,19 @@ class _DiscoverPageState extends State<DiscoverPage>
                       ),
                     ),
                 ]);
+  }
+
+  Widget _avatarWidget(String url, {double radius = 20}) {
+    if (url.trim().isEmpty) {
+      return CircleAvatar(radius: radius, child: const Icon(Icons.person_outline));
+    }
+    return ClipOval(
+      child: SizedBox(
+        width: radius * 2,
+        height: radius * 2,
+        child: _PermanentCachedImage(url: url, fit: BoxFit.cover),
+      ),
+    );
   }
 
   @override
@@ -3615,12 +3664,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       children: [
                                         CircleAvatar(
                                           radius: 22,
-                                          backgroundImage:
-                                              item.avatar?.isNotEmpty == true
-                                                  ? NetworkImage(item.avatar!)
-                                                  : null,
                                           child: item.avatar?.isNotEmpty == true
-                                              ? null
+                                              ? ClipOval(
+                                                  child: _PermanentCachedImage(
+                                                    url: item.avatar!,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
                                               : Icon(item.nickname == null
                                                   ? Icons.shield_outlined
                                                   : Icons.person_outline),
@@ -3842,6 +3892,21 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_detailCacheKey(value.id), jsonEncode(value.toJson()));
     await prefs.setInt(_detailCacheAtKey(value.id), DateTime.now().millisecondsSinceEpoch);
+    final expiry = _postMediaExpiryMillis(value.toJson());
+    if (expiry != null) await prefs.setInt('${_detailCacheAtKey(value.id)}.urlExpiresAt', expiry);
+  }
+
+  Future<List<DDComment>> _loadComments(String t) async {
+    final value = await service.fetchComments(t, widget.postId);
+    if (mounted) {
+      setState(() {
+        comments = value;
+        visibleRootCount = 30;
+        visibleReplyCounts.clear();
+        expandedThirdLevelParents.clear();
+      });
+    }
+    return value;
   }
 
   Future<void> load() async {
@@ -3851,32 +3916,27 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       currentUserId = _intValue(me['id']);
       final cached = await _readDetailCache(widget.postId);
       if (cached != null && mounted) {
-        final cachedOwner = cached.userId == currentUserId;
-        final cachedAt = (await SharedPreferences.getInstance()).getInt(_detailCacheAtKey(widget.postId));
-        final valid = cachedAt != null &&
-            DateTime.now().millisecondsSinceEpoch - cachedAt <
-                const Duration(hours: 1).inMilliseconds;
+        final cachedUrlExpiry = (await SharedPreferences.getInstance())
+            .getInt('${_detailCacheAtKey(widget.postId)}.urlExpiresAt');
+        final valid = cachedUrlExpiry == null ||
+            DateTime.now().millisecondsSinceEpoch < cachedUrlExpiry;
         if (valid) {
           post = cached;
           loading = false;
           setState(() {});
-          if (!cachedOwner) {
-            comments = await service.fetchComments(t, widget.postId);
-            return;
-          }
+          await _loadComments(t);
+          return;
         }
       }
       final freshPost = await service.fetchPost(t, widget.postId);
       post = freshPost;
       await _saveDetailCache(freshPost);
-      comments = await service.fetchComments(t, widget.postId);
-      visibleRootCount = 30;
-      visibleReplyCounts.clear();
-      expandedThirdLevelParents.clear();
+      await _loadComments(t);
       if (post == null) throw Exception('动态不存在');
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -4366,15 +4426,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                     ),
                                   ),
                           borderRadius: BorderRadius.circular(26),
-                          child: CircleAvatar(
-                            radius: 24,
-                            backgroundImage: item.avatar.isEmpty
-                                ? null
-                                : NetworkImage(item.avatar),
-                            child: item.avatar.isEmpty
-                                ? const Icon(Icons.person_outline)
-                                : null,
-                          ),
+                          child: item.avatar.isEmpty
+                              ? const Icon(Icons.person_outline)
+                              : ClipOval(
+                                  child: _PermanentCachedImage(
+                                    url: item.avatar,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -4914,20 +4973,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 children: [
                                   CircleAvatar(
                                     radius: 40,
-                                    backgroundImage:
-                                        (p?['avatar']?.toString() ?? '')
-                                                .trim()
-                                                .isEmpty
-                                            ? null
-                                            : NetworkImage(
-                                                DDPostService.mediaUrl(
-                                                    p?['avatar']?.toString())),
                                     child: (p?['avatar']?.toString() ?? '')
                                             .trim()
                                             .isEmpty
                                         ? const Icon(Icons.person_outline,
                                             size: 34)
-                                        : null,
+                                        : ClipOval(
+                                            child: _PermanentCachedImage(
+                                              url: DDPostService.mediaUrl(
+                                                  p?['avatar']?.toString()),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
                                   ),
                                   Positioned(
                                     left: 0,
@@ -5195,13 +5252,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
 
   Future<List<DDPost>?> _readTabCache(int tab) async {
     final prefs = await SharedPreferences.getInstance();
-    final cachedAt = prefs.getInt('$_profileTabCacheAtPrefix$tab');
-    if (cachedAt == null ||
-        DateTime.now().millisecondsSinceEpoch - cachedAt >=
-            _profileMediaRefreshAge.inMilliseconds) {
-      return null;
-    }
-    final raw = prefs.getString('$_profileTabCachePrefix$tab');
+    final key = '$_profileTabCachePrefix$tab';
+    final expiry = prefs.getInt('$key.urlExpiresAt');
+    if (expiry != null && DateTime.now().millisecondsSinceEpoch >= expiry) return null;
+    final raw = prefs.getString(key);
     if (raw == null || raw.isEmpty) return null;
     try {
       final data = jsonDecode(raw) as List;
@@ -5780,15 +5834,14 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                               ),
                                             ),
                                           ),
-                                  leading: CircleAvatar(
-                                    backgroundImage: '${user['avatar'] ?? ''}'
-                                            .isNotEmpty
-                                        ? NetworkImage(DDPostService.mediaUrl(
-                                            '${user['avatar']}'))
-                                        : null,
-                                    child: '${user['avatar'] ?? ''}'.isEmpty
-                                        ? const Icon(Icons.person_outline)
-                                        : null,
+                                  leading: '${user['avatar'] ?? ''}'.isEmpty
+                                      ? const CircleAvatar(child: Icon(Icons.person_outline))
+                                      : ClipOval(
+                                          child: _PermanentCachedImage(
+                                            url: DDPostService.mediaUrl('${user['avatar']}'),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
                                   ),
                                   title: Text('${user['nickname'] ?? '用户'}'),
                                   subtitle: Text(
