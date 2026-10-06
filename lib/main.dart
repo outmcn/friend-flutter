@@ -2595,16 +2595,18 @@ class _DiscoverPageState extends State<DiscoverPage>
                               : '暂时没有可发现的真实动态',
                     ),
                   if (!loading && !tabLoading && error == null)
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: _postsByTab[tab]
-                          .map(
-                            (post) => SizedBox(
-                              width: (MediaQuery.of(context).size.width - 18) / 2,
-                              child: _DiscoverProfileCard(
-                                post: post,
-                                onLike: () async {
+                    MasonryGridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
+                      itemCount: _postsByTab[tab].length,
+                      itemBuilder: (context, index) {
+                        final post = _postsByTab[tab][index];
+                        return _DiscoverProfileCard(
+                          post: post,
+                          onLike: () async {
                             try {
                               final p = await SharedPreferences.getInstance();
                               final t = p.getString('friend.auth.token') ?? '';
@@ -2699,10 +2701,8 @@ class _DiscoverPageState extends State<DiscoverPage>
                           onChat: () => ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('私聊功能暂未接入')),
                           ),
-                          ),
-                          ),
-                          )
-                          .toList(),
+                        );
+                      },
                     ),
                 ]);
   }
