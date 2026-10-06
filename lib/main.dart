@@ -4430,11 +4430,19 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                   ),
                           borderRadius: BorderRadius.circular(26),
                           child: item.avatar.isEmpty
-                              ? const Icon(Icons.person_outline)
-                              : ClipOval(
-                                  child: _PermanentCachedImage(
-                                    url: item.avatar,
-                                    fit: BoxFit.cover,
+                              ? const SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: Icon(Icons.person_outline),
+                                )
+                              : SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: ClipOval(
+                                    child: _PermanentCachedImage(
+                                      url: item.avatar,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                         ),
@@ -5558,16 +5566,20 @@ class _DDProfilePageState extends State<DDProfilePage> {
                       Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          CircleAvatar(
-                            radius: 40,
-                            child: _avatarUrl == null || _avatarUrl!.isEmpty
-                                ? const Icon(Icons.person, size: 42)
-                                : ClipOval(
-                                    child: _PermanentCachedImage(
+                          ClipOval(
+                            child: SizedBox(
+                              width: 80,
+                              height: 80,
+                              child: _avatarUrl == null || _avatarUrl!.isEmpty
+                                  ? const ColoredBox(
+                                      color: Colors.black12,
+                                      child: Icon(Icons.person, size: 42),
+                                    )
+                                  : _PermanentCachedImage(
                                       url: _avatarUrl!,
                                       fit: BoxFit.cover,
                                     ),
-                                  ),
+                            ),
                           ),
                           Positioned(
                             left: 0,
