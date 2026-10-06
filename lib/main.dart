@@ -2311,7 +2311,7 @@ class _DiscoverPageState extends State<DiscoverPage>
         appBar: AppBar(
           titleSpacing: 16,
           title: Row(
-            children: ['推荐', cityLabel ?? '', '关注']
+            children: ['推荐', (cityLabel ?? '').trim().isEmpty ? '本地' : cityLabel!, '关注']
                 .asMap()
                 .entries
                 .map((entry) => GestureDetector(
