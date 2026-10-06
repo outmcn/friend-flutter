@@ -1957,7 +1957,7 @@ class _DiscoverProfileCard extends StatelessWidget {
       child: InkWell(
         onTap: onOpen,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2030,7 +2030,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   (image != null && image.isNotEmpty ||
                       video != null && video.isNotEmpty))
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+                  padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
                   child: Text(
                     post.content.trim(),
                     maxLines: 2,
