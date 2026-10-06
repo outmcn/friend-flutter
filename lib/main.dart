@@ -2088,7 +2088,8 @@ class _DiscoverPageState extends State<DiscoverPage>
     with WidgetsBindingObserver {
   final DDPostService service = DDPostService();
   static const _cacheDuration = Duration(hours: 1);
-  List<DDPost> posts = const [];
+  final List<List<DDPost>> _postsByTab = [<DDPost>[], <DDPost>[], <DDPost>[]];
+  List<DDPost> get _currentPosts => _postsByTab[selectedTab];
   bool loading = true;
   bool _refreshing = false;
   int selectedTab = 0;
@@ -2132,17 +2133,20 @@ class _DiscoverPageState extends State<DiscoverPage>
       final token = prefs.getString('friend.auth.token') ?? '';
       final controller = _discoverScrollControllers[tabAtRequest];
       if (!controller.hasClients || controller.position.extentAfter >= 500) return;
-      final postsAtRequest = posts;
+      final postsAtRequest = List<DDPost>.from(_postsByTab[tabAtRequest]);
       final batch = tabAtRequest == 0
           ? await service.fetchRecommendedPosts(token, offset: postsAtRequest.length)
           : tabAtRequest == 1
               ? await service.fetchNearbyPosts(token, offset: postsAtRequest.length)
               : await service.fetchFollowingPosts(token, offset: postsAtRequest.length);
       if (!mounted || selectedTab != tabAtRequest) return;
-      final ids = posts.map((item) => item.id).toSet();
+      final ids = _postsByTab[tabAtRequest].map((item) => item.id).toSet();
       final additions = batch.where((item) => ids.add(item.id)).toList();
       setState(() {
-        posts = [...posts, ...additions];
+        _postsByTab[tabAtRequest] = [
+          ..._postsByTab[tabAtRequest],
+          ...additions,
+        ];
         _hasMoreByTab[tabAtRequest] = batch.length >= 30;
       });
       await _saveDiscoverCache(tabAtRequest);
@@ -2154,7 +2158,7 @@ class _DiscoverPageState extends State<DiscoverPage>
   Future<void> _saveDiscoverCache(int tab) async {
     final prefs = await SharedPreferences.getInstance();
     final key = 'dd.discover.cache.v2.$tab';
-    await prefs.setString(key, jsonEncode(posts.map((item) => item.toJson()).toList()));
+    await prefs.setString(key, jsonEncode(_postsByTab[tab].map((item) => item.toJson()).toList()));
     await prefs.setInt('$key.at', DateTime.now().millisecondsSinceEpoch);
   }
 
@@ -2220,7 +2224,7 @@ class _DiscoverPageState extends State<DiscoverPage>
       if (!mounted || generation != _activeLoadGeneration) return;
       if (cacheFresh) {
         setState(() {
-          posts = cachedPosts;
+          _postsByTab[targetTab] = cachedPosts;
           loading = false;
           tabLoading = false;
         });
@@ -2273,7 +2277,7 @@ class _DiscoverPageState extends State<DiscoverPage>
       if (!mounted || generation != _activeLoadGeneration) return;
       if (mounted) {
         setState(() {
-          posts = loaded;
+          _postsByTab[targetTab] = loaded;
           selectedTab = targetTab;
         });
       }
@@ -2385,7 +2389,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                       padding: EdgeInsets.only(top: 36),
                       child: Center(child: CircularProgressIndicator()),
                     )
-                  else if (!loading && error == null && posts.isEmpty)
+                  else if (!loading && error == null && _currentPosts.isEmpty)
                     _EmptyStateCard(
                       icon: selectedTab == 1
                           ? Icons.location_off_outlined
@@ -2404,7 +2408,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                               : '暂时没有可发现的真实动态',
                     ),
                   if (!loading && !tabLoading && error == null)
-                    ...posts.map(
+                    ..._currentPosts.map(
                       (post) => Padding(
                         padding: const EdgeInsets.only(bottom: 2),
                         child: _DynamicPostCard(
@@ -2418,11 +2422,11 @@ class _DiscoverPageState extends State<DiscoverPage>
                               await service.toggleLike(t, post.id);
                               if (mounted) {
                                 setState(() {
-                                  final index = posts
+                                  final index = _postsByTab[selectedTab]
                                       .indexWhere((item) => item.id == post.id);
                                   if (index >= 0) {
-                                    final current = posts[index];
-                                    posts[index] = current.copyWith(
+                                    final current = _postsByTab[selectedTab][index];
+                                    _postsByTab[selectedTab][index] = current.copyWith(
                                       liked: !current.liked,
                                       likes: current.likes +
                                           (current.liked ? -1 : 1),
@@ -2447,11 +2451,11 @@ class _DiscoverPageState extends State<DiscoverPage>
                               await service.toggleFavorite(t, post.id);
                               if (mounted) {
                                 setState(() {
-                                  final index = posts
+                                  final index = _postsByTab[selectedTab]
                                       .indexWhere((item) => item.id == post.id);
                                   if (index >= 0) {
-                                    final current = posts[index];
-                                    posts[index] = current.copyWith(
+                                    final current = _postsByTab[selectedTab][index];
+                                    _postsByTab[selectedTab][index] = current.copyWith(
                                       favorited: !current.favorited,
                                       favorites: current.favorites +
                                           (current.favorited ? -1 : 1),
