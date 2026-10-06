@@ -1676,13 +1676,18 @@ class _DynamicPostCard extends StatelessWidget {
                         ),
                       ),
               borderRadius: BorderRadius.circular(24),
-              child: CircleAvatar(
-                radius: 20,
-                child: _PermanentCachedImage(
-                  url: post.avatar,
-                  fit: BoxFit.cover,
-                ),
-              ),
+              child: post.avatar.trim().isEmpty
+                  ? const Icon(Icons.person_outline)
+                  : ClipOval(
+                      child: Image.network(
+                        post.avatar,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.person_outline),
+                      ),
+                    ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -4475,22 +4480,18 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                     ),
                                   ),
                           borderRadius: BorderRadius.circular(26),
-                          child: item.avatar.isEmpty
-                              ? const SizedBox(
-                                  width: 48,
-                                  height: 48,
-                                  child: Icon(Icons.person_outline),
-                                )
-                              : SizedBox(
-                                  width: 48,
-                                  height: 48,
-                                  child: ClipOval(
-                                    child: _PermanentCachedImage(
-                                      url: item.avatar,
-                                      fit: BoxFit.cover,
+                              child: item.avatar.trim().isEmpty
+                                  ? const Icon(Icons.person_outline)
+                                  : ClipOval(
+                                      child: Image.network(
+                                        item.avatar,
+                                        width: 48,
+                                        height: 48,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) =>
+                                            const Icon(Icons.person_outline),
+                                      ),
                                     ),
-                                  ),
-                                ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
