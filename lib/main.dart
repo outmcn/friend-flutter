@@ -1664,7 +1664,10 @@ class _DynamicPostCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               child: CircleAvatar(
                 radius: 20,
-                child: _avatarWidget(post.avatar),
+                child: _PermanentCachedImage(
+                  url: post.avatar,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(width: 10),
@@ -5301,7 +5304,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
         loadedProfile = await service.fetchMe(t);
         _sonicUrl =
             DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
-        _avatarUrl = await service.resolveAvatarUrl(t, loadedProfile['avatarKey']);
+        final avatarKey = '${loadedProfile['avatarKey'] ?? ''}'.trim();
+        _avatarUrl = avatarKey.isEmpty ? null : await service.resolveAvatarUrl(t, avatarKey);
         final profileTags = loadedProfile['tags'];
         _tags = profileTags is List
             ? profileTags.map((value) => '$value').where((value) => value.trim().isNotEmpty).toList()
@@ -5556,7 +5560,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         children: [
                           CircleAvatar(
                             radius: 40,
-                            child: _avatarUrl == null
+                            child: _avatarUrl == null || _avatarUrl!.isEmpty
                                 ? const Icon(Icons.person, size: 42)
                                 : ClipOval(
                                     child: _PermanentCachedImage(
@@ -5841,8 +5845,7 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                             url: DDPostService.mediaUrl('${user['avatar']}'),
                                             fit: BoxFit.cover,
                                           ),
-                                        ),
-                                  ),
+                                      ),
                                   title: Text('${user['nickname'] ?? '用户'}'),
                                   subtitle: Text(
                                       widget.relation == 'history'
