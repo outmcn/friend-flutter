@@ -2210,7 +2210,7 @@ class _DiscoverPageState extends State<DiscoverPage>
           cacheHasData &&
           (cachedAt != null &&
               DateTime.now().millisecondsSinceEpoch - cachedAt <
-                  _cacheDuration.inMilliseconds));
+                  _cacheDuration.inMilliseconds);
       final cachedPosts = cacheFresh
           ? (jsonDecode(cachedJson!) as List)
               .whereType<Map<String, dynamic>>()
