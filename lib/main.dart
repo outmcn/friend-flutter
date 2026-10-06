@@ -1808,7 +1808,8 @@ class _DynamicPostCard extends StatelessWidget {
                         child: Image.network(
                           post.thumbnailUrl!,
                           width: double.infinity,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.fitWidth,
+                          alignment: Alignment.topCenter,
                         ),
                       ),
                     )
@@ -1969,6 +1970,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       image,
                       width: double.infinity,
                       fit: BoxFit.fitWidth,
+                      alignment: Alignment.topCenter,
                       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
                   ),
@@ -1984,6 +1986,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                               post.thumbnailUrl!,
                               width: double.infinity,
                               fit: BoxFit.fitWidth,
+                              alignment: Alignment.topCenter,
                             )
                           : const SizedBox(
                               height: 300,
