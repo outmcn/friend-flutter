@@ -5727,17 +5727,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: Theme.of(context).brightness == Brightness.dark
-                      ? const [Color(0xff11131d), Color(0xff0b0c12)]
-                      : const [Color(0xffdff5ff), Color(0xfffafcff)],
-                ),
-              ),
-              child: RefreshIndicator(
+          : RefreshIndicator(
               onRefresh: () => load(forceRefresh: true),
               child: CustomScrollView(
                 controller: _profileScrollController,
@@ -5758,99 +5748,123 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipOval(
-                          child: SizedBox(
-                            width: 84,
-                            height: 84,
-                            child: _avatarUrl == null || _avatarUrl!.isEmpty
-                                ? const ColoredBox(
-                                    color: Colors.black12,
-                                    child: Icon(Icons.person, size: 42),
-                                  )
-                                : _PermanentCachedImage(
-                                    url: _avatarUrl!,
-                                    width: 84,
-                                    height: 84,
-                                    fit: BoxFit.cover,
-                                    placeholder: const ColoredBox(
-                                      color: Colors.black12,
-                                      child: Icon(Icons.person, size: 42),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipOval(
+                              child: SizedBox(
+                                width: 84,
+                                height: 84,
+                                child: _avatarUrl == null || _avatarUrl!.isEmpty
+                                    ? const ColoredBox(
+                                        color: Colors.black12,
+                                        child: Icon(Icons.person, size: 42),
+                                      )
+                                    : _PermanentCachedImage(
+                                        url: _avatarUrl!,
+                                        width: 84,
+                                        height: 84,
+                                        fit: BoxFit.cover,
+                                        placeholder: const ColoredBox(
+                                          color: Colors.black12,
+                                          child: Icon(Icons.person, size: 42),
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _ProfileTag(text: '${p?['city'] ?? '未知'}'),
+                                    const SizedBox(width: 8),
+                                    _SonicProfileButton(
+                                      playing: _sonicPlaying,
+                                      enabled: _sonicUrl?.isNotEmpty == true,
+                                      onTap: _toggleSonic,
                                     ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${p?['nickname'] ?? 'DD 用户'}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            IconButton(
-                              tooltip: '编辑资料',
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints.tightFor(width: 30, height: 30),
-                              onPressed: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const EditProfilePage()),
-                                );
-                                if (mounted) load();
-                              },
-                              icon: const Icon(Icons.edit_outlined, size: 18),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            _InlineProfileStat(
-                              label: '粉丝',
-                              value: '${p?['followers'] ?? 0}',
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const _UserRelationListPage(
-                                    relation: 'followers',
-                                    title: '粉丝',
-                                  ),
+                                  ],
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            _InlineProfileStat(
-                              label: '关注',
-                              value: '${p?['following'] ?? 0}',
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const _UserRelationListPage(
-                                    relation: 'following',
-                                    title: '关注',
-                                  ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${p?['nickname'] ?? 'DD 用户'}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 25,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    IconButton(
+                                      tooltip: '编辑资料',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints.tightFor(width: 30, height: 30),
+                                      onPressed: () async {
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => const EditProfilePage()),
+                                        );
+                                        if (mounted) load();
+                                      },
+                                      icon: const Icon(Icons.edit_outlined, size: 18),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            _InlineProfileStat(
-                              label: '获赞',
-                              value: '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const _UserRelationListPage(
-                                    relation: 'likers',
-                                    title: '获赞',
-                                  ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _InlineProfileStat(
+                                      label: '粉丝',
+                                      value: '${p?['followers'] ?? 0}',
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const _UserRelationListPage(
+                                            relation: 'followers',
+                                            title: '粉丝',
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    _InlineProfileStat(
+                                      label: '关注',
+                                      value: '${p?['following'] ?? 0}',
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const _UserRelationListPage(
+                                            relation: 'following',
+                                            title: '关注',
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    _InlineProfileStat(
+                                      label: '获赞',
+                                      value: '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const _UserRelationListPage(
+                                            relation: 'likers',
+                                            title: '获赞',
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                              ],
                             ),
                           ],
                         ),
@@ -5919,9 +5933,24 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   ]),
                     ),
                   ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(6, 14, 6, 28),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        _MyProfileIconTabs(
+                          selectedTab: selectedTab,
+                          onSelect: (tab) => load(tab: tab),
+                        ),
+                        const SizedBox(height: 12),
+                        _MyProfileGrid(
+                          posts: posts,
+                          onChanged: _invalidateProfileCacheAndReload,
+                        ),
+                      ]),
+                    ),
+                  ),
                 ],
               ),
-            ),
             ),
     );
   }
