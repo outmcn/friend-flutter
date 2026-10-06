@@ -1980,16 +1980,20 @@ class _DiscoverProfileCard extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       if (post.thumbnailUrl?.isNotEmpty == true)
-                        Image.network(
-                          post.thumbnailUrl!,
-                          width: double.infinity,
-                          fit: BoxFit.fitWidth,
-                        )
+                        ...[
+                          Image.network(
+                            post.thumbnailUrl!,
+                            width: double.infinity,
+                            fit: BoxFit.fitWidth,
+                          ),
+                        ]
                       else
-                        const SizedBox(
-                          height: 300,
-                          child: ColoredBox(color: Colors.black26),
-                        ),
+                        ...[
+                          const SizedBox(
+                            height: 300,
+                            child: ColoredBox(color: Colors.black26),
+                          ),
+                        ],
                       const Icon(Icons.play_circle_outline,
                           size: 42, color: Colors.white),
                     ],
