@@ -1825,31 +1825,78 @@ class _DynamicPostCard extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 10),
-        Row(
-          children: [
-            TextButton.icon(
-              onPressed: onLike,
-              style: TextButton.styleFrom(
-                foregroundColor: post.liked ? Colors.red : null,
+        if (!listMode)
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: onLike,
+                style: TextButton.styleFrom(
+                  foregroundColor: post.liked ? Colors.red : null,
+                ),
+                icon: Icon(TIcons.thumb_up_1),
+                label: Text('${post.likes}'),
               ),
-              icon: Icon(TIcons.thumb_up_1),
-              label: Text('${post.likes}'),
-            ),
-            TextButton.icon(
-              onPressed: onComment ?? onOpen,
-              icon: const Icon(Icons.chat_bubble_outline),
-              label: Text('${post.comments}'),
-            ),
-            TextButton.icon(
-              onPressed: onFavorite,
-              style: TextButton.styleFrom(
-                foregroundColor: post.favorited ? Colors.red : null,
+              TextButton.icon(
+                onPressed: onComment ?? onOpen,
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: Text('${post.comments}'),
               ),
-              icon: Icon(TIcons.bookmark),
-              label: Text('${post.favorites}'),
+              TextButton.icon(
+                onPressed: onFavorite,
+                style: TextButton.styleFrom(
+                  foregroundColor: post.favorited ? Colors.red : null,
+                ),
+                icon: Icon(TIcons.bookmark),
+                label: Text('${post.favorites}'),
+              ),
+            ],
+          )
+        else ...[
+          if (post.content.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 0),
+              child: Text(
+                post.content.trim(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, height: 1.35),
+              ),
             ),
-          ],
-        ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              ClipOval(
+                child: post.avatar.trim().isEmpty
+                    ? const Icon(Icons.person_outline, size: 22)
+                    : Image.network(
+                        post.avatar,
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.person_outline, size: 22),
+                      ),
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  post.nickname,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+              IconButton(
+                onPressed: onLike,
+                iconSize: 17,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(width: 24, height: 24),
+                color: post.liked ? Colors.red : null,
+                icon: Icon(TIcons.thumb_up_1),
+              ),
+              Text('${post.likes}', style: const TextStyle(fontSize: 12)),
+            ],
+          ),
       ],
     );
     if (!listMode) {
@@ -1874,6 +1921,130 @@ class _DynamicPostCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
           child: content,
+        ),
+      ),
+    );
+  }
+}
+
+class _DiscoverProfileCard extends StatelessWidget {
+  const _DiscoverProfileCard({
+    required this.post,
+    required this.onLike,
+    required this.onOpen,
+    this.onFavorite,
+    this.onComment,
+    this.onFollow,
+    this.onChat,
+  });
+  final DDPost post;
+  final VoidCallback onLike;
+  final VoidCallback onOpen;
+  final VoidCallback? onFavorite;
+  final VoidCallback? onComment;
+  final VoidCallback? onFollow;
+  final VoidCallback? onChat;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = post.imageUrl?.trim();
+    final video = post.videoUrl?.trim();
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (image != null && image.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    image,
+                    width: double.infinity,
+                    height: 150,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                )
+              else if (video != null && video.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (post.thumbnailUrl?.isNotEmpty == true)
+                        Image.network(
+                          post.thumbnailUrl!,
+                          width: double.infinity,
+                          height: 150,
+                          fit: BoxFit.cover,
+                        )
+                      else
+                        const SizedBox(
+                          height: 150,
+                          child: ColoredBox(color: Colors.black26),
+                        ),
+                      const Icon(Icons.play_circle_outline,
+                          size: 42, color: Colors.white),
+                    ],
+                  ),
+                ),
+              if (post.content.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    post.content.trim(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14, height: 1.35),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  ClipOval(
+                    child: post.avatar.trim().isEmpty
+                        ? const Icon(Icons.person_outline, size: 22)
+                        : Image.network(
+                            post.avatar,
+                            width: 22,
+                            height: 22,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.person_outline, size: 22),
+                          ),
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      post.nickname,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: onLike,
+                    iconSize: 17,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 24, height: 24),
+                    color: post.liked ? Colors.red : null,
+                    icon: Icon(TIcons.thumb_up_1),
+                  ),
+                  Text('${post.likes}',
+                      style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2399,10 +2570,9 @@ class _DiscoverPageState extends State<DiscoverPage>
                           .map(
                             (post) => SizedBox(
                               width: (MediaQuery.of(context).size.width - 54) / 2,
-                              child: _DynamicPostCard(
-                          post: post,
-                          listMode: true,
-                          onLike: () async {
+                              child: _DiscoverProfileCard(
+                                post: post,
+                                onLike: () async {
                             try {
                               final p = await SharedPreferences.getInstance();
                               final t = p.getString('friend.auth.token') ?? '';
@@ -2498,7 +2668,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                             const SnackBar(content: Text('私聊功能暂未接入')),
                           ),
                           ),
-                            ),
+                          ),
                           )
                           .toList(),
                     ),
