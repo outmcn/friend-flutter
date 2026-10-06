@@ -106,6 +106,7 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
     super.didUpdateWidget(oldWidget);
     if (_PermanentImageCache.identity(oldWidget.url) !=
         _PermanentImageCache.identity(widget.url)) {
+      localPath = _PermanentImageCache.peek(widget.url);
       failed = false;
       _load();
     }
@@ -1693,13 +1694,9 @@ class _DynamicPostCard extends StatelessWidget {
               child: post.avatar.trim().isEmpty
                   ? const Icon(Icons.person_outline)
                   : ClipOval(
-                      child: Image.network(
-                        post.avatar,
-                        width: 40,
-                        height: 40,
+                      child: _PermanentCachedImage(
+                        url: post.avatar,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.person_outline),
                       ),
                     ),
             ),
@@ -1795,11 +1792,9 @@ class _DynamicPostCard extends StatelessWidget {
               onTap: onOpen,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 500),
-                child: Image.network(
-                  post.imageUrl!,
-                  width: double.infinity,
+                child: _PermanentCachedImage(
+                  url: post.imageUrl!,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
             ),
@@ -1819,11 +1814,9 @@ class _DynamicPostCard extends StatelessWidget {
                       width: double.infinity,
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxHeight: 400),
-                        child: Image.network(
-                          post.thumbnailUrl!,
-                          width: double.infinity,
+                        child: _PermanentCachedImage(
+                          url: post.thumbnailUrl!,
                           fit: BoxFit.fitWidth,
-                          alignment: Alignment.topCenter,
                         ),
                       ),
                     )
@@ -1883,13 +1876,9 @@ class _DynamicPostCard extends StatelessWidget {
               ClipOval(
                 child: post.avatar.trim().isEmpty
                     ? const Icon(Icons.person_outline, size: 22)
-                    : Image.network(
-                        post.avatar,
-                        width: 22,
-                        height: 22,
+                    : _PermanentCachedImage(
+                        url: post.avatar,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.person_outline, size: 22),
                       ),
               ),
               const SizedBox(width: 5),
@@ -1978,12 +1967,9 @@ class _DiscoverProfileCard extends StatelessWidget {
               if (image != null && image.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    image,
-                    width: double.infinity,
+                  child: _PermanentCachedImage(
+                    url: image,
                     fit: BoxFit.fitWidth,
-                    alignment: Alignment.topCenter,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
                 )
               else if (video != null && video.isNotEmpty)
@@ -1993,11 +1979,9 @@ class _DiscoverProfileCard extends StatelessWidget {
                     alignment: Alignment.topCenter,
                     children: [
                       post.thumbnailUrl?.isNotEmpty == true
-                          ? Image.network(
-                              post.thumbnailUrl!,
-                              width: double.infinity,
+                          ? _PermanentCachedImage(
+                              url: post.thumbnailUrl!,
                               fit: BoxFit.fitWidth,
-                              alignment: Alignment.topCenter,
                             )
                           : const SizedBox(
                               height: 96,
@@ -2059,13 +2043,9 @@ class _DiscoverProfileCard extends StatelessWidget {
                     ClipOval(
                       child: post.avatar.trim().isEmpty
                           ? const Icon(Icons.person_outline, size: 22)
-                          : Image.network(
-                              post.avatar,
-                              width: 22,
-                              height: 22,
+                          : _PermanentCachedImage(
+                              url: post.avatar,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  const Icon(Icons.person_outline, size: 22),
                             ),
                     ),
                     const SizedBox(width: 5),
@@ -2213,11 +2193,9 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
                           constraints: widget.unlimitedHeight
                               ? const BoxConstraints()
                               : const BoxConstraints(maxHeight: 400),
-                          child: Image.network(
-                            widget.thumbnailUrl!,
-                            width: constraints.maxWidth,
+                          child: _PermanentCachedImage(
+                            url: widget.thumbnailUrl!,
                             fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                           ),
                         )
                       : const SizedBox(height: 225),
@@ -4713,18 +4691,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                                     ),
                                   ),
                           borderRadius: BorderRadius.circular(26),
-                              child: item.avatar.trim().isEmpty
-                                  ? const Icon(Icons.person_outline)
-                                  : ClipOval(
-                                      child: Image.network(
-                                        item.avatar,
-                                        width: 48,
-                                        height: 48,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            const Icon(Icons.person_outline),
-                                      ),
-                                    ),
+                          child: item.avatar.trim().isEmpty
+                              ? const Icon(Icons.person_outline)
+                              : ClipOval(
+                                  child: _PermanentCachedImage(
+                                    url: item.avatar,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -4884,7 +4858,10 @@ class _PostImageHolder extends StatelessWidget {
           child: InteractiveViewer(
             minScale: 1,
             maxScale: 5,
-            child: Image.network(url, fit: BoxFit.contain),
+            child: _PermanentCachedImage(
+              url: url,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
       ),
@@ -4900,29 +4877,9 @@ class _PostImageHolder extends StatelessWidget {
             constraints: unlimitedHeight
                 ? const BoxConstraints()
                 : const BoxConstraints(maxHeight: 400),
-            child: Image.network(
-              url,
-              width: double.infinity,
+            child: _PermanentCachedImage(
+              url: url,
               fit: BoxFit.contain,
-              loadingBuilder: (_, child, progress) => progress == null
-                  ? child
-                  : const SizedBox(
-                      height: 260,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-              errorBuilder: (_, __, ___) => Container(
-                height: 220,
-                color: Colors.black12,
-                alignment: Alignment.center,
-                child: const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.broken_image_outlined, size: 42),
-                    SizedBox(height: 8),
-                    Text('图片加载失败'),
-                  ],
-                ),
-              ),
             ),
           ),
         ),
