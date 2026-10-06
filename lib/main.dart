@@ -1897,6 +1897,7 @@ class _DynamicPostCard extends StatelessWidget {
               Text('${post.likes}', style: const TextStyle(fontSize: 12)),
             ],
           ),
+        ],
       ],
     );
     if (!listMode) {
