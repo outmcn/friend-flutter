@@ -1865,22 +1865,15 @@ class _DynamicPostCard extends StatelessWidget {
         ),
       );
     }
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+    return Card(
+      margin: const EdgeInsets.only(top: 0),
+      clipBehavior: Clip.antiAlias,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onOpen,
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          content,
-          const SizedBox(height: 10),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: Theme.of(context).dividerColor.withValues(alpha: .5),
-          ),
-        ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+          child: content,
         ),
       ),
     );
@@ -2406,9 +2399,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                           .map(
                             (post) => SizedBox(
                               width: (MediaQuery.of(context).size.width - 54) / 2,
-                              child: Padding(
-                                padding: EdgeInsets.zero,
-                                child: _DynamicPostCard(
+                              child: _DynamicPostCard(
                           post: post,
                           listMode: true,
                           onLike: () async {
@@ -2506,8 +2497,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                           onChat: () => ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('私聊功能暂未接入')),
                           ),
-                                ),
-                              ),
+                          ),
                             ),
                           )
                           .toList(),
