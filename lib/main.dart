@@ -2298,6 +2298,156 @@ class _DiscoverPageState extends State<DiscoverPage>
     }
   }
 
+  Widget _buildDiscoverList(int tab) {
+    return ListView(
+                controller: _discoverScrollControllers[tab],
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                    18, 0, 18, 28 + MediaQuery.of(context).padding.bottom),
+                children: [
+                  const SizedBox(height: 6),
+                  if (loading)
+                    const _PageLoadState(
+                      title: '动态加载中',
+                      subtitle: '正在读取发现内容',
+                    ),
+                  if (!loading && error != null)
+                    _PageErrorState(
+                      title: '发现加载失败',
+                      subtitle: error!,
+                      onRetry: () => load(tab: tab),
+                    ),
+                  if (tabLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 36),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (!loading && error == null && _postsByTab[tab].isEmpty)
+                    _EmptyStateCard(
+                      icon: tab == 1
+                          ? Icons.location_off_outlined
+                          : tab == 2
+                              ? Icons.person_outline
+                              : Icons.article_outlined,
+                      title: tab == 1
+                          ? '暂无附近动态'
+                          : tab == 2
+                              ? '暂无关注动态'
+                              : '暂无动态',
+                      subtitle: tab == 1
+                          ? '授权定位并等待附近用户发布动态'
+                          : tab == 2
+                              ? '关注用户后，他们的动态会显示在这里'
+                              : '暂时没有可发现的真实动态',
+                    ),
+                  if (!loading && !tabLoading && error == null)
+                    ..._postsByTab[tab].map(
+                      (post) => Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: _DynamicPostCard(
+                          post: post,
+                          listMode: true,
+                          onLike: () async {
+                            try {
+                              final p = await SharedPreferences.getInstance();
+                              final t = p.getString('friend.auth.token') ?? '';
+                              if (t.isEmpty) throw Exception('请先登录');
+                              await service.toggleLike(t, post.id);
+                              if (mounted) {
+                                setState(() {
+                                  final index = _postsByTab[tab]
+                                      .indexWhere((item) => item.id == post.id);
+                                  if (index >= 0) {
+                                    final current = _postsByTab[tab][index];
+                                    _postsByTab[tab][index] = current.copyWith(
+                                      liked: !current.liked,
+                                      likes: current.likes +
+                                          (current.liked ? -1 : 1),
+                                    );
+                                  }
+                                });
+                                await DDPostService.clearProfileTabCaches();
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() => error = e
+                                    .toString()
+                                    .replaceFirst('Exception: ', ''));
+                              }
+                            }
+                          },
+                          onFavorite: () async {
+                            try {
+                              final p = await SharedPreferences.getInstance();
+                              final t = p.getString('friend.auth.token') ?? '';
+                              if (t.isEmpty) throw Exception('请先登录');
+                              await service.toggleFavorite(t, post.id);
+                              if (mounted) {
+                                setState(() {
+                                  final index = _postsByTab[tab]
+                                      .indexWhere((item) => item.id == post.id);
+                                  if (index >= 0) {
+                                    final current = _postsByTab[tab][index];
+                                    _postsByTab[tab][index] = current.copyWith(
+                                      favorited: !current.favorited,
+                                      favorites: current.favorites +
+                                          (current.favorited ? -1 : 1),
+                                    );
+                                  }
+                                });
+                                await DDPostService.clearProfileTabCaches();
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() => error = e
+                                    .toString()
+                                    .replaceFirst('Exception: ', ''));
+                              }
+                            }
+                          },
+                          onOpen: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  DynamicDetailPage(postId: post.id),
+                            ),
+                          ),
+                          onComment: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DynamicDetailPage(
+                                postId: post.id,
+                                focusComment: true,
+                              ),
+                            ),
+                          ),
+                          onFollow: post.userId == null || post.userId == 1
+                              ? null
+                              : () async {
+                                  if (!mounted) return;
+                                  try {
+                                    final p = await SharedPreferences.getInstance();
+                                    final t = p.getString('friend.auth.token') ?? '';
+                                    if (t.isEmpty) throw Exception('请先登录');
+                                    await service.toggleFollow(t, post.userId!);
+                                    await load(tab: tab, fromRefresh: true);
+                                  } catch (e) {
+                                    if (mounted) {
+                                      setState(() => error = e
+                                          .toString()
+                                          .replaceFirst('Exception: ', ''));
+                                    }
+                                  }
+                                },
+                          onChat: () => ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('私聊功能暂未接入')),
+                          ),
+                        ),
+                      ),
+                    ),
+                ]);
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -2364,155 +2514,16 @@ class _DiscoverPageState extends State<DiscoverPage>
             ),
           ],
         ),
-        body: RefreshIndicator(
-            onRefresh: () => load(fromRefresh: true),
-            child: ListView(
-                controller: _discoverScrollControllers[selectedTab],
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                    18, 0, 18, 28 + MediaQuery.of(context).padding.bottom),
-                children: [
-                  const SizedBox(height: 6),
-                  if (loading)
-                    const _PageLoadState(
-                      title: '动态加载中',
-                      subtitle: '正在读取发现内容',
-                    ),
-                  if (!loading && error != null)
-                    _PageErrorState(
-                      title: '发现加载失败',
-                      subtitle: error!,
-                      onRetry: load,
-                    ),
-                  if (tabLoading)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 36),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (!loading && error == null && _currentPosts.isEmpty)
-                    _EmptyStateCard(
-                      icon: selectedTab == 1
-                          ? Icons.location_off_outlined
-                          : selectedTab == 2
-                              ? Icons.person_outline
-                              : Icons.article_outlined,
-                      title: selectedTab == 1
-                          ? '暂无附近动态'
-                          : selectedTab == 2
-                              ? '暂无关注动态'
-                              : '暂无动态',
-                      subtitle: selectedTab == 1
-                          ? '授权定位并等待附近用户发布动态'
-                          : selectedTab == 2
-                              ? '关注用户后，他们的动态会显示在这里'
-                              : '暂时没有可发现的真实动态',
-                    ),
-                  if (!loading && !tabLoading && error == null)
-                    ..._currentPosts.map(
-                      (post) => Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: _DynamicPostCard(
-                          post: post,
-                          listMode: true,
-                          onLike: () async {
-                            try {
-                              final p = await SharedPreferences.getInstance();
-                              final t = p.getString('friend.auth.token') ?? '';
-                              if (t.isEmpty) throw Exception('请先登录');
-                              await service.toggleLike(t, post.id);
-                              if (mounted) {
-                                setState(() {
-                                  final index = _postsByTab[selectedTab]
-                                      .indexWhere((item) => item.id == post.id);
-                                  if (index >= 0) {
-                                    final current = _postsByTab[selectedTab][index];
-                                    _postsByTab[selectedTab][index] = current.copyWith(
-                                      liked: !current.liked,
-                                      likes: current.likes +
-                                          (current.liked ? -1 : 1),
-                                    );
-                                  }
-                                });
-                                await DDPostService.clearProfileTabCaches();
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                setState(() => error = e
-                                    .toString()
-                                    .replaceFirst('Exception: ', ''));
-                              }
-                            }
-                          },
-                          onFavorite: () async {
-                            try {
-                              final p = await SharedPreferences.getInstance();
-                              final t = p.getString('friend.auth.token') ?? '';
-                              if (t.isEmpty) throw Exception('请先登录');
-                              await service.toggleFavorite(t, post.id);
-                              if (mounted) {
-                                setState(() {
-                                  final index = _postsByTab[selectedTab]
-                                      .indexWhere((item) => item.id == post.id);
-                                  if (index >= 0) {
-                                    final current = _postsByTab[selectedTab][index];
-                                    _postsByTab[selectedTab][index] = current.copyWith(
-                                      favorited: !current.favorited,
-                                      favorites: current.favorites +
-                                          (current.favorited ? -1 : 1),
-                                    );
-                                  }
-                                });
-                                await DDPostService.clearProfileTabCaches();
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                setState(() => error = e
-                                    .toString()
-                                    .replaceFirst('Exception: ', ''));
-                              }
-                            }
-                          },
-                          onOpen: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  DynamicDetailPage(postId: post.id),
-                            ),
-                          ),
-                          onComment: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DynamicDetailPage(
-                                postId: post.id,
-                                focusComment: true,
-                              ),
-                            ),
-                          ),
-                          onFollow: post.userId == null || post.userId == 1
-                              ? null
-                              : () async {
-                                  if (!mounted) return;
-                                  try {
-                                    final p = await SharedPreferences.getInstance();
-                                    final t = p.getString('friend.auth.token') ?? '';
-                                    if (t.isEmpty) throw Exception('请先登录');
-                                    await service.toggleFollow(t, post.userId!);
-                                    await load(fromRefresh: true);
-                                  } catch (e) {
-                                    if (mounted) {
-                                      setState(() => error = e
-                                          .toString()
-                                          .replaceFirst('Exception: ', ''));
-                                    }
-                                  }
-                                },
-                          onChat: () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('私聊功能暂未接入')),
-                          ),
-                        ),
-                      ),
-                    ),
-                ])),
+        body: IndexedStack(
+              index: selectedTab,
+              children: List<Widget>.generate(
+                3,
+                (tab) => RefreshIndicator(
+                  onRefresh: () => load(tab: tab, fromRefresh: true),
+                  child: _buildDiscoverList(tab),
+                ),
+              ),
+            ),
       );
 }
 
