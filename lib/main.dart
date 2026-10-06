@@ -277,7 +277,7 @@ class DDApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const StartupNetworkGate(),
+      home: const AuthGate(),
     );
   }
 }
@@ -370,18 +370,7 @@ class _StartupNetworkGateState extends State<StartupNetworkGate> {
   @override
   Widget build(BuildContext context) {
     if (checking) {
-      return const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 14),
-              Text('正在连接网络…'),
-            ],
-          ),
-        ),
-      );
+      return const DDShell();
     }
     if (!connected) {
       return Scaffold(
@@ -3790,6 +3779,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   // 默认只显示每个父评论的 1 条直接回复，点击“显示更多”后每次增加 3 条。
   int visibleRootCount = 30;
   final Map<int, int> visibleReplyCounts = <int, int>{};
+  final Set<int> expandedThirdLevelParents = <int>{};
   String? error;
   int? currentUserId;
   bool get isOwner => post?.userId != null && currentUserId == post!.userId;
@@ -3868,6 +3858,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       comments = await service.fetchComments(t, widget.postId);
       visibleRootCount = 30;
       visibleReplyCounts.clear();
+      expandedThirdLevelParents.clear();
       if (post == null) throw Exception('动态不存在');
     } catch (e) {
       if (mounted)
@@ -3906,7 +3897,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
     void appendReplies(DDComment parent, int depth) {
       final replies = repliesByParent[parent.id] ?? const <DDComment>[];
-      final visible = visibleReplyCounts[parent.id] ?? 1;
+      final visible = depth >= 2 && !expandedThirdLevelParents.contains(parent.id)
+          ? 0
+          : (visibleReplyCounts[parent.id] ?? 1);
       for (final reply in replies.take(visible)) {
         result.add(Padding(
           padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : 42.0),
@@ -3919,14 +3912,23 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         ));
         appendReplies(reply, depth + 1);
       }
-      if (replies.isNotEmpty && visible < replies.length) {
+      if (replies.isNotEmpty &&
+          ((depth >= 2 && !expandedThirdLevelParents.contains(parent.id)) ||
+              visible < replies.length)) {
         result.add(Align(
           alignment: Alignment.centerLeft,
           child: TextButton(
             onPressed: () => setState(() {
-              visibleReplyCounts[parent.id] = visible + 3;
+              if (depth >= 2) {
+                expandedThirdLevelParents.add(parent.id);
+                visibleReplyCounts[parent.id] = replies.length;
+              } else {
+                visibleReplyCounts[parent.id] = visible + 3;
+              }
             }),
-            child: const Text('显示更多'),
+            child: Text(depth >= 2 && !expandedThirdLevelParents.contains(parent.id)
+                ? '显示更多'
+                : '显示更多'),
           ),
         ));
       }
@@ -3973,6 +3975,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
 
   Future<void> _commentMenu(DDComment comment) async {
     final isMine = currentUserId != null && comment.userId == currentUserId;
+    final canDelete = isMine || isOwner;
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (_) => SafeArea(
@@ -3993,7 +3996,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
               title: const Text('复制'),
               onTap: () => Navigator.pop(context, 'copy'),
             ),
-            if (isMine)
+            if (canDelete)
               ListTile(
                 leading: const Icon(Icons.delete_outline),
                 title: const Text('删除'),
@@ -4065,6 +4068,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     final isMine = currentUserId != null && comment.userId == currentUserId;
     final isPostAuthor = post?.userId != null && comment.userId == post!.userId;
     final displayName = isMine ? '我' : comment.nickname;
+    final displayColor = isMine
+        ? Colors.red
+        : isPostAuthor
+            ? Colors.green
+            : null;
     return InkWell(
         onTap: () {
           setState(() => replyingTo = comment);
@@ -4108,20 +4116,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                               : displayName,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: isMine ? Colors.red : null,
+                            color: displayColor,
                           ),
                         ),
-                        if (isPostAuthor && !isMine)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 6),
-                            child: Text(
-                              '作者',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
                         if (comment.city.trim().isNotEmpty) ...[
                           const SizedBox(width: 6),
                           _ProfileTag(text: comment.city.trim()),
