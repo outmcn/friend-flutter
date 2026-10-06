@@ -1956,7 +1956,7 @@ class _DiscoverProfileCard extends StatelessWidget {
       child: InkWell(
         onTap: onOpen,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1966,7 +1966,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   child: Image.network(
                     image,
                     width: double.infinity,
-                    height: 150,
+                    height: 300,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
@@ -1981,12 +1981,12 @@ class _DiscoverProfileCard extends StatelessWidget {
                         Image.network(
                           post.thumbnailUrl!,
                           width: double.infinity,
-                          height: 150,
+                          height: 300,
                           fit: BoxFit.cover,
                         )
                       else
                         const SizedBox(
-                          height: 150,
+                          height: 300,
                           child: ColoredBox(color: Colors.black26),
                         ),
                       const Icon(Icons.play_circle_outline,
@@ -1999,7 +1999,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     width: double.infinity,
-                    height: 150,
+                    height: 300,
                     padding: const EdgeInsets.all(14),
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -6553,7 +6553,7 @@ class _MyProfilePostCard extends StatelessWidget {
               if (image != null && image.isNotEmpty)
                 LayoutBuilder(
                   builder: (context, constraints) => ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 400),
+                  constraints: const BoxConstraints(maxHeight: 300),
                     child: Image.network(
                       DDPostService.mediaUrl(image),
                       width: double.infinity,
@@ -6623,7 +6623,7 @@ class _MyProfilePostCard extends StatelessWidget {
                   ((image != null && image.isNotEmpty) ||
                       (video != null && video.isNotEmpty)))
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                  padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
                   child: Text(
                     post.content.trim(),
                     maxLines: 3,
@@ -6632,7 +6632,7 @@ class _MyProfilePostCard extends StatelessWidget {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                padding: const EdgeInsets.fromLTRB(0, 10, 0, 12),
                 child: Row(
                   children: [
                     Icon(TIcons.thumb_up_1,
