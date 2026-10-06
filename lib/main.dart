@@ -2399,10 +2399,16 @@ class _DiscoverPageState extends State<DiscoverPage>
                               : '暂时没有可发现的真实动态',
                     ),
                   if (!loading && !tabLoading && error == null)
-                    ..._postsByTab[tab].map(
-                      (post) => Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: _DynamicPostCard(
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: _postsByTab[tab]
+                          .map(
+                            (post) => SizedBox(
+                              width: (MediaQuery.of(context).size.width - 54) / 2,
+                              child: Padding(
+                                padding: EdgeInsets.zero,
+                                child: _DynamicPostCard(
                           post: post,
                           listMode: true,
                           onLike: () async {
@@ -2500,8 +2506,11 @@ class _DiscoverPageState extends State<DiscoverPage>
                           onChat: () => ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('私聊功能暂未接入')),
                           ),
-                        ),
-                      ),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                 ]);
   }
