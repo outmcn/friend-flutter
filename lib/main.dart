@@ -1964,22 +1964,19 @@ class _DiscoverProfileCard extends StatelessWidget {
               if (image != null && image.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    height: 300,
-                    child: Image.network(
-                      image,
-                      width: double.infinity,
-                      fit: BoxFit.fitWidth,
-                      alignment: Alignment.topCenter,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
+                  child: Image.network(
+                    image,
+                    width: double.infinity,
+                    fit: BoxFit.fitWidth,
+                    alignment: Alignment.topCenter,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
                 )
               else if (video != null && video.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Stack(
-                    alignment: Alignment.center,
+                    alignment: Alignment.topCenter,
                     children: [
                       post.thumbnailUrl?.isNotEmpty == true
                           ? Image.network(
@@ -1989,11 +1986,14 @@ class _DiscoverProfileCard extends StatelessWidget {
                               alignment: Alignment.topCenter,
                             )
                           : const SizedBox(
-                              height: 300,
+                              height: 96,
                               child: ColoredBox(color: Colors.black26),
                             ),
-                      const Icon(Icons.play_circle_outline,
-                          size: 42, color: Colors.white),
+                      Align(
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.play_circle_outline,
+                            size: 42, color: Colors.white),
+                      ),
                     ],
                   ),
                 )
@@ -2002,7 +2002,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     width: double.infinity,
-                    height: 300,
+                    constraints: const BoxConstraints(minHeight: 96),
                     padding: const EdgeInsets.all(14),
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
