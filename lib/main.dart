@@ -4889,6 +4889,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       }
       final data = await service.fetchUserProfile(token, widget.userId!);
       final me = await service.fetchMe(token);
+      final avatarKey = '${data['avatarKey'] ?? data['avatar'] ?? ''}'.trim();
+      final signedAvatar = avatarKey.isEmpty
+          ? null
+          : await service.resolveAvatarUrl(token, avatarKey);
       final loadedPosts = (data['posts'] is List)
           ? (data['posts'] as List)
               .whereType<Map>()
@@ -4904,7 +4908,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           isSelfProfile = '${data['id']}' == '${me['id']}';
           profileLikes = int.tryParse('${data['receivedLikes'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(data['voiceUrl']?.toString());
-          _avatarUrl = DDPostService.mediaUrl(data['avatar']?.toString());
+          _avatarUrl = signedAvatar;
         });
       }
     } on UnsupportedError catch (e) {
@@ -5031,18 +5035,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 children: [
                                   CircleAvatar(
                                     radius: 40,
-                                    child: (p?['avatar']?.toString() ?? '')
-                                            .trim()
-                                            .isEmpty
-                                        ? const Icon(Icons.person_outline,
-                                            size: 34)
-                                        : ClipOval(
-                                            child: _PermanentCachedImage(
-                                              url: DDPostService.mediaUrl(
-                                                  p?['avatar']?.toString()),
-                                              fit: BoxFit.cover,
-                                            ),
+                                  child: _avatarUrl == null || _avatarUrl!.isEmpty
+                                      ? const Icon(Icons.person_outline, size: 34)
+                                      : ClipOval(
+                                          child: Image.network(
+                                            _avatarUrl!,
+                                            width: 80,
+                                            height: 80,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                const Icon(Icons.person_outline, size: 34),
                                           ),
+                                        ),
                                   ),
                                   Positioned(
                                     left: 0,
@@ -5062,46 +5066,53 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            '${p?['nickname'] ?? widget.name}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 25,
-                                              fontWeight: FontWeight.w900,
-                                            ),
+                                    SizedBox(
+                                      height: 80,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  '${p?['nickname'] ?? widget.name}',
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontSize: 25,
+                                                    fontWeight: FontWeight.w900,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              _SonicProfileButton(
+                                                playing: _sonicPlaying,
+                                                enabled: _sonicUrl?.isNotEmpty == true,
+                                                onTap: _toggleSonic,
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        _SonicProfileButton(
-                                          playing: _sonicPlaying,
-                                          enabled: _sonicUrl?.isNotEmpty == true,
-                                          onTap: _toggleSonic,
-                                        ),
-
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        _InlineProfileStat(
-                                          label: '关注',
-                                          value: '${p?['following'] ?? 0}',
-                                        ),
-                                        const SizedBox(width: 18),
-                                        _InlineProfileStat(
-                                          label: '粉丝',
-                                          value: '${p?['followers'] ?? 0}',
-                                        ),
-                                        const SizedBox(width: 18),
-                                        _InlineProfileStat(
-                                          label: '获赞',
-                                          value: '${p?['receivedLikes'] ?? 0}',
-                                        ),
-                                      ],
+                                          const Spacer(),
+                                          Row(
+                                            children: [
+                                              _InlineProfileStat(
+                                                label: '关注',
+                                                value: '${p?['following'] ?? 0}',
+                                              ),
+                                              const SizedBox(width: 18),
+                                              _InlineProfileStat(
+                                                label: '粉丝',
+                                                value: '${p?['followers'] ?? 0}',
+                                              ),
+                                              const SizedBox(width: 18),
+                                              _InlineProfileStat(
+                                                label: '获赞',
+                                                value: '${p?['receivedLikes'] ?? 0}',
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                     const SizedBox(height: 8),
                                     SizedBox(
