@@ -1984,7 +1984,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                           post.thumbnailUrl!,
                           width: double.infinity,
                           fit: BoxFit.fitWidth,
-                        ),
+                        )
                       else
                         const SizedBox(
                           height: 300,
