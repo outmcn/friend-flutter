@@ -2087,7 +2087,7 @@ class DiscoverPage extends StatefulWidget {
 class _DiscoverPageState extends State<DiscoverPage>
     with WidgetsBindingObserver {
   final DDPostService service = DDPostService();
-  static const _cacheDuration = Duration(minutes: 30);
+  static const _cacheDuration = Duration(hours: 1);
   List<DDPost> posts = const [];
   bool loading = true;
   bool _refreshing = false;
@@ -2208,10 +2208,9 @@ class _DiscoverPageState extends State<DiscoverPage>
       final cacheFresh = !fromRefresh &&
           !backgroundRefresh &&
           cacheHasData &&
-          (targetTab == 2 ||
-              (cachedAt != null &&
-                  DateTime.now().millisecondsSinceEpoch - cachedAt <
-                      _cacheDuration.inMilliseconds));
+          (cachedAt != null &&
+              DateTime.now().millisecondsSinceEpoch - cachedAt <
+                  _cacheDuration.inMilliseconds));
       final cachedPosts = cacheFresh
           ? (jsonDecode(cachedJson!) as List)
               .whereType<Map<String, dynamic>>()
@@ -3839,9 +3838,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       if (cached != null && mounted) {
         final cachedOwner = cached.userId == currentUserId;
         final cachedAt = (await SharedPreferences.getInstance()).getInt(_detailCacheAtKey(widget.postId));
-        final valid = cachedOwner ||
-            (cachedAt != null && DateTime.now().millisecondsSinceEpoch - cachedAt <
-                const Duration(minutes: 30).inMilliseconds);
+        final valid = cachedAt != null &&
+            DateTime.now().millisecondsSinceEpoch - cachedAt <
+                const Duration(hours: 1).inMilliseconds;
         if (valid) {
           post = cached;
           loading = false;
@@ -5165,7 +5164,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
 
   static const _profileTabCachePrefix = 'dd.profile.tab.cache.v2.';
   static const _profileTabCacheAtPrefix = 'dd.profile.tab.cache.at.';
-  static const _profileMediaRefreshAge = Duration(minutes: 12);
+  static const _profileMediaRefreshAge = Duration(hours: 1);
 
   Future<void> _saveTabCache(int tab, List<DDPost> value) async {
     final prefs = await SharedPreferences.getInstance();
@@ -5179,8 +5178,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
     );
   }
 
-  Future<List<DDPost>?> _readTabCache(int tab, {bool requireFreshMedia = false}) async {
+  Future<List<DDPost>?> _readTabCache(int tab) async {
     final prefs = await SharedPreferences.getInstance();
+    final cachedAt = prefs.getInt('$_profileTabCacheAtPrefix$tab');
+    if (cachedAt == null ||
+        DateTime.now().millisecondsSinceEpoch - cachedAt >=
+            _profileMediaRefreshAge.inMilliseconds) {
+      return null;
+    }
     final raw = prefs.getString('$_profileTabCachePrefix$tab');
     if (raw == null || raw.isEmpty) return null;
     try {
@@ -5235,7 +5240,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
       }
       final cached = forceRefresh
           ? null
-          : await _readTabCache(targetTab, requireFreshMedia: true);
+          : await _readTabCache(targetTab);
       if (cached != null && !forceRefresh) {
         tabPosts[targetTab] = cached;
         if (mounted) {
