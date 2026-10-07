@@ -52,6 +52,30 @@ void main() {
     feed.dispose();
   });
 
+  test('点赞只通知卡片并保留其他数据及分页状态', () async {
+    final feed = DiscoverFeed((_) async => [post(1), post(2)]);
+    await feed.load();
+    final other = feed.posts[1];
+    var listNotifications = 0;
+    final changedIds = <int>[];
+    feed.addListener(() => listNotifications++);
+    feed.postChanges
+        .addListener(() => changedIds.add(feed.postChanges.value!.id));
+
+    feed.updateLike(feed.posts.first.copyWith(liked: true, likes: 1));
+    feed.updateLike(feed.posts.first.copyWith(liked: false, likes: 0));
+    feed.updateLike(post(99));
+
+    expect(listNotifications, 0);
+    expect(changedIds, [1, 1]);
+    expect(feed.posts.first.liked, isFalse);
+    expect(feed.posts.first.likes, 0);
+    expect(identical(feed.posts[1], other), isTrue);
+    expect(feed.offset, 2);
+    expect(feed.hasMore, isFalse);
+    feed.dispose();
+  });
+
   test('销毁后收到响应不会更新状态或发送通知', () async {
     final response = Completer<List<DDPost>>();
     final feed = DiscoverFeed((_) => response.future);

@@ -7,6 +7,16 @@ class DiscoverFeed extends ChangeNotifier {
   final Future<List<DDPost>> Function(int offset) fetch;
   final scroll = ScrollController();
   final posts = <DDPost>[];
+  final postChanges = ValueNotifier<DDPost?>(null);
+
+  void updateLike(DDPost post) {
+    final index = posts.indexWhere((item) => item.id == post.id);
+    if (disposed || index < 0) return;
+    final updated = posts[index].copyWith(liked: post.liked, likes: post.likes);
+    posts[index] = updated;
+    postChanges.value = updated;
+  }
+
   int offset = 0;
   bool initialized = false;
   bool busy = false;
@@ -47,6 +57,7 @@ class DiscoverFeed extends ChangeNotifier {
   void dispose() {
     disposed = true;
     scroll.dispose();
+    postChanges.dispose();
     super.dispose();
   }
 }

@@ -47,29 +47,16 @@ class _DiscoverPageState extends State<DiscoverPage> {
     feeds.first.load();
   }
 
-  void _replace(DDPost post) {
-    for (final feed in feeds) {
-      for (var index = 0; index < feed.posts.length; index++) {
-        final item = feed.posts[index];
-        if (item.id == post.id) {
-          feed.posts[index] = post;
-        } else if (post.userId != null && item.userId == post.userId) {
-          feed.posts[index] = item.copyWith(following: post.following);
-        }
-      }
-      if (feed.posts.any((item) => item.id == post.id)) {
-        feed.notifyListeners();
-      }
-    }
-  }
-
   Future<void> _like(DDPost post) async {
     if (!pendingLikes.add(post.id)) return;
     try {
       await service.toggleLike(await _token(), post.id);
       if (!mounted) return;
-      _replace(post.copyWith(
-          liked: !post.liked, likes: post.likes + (post.liked ? -1 : 1)));
+      final updated = post.copyWith(
+          liked: !post.liked, likes: post.likes + (post.liked ? -1 : 1));
+      for (final feed in feeds) {
+        feed.updateLike(updated);
+      }
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
       if (mounted) {
@@ -97,6 +84,27 @@ class _DiscoverPageState extends State<DiscoverPage> {
     feeds[selectedTab].notifyListeners();
   }
 
+  Widget _card(DiscoverFeed feed, int index, {bool fullWidth = false}) {
+    final post = feed.posts[index];
+    if (index + 1 < feed.posts.length) {
+      final next = feed.posts[index + 1];
+      if (next.imageUrl?.isNotEmpty == true) {
+        unawaited(_PermanentImageCache.prefetch(next.imageUrl!));
+      }
+      if (next.thumbnailUrl?.isNotEmpty == true) {
+        unawaited(_PermanentImageCache.prefetch(next.thumbnailUrl!));
+      }
+    }
+    return _DiscoverFeedCard(
+      key: ValueKey(post.id),
+      feed: feed,
+      post: post,
+      fullWidth: fullWidth,
+      onLike: _like,
+      onOpen: _open,
+    );
+  }
+
   Widget _list(int tab) {
     final feed = feeds[tab];
     return AnimatedBuilder(
@@ -108,42 +116,37 @@ class _DiscoverPageState extends State<DiscoverPage> {
           controller: feed.scroll,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(8),
-              sliver: SliverToBoxAdapter(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: MasonryGridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    itemCount: feed.posts.length,
-                    itemBuilder: (context, index) {
-                      final post = feed.posts[index];
-                      if (index + 1 < feed.posts.length) {
-                        final next = feed.posts[index + 1];
-                        if (next.imageUrl?.isNotEmpty == true) {
-                          unawaited(
-                              _PermanentImageCache.prefetch(next.imageUrl!));
-                        }
-                        if (next.thumbnailUrl?.isNotEmpty == true) {
-                          unawaited(_PermanentImageCache.prefetch(
-                              next.thumbnailUrl!));
-                        }
-                      }
-                      return _DiscoverProfileCard(
-                        key: ValueKey(post.id),
-                        post: post,
-                        onLike: () => _like(post),
-                        onOpen: () => _open(post),
-                      );
-                    },
+            if (tab == 0)
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => _card(feed, index, fullWidth: true),
+                  childCount: feed.posts.length,
+                  findChildIndexCallback: (key) {
+                    if (key is! ValueKey<int>) return null;
+                    final index =
+                        feed.posts.indexWhere((post) => post.id == key.value);
+                    return index < 0 ? null : index;
+                  },
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.all(8),
+                sliver: SliverToBoxAdapter(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: MasonryGridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      itemCount: feed.posts.length,
+                      itemBuilder: (context, index) => _card(feed, index),
+                    ),
                   ),
                 ),
               ),
-            ),
             SliverToBoxAdapter(
                 child: Padding(
               padding: const EdgeInsets.all(24),
@@ -220,6 +223,73 @@ class _DiscoverPageState extends State<DiscoverPage> {
       feed.dispose();
     }
     service.dispose();
+    super.dispose();
+  }
+}
+
+// 单条数据变化只刷新对应卡片，列表结构仍由 feed 的分页通知更新。
+class _DiscoverFeedCard extends StatefulWidget {
+  const _DiscoverFeedCard({
+    super.key,
+    required this.feed,
+    required this.post,
+    required this.fullWidth,
+    required this.onLike,
+    required this.onOpen,
+  });
+
+  final DiscoverFeed feed;
+  final DDPost post;
+  final bool fullWidth;
+  final ValueChanged<DDPost> onLike;
+  final ValueChanged<DDPost> onOpen;
+
+  @override
+  State<_DiscoverFeedCard> createState() => _DiscoverFeedCardState();
+}
+
+class _DiscoverFeedCardState extends State<_DiscoverFeedCard> {
+  late DDPost post;
+
+  @override
+  void initState() {
+    super.initState();
+    post = widget.post;
+    widget.feed.postChanges.addListener(_update);
+  }
+
+  void _update() {
+    final updated = widget.feed.postChanges.value;
+    if (updated != null && updated.id == post.id) {
+      setState(() => post = updated);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _DiscoverFeedCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.feed != widget.feed) {
+      oldWidget.feed.postChanges.removeListener(_update);
+      widget.feed.postChanges.addListener(_update);
+    }
+    post = widget.post;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final card = _DiscoverProfileCard(
+      post: post,
+      onLike: () => widget.onLike(post),
+      onOpen: () => widget.onOpen(post),
+    );
+    return widget.fullWidth
+        ? Padding(padding: const EdgeInsets.only(bottom: 8), child: card)
+        : card;
+  }
+
+  @override
+  void dispose() {
+    widget.feed.postChanges.removeListener(_update);
     super.dispose();
   }
 }
