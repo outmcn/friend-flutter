@@ -6213,12 +6213,38 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
               spacing: 8,
               runSpacing: 8,
               children: List.generate(
-                  4,
-                  (index) => ChoiceChip(
-                        label: Text(['明星陪玩', '魔王技术', '人工派单', '一键找人'][index]),
-                        selected: tab == index,
-                        onSelected: (_) => setState(() => tab = index),
-                      )),
+                4,
+                (index) {
+                  final selected = tab == index;
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => tab = index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        ['明星陪玩', '魔王技术', '玩法合集', '一键找人'][index],
+                        style: TextStyle(
+                          color: selected
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.onSurface,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 14),
             if (tab == 0)
@@ -6277,20 +6303,23 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
 
   Widget _orderPage() =>
       const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('订单要求',
+        Text('玩法合集',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
         SizedBox(height: 12),
-        Card(
-            child: ListTile(
-                title: Text('服务分类'),
-                subtitle: Text('上分陪玩 · 娱乐开黑 · 语音陪伴 · 新手教学'))),
-        Card(
-            child: ListTile(
-                title: Text('游戏地图'),
-                subtitle: Text('不限 · 巴克什 · 潮汐监狱 · 航天基地 · 长弓溪谷 · 零号大坝'))),
-        Card(
-            child: ListTile(
-                title: Text('考核等级'), subtitle: Text('不限 · 魔王S · 金牌大神'))),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            Chip(label: Text('体验单')),
+            Chip(label: Text('保底单')),
+            Chip(label: Text('趣味单')),
+            Chip(label: Text('陪玩单')),
+            Chip(label: Text('转盘单')),
+            Chip(label: Text('大红单')),
+            Chip(label: Text('礼物单')),
+            Chip(label: Text('任务单')),
+          ],
+        ),
       ]);
 
   Widget _filterPage() =>
