@@ -60,16 +60,13 @@ class _PostImageHolder extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GestureDetector(
         onTap: () => _showViewer(context),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: ConstrainedBox(
-            constraints: unlimitedHeight
-                ? const BoxConstraints()
-                : const BoxConstraints(maxHeight: 400),
-            child: _PermanentCachedImage(
-              url: url,
-              fit: BoxFit.contain,
-            ),
+        child: ConstrainedBox(
+          constraints: unlimitedHeight
+              ? const BoxConstraints()
+              : const BoxConstraints(maxHeight: 400),
+          child: _PermanentCachedImage(
+            url: url,
+            fit: BoxFit.contain,
           ),
         ),
       );

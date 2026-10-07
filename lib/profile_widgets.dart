@@ -270,7 +270,7 @@ class _MyProfilePostCard extends StatelessWidget {
                   ((image != null && image.isNotEmpty) ||
                       (video != null && video.isNotEmpty)))
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
                   child: Text(
                     post.content.trim(),
                     maxLines: 3,
@@ -279,7 +279,7 @@ class _MyProfilePostCard extends StatelessWidget {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 0, 12),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
                 child: Row(
                   children: [
                     Row(

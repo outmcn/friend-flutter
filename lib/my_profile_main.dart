@@ -13,7 +13,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   int selectedTab = 0;
   bool loading = true;
   bool tabLoading = false;
-  final Map<int, List<DDPost>> tabPosts = {};
+  late final List<DiscoverFeed> feeds;
   final AudioPlayer _sonicPlayer = AudioPlayer();
   final ScrollController _profileScrollController = ScrollController();
   bool _showStickyNickname = false;
@@ -28,6 +28,18 @@ class _DDProfilePageState extends State<DDProfilePage> {
   void initState() {
     super.initState();
     _profileScrollController.addListener(_handleProfileScroll);
+    feeds = List.generate(
+        3,
+        (tab) => DiscoverFeed((_) async {
+              final token = await _token();
+              final loaded = tab == 0
+                  ? await service.fetchMyPosts(token)
+                  : tab == 1
+                      ? await service.fetchFavoritedPosts(token)
+                      : await service.fetchLikedPosts(token);
+              return Future.wait(
+                  loaded.map((post) => service.resolvePostMedia(token, post)));
+            }));
     load();
   }
 
@@ -50,6 +62,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
   void dispose() {
     _profileScrollController.removeListener(_handleProfileScroll);
     _profileScrollController.dispose();
+    for (final feed in feeds) {
+      feed.dispose();
+    }
     _sonicPlayer.dispose();
     service.dispose();
     super.dispose();
@@ -66,45 +81,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
     if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
   }
 
-  static const _profileTabCachePrefix = 'dd.profile.tab.cache.v2.';
-  static const _profileTabCacheAtPrefix = 'dd.profile.tab.cache.at.';
-
-  Future<void> _saveTabCache(int tab, List<DDPost> value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      '$_profileTabCachePrefix$tab',
-      jsonEncode(value.map((post) => post.toJson()).toList()),
-    );
-    await prefs.setInt(
-      '$_profileTabCacheAtPrefix$tab',
-      DateTime.now().millisecondsSinceEpoch,
-    );
-  }
-
-  Future<List<DDPost>?> _readTabCache(int tab) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '$_profileTabCachePrefix$tab';
-    final expiry = prefs.getInt('$key.urlExpiresAt');
-    if (expiry != null && DateTime.now().millisecondsSinceEpoch >= expiry) {
-      return null;
-    }
-    final raw = prefs.getString(key);
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      final data = jsonDecode(raw) as List;
-      return data
-          .whereType<Map>()
-          .map((item) => DDPost.fromJson(item.cast<String, dynamic>()))
-          .toList();
-    } catch (_) {
-      await prefs.remove('$_profileTabCachePrefix$tab');
-      return null;
-    }
-  }
-
   Future<void> _invalidateProfileCacheAndReload() async {
     await DDPostService.clearProfileTabCaches();
-    tabPosts.clear();
+    for (final feed in feeds) {
+      feed.posts.clear();
+      feed.initialized = false;
+      feed.offset = 0;
+      feed.hasMore = true;
+    }
     await load(tab: selectedTab, forceRefresh: true);
   }
 
@@ -116,62 +100,47 @@ class _DDProfilePageState extends State<DDProfilePage> {
         error = null;
         if (isTabSwitch) {
           selectedTab = targetTab;
-          tabLoading = false;
-          final cached = tabPosts[targetTab];
-          if (cached != null) posts = cached;
+          tabLoading = true;
+          posts = feeds[targetTab].posts;
         } else {
           loading = true;
         }
       });
     }
     try {
-      final p = await SharedPreferences.getInstance();
-      final t = p.getString('friend.auth.token') ?? '';
-      if (t.isEmpty) throw Exception('请先登录');
-      final needProfile = profile == null || !isTabSwitch;
-      Map<String, dynamic> loadedProfile = profile ?? {};
-      if (needProfile) {
-        loadedProfile = await service.fetchMe(t);
+      final t = await _token();
+      if (profile == null || !isTabSwitch) {
+        final loadedProfile = await service.fetchMe(t);
         _sonicUrl =
             DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
         final avatarKey = '${loadedProfile['avatarKey'] ?? ''}'.trim();
-        _avatarUrl = avatarKey.isEmpty
+        final avatar = avatarKey.isEmpty
             ? null
             : await service.resolveAvatarUrl(t, avatarKey);
         final profileTags = loadedProfile['tags'];
-        _tags = profileTags is List
+        final tags = profileTags is List
             ? profileTags
                 .map((value) => '$value')
                 .where((value) => value.trim().isNotEmpty)
                 .toList()
             : <String>[];
-      }
-      final cached = forceRefresh ? null : await _readTabCache(targetTab);
-      if (cached != null && !forceRefresh) {
-        tabPosts[targetTab] = cached;
         if (mounted) {
           setState(() {
             profile = loadedProfile;
-            posts = cached;
-            selectedTab = targetTab;
+            _avatarUrl = avatar;
+            _tags = tags;
           });
         }
-        return;
       }
-      final loadedPosts = targetTab == 0
-          ? await service.fetchMyPosts(t)
-          : targetTab == 1
-              ? await service.fetchFavoritedPosts(t)
-              : await service.fetchLikedPosts(t);
-      final resolvedPosts = await Future.wait(
-          loadedPosts.map((post) => service.resolvePostMedia(t, post)));
-      tabPosts[targetTab] = resolvedPosts;
-      await _saveTabCache(targetTab, resolvedPosts);
+      final feed = feeds[targetTab];
+      if (forceRefresh || !feed.initialized) {
+        await feed.load(refresh: forceRefresh);
+      }
       if (!mounted) return;
       setState(() {
-        profile = loadedProfile;
-        posts = loadedPosts;
         selectedTab = targetTab;
+        posts = feed.posts;
+        error = feed.error;
       });
     } catch (e) {
       if (mounted) {

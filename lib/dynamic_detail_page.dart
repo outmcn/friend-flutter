@@ -223,18 +223,21 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       if (replies.isNotEmpty &&
           ((depth >= 2 && !expandedThirdLevelParents.contains(parent.id)) ||
               visible < replies.length)) {
-        result.add(Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton(
-            onPressed: () => setState(() {
-              if (depth >= 2) {
-                expandedThirdLevelParents.add(parent.id);
-                visibleReplyCounts[parent.id] = replies.length;
-              } else {
-                visibleReplyCounts[parent.id] = visible + 3;
-              }
-            }),
-            child: const Text('显示更多'),
+        result.add(Padding(
+          padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : 42.0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => setState(() {
+                if (depth >= 2) {
+                  expandedThirdLevelParents.add(parent.id);
+                  visibleReplyCounts[parent.id] = replies.length;
+                } else {
+                  visibleReplyCounts[parent.id] = visible + 3;
+                }
+              }),
+              child: const Text('显示更多'),
+            ),
           ),
         ));
       }
@@ -245,11 +248,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       appendReplies(root, 1);
     }
     if (visibleRootCount < roots.length) {
-      result.add(Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton(
-          onPressed: () => setState(() => visibleRootCount += 30),
-          child: const Text('显示更多'),
+      result.add(Padding(
+        padding: const EdgeInsets.only(left: 0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: () => setState(() => visibleRootCount += 30),
+            child: const Text('显示更多'),
+          ),
         ),
       ));
     }
@@ -437,31 +443,38 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(comment.content),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(comment.content),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InkWell(
+                            onTap: () => _toggleCommentLike(comment),
+                            child: Icon(
+                              comment.liked
+                                  ? Icons.thumb_up
+                                  : Icons.thumb_up_outlined,
+                              size: 16,
+                              color: comment.liked
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).hintColor,
+                            ),
+                          ),
+                          Text('${comment.likes}',
+                              style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 5),
                   Text(
                     formatDDTime(comment.createdAt),
                     style: const TextStyle(fontSize: 11),
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () => _toggleCommentLike(comment),
-                        child: Icon(
-                          comment.liked
-                              ? Icons.thumb_up
-                              : Icons.thumb_up_outlined,
-                          size: 16,
-                          color: comment.liked
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).hintColor,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text('${comment.likes}',
-                          style: const TextStyle(fontSize: 12)),
-                    ],
                   ),
                 ],
               ),
@@ -600,31 +613,53 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
-  Widget _composer() => SafeArea(
-          child: Padding(
-        padding: EdgeInsets.fromLTRB(
-            16, 8, 16, 8 + MediaQuery.of(context).viewInsets.bottom),
-        child: TextField(
-          controller: commentController,
-          focusNode: commentFocusNode,
-          textInputAction: TextInputAction.send,
-          onSubmitted: (_) => submitComment(),
-          decoration: InputDecoration(
-            hintText:
-                replyingTo == null ? '写下你的评论…' : '回复 ${replyingTo!.nickname}…',
-            prefixIcon: replyingTo == null
-                ? null
-                : IconButton(
-                    tooltip: '取消回复',
-                    onPressed: () => setState(() => replyingTo = null),
-                    icon: const Icon(Icons.close)),
-            suffixIcon: IconButton(
-                onPressed: submitting ? null : submitComment,
-                icon: const Icon(Icons.send)),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
+  Widget _composer(DDPost item) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+              8, 8, 8, 8 + MediaQuery.of(context).viewInsets.bottom),
+          child: Row(
+            children: [
+              _DetailAction(
+                icon: TIcons.thumb_up_1,
+                label: '${item.likes}',
+                active: item.liked,
+                onTap: _toggleLike,
+              ),
+              _DetailAction(
+                icon: TIcons.bookmark,
+                label: '${item.favorites}',
+                active: item.favorited,
+                onTap: _toggleFavorite,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: TextField(
+                  controller: commentController,
+                  focusNode: commentFocusNode,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => submitComment(),
+                  decoration: InputDecoration(
+                    hintText: replyingTo == null
+                        ? '写下你的评论…'
+                        : '回复 ${replyingTo!.nickname}…',
+                    prefixIcon: replyingTo == null
+                        ? null
+                        : IconButton(
+                            tooltip: '取消回复',
+                            onPressed: () => setState(() => replyingTo = null),
+                            icon: const Icon(Icons.close)),
+                    suffixIcon: IconButton(
+                        onPressed: submitting ? null : submitComment,
+                        icon: const Icon(Icons.send)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ));
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -633,25 +668,39 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       appBar: AppBar(
         title: item == null
             ? const Text('动态详情')
-            : Row(
-                children: [
-                  ClipOval(
-                    child: SizedBox(
-                      width: 32,
-                      height: 32,
-                      child: _PermanentCachedImage(
-                        url: item.avatar,
-                        fit: BoxFit.cover,
-                        placeholder: const Icon(Icons.person_outline),
+            : InkWell(
+                onTap: item.userId == null
+                    ? null
+                    : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => OtherProfilePage(
+                              userId: item.userId,
+                              name: item.nickname,
+                            ),
+                          ),
+                        ),
+                borderRadius: BorderRadius.circular(20),
+                child: Row(
+                  children: [
+                    ClipOval(
+                      child: SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: _PermanentCachedImage(
+                          url: item.avatar,
+                          fit: BoxFit.cover,
+                          placeholder: const Icon(Icons.person_outline),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(item.nickname,
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(item.nickname,
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
               ),
         actions: [
           IconButton(
@@ -695,35 +744,37 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                             style: const TextStyle(fontSize: 18, height: 1.5)),
                       ),
                     const SizedBox(height: 16),
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _DetailAction(
-                              icon: TIcons.thumb_up_1,
-                              label: '${item.likes}',
-                              active: item.liked,
-                              onTap: _toggleLike),
-                          _DetailAction(
-                              icon: TIcons.chat,
-                              label: '${item.comments}',
-                              onTap: () => commentFocusNode.requestFocus()),
-                          _DetailAction(
-                              icon: TIcons.bookmark,
-                              label: '${item.favorites}',
-                              active: item.favorited,
-                              onTap: _toggleFavorite),
-                        ]),
                     const Divider(height: 32),
-                    Text('评论', style: Theme.of(context).textTheme.titleLarge),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          Text('评论',
+                              style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${item.comments}',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ],
+                      ),
+                    ),
                     if (comments.isEmpty)
                       const Padding(
-                          padding: EdgeInsets.all(24), child: Text('暂无评论'))
+                        padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
+                        child: Text('暂无评论'),
+                      )
                     else
-                      ..._buildCommentTree(comments),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: _buildCommentTree(comments),
+                        ),
+                      ),
                   ],
                 ],
               )),
-      bottomNavigationBar: item == null ? null : _composer(),
+      bottomNavigationBar: item == null ? null : _composer(item),
     );
   }
 }
