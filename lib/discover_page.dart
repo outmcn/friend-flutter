@@ -57,8 +57,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
           feed.posts[index] = item.copyWith(following: post.following);
         }
       }
+      if (feed.posts.any((item) => item.id == post.id)) {
+        feed.notifyListeners();
+      }
     }
-    setState(() {});
   }
 
   Future<void> _like(DDPost post) async {
