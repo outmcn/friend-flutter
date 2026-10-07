@@ -9,7 +9,7 @@ void main() {
   });
 
   testWidgets('original shell widget is constructible', (tester) async {
-    final shell = const DDShell();
+    const shell = DDShell();
     expect(shell, isA<DDShell>());
   });
 }

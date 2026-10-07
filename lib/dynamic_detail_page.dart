@@ -503,12 +503,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
             favorites: item.favorites + (item.favorited ? -1 : 1));
       });
 
-  Future<void> _toggleFollow() => _mutate('follow', (token, item) async {
-        if (!ownerResolved || isOwner || item.userId == null) return item;
-        final followed = await service.toggleFollow(token, item.userId!);
-        return post!.copyWith(following: followed);
-      });
-
   Future<void> _delete() async {
     if (deleting) return;
     final confirmed = await showDialog<bool>(
@@ -562,49 +556,49 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
-  void _openAuthor(DDPost item) {
-    if (item.userId == null) return;
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (_) => OtherProfilePage(
-                  userId: item.userId,
-                  name: item.nickname,
-                )));
-  }
-
-  Widget _author(DDPost item) => Row(children: [
-        InkWell(
-          onTap: () => _openAuthor(item),
-          child: ClipOval(
-              child: SizedBox(
-            width: 48,
-            height: 48,
-            child: _PermanentCachedImage(
-                url: item.avatar,
-                fit: BoxFit.cover,
-                placeholder: const Icon(Icons.person_outline)),
-          )),
+  Future<void> _openShareMenu(DDPost item) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('分享动态'),
+              onTap: () => Navigator.pop(context, 'share'),
+            ),
+            if (!isOwner)
+              ListTile(
+                leading: const Icon(Icons.report_outlined),
+                title: const Text('举报动态'),
+                onTap: () => Navigator.pop(context, 'report'),
+              ),
+            if (isOwner)
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('删除动态'),
+                onTap: () => Navigator.pop(context, 'delete'),
+              ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-            child: InkWell(
-                onTap: () => _openAuthor(item),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.nickname,
-                        style: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.bold)),
-                    Text(formatDDTime(item.createdAt),
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ],
-                ))),
-        if (ownerResolved && !isOwner && item.userId != null)
-          OutlinedButton(
-              onPressed: _toggleFollow,
-              child: Text(item.following ? '已关注' : '关注')),
-      ]);
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'report') {
+      await _openReportPage();
+    } else if (action == 'delete') {
+      await _delete();
+    } else if (action == 'share') {
+      await Clipboard.setData(
+        ClipboardData(text: '动态 ${item.id}：${item.content}'),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('动态内容已复制，可粘贴分享')),
+        );
+      }
+    }
+  }
 
   Widget _composer() => SafeArea(
           child: Padding(
@@ -636,18 +630,38 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Widget build(BuildContext context) {
     final item = post;
     return Scaffold(
-      appBar: AppBar(title: const Text('动态详情'), actions: [
-        if (item != null && ownerResolved)
-          IconButton(
-            tooltip: isOwner ? '删除动态' : '举报动态',
-            onPressed: deleting
-                ? null
-                : isOwner
-                    ? _delete
-                    : _openReportPage,
-            icon: Icon(isOwner ? Icons.delete_outline : Icons.report_outlined),
-          ),
-      ]),
+      appBar: AppBar(
+        title: item == null
+            ? const Text('动态详情')
+            : Row(
+                children: [
+                  ClipOval(
+                    child: SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: _PermanentCachedImage(
+                        url: item.avatar,
+                        fit: BoxFit.cover,
+                        placeholder: const Icon(Icons.person_outline),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(item.nickname,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+        actions: [
+          if (item != null && ownerResolved)
+            IconButton(
+              tooltip: '分享',
+              onPressed: deleting ? null : () => _openShareMenu(item),
+              icon: const Icon(Icons.share_outlined),
+            ),
+        ],
+      ),
       body: item == null && loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -655,29 +669,31 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
               child: ListView(
                 controller: scroll,
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.zero,
                 children: [
                   if (error != null)
                     _PageErrorState(
                         title: '加载失败', subtitle: error!, onRetry: load),
                   if (item != null) ...[
-                    _author(item),
-                    const SizedBox(height: 20),
-                    if (item.content.isNotEmpty)
-                      Text(item.content,
-                          style: const TextStyle(fontSize: 18, height: 1.5)),
                     if (item.imageUrl?.isNotEmpty == true) ...[
-                      const SizedBox(height: 16),
                       _PostImageHolder(
-                          url: item.imageUrl!, unlimitedHeight: true),
+                        url: item.imageUrl!,
+                        unlimitedHeight: true,
+                      ),
                     ],
                     if (item.videoUrl?.isNotEmpty == true) ...[
-                      const SizedBox(height: 16),
                       _NetworkVideoPreview(
-                          url: item.videoUrl!,
-                          thumbnailUrl: item.thumbnailUrl,
-                          unlimitedHeight: true),
+                        url: item.videoUrl!,
+                        thumbnailUrl: item.thumbnailUrl,
+                        unlimitedHeight: true,
+                      ),
                     ],
+                    if (item.content.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Text(item.content,
+                            style: const TextStyle(fontSize: 18, height: 1.5)),
+                      ),
                     const SizedBox(height: 16),
                     Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,

@@ -46,7 +46,8 @@ class FriendAuthClient {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode != 204) {
-      throw FriendAuthException(_decode(response)['error']?.toString() ?? '退出登录失败');
+      throw FriendAuthException(
+          _decode(response)['error']?.toString() ?? '退出登录失败');
     }
     await clearToken();
   }

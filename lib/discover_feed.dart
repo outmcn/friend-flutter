@@ -17,6 +17,10 @@ class DiscoverFeed extends ChangeNotifier {
     postChanges.value = updated;
   }
 
+  void markChanged() {
+    if (!disposed) notifyListeners();
+  }
+
   int offset = 0;
   bool initialized = false;
   bool busy = false;

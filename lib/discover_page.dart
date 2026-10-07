@@ -81,7 +81,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     for (final feed in feeds) {
       feed.posts.removeWhere((item) => item.id == post.id);
     }
-    feeds[selectedTab].notifyListeners();
+    feeds[selectedTab].markChanged();
   }
 
   Widget _card(DiscoverFeed feed, int index, {bool fullWidth = false}) {
