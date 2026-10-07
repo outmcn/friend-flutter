@@ -167,28 +167,43 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
     }
   }
 
+  Future<void> _showReady(FileImage provider, String requestedUrl) async {
+    _PermanentImageCache.rememberProvider(requestedUrl, provider);
+    if (mounted) {
+      await precacheImage(provider, context);
+    }
+    if (!mounted || requestedUrl != widget.url) return;
+    setState(() {
+      localPath = provider.file.path;
+      failed = false;
+    });
+  }
+
   Future<void> _load() async {
     final requestedUrl = widget.url;
+    final cachedProvider = _PermanentImageCache.provider(requestedUrl);
+    if (cachedProvider is FileImage) {
+      localPath = cachedProvider.file.path;
+      if (mounted) setState(() {});
+      return;
+    }
     final memoryPath = _PermanentImageCache.peek(widget.url);
-    if (memoryPath != null && mounted) {
-      setState(() => localPath = memoryPath);
+    if (memoryPath != null) {
+      await _showReady(FileImage(File(memoryPath)), requestedUrl);
       return;
     }
     final diskPath = await _PermanentImageCache._diskPath(widget.url);
-    if (diskPath != null && mounted && requestedUrl == widget.url) {
-      setState(() {
-        localPath = diskPath;
-        failed = false;
-      });
+    if (diskPath != null && requestedUrl == widget.url) {
+      await _showReady(FileImage(File(diskPath)), requestedUrl);
       return;
     }
     final path = await _PermanentImageCache.get(requestedUrl);
     if (!mounted || requestedUrl != widget.url) return;
-    setState(() {
-      // 刷新失败时保留已经显示的同一张图片。
-      if (path != null) localPath = path;
-      failed = path == null && localPath == null;
-    });
+    if (path != null) {
+      await _showReady(FileImage(File(path)), requestedUrl);
+    } else {
+      setState(() => failed = localPath == null);
+    }
   }
 
   @override
@@ -1891,7 +1906,8 @@ class _DynamicPostCard extends StatelessWidget {
                     )
                   else
                     const SizedBox(
-                        height: 225, child: ColoredBox(color: Colors.black26)),
+                        height: 225,
+                        child: ColoredBox(color: Colors.transparent)),
                   const Icon(
                     Icons.play_circle_outline,
                     size: 56,
@@ -2066,7 +2082,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                             )
                           : const SizedBox(
                               height: 96,
-                              child: ColoredBox(color: Colors.black26),
+                              child: ColoredBox(color: Colors.transparent),
                             ),
                       Align(
                         alignment: Alignment.center,
@@ -2292,7 +2308,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
               LayoutBuilder(
                 builder: (context, constraints) => Container(
                   width: double.infinity,
-                  color: Colors.black26,
+                  color: Colors.transparent,
                   alignment: Alignment.center,
                   child: widget.thumbnailUrl?.isNotEmpty == true
                       ? ConstrainedBox(
@@ -3314,7 +3330,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           height: 180,
                           width: double.infinity,
                           child: snapshot.data == null
-                              ? const ColoredBox(color: Colors.black26)
+                              ? const ColoredBox(color: Colors.transparent)
                               : Image.memory(snapshot.data!, fit: BoxFit.cover),
                         ),
                       ),
@@ -5473,7 +5489,7 @@ class _MyProfilePostCard extends StatelessWidget {
                       else
                         const SizedBox(
                           height: 225,
-                          child: ColoredBox(color: Colors.black26),
+                          child: ColoredBox(color: Colors.transparent),
                         ),
                       const Icon(
                         Icons.play_circle_outline,
@@ -5692,7 +5708,7 @@ class _MyListCard extends StatelessWidget {
                       else
                         const SizedBox(
                           height: 225,
-                          child: ColoredBox(color: Colors.black26),
+                          child: ColoredBox(color: Colors.transparent),
                         ),
                       const Icon(
                         Icons.play_circle_outline,
