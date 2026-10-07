@@ -38,6 +38,7 @@ class _PermanentImageCache {
   // 内存层直接保存已解码的 ImageProvider，列表项回收后首帧可复用。
   static final Map<String, ImageProvider<Object>> _providers =
       <String, ImageProvider<Object>>{};
+  static final Map<String, Size> _sizes = <String, Size>{};
 
   static String identity(String url) {
     final normalized = url.trim();
@@ -74,6 +75,13 @@ class _PermanentImageCache {
     final provider = FileImage(File(path));
     rememberProvider(url, provider);
   }
+
+  static void rememberSize(String url, Size size) {
+    final key = identity(url);
+    if (key.isNotEmpty && size.width > 0 && size.height > 0) _sizes[key] = size;
+  }
+
+  static Size? size(String url) => _sizes[identity(url)];
 
   static String? peek(String url) => _localPaths[identity(url)];
 
@@ -194,6 +202,13 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
         width: widget.width,
         height: widget.height,
         fit: widget.fit,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (frame != null || wasSynchronouslyLoaded) {
+            final size = MediaQuery.sizeOf(context);
+            _PermanentImageCache.rememberSize(widget.url, size);
+          }
+          return child;
+        },
       );
     }
     return SizedBox(
