@@ -1965,16 +1965,24 @@ class _DynamicPostCard extends StatelessWidget {
                       fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
-              IconButton(
-                onPressed: onLike,
-                iconSize: 17,
-                padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints.tightFor(width: 24, height: 24),
-                color: post.liked ? Colors.red : null,
-                icon: Icon(TIcons.thumb_up_1),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: onLike,
+                    iconSize: 17,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 24,
+                      height: 24,
+                    ),
+                    color: post.liked ? Colors.red : null,
+                    icon: Icon(TIcons.thumb_up_1),
+                  ),
+                  const SizedBox(width: 2),
+                  Text('${post.likes}', style: const TextStyle(fontSize: 12)),
+                ],
               ),
-              Text('${post.likes}', style: const TextStyle(fontSize: 12)),
             ],
           ),
         ],
@@ -5590,12 +5598,18 @@ class _MyProfilePostCard extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(0, 10, 0, 12),
                 child: Row(
                   children: [
-                    Icon(TIcons.thumb_up_1,
-                        size: 16,
-                        color:
-                            post.liked ? Colors.red : scheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('${post.likes}'),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(TIcons.thumb_up_1,
+                            size: 16,
+                            color: post.liked
+                                ? Colors.red
+                                : scheme.onSurfaceVariant),
+                        const SizedBox(width: 2),
+                        Text('${post.likes}'),
+                      ],
+                    ),
                     const SizedBox(width: 12),
                     Icon(Icons.bookmark_border,
                         size: 16, color: scheme.onSurfaceVariant),
