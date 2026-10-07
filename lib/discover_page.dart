@@ -84,14 +84,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
         context,
         MaterialPageRoute(
           builder: (_) => DynamicDetailPage(
-              postId: post.id, initialPost: post, onChanged: _replace),
+            postId: post.id,
+            initialPost: post,
+          ),
         ));
     if (!mounted || deleted != true) return;
-    setState(() {
-      for (final feed in feeds) {
-        feed.posts.removeWhere((item) => item.id == post.id);
-      }
-    });
+    for (final feed in feeds) {
+      feed.posts.removeWhere((item) => item.id == post.id);
+    }
+    feeds[selectedTab].notifyListeners();
   }
 
   Widget _list(int tab) {
