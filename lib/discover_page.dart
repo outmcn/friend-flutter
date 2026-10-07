@@ -114,6 +114,17 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 childCount: feed.posts.length,
                 itemBuilder: (context, index) {
                   final post = feed.posts[index];
+                  // 提前准备当前视口后方的媒体，接近小红书的预加载窗口。
+                  if (index + 1 < feed.posts.length) {
+                    final next = feed.posts[index + 1];
+                    if (next.imageUrl?.isNotEmpty == true) {
+                      unawaited(_PermanentImageCache.prefetch(next.imageUrl!));
+                    }
+                    if (next.thumbnailUrl?.isNotEmpty == true) {
+                      unawaited(
+                          _PermanentImageCache.prefetch(next.thumbnailUrl!));
+                    }
+                  }
                   return _DiscoverProfileCard(
                     key: ValueKey(post.id),
                     post: post,

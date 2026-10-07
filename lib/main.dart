@@ -35,6 +35,7 @@ class _PermanentImageCache {
   static final Map<String, String> _localPaths = <String, String>{};
   static final Map<String, Future<String?>> _pending =
       <String, Future<String?>>{};
+  // 内存层直接保存已解码的 ImageProvider，列表项回收后首帧可复用。
   static final Map<String, ImageProvider<Object>> _providers =
       <String, ImageProvider<Object>>{};
 
@@ -65,6 +66,13 @@ class _PermanentImageCache {
   static void rememberProvider(String url, ImageProvider<Object> provider) {
     final key = identity(url);
     if (key.isNotEmpty) _providers[key] = provider;
+  }
+
+  static Future<void> prefetch(String url) async {
+    final path = await get(url);
+    if (path == null) return;
+    final provider = FileImage(File(path));
+    rememberProvider(url, provider);
   }
 
   static String? peek(String url) => _localPaths[identity(url)];
@@ -131,7 +139,8 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   @override
   void initState() {
     super.initState();
-    final provider = _PermanentImageCache.provider(widget.url);
+    final provider = _PermanentImageCache
+        ._providers[_PermanentImageCache.identity(widget.url)];
     if (provider is FileImage) localPath = provider.file.path;
     _load();
   }
