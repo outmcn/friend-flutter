@@ -3172,12 +3172,22 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         final location = await _locationForPost(token);
                         final videoKey = await _videoObjectKey(token);
                         final thumbnailKey = await _videoThumbnailKey(token);
+                        int? imageWidth;
+                        int? imageHeight;
+                        if (selectedImage != null) {
+                          final decoded = img
+                              .decodeImage(await selectedImage!.readAsBytes());
+                          imageWidth = decoded?.width;
+                          imageHeight = decoded?.height;
+                        }
                         await _service.createPost(
                           token: token,
                           content: _content.text.trim(),
                           imageDataUrl: await _imageObjectKey(token),
                           videoUrl: videoKey,
                           thumbnailUrl: thumbnailKey,
+                          imageWidth: imageWidth,
+                          imageHeight: imageHeight,
                           visibility: visibility == '仅好友可见'
                               ? 'friends'
                               : visibility == '仅自己可见'

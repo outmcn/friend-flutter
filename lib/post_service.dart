@@ -48,6 +48,10 @@ class DDPost {
     this.videoUrl,
     this.thumbnailUrl,
     required this.views,
+    this.imageWidth,
+    this.imageHeight,
+    this.thumbnailWidth,
+    this.thumbnailHeight,
   });
 
   final int id;
@@ -68,6 +72,11 @@ class DDPost {
   final String? videoUrl;
   final String? thumbnailUrl;
   final int views;
+  final int? imageWidth;
+  final int? imageHeight;
+  final int? thumbnailWidth;
+  final int? thumbnailHeight;
+
   DDPost copyWith({
     bool? following,
     bool? liked,
@@ -94,6 +103,10 @@ class DDPost {
         videoUrl: videoUrl,
         thumbnailUrl: thumbnailUrl,
         views: views,
+        imageWidth: imageWidth,
+        imageHeight: imageHeight,
+        thumbnailWidth: thumbnailWidth,
+        thumbnailHeight: thumbnailHeight,
       );
 
   Map<String, dynamic> toJson() => {
@@ -115,7 +128,12 @@ class DDPost {
         'videoUrl': videoUrl,
         'thumbnailUrl': thumbnailUrl,
         'views': views,
+        'imageWidth': imageWidth,
+        'imageHeight': imageHeight,
+        'thumbnailWidth': thumbnailWidth,
+        'thumbnailHeight': thumbnailHeight,
       };
+
   factory DDPost.fromJson(
     Map<String, dynamic> json, {
     bool preserveMediaKeys = false,
@@ -140,6 +158,10 @@ class DDPost {
         thumbnailUrl:
             _nullableMediaValue(json['thumbnailUrl'], preserveMediaKeys),
         views: _intValue(json['views']) ?? 0,
+        imageWidth: _intValue(json['imageWidth']),
+        imageHeight: _intValue(json['imageHeight']),
+        thumbnailWidth: _intValue(json['thumbnailWidth']),
+        thumbnailHeight: _intValue(json['thumbnailHeight']),
       );
 }
 
@@ -460,6 +482,10 @@ class DDPostService {
       String? imageDataUrl,
       String? videoUrl,
       String? thumbnailUrl,
+      int? imageWidth,
+      int? imageHeight,
+      int? thumbnailWidth,
+      int? thumbnailHeight,
       String visibility = 'public',
       double? latitude,
       double? longitude}) async {
@@ -480,6 +506,10 @@ class DDPostService {
     if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
       body['thumbnailKey'] = thumbnailUrl;
     }
+    if (imageWidth != null) body['imageWidth'] = imageWidth;
+    if (imageHeight != null) body['imageHeight'] = imageHeight;
+    if (thumbnailWidth != null) body['thumbnailWidth'] = thumbnailWidth;
+    if (thumbnailHeight != null) body['thumbnailHeight'] = thumbnailHeight;
     final response = await _client.post(
       _api('/posts'),
       headers: {
