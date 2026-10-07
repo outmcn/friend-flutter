@@ -3911,13 +3911,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       final loadedPosts = (data['posts'] is List)
           ? (data['posts'] as List)
               .whereType<Map>()
-              .map((item) => DDPost.fromJson(item.cast<String, dynamic>()))
+              .map((item) => DDPost.fromJson(
+                    item.cast<String, dynamic>(),
+                    preserveMediaKeys: true,
+                  ))
               .toList()
           : <DDPost>[];
+      final resolvedPosts = await Future.wait(
+          loadedPosts.map((post) => service.resolvePostMedia(token, post)));
       if (mounted) {
         setState(() {
           profile = data;
-          posts = loadedPosts;
+          posts = resolvedPosts;
           isFollowing = data['followingByViewer'] == true;
           isProfileLiked = data['likedByViewer'] == true;
           isSelfProfile = '${data['id']}' == '${me['id']}';
@@ -5383,6 +5388,54 @@ class _MyProfileIconTabs extends StatelessWidget {
       );
 }
 
+class _ProfilePostFeed extends StatefulWidget {
+  const _ProfilePostFeed({
+    required this.posts,
+    required this.onChanged,
+    required this.onOpen,
+  });
+  final List<DDPost> posts;
+  final VoidCallback onChanged;
+  final ValueChanged<DDPost> onOpen;
+  @override
+  State<_ProfilePostFeed> createState() => _ProfilePostFeedState();
+}
+
+class _ProfilePostFeedState extends State<_ProfilePostFeed> {
+  late List<DDPost> posts;
+  @override
+  void initState() {
+    super.initState();
+    posts = List<DDPost>.of(widget.posts);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProfilePostFeed oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.posts, widget.posts)) {
+      posts = List<DDPost>.of(widget.posts);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => MasonryGridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        crossAxisSpacing: 6,
+        mainAxisSpacing: 6,
+        itemCount: posts.length,
+        itemBuilder: (context, index) {
+          final post = posts[index];
+          return _MyProfilePostCard(
+            key: ValueKey(post.id),
+            post: post,
+            onTap: () => widget.onOpen(post),
+          );
+        },
+      );
+}
+
 class _MyProfileGrid extends StatelessWidget {
   const _MyProfileGrid({required this.posts, this.onChanged});
   final List<DDPost> posts;
@@ -5423,7 +5476,8 @@ class _MyProfileGrid extends StatelessWidget {
 }
 
 class _MyProfilePostCard extends StatelessWidget {
-  const _MyProfilePostCard({required this.post, required this.onTap});
+  const _MyProfilePostCard(
+      {super.key, required this.post, required this.onTap});
   final DDPost post;
   final VoidCallback onTap;
 

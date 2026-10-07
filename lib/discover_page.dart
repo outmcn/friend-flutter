@@ -160,25 +160,53 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          titleSpacing: 16,
           title: Row(
-              children: List.generate(
-                  3,
-                  (tab) => TextButton(
-                        onPressed: () {
-                          setState(() => selectedTab = tab);
-                          if (!feeds[tab].initialized) feeds[tab].load();
-                        },
-                        child: Text(['推荐', '本地', '关注'][tab],
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: selectedTab == tab
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: selectedTab == tab
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).hintColor,
-                            )),
-                      ))),
+            children: ['推荐', '本地', '关注']
+                .asMap()
+                .entries
+                .map((entry) => GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => selectedTab = entry.key);
+                        if (!feeds[entry.key].initialized) {
+                          feeds[entry.key].load();
+                        }
+                      },
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.only(right: 20, top: 9, bottom: 6),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              entry.value,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: selectedTab == entry.key
+                                    ? null
+                                    : Theme.of(context).hintColor,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              curve: Curves.easeOutCubic,
+                              width: selectedTab == entry.key ? 24 : 0,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
           actions: [
             IconButton(
                 tooltip: '通知中心',
