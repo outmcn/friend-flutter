@@ -2072,10 +2072,14 @@ class _DiscoverProfileCard extends StatelessWidget {
                               height: 96,
                               child: ColoredBox(color: Colors.transparent),
                             ),
-                      Align(
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.play_circle_outline,
-                            size: 42, color: Colors.white),
+                      const Positioned.fill(
+                        child: Center(
+                          child: Icon(
+                            Icons.play_circle_outline,
+                            size: 42,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -4492,8 +4496,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
           : targetTab == 1
               ? await service.fetchFavoritedPosts(t)
               : await service.fetchLikedPosts(t);
-      tabPosts[targetTab] = loadedPosts;
-      await _saveTabCache(targetTab, loadedPosts);
+      final resolvedPosts = await Future.wait(
+          loadedPosts.map((post) => service.resolvePostMedia(t, post)));
+      tabPosts[targetTab] = resolvedPosts;
+      await _saveTabCache(targetTab, resolvedPosts);
       if (!mounted) return;
       setState(() {
         profile = loadedProfile;
@@ -5421,6 +5427,22 @@ class _MyProfilePostCard extends StatelessWidget {
   final DDPost post;
   final VoidCallback onTap;
 
+  Widget _profileMedia({required String url, required bool thumbnail}) {
+    final width = thumbnail ? post.thumbnailWidth : post.imageWidth;
+    final height = thumbnail ? post.thumbnailHeight : post.imageHeight;
+    final ratio = width != null && height != null && width > 0 && height > 0
+        ? width / height
+        : 4 / 3;
+    return AspectRatio(
+      aspectRatio: ratio,
+      child: _PermanentCachedImage(
+        url: url,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -5441,16 +5463,7 @@ class _MyProfilePostCard extends StatelessWidget {
                 LayoutBuilder(
                   builder: (context, constraints) => ConstrainedBox(
                     constraints: const BoxConstraints(maxHeight: 300),
-                    child: Image.network(
-                      DDPostService.mediaUrl(image),
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 180,
-                        color: scheme.surfaceContainerHighest,
-                        child: const Icon(Icons.broken_image_outlined),
-                      ),
-                    ),
+                    child: _profileMedia(url: image, thumbnail: false),
                   ),
                 )
               else if (video != null && video.isNotEmpty)
@@ -5465,12 +5478,9 @@ class _MyProfilePostCard extends StatelessWidget {
                           width: double.infinity,
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxHeight: 400),
-                            child: Image.network(
-                              post.thumbnailUrl!,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  const SizedBox.shrink(),
+                            child: _profileMedia(
+                              url: post.thumbnailUrl!,
+                              thumbnail: true,
                             ),
                           ),
                         )

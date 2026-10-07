@@ -454,7 +454,10 @@ class DDPostService {
     }
     final rows = decoded['posts'];
     if (rows is! List) throw Exception('动态数据格式错误');
-    return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map((row) => DDPost.fromJson(row, preserveMediaKeys: true))
+        .toList();
   }
 
   Future<Map<String, dynamic>> _decodeResponse(
