@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 int? _intValue(Object? value) {
@@ -23,8 +22,10 @@ String _mediaValue(Object? value, bool preserveKeys) {
 
 String? _nullableMediaValue(Object? value, bool preserveKeys) {
   if (value == null) return null;
-  final raw = '${value}';
-  return raw.trim().isEmpty ? null : (preserveKeys ? raw : DDPostService.mediaUrl(raw));
+  final raw = '$value';
+  return raw.trim().isEmpty
+      ? null
+      : (preserveKeys ? raw : DDPostService.mediaUrl(raw));
 }
 
 class DDPost {
@@ -68,6 +69,7 @@ class DDPost {
   final String? thumbnailUrl;
   final int views;
   DDPost copyWith({
+    bool? following,
     bool? liked,
     int? likes,
     bool? favorited,
@@ -83,7 +85,7 @@ class DDPost {
         likes: likes ?? this.likes,
         favorites: favorites ?? this.favorites,
         comments: comments,
-        following: following,
+        following: following ?? this.following,
         followedByViewer: followedByViewer,
         distanceKm: distanceKm,
         liked: liked ?? this.liked,
@@ -117,7 +119,8 @@ class DDPost {
   factory DDPost.fromJson(
     Map<String, dynamic> json, {
     bool preserveMediaKeys = false,
-  }) => DDPost(
+  }) =>
+      DDPost(
         id: _intValue(json['id']) ?? 0,
         userId: _intValue(json['userId']),
         content: '${json['content'] ?? ''}',
@@ -134,10 +137,10 @@ class DDPost {
         favorited: json['favorited'] == true,
         imageUrl: _nullableMediaValue(json['imageUrl'], preserveMediaKeys),
         videoUrl: _nullableMediaValue(json['videoUrl'], preserveMediaKeys),
-        thumbnailUrl: _nullableMediaValue(json['thumbnailUrl'], preserveMediaKeys),
+        thumbnailUrl:
+            _nullableMediaValue(json['thumbnailUrl'], preserveMediaKeys),
         views: _intValue(json['views']) ?? 0,
       );
-
 }
 
 class DDComment {
@@ -219,7 +222,8 @@ class DDPostService {
   final http.Client _client;
   static const profileTabCachePrefix = 'dd.profile.tab.cache.';
 
-  Uri _api(String path) => _base.resolve(path.startsWith('/api/') ? path : '/api$path');
+  Uri _api(String path) =>
+      _base.resolve(path.startsWith('/api/') ? path : '/api$path');
 
   static Future<void> clearProfileTabCaches() async {
     final prefs = await SharedPreferences.getInstance();
@@ -236,6 +240,40 @@ class DDPostService {
     return '';
   }
 
+  // 缓存保存对象身份，展示时统一换取签名；已有有效签名不重复请求。
+  static String mediaKey(String source) {
+    final uri = Uri.tryParse(source);
+    return uri != null && uri.hasScheme ? uri.pathSegments.join('/') : source;
+  }
+
+  static bool _needsMediaSignature(String source) {
+    final uri = Uri.tryParse(source);
+    if (uri == null || uri.scheme != 'https') return true;
+    final query = {
+      for (final entry in uri.queryParameters.entries)
+        entry.key.toLowerCase(): entry.value
+    };
+    final expires = int.tryParse(query['expires'] ?? '');
+    if (expires != null) {
+      return DateTime.now().millisecondsSinceEpoch + 60000 >= expires * 1000;
+    }
+    return false;
+  }
+
+  Future<DDPost> resolvePostMedia(String token, DDPost post) async {
+    final data = post.toJson();
+    await Future.wait(
+        ['avatar', 'imageUrl', 'videoUrl', 'thumbnailUrl'].map((field) async {
+      final raw = data[field] as String?;
+      if (raw == null || raw.isEmpty) return;
+      if (!_needsMediaSignature(raw)) return;
+      data[field] = field == 'avatar'
+          ? await avatarUrl(token, mediaKey(raw))
+          : await mediaUrlForKey(token, mediaKey(raw));
+    }));
+    return DDPost.fromJson(data, preserveMediaKeys: true);
+  }
+
   Future<String> login(
       {required String username, required String password}) async {
     final response = await _client.post(
@@ -244,8 +282,7 @@ class DDPostService {
       body: jsonEncode({'username': username, 'password': password}),
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('${decoded['error'] ?? '登录失败'}');
     }
     final token = decoded['token'];
@@ -255,7 +292,8 @@ class DDPostService {
     return token;
   }
 
-  Future<List<DDNotification>> fetchNotifications(String token) async => <DDNotification>[];
+  Future<List<DDNotification>> fetchNotifications(String token) async =>
+      <DDNotification>[];
 
   Future<void> markNotificationsRead(String token) async {}
 
@@ -275,13 +313,19 @@ class DDPostService {
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('动态加载失败');
     }
     final rows = decoded['posts'];
     if (rows is! List) throw Exception('动态数据格式错误');
-    return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map((row) => DDPost.fromJson(row, preserveMediaKeys: true))
+        .toList();
   }
+
   Future<List<DDPost>> fetchNearbyPosts(
     String token, {
     int offset = 0,
@@ -291,21 +335,28 @@ class DDPostService {
       'offset': '$offset',
       'limit': '$limit',
     });
-    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final response =
+        await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('本地动态加载失败');
     }
     final rows = decoded['posts'];
     if (rows is! List) throw Exception('本地动态数据格式错误');
-    return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map((row) => DDPost.fromJson(row, preserveMediaKeys: true))
+        .toList();
   }
 
   Future<List<DDPost>> fetchFollowingPosts(
     String token, {
     int offset = 0,
     int limit = 30,
-  }) => fetchPosts(token, offset: offset, limit: limit, followingFeed: true);
+  }) =>
+      fetchPosts(token, offset: offset, limit: limit, followingFeed: true);
 
   Future<List<DDPost>> fetchRecommendedPosts(
     String token, {
@@ -316,22 +367,30 @@ class DDPostService {
       'offset': '$offset',
       'limit': '$limit',
     });
-    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final response =
+        await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('推荐动态加载失败');
     }
     final rows = decoded['posts'];
     if (rows is! List) throw Exception('推荐动态数据格式错误');
-    return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map((row) => DDPost.fromJson(row, preserveMediaKeys: true))
+        .toList();
   }
+
   Future<DDPost> fetchPost(String token, int postId) async {
     final response = await _client.get(
       _api('/posts/$postId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final decoded = response.body.trim().isEmpty ? null : jsonDecode(response.body);
+      final decoded =
+          response.body.trim().isEmpty ? null : jsonDecode(response.body);
       final message = decoded is Map<String, dynamic>
           ? decoded['error'] ?? '动态加载失败'
           : '动态加载失败';
@@ -344,7 +403,8 @@ class DDPostService {
     if (decoded is! Map<String, dynamic> || decoded['post'] is! Map) {
       throw Exception('动态数据格式错误');
     }
-    return DDPost.fromJson((decoded['post'] as Map).cast<String, dynamic>());
+    return DDPost.fromJson((decoded['post'] as Map).cast<String, dynamic>(),
+        preserveMediaKeys: true);
   }
 
   Future<List<DDPost>> fetchMyPosts(String token) async {
@@ -365,16 +425,14 @@ class DDPostService {
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('我的动态加载失败');
     }
     final rows = decoded['posts'];
     if (rows is! List) throw Exception('动态数据格式错误');
     return rows.whereType<Map<String, dynamic>>().map(DDPost.fromJson).toList();
-  }
-
-  Future<List<DDPost>> _fetchList(String token, String path) async {
-    return const [];
   }
 
   Future<Map<String, dynamic>> _decodeResponse(
@@ -396,8 +454,8 @@ class DDPostService {
     }
   }
 
-  Future<int> createPost({
-      required String token,
+  Future<int> createPost(
+      {required String token,
       required String content,
       String? imageDataUrl,
       String? videoUrl,
@@ -446,7 +504,10 @@ class DDPostService {
     if (response.body.trim().isEmpty) return const [];
     final decoded = jsonDecode(response.body);
     if (decoded is! List) throw Exception('评论数据格式错误');
-    return decoded.whereType<Map<String, dynamic>>().map(DDComment.fromJson).toList();
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(DDComment.fromJson)
+        .toList();
   }
 
   Future<void> createComment(
@@ -482,6 +543,7 @@ class DDPostService {
     }
     return decoded['liked'] == true;
   }
+
   Future<void> deleteComment(String token, int commentId) async {
     final response = await _client.delete(
       _api('/comments/$commentId'),
@@ -552,16 +614,21 @@ class DDPostService {
     await prefs.remove('friend.auth.token');
   }
 
-  Future<Map<String, dynamic>> fetchUserProfile(String token, int userId) async {
+  Future<Map<String, dynamic>> fetchUserProfile(
+      String token, int userId) async {
     final response = await _client.get(
       _api('/users/$userId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('用户资料加载失败');
     }
-    return decoded['user'] is Map<String, dynamic> ? decoded['user'] as Map<String, dynamic> : decoded;
+    return decoded['user'] is Map<String, dynamic>
+        ? decoded['user'] as Map<String, dynamic>
+        : decoded;
   }
 
   Future<List<Map<String, dynamic>>> fetchUsers(String token,
@@ -599,9 +666,12 @@ class DDPostService {
       'contentType': contentType,
       'kind': kind,
     });
-    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final response =
+        await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('动态媒体上传地址获取失败');
     }
     return decoded;
@@ -609,9 +679,13 @@ class DDPostService {
 
   Future<String> mediaUrlForKey(String token, String key) async {
     final uri = _api('/media/url').replace(queryParameters: {'key': key});
-    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final response =
+        await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic> || decoded['url'] is! String) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic> ||
+        decoded['url'] is! String) {
       throw Exception('动态媒体地址获取失败');
     }
     return decoded['url'] as String;
@@ -626,14 +700,16 @@ class DDPostService {
       'fileName': fileName,
       'contentType': contentType,
     });
-    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final response =
+        await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('声音上传地址获取失败');
     }
     return decoded;
   }
-
 
   Future<Map<String, dynamic>> avatarUploadUrl({
     required String token,
@@ -644,9 +720,12 @@ class DDPostService {
       'fileName': fileName,
       'contentType': contentType,
     });
-    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final response =
+        await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic>) {
       throw Exception('头像上传地址获取失败');
     }
     return decoded;
@@ -666,10 +745,15 @@ class DDPostService {
   }
 
   Future<String> avatarUrl(String token, String objectKey) async {
-    final uri = _api('/api/media/avatar/url').replace(queryParameters: {'key': objectKey});
-    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final uri = _api('/api/media/avatar/url')
+        .replace(queryParameters: {'key': objectKey});
+    final response =
+        await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
     final decoded = jsonDecode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic> || decoded['url'] is! String) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map<String, dynamic> ||
+        decoded['url'] is! String) {
       throw Exception('头像地址获取失败');
     }
     return decoded['url'] as String;
@@ -680,6 +764,7 @@ class DDPostService {
     if (key.isEmpty) return null;
     return avatarUrl(token, key);
   }
+
   Future<Map<String, dynamic>> fetchMe(String token) async {
     final data = await _fetchObject(token, '/api/me');
     final user = data['user'];
@@ -719,8 +804,8 @@ class DDPostService {
         : decoded as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> updateLocation({
-      required String token,
+  Future<Map<String, dynamic>> updateLocation(
+      {required String token,
       required double latitude,
       required double longitude,
       String? city}) async {
@@ -759,7 +844,9 @@ class DDPostService {
     final response = await _client.delete(_api('/posts/$postId'),
         headers: {'Authorization': 'Bearer $token'});
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final decoded = response.body.trim().isEmpty ? <String, dynamic>{} : jsonDecode(response.body) as Map<String, dynamic>;
+      final decoded = response.body.trim().isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body) as Map<String, dynamic>;
       throw Exception('${decoded['error'] ?? '删除动态失败'}');
     }
   }
