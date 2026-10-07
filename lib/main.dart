@@ -6193,6 +6193,178 @@ class GameCompanionPlazaPage extends StatefulWidget {
   State<GameCompanionPlazaPage> createState() => _GameCompanionPlazaPageState();
 }
 
+class _DeltaGameEntryButton extends StatelessWidget {
+  const _DeltaGameEntryButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Ink(
+            height: 82,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xff182b49), Color(0xff8a3d45)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.shield_outlined,
+                    color: Colors.white, size: 34),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('三角洲端游',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800)),
+                      SizedBox(height: 4),
+                      Text('百强大神推荐榜 · 好评优选',
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.white),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class DeltaCompanionPage extends StatelessWidget {
+  const DeltaCompanionPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('三角洲端游')),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
+          children: [
+            Container(
+              height: 156,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xff263b59), Color(0xff9b4c48)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text('百强大神推荐榜',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.w900)),
+                  SizedBox(height: 6),
+                  Text('服务贴心 · 好评优选',
+                      style: TextStyle(color: Colors.white70, fontSize: 14)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(label: Text('优选俱乐部')),
+                Chip(label: Text('魔王技术')),
+                Chip(label: Text('人工派单')),
+                Chip(label: Text('一键找人')),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const _DeltaCompanionCard(
+              name: '若尘',
+              price: '80',
+              tags: ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰', '秒接单'],
+            ),
+            const _DeltaCompanionCard(
+              name: '圆子ovo冲冲冲',
+              price: '64',
+              tags: ['金牌娱乐', '三角洲巅峰', '秒接单'],
+            ),
+            const _DeltaCompanionCard(
+              name: '董可爱呀',
+              price: '88',
+              tags: ['魔王技术', '金牌娱乐', '三角洲巅峰'],
+            ),
+          ],
+        ),
+      );
+}
+
+class _DeltaCompanionCard extends StatelessWidget {
+  const _DeltaCompanionCard({
+    required this.name,
+    required this.price,
+    required this.tags,
+  });
+  final String name;
+  final String price;
+  final List<String> tags;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              const CircleAvatar(
+                radius: 30,
+                child: Icon(Icons.person_outline, size: 30),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      children: tags
+                          .map((tag) => Chip(
+                                label: Text(tag),
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                              ))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('$price 币 / 小时',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+              FilledButton(onPressed: () {}, child: const Text('查看')),
+            ],
+          ),
+        ),
+      );
+}
+
 class CompanionProfile {
   const CompanionProfile(
       {required this.name,
@@ -6276,6 +6448,15 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
       body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
           children: [
+            _DeltaGameEntryButton(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const DeltaCompanionPage(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             const _CompanionNotice(),
             const SizedBox(height: 12),
             TextField(
