@@ -5487,8 +5487,8 @@ class _MyProfilePostCard extends StatelessWidget {
     final ratio = width != null && height != null && width > 0 && height > 0
         ? width / height
         : 4 / 3;
-    return AspectRatio(
-      aspectRatio: ratio,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: thumbnail ? 400 : 300),
       child: _PermanentCachedImage(
         url: url,
         width: double.infinity,
@@ -6754,6 +6754,17 @@ class _FateMatchPageState extends State<FateMatchPage> {
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
           title: const Text('缘分匹配'),
+          actions: [
+            IconButton(
+              tooltip: '分享',
+              icon: const Icon(Icons.share_outlined),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('分享功能暂未接入')),
+                );
+              },
+            ),
+          ],
         ),
         body: Stack(children: [
           Positioned.fill(
