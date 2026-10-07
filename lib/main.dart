@@ -2015,6 +2015,25 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onOpen;
 
+  double _mediaRatio({required bool thumbnail}) {
+    final width = thumbnail ? post.thumbnailWidth : post.imageWidth;
+    final height = thumbnail ? post.thumbnailHeight : post.imageHeight;
+    if (width != null && height != null && width > 0 && height > 0) {
+      return width / height;
+    }
+    return 4 / 3;
+  }
+
+  Widget _stableMedia({required String url, required bool thumbnail}) =>
+      AspectRatio(
+        aspectRatio: _mediaRatio(thumbnail: thumbnail),
+        child: _PermanentCachedImage(
+          url: url,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final image = post.imageUrl?.trim();
@@ -2032,11 +2051,7 @@ class _DiscoverProfileCard extends StatelessWidget {
               if (image != null && image.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: _PermanentCachedImage(
-                    url: image,
-                    width: double.infinity,
-                    fit: BoxFit.fitWidth,
-                  ),
+                  child: _stableMedia(url: image, thumbnail: false),
                 )
               else if (video != null && video.isNotEmpty)
                 ClipRRect(
@@ -2045,10 +2060,9 @@ class _DiscoverProfileCard extends StatelessWidget {
                     alignment: Alignment.topCenter,
                     children: [
                       post.thumbnailUrl?.isNotEmpty == true
-                          ? _PermanentCachedImage(
+                          ? _stableMedia(
                               url: post.thumbnailUrl!,
-                              width: double.infinity,
-                              fit: BoxFit.fitWidth,
+                              thumbnail: true,
                             )
                           : const SizedBox(
                               height: 96,
