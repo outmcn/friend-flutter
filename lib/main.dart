@@ -6193,6 +6193,127 @@ class GameCompanionPlazaPage extends StatefulWidget {
   State<GameCompanionPlazaPage> createState() => _GameCompanionPlazaPageState();
 }
 
+class DeltaCompanionPage extends StatefulWidget {
+  const DeltaCompanionPage({super.key});
+  @override
+  State<DeltaCompanionPage> createState() => _DeltaCompanionPageState();
+}
+
+class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
+  int tab = 0;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('三角洲端游')),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
+          children: [
+            _deltaBanner(),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List.generate(
+                  4,
+                  (index) => ChoiceChip(
+                        label: Text(['明星陪玩', '魔王技术', '人工派单', '一键找人'][index]),
+                        selected: tab == index,
+                        onSelected: (_) => setState(() => tab = index),
+                      )),
+            ),
+            const SizedBox(height: 14),
+            if (tab == 0)
+              _starPage()
+            else if (tab == 1)
+              _techPage()
+            else if (tab == 2)
+              _orderPage()
+            else
+              _filterPage(),
+          ],
+        ),
+      );
+
+  Widget _deltaBanner() => Container(
+        height: 156,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              colors: [Color(0xff263b59), Color(0xff9b4c48)]),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('百强大神推荐榜',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w900)),
+            SizedBox(height: 6),
+            Text('服务贴心 · 好评优选',
+                style: TextStyle(color: Colors.white70, fontSize: 14)),
+          ],
+        ),
+      );
+
+  Widget _starPage() => const Column(children: [
+        _DeltaCompanionCard(
+            name: '若尘',
+            price: '80',
+            tags: ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰', '秒接单']),
+        _DeltaCompanionCard(
+            name: '圆子ovo冲冲冲', price: '64', tags: ['金牌娱乐', '三角洲巅峰', '秒接单']),
+        _DeltaCompanionCard(
+            name: '董可爱呀', price: '88', tags: ['魔王技术', '金牌娱乐', '三角洲巅峰']),
+      ]);
+
+  Widget _techPage() => const Column(children: [
+        _DeltaCompanionCard(
+            name: '魔王S大神', price: '108', tags: ['魔王S', '三角洲巅峰', '技术指导']),
+        _DeltaCompanionCard(
+            name: '金牌大神', price: '96', tags: ['金牌大神', '航天基地', '秒接单']),
+      ]);
+
+  Widget _orderPage() =>
+      const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('订单要求',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+        SizedBox(height: 12),
+        Card(
+            child: ListTile(
+                title: Text('服务分类'),
+                subtitle: Text('上分陪玩 · 娱乐开黑 · 语音陪伴 · 新手教学'))),
+        Card(
+            child: ListTile(
+                title: Text('游戏地图'),
+                subtitle: Text('不限 · 巴克什 · 潮汐监狱 · 航天基地 · 长弓溪谷 · 零号大坝'))),
+        Card(
+            child: ListTile(
+                title: Text('考核等级'), subtitle: Text('不限 · 魔王S · 金牌大神'))),
+      ]);
+
+  Widget _filterPage() =>
+      const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('我的要求',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+        Card(child: ListTile(title: Text('性别'), subtitle: Text('不限 · 男 · 女'))),
+        Card(child: ListTile(title: Text('服务模式'), subtitle: Text('机密价'))),
+        Card(child: ListTile(title: Text('游戏模式'), subtitle: Text('不限'))),
+        Card(
+            child: ListTile(
+                title: Text('游戏地图'),
+                subtitle: Text('不限 · 巴克什 · 潮汐监狱 · 航天基地 · 长弓溪谷 · 零号大坝'))),
+        Card(
+            child: ListTile(
+                title: Text('考核等级'), subtitle: Text('不限 · 魔王S · 金牌大神'))),
+        Card(child: ListTile(title: Text('是否单陪'), subtitle: Text('不限'))),
+        Card(
+            child: ListTile(
+                title: Text('更多要求'), subtitle: Text('达到等级 ≥ 白银2 后解锁'))),
+      ]);
+}
+
 class _DeltaGameEntryButton extends StatelessWidget {
   const _DeltaGameEntryButton({required this.onTap});
   final VoidCallback onTap;
@@ -6240,71 +6361,6 @@ class _DeltaGameEntryButton extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      );
-}
-
-class DeltaCompanionPage extends StatelessWidget {
-  const DeltaCompanionPage({super.key});
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('三角洲端游')),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
-          children: [
-            Container(
-              height: 156,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xff263b59), Color(0xff9b4c48)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text('百强大神推荐榜',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 25,
-                          fontWeight: FontWeight.w900)),
-                  SizedBox(height: 6),
-                  Text('服务贴心 · 好评优选',
-                      style: TextStyle(color: Colors.white70, fontSize: 14)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(label: Text('优选俱乐部')),
-                Chip(label: Text('魔王技术')),
-                Chip(label: Text('人工派单')),
-                Chip(label: Text('一键找人')),
-              ],
-            ),
-            const SizedBox(height: 14),
-            const _DeltaCompanionCard(
-              name: '若尘',
-              price: '80',
-              tags: ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰', '秒接单'],
-            ),
-            const _DeltaCompanionCard(
-              name: '圆子ovo冲冲冲',
-              price: '64',
-              tags: ['金牌娱乐', '三角洲巅峰', '秒接单'],
-            ),
-            const _DeltaCompanionCard(
-              name: '董可爱呀',
-              price: '88',
-              tags: ['魔王技术', '金牌娱乐', '三角洲巅峰'],
-            ),
-          ],
         ),
       );
 }
