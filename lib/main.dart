@@ -2025,8 +2025,8 @@ class _DiscoverProfileCard extends StatelessWidget {
   }
 
   Widget _stableMedia({required String url, required bool thumbnail}) =>
-      AspectRatio(
-        aspectRatio: _mediaRatio(thumbnail: thumbnail),
+      ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: thumbnail ? 400 : 300),
         child: _PermanentCachedImage(
           url: url,
           width: double.infinity,
