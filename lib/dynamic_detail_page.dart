@@ -654,12 +654,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                 ],
               ),
         actions: [
-          if (item != null && ownerResolved)
-            IconButton(
-              tooltip: '分享',
-              onPressed: deleting ? null : () => _openShareMenu(item),
-              icon: const Icon(Icons.share_outlined),
-            ),
+          IconButton(
+            tooltip: '分享',
+            onPressed:
+                item == null || deleting ? null : () => _openShareMenu(item),
+            icon: Icon(TIcons.share_1),
+          ),
         ],
       ),
       body: item == null && loading
