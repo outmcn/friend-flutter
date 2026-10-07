@@ -109,33 +109,36 @@ class _DiscoverPageState extends State<DiscoverPage> {
             SliverPadding(
               padding: const EdgeInsets.all(8),
               sliver: SliverToBoxAdapter(
-                child: MasonryGridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  itemCount: feed.posts.length,
-                  itemBuilder: (context, index) {
-                    final post = feed.posts[index];
-                    if (index + 1 < feed.posts.length) {
-                      final next = feed.posts[index + 1];
-                      if (next.imageUrl?.isNotEmpty == true) {
-                        unawaited(
-                            _PermanentImageCache.prefetch(next.imageUrl!));
+                child: SizedBox(
+                  width: double.infinity,
+                  child: MasonryGridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    itemCount: feed.posts.length,
+                    itemBuilder: (context, index) {
+                      final post = feed.posts[index];
+                      if (index + 1 < feed.posts.length) {
+                        final next = feed.posts[index + 1];
+                        if (next.imageUrl?.isNotEmpty == true) {
+                          unawaited(
+                              _PermanentImageCache.prefetch(next.imageUrl!));
+                        }
+                        if (next.thumbnailUrl?.isNotEmpty == true) {
+                          unawaited(_PermanentImageCache.prefetch(
+                              next.thumbnailUrl!));
+                        }
                       }
-                      if (next.thumbnailUrl?.isNotEmpty == true) {
-                        unawaited(
-                            _PermanentImageCache.prefetch(next.thumbnailUrl!));
-                      }
-                    }
-                    return _DiscoverProfileCard(
-                      key: ValueKey(post.id),
-                      post: post,
-                      onLike: () => _like(post),
-                      onOpen: () => _open(post),
-                    );
-                  },
+                      return _DiscoverProfileCard(
+                        key: ValueKey(post.id),
+                        post: post,
+                        onLike: () => _like(post),
+                        onOpen: () => _open(post),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
