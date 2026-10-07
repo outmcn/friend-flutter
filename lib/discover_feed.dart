@@ -18,7 +18,8 @@ class DiscoverFeed extends ChangeNotifier {
     if (disposed || busy || (!refresh && initialized && !hasMore)) return;
     busy = true;
     error = null;
-    notifyListeners();
+    // 分页加载期间保留已有卡片，避免滚动时把整张瀑布流替换成加载状态。
+    if (!refresh) notifyListeners();
     try {
       final batch = await fetch(refresh ? 0 : offset);
       if (disposed) return;

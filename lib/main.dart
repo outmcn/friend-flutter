@@ -33,7 +33,10 @@ part 'dynamic_detail_page.dart';
 
 class _PermanentImageCache {
   static final Map<String, String> _localPaths = <String, String>{};
-  static final Map<String, Future<String?>> _pending = <String, Future<String?>>{};
+  static final Map<String, Future<String?>> _pending =
+      <String, Future<String?>>{};
+  static final Map<String, ImageProvider<Object>> _providers =
+      <String, ImageProvider<Object>>{};
 
   static String identity(String url) {
     final normalized = url.trim();
@@ -56,6 +59,14 @@ class _PermanentImageCache {
     return await file.exists() && await file.length() > 0 ? file.path : null;
   }
 
+  static ImageProvider<Object>? provider(String url) =>
+      _providers[identity(url)];
+
+  static void rememberProvider(String url, ImageProvider<Object> provider) {
+    final key = identity(url);
+    if (key.isNotEmpty) _providers[key] = provider;
+  }
+
   static String? peek(String url) => _localPaths[identity(url)];
 
   static Future<String?> get(String url) async {
@@ -67,7 +78,8 @@ class _PermanentImageCache {
     return _pending.putIfAbsent(key, () async {
       try {
         final directory = await getApplicationDocumentsDirectory();
-        final cacheDirectory = Directory('${directory.path}/friend_media_cache');
+        final cacheDirectory =
+            Directory('${directory.path}/friend_media_cache');
         await cacheDirectory.create(recursive: true);
         final fileName = base64Url.encode(utf8.encode(key)).replaceAll('=', '');
         final file = File('${cacheDirectory.path}/$fileName');
@@ -77,7 +89,8 @@ class _PermanentImageCache {
         }
         if (await file.exists()) await file.delete();
         final response = await http.get(Uri.parse(normalized));
-        if (response.statusCode < 200 || response.statusCode >= 300) return null;
+        if (response.statusCode < 200 || response.statusCode >= 300)
+          return null;
         if (response.bodyBytes.isEmpty) return null;
         final temporary = File('${file.path}.part');
         await temporary.writeAsBytes(response.bodyBytes, flush: true);
@@ -118,6 +131,8 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   @override
   void initState() {
     super.initState();
+    final provider = _PermanentImageCache.provider(widget.url);
+    if (provider is FileImage) localPath = provider.file.path;
     _load();
   }
 
@@ -163,8 +178,10 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   Widget build(BuildContext context) {
     final path = localPath;
     if (path != null) {
-      return Image.file(
-        File(path),
+      final provider = FileImage(File(path));
+      _PermanentImageCache.rememberProvider(widget.url, provider);
+      return Image(
+        image: provider,
         width: widget.width,
         height: widget.height,
         fit: widget.fit,
@@ -177,6 +194,7 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
     );
   }
 }
+
 int? _intValue(Object? value) {
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value);
@@ -242,7 +260,8 @@ Future<void> syncCachedLocation(DDPostService service, String token) async {
     );
     try {
       final geocoder = Geocoding();
-      final marks = await geocoder.placemarkFromCoordinates(latitude, longitude);
+      final marks =
+          await geocoder.placemarkFromCoordinates(latitude, longitude);
       final mark = marks.isNotEmpty ? marks.first : null;
       final resolvedCity = (mark?.locality ?? mark?.subAdministrativeArea ?? '')
           .replaceAll('市', '')
@@ -534,7 +553,8 @@ class _AuthGateState extends State<AuthGate> {
 }
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key, required this.auth, required this.onAuthenticated});
+  const AuthPage(
+      {super.key, required this.auth, required this.onAuthenticated});
   final FriendAuthClient auth;
   final ValueChanged<String> onAuthenticated;
 
@@ -560,7 +580,10 @@ class _AuthPageState extends State<AuthPage> {
       setState(() => error = '请输入账号和密码');
       return;
     }
-    setState(() { loading = true; error = null; });
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
       final value = await widget.auth.login(
         username: username.text,
@@ -582,15 +605,27 @@ class _AuthPageState extends State<AuthPage> {
         subtitle: '使用手机号和密码登录 DD',
         child: Column(
           children: [
-            _AuthFieldController(label: '手机号码', icon: Icons.phone_outlined, controller: username),
+            _AuthFieldController(
+                label: '手机号码',
+                icon: Icons.phone_outlined,
+                controller: username),
             const SizedBox(height: 14),
-            _AuthFieldController(label: '密码', icon: Icons.lock_outline, controller: password, obscureText: true),
+            _AuthFieldController(
+                label: '密码',
+                icon: Icons.lock_outline,
+                controller: password,
+                obscureText: true),
             if (error != null) ...[
               const SizedBox(height: 10),
-              Align(alignment: Alignment.centerLeft, child: Text(error!, style: const TextStyle(color: Colors.orange))),
+              Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(error!,
+                      style: const TextStyle(color: Colors.orange))),
             ],
             const SizedBox(height: 18),
-            _PrimaryAuthButton(label: loading ? '登录中…' : '登录', onTap: loading ? () {} : _login),
+            _PrimaryAuthButton(
+                label: loading ? '登录中…' : '登录',
+                onTap: loading ? () {} : _login),
             TextButton(onPressed: () {}, child: const Text('没有账号？注册')),
           ],
         ),
@@ -1760,16 +1795,21 @@ class _DynamicPostCard extends StatelessWidget {
                   minimumSize: const Size(0, 34),
                   fixedSize: const Size(78, 34),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: const VisualDensity(horizontal: -1, vertical: -1),
-                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+                  visualDensity:
+                      const VisualDensity(horizontal: -1, vertical: -1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
                   textStyle: const TextStyle(fontSize: 13, height: 1.15),
-                  foregroundColor: post.following ? Theme.of(context).colorScheme.onSurface : Colors.white,
+                  foregroundColor: post.following
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Colors.white,
                   side: BorderSide(
                     color: post.following
                         ? Theme.of(context).colorScheme.outlineVariant
                         : Colors.red,
                   ),
-                  backgroundColor: post.following ? Colors.transparent : Colors.red,
+                  backgroundColor:
+                      post.following ? Colors.transparent : Colors.red,
                 ),
                 child: Text(post.following ? '私聊' : '关注'),
               ),
@@ -1795,11 +1835,11 @@ class _DynamicPostCard extends StatelessWidget {
               onTap: onOpen,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 500),
-                      child: _PermanentCachedImage(
-                        url: post.imageUrl!,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                child: _PermanentCachedImage(
+                  url: post.imageUrl!,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -1813,7 +1853,8 @@ class _DynamicPostCard extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  if (post.thumbnailUrl != null && post.thumbnailUrl!.isNotEmpty)
+                  if (post.thumbnailUrl != null &&
+                      post.thumbnailUrl!.isNotEmpty)
                     SizedBox(
                       width: double.infinity,
                       child: ConstrainedBox(
@@ -1825,7 +1866,8 @@ class _DynamicPostCard extends StatelessWidget {
                       ),
                     )
                   else
-                    const SizedBox(height: 225, child: ColoredBox(color: Colors.black26)),
+                    const SizedBox(
+                        height: 225, child: ColoredBox(color: Colors.black26)),
                   const Icon(
                     Icons.play_circle_outline,
                     size: 56,
@@ -1891,14 +1933,16 @@ class _DynamicPostCard extends StatelessWidget {
                   post.nickname,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
               IconButton(
                 onPressed: onLike,
                 iconSize: 17,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(width: 24, height: 24),
+                constraints:
+                    const BoxConstraints.tightFor(width: 24, height: 24),
                 color: post.liked ? Colors.red : null,
                 icon: Icon(TIcons.thumb_up_1),
               ),
@@ -2050,7 +2094,8 @@ class _DiscoverProfileCard extends StatelessWidget {
                                 width: 22,
                                 height: 22,
                                 fit: BoxFit.cover,
-                                placeholder: const Icon(Icons.person_outline, size: 22),
+                                placeholder:
+                                    const Icon(Icons.person_outline, size: 22),
                               ),
                             ),
                     ),
@@ -2075,8 +2120,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       color: post.liked ? Colors.red : null,
                       icon: Icon(TIcons.thumb_up_1),
                     ),
-                    Text('${post.likes}',
-                        style: const TextStyle(fontSize: 12)),
+                    Text('${post.likes}', style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -2089,10 +2133,13 @@ class _DiscoverProfileCard extends StatelessWidget {
 }
 
 class _VideoPlaybackRegistry {
-  static final Set<_NetworkVideoPreviewState> _players = <_NetworkVideoPreviewState>{};
+  static final Set<_NetworkVideoPreviewState> _players =
+      <_NetworkVideoPreviewState>{};
 
-  static void register(_NetworkVideoPreviewState player) => _players.add(player);
-  static void unregister(_NetworkVideoPreviewState player) => _players.remove(player);
+  static void register(_NetworkVideoPreviewState player) =>
+      _players.add(player);
+  static void unregister(_NetworkVideoPreviewState player) =>
+      _players.remove(player);
 
   static void stopAll() {
     for (final player in List<_NetworkVideoPreviewState>.from(_players)) {
@@ -2255,7 +2302,8 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
           if (ended)
             GestureDetector(
               onTap: _replay,
-              child: const Icon(Icons.replay_circle_filled, size: 64, color: Colors.white),
+              child: const Icon(Icons.replay_circle_filled,
+                  size: 64, color: Colors.white),
             ),
         ],
       ),
@@ -2920,6 +2968,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
       if (mounted) setState(() => error = '视频选择失败：$e');
     }
   }
+
   Future<void> _pickMedia() async {
     final type = await showModalBottomSheet<String>(
       context: context,
@@ -2952,8 +3001,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final decoded = img.decodeImage(bytes);
     final resized = decoded == null
         ? null
-        : (decoded.width > 1600 ? img.copyResize(decoded, width: 1600) : decoded);
-    final compressed = resized == null ? bytes : img.encodeJpg(resized, quality: 82);
+        : (decoded.width > 1600
+            ? img.copyResize(decoded, width: 1600)
+            : decoded);
+    final compressed =
+        resized == null ? bytes : img.encodeJpg(resized, quality: 82);
     final signed = await _service.postMediaUploadUrl(
       token: token,
       fileName: selectedImage!.name,
@@ -2963,7 +3015,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final url = signed['url'];
     final key = signed['objectKey'];
     if (url is! String || key is! String) throw Exception('图片上传地址格式错误');
-    if (!await _service.uploadAvatar(url: url, bytes: compressed, contentType: 'image/jpeg')) {
+    if (!await _service.uploadAvatar(
+        url: url, bytes: compressed, contentType: 'image/jpeg')) {
       throw Exception('图片上传失败');
     }
     return key;
@@ -2982,12 +3035,12 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final url = signed['url'];
     final key = signed['objectKey'];
     if (url is! String || key is! String) throw Exception('视频上传地址格式错误');
-    if (!await _service.uploadAvatar(url: url, bytes: bytes, contentType: 'video/mp4')) {
+    if (!await _service.uploadAvatar(
+        url: url, bytes: bytes, contentType: 'video/mp4')) {
       throw Exception('视频上传失败');
     }
     return key;
   }
-
 
   Future<String?> _videoThumbnailKey(String token) async {
     if (selectedVideo == null) return null;
@@ -3007,7 +3060,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final url = signed['url'];
     final key = signed['objectKey'];
     if (url is! String || key is! String) throw Exception('视频预览图上传地址格式错误');
-    if (!await _service.uploadAvatar(url: url, bytes: bytes, contentType: 'image/jpeg')) {
+    if (!await _service.uploadAvatar(
+        url: url, bytes: bytes, contentType: 'image/jpeg')) {
       throw Exception('视频预览图上传失败');
     }
     return key;
@@ -3081,8 +3135,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         return;
                       }
                       if (_content.text.trim().isEmpty &&
-          selectedImage == null &&
-          selectedVideo == null) {
+                          selectedImage == null &&
+                          selectedVideo == null) {
                         setState(() => error = '请输入动态内容或选择图片');
                         return;
                       }
@@ -3880,7 +3934,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => actionLoading = false);
     }
@@ -3940,20 +3995,23 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 children: [
                                   CircleAvatar(
                                     radius: 40,
-                                  child: _avatarUrl == null || _avatarUrl!.isEmpty
-                                      ? const Icon(Icons.person_outline, size: 34)
-                                      : ClipOval(
-                                          child: _PermanentCachedImage(
-                                            url: _avatarUrl!,
-                                            width: 80,
-                                            height: 80,
-                                            fit: BoxFit.cover,
-                                            placeholder: const ColoredBox(
-                                              color: Colors.black12,
-                                              child: Icon(Icons.person, size: 42),
+                                    child: _avatarUrl == null ||
+                                            _avatarUrl!.isEmpty
+                                        ? const Icon(Icons.person_outline,
+                                            size: 34)
+                                        : ClipOval(
+                                            child: _PermanentCachedImage(
+                                              url: _avatarUrl!,
+                                              width: 80,
+                                              height: 80,
+                                              fit: BoxFit.cover,
+                                              placeholder: const ColoredBox(
+                                                color: Colors.black12,
+                                                child: Icon(Icons.person,
+                                                    size: 42),
+                                              ),
                                             ),
                                           ),
-                                        ),
                                   ),
                                   Positioned(
                                     left: 0,
@@ -3976,7 +4034,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                     SizedBox(
                                       height: 80,
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
@@ -3984,7 +4043,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                                 child: Text(
                                                   '${p?['nickname'] ?? widget.name}',
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                   style: const TextStyle(
                                                     fontSize: 25,
                                                     fontWeight: FontWeight.w900,
@@ -3994,7 +4054,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                               const SizedBox(width: 8),
                                               _SonicProfileButton(
                                                 playing: _sonicPlaying,
-                                                enabled: _sonicUrl?.isNotEmpty == true,
+                                                enabled:
+                                                    _sonicUrl?.isNotEmpty ==
+                                                        true,
                                                 onTap: _toggleSonic,
                                               ),
                                             ],
@@ -4004,21 +4066,24 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                             children: [
                                               _InlineProfileStat(
                                                 label: '关注',
-                                                value: '${p?['following'] ?? 0}',
+                                                value:
+                                                    '${p?['following'] ?? 0}',
                                                 valueFontSize: 18,
                                                 labelFontSize: 14,
                                               ),
                                               const SizedBox(width: 18),
                                               _InlineProfileStat(
                                                 label: '粉丝',
-                                                value: '${p?['followers'] ?? 0}',
+                                                value:
+                                                    '${p?['followers'] ?? 0}',
                                                 valueFontSize: 18,
                                                 labelFontSize: 14,
                                               ),
                                               const SizedBox(width: 18),
                                               _InlineProfileStat(
                                                 label: '获赞',
-                                                value: '${p?['receivedLikes'] ?? 0}',
+                                                value:
+                                                    '${p?['receivedLikes'] ?? 0}',
                                                 valueFontSize: 18,
                                                 labelFontSize: 14,
                                               ),
@@ -4036,40 +4101,59 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                           children: (profile?['tags'] is List
                                                   ? (profile!['tags'] as List)
                                                       .map((value) => '$value')
-                                                      .where((value) => value.trim().isNotEmpty)
+                                                      .where((value) => value
+                                                          .trim()
+                                                          .isNotEmpty)
                                                       .toList()
                                                   : <String>[])
                                               .map((tag) => Padding(
-                                                    padding: const EdgeInsets.only(right: 6),
-                                                    child: _ProfileTag(text: tag),
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            right: 6),
+                                                    child:
+                                                        _ProfileTag(text: tag),
                                                   ))
                                               .toList(),
                                         ),
                                       ),
                                     ),
-                                    if ('${p?['clubName'] ?? p?['club'] ?? ''}'.trim().isNotEmpty) ...[
+                                    if ('${p?['clubName'] ?? p?['club'] ?? ''}'
+                                        .trim()
+                                        .isNotEmpty) ...[
                                       const SizedBox(height: 12),
                                       Container(
                                         width: double.infinity,
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 10),
                                         decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                         child: Row(
                                           children: [
-                                            const Icon(Icons.groups_outlined, size: 20),
+                                            const Icon(Icons.groups_outlined,
+                                                size: 20),
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
                                                 '${p?['clubName'] ?? p?['club']}',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(fontWeight: FontWeight.w700),
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w700),
                                               ),
                                             ),
-                                            if ('${p?['clubMemberCount'] ?? ''}'.trim().isNotEmpty)
-                                              Text('${p?['clubMemberCount']}', style: TextStyle(color: Theme.of(context).hintColor)),
+                                            if ('${p?['clubMemberCount'] ?? ''}'
+                                                .trim()
+                                                .isNotEmpty)
+                                              Text('${p?['clubMemberCount']}',
+                                                  style: TextStyle(
+                                                      color: Theme.of(context)
+                                                          .hintColor)),
                                           ],
                                         ),
                                       ),
@@ -4085,40 +4169,57 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                             children: [
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: actionLoading ? null : toggleFollow,
+                                  onPressed:
+                                      actionLoading ? null : toggleFollow,
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: following
-                                        ? Theme.of(context).colorScheme.onSurface
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
                                         : Colors.white,
-                                    backgroundColor:
-                                        following ? Colors.transparent : Colors.red,
+                                    backgroundColor: following
+                                        ? Colors.transparent
+                                        : Colors.red,
                                     side: BorderSide(
                                       color: following
-                                          ? Theme.of(context).colorScheme.outlineVariant
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .outlineVariant
                                           : Colors.red,
                                     ),
                                   ),
                                   icon: Icon(
-                                    following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined,
+                                    following
+                                        ? Icons.person_remove_outlined
+                                        : Icons.person_add_alt_1_outlined,
                                   ),
-                                    label: Text(
-                                      actionLoading
-                                          ? '处理中…'
-                                          : following
-                                              ? (p?['followedByViewer'] == true ? '好友' : '已关注')
-                                              : (p?['followedByViewer'] == true ? '回关' : '关注'),
-                                    ),
+                                  label: Text(
+                                    actionLoading
+                                        ? '处理中…'
+                                        : following
+                                            ? (p?['followedByViewer'] == true
+                                                ? '好友'
+                                                : '已关注')
+                                            : (p?['followedByViewer'] == true
+                                                ? '回关'
+                                                : '关注'),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                                  onPressed: () => ScaffoldMessenger.of(context)
+                                      .showSnackBar(
                                     const SnackBar(content: Text('私聊功能暂未接入')),
                                   ),
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: Theme.of(context).colorScheme.primary,
-                                    side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                                    foregroundColor:
+                                        Theme.of(context).colorScheme.primary,
+                                    side: BorderSide(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary),
                                   ),
                                   icon: const Icon(Icons.chat_bubble_outline),
                                   label: const Text('私聊'),
@@ -4220,7 +4321,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
     if (shouldShow != _showStickyNickname && mounted) {
       setState(() => _showStickyNickname = shouldShow);
     }
-
   }
 
   @override
@@ -4263,7 +4363,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final key = '$_profileTabCachePrefix$tab';
     final expiry = prefs.getInt('$key.urlExpiresAt');
-    if (expiry != null && DateTime.now().millisecondsSinceEpoch >= expiry) return null;
+    if (expiry != null && DateTime.now().millisecondsSinceEpoch >= expiry)
+      return null;
     final raw = prefs.getString(key);
     if (raw == null || raw.isEmpty) return null;
     try {
@@ -4311,15 +4412,18 @@ class _DDProfilePageState extends State<DDProfilePage> {
         _sonicUrl =
             DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
         final avatarKey = '${loadedProfile['avatarKey'] ?? ''}'.trim();
-        _avatarUrl = avatarKey.isEmpty ? null : await service.resolveAvatarUrl(t, avatarKey);
+        _avatarUrl = avatarKey.isEmpty
+            ? null
+            : await service.resolveAvatarUrl(t, avatarKey);
         final profileTags = loadedProfile['tags'];
         _tags = profileTags is List
-            ? profileTags.map((value) => '$value').where((value) => value.trim().isNotEmpty).toList()
+            ? profileTags
+                .map((value) => '$value')
+                .where((value) => value.trim().isNotEmpty)
+                .toList()
             : <String>[];
       }
-      final cached = forceRefresh
-          ? null
-          : await _readTabCache(targetTab);
+      final cached = forceRefresh ? null : await _readTabCache(targetTab);
       if (cached != null && !forceRefresh) {
         tabPosts[targetTab] = cached;
         if (mounted) {
@@ -4418,200 +4522,228 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                  if (error != null)
-                    _PageErrorState(
-                      title: '资料加载失败',
-                      subtitle: error!,
-                      onRetry: load,
-                    ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipOval(
-                              child: SizedBox(
-                                width: 84,
-                                height: 84,
-                                child: _avatarUrl == null || _avatarUrl!.isEmpty
-                                    ? const ColoredBox(
-                                        color: Colors.black12,
-                                        child: Icon(Icons.person, size: 42),
-                                      )
-                                    : _PermanentCachedImage(
-                                        url: _avatarUrl!,
-                                        width: 84,
-                                        height: 84,
-                                        fit: BoxFit.cover,
-                                        placeholder: const ColoredBox(
-                                          color: Colors.black12,
-                                          child: Icon(Icons.person, size: 42),
-                                        ),
+                        if (error != null)
+                          _PageErrorState(
+                            title: '资料加载失败',
+                            subtitle: error!,
+                            onRetry: load,
+                          ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipOval(
+                                    child: SizedBox(
+                                      width: 84,
+                                      height: 84,
+                                      child: _avatarUrl == null ||
+                                              _avatarUrl!.isEmpty
+                                          ? const ColoredBox(
+                                              color: Colors.black12,
+                                              child:
+                                                  Icon(Icons.person, size: 42),
+                                            )
+                                          : _PermanentCachedImage(
+                                              url: _avatarUrl!,
+                                              width: 84,
+                                              height: 84,
+                                              fit: BoxFit.cover,
+                                              placeholder: const ColoredBox(
+                                                color: Colors.black12,
+                                                child: Icon(Icons.person,
+                                                    size: 42),
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _ProfileTag(
+                                              text: '${p?['city'] ?? '未知'}'),
+                                          const SizedBox(width: 8),
+                                          _SonicProfileButton(
+                                            playing: _sonicPlaying,
+                                            enabled:
+                                                _sonicUrl?.isNotEmpty == true,
+                                            onTap: _toggleSonic,
+                                          ),
+                                        ],
                                       ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '${p?['nickname'] ?? 'DD 用户'}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 25,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          IconButton(
+                                            tooltip: '编辑资料',
+                                            padding: EdgeInsets.zero,
+                                            constraints:
+                                                const BoxConstraints.tightFor(
+                                                    width: 30, height: 30),
+                                            onPressed: () async {
+                                              await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const EditProfilePage()),
+                                              );
+                                              if (mounted) load();
+                                            },
+                                            icon: const Icon(
+                                                Icons.edit_outlined,
+                                                size: 18),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _InlineProfileStat(
+                                            label: '粉丝',
+                                            value: '${p?['followers'] ?? 0}',
+                                            onTap: () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const _UserRelationListPage(
+                                                  relation: 'followers',
+                                                  title: '粉丝',
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          _InlineProfileStat(
+                                            label: '关注',
+                                            value: '${p?['following'] ?? 0}',
+                                            onTap: () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const _UserRelationListPage(
+                                                  relation: 'following',
+                                                  title: '关注',
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          _InlineProfileStat(
+                                            label: '获赞',
+                                            value:
+                                                '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
+                                            onTap: () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const _UserRelationListPage(
+                                                  relation: 'likers',
+                                                  title: '获赞',
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _ProfileTag(text: '${p?['city'] ?? '未知'}'),
-                                    const SizedBox(width: 8),
-                                    _SonicProfileButton(
-                                      playing: _sonicPlaying,
-                                      enabled: _sonicUrl?.isNotEmpty == true,
-                                      onTap: _toggleSonic,
-                                    ),
-                                  ],
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                height: 32,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      ..._tags.map((tag) => Padding(
+                                            padding:
+                                                const EdgeInsets.only(right: 6),
+                                            child: _ProfileTag(text: tag),
+                                          )),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          final selected = await Navigator.push<
+                                              List<String>>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  _ProfileTagEditorPage(
+                                                      selectedTags: _tags),
+                                            ),
+                                          );
+                                          if (selected != null && mounted) {
+                                            final t = await _token();
+                                            final updated =
+                                                await service.updateMe(
+                                                    token: t, tags: selected);
+                                            setState(() {
+                                              _tags = selected;
+                                              profile = {
+                                                ...(profile ??
+                                                    <String, dynamic>{}),
+                                                ...updated,
+                                                'tags': selected,
+                                              };
+                                            });
+                                          }
+                                        },
+                                        child: const _ProfileTag(text: '+'),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '${p?['nickname'] ?? 'DD 用户'}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 25,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    IconButton(
-                                      tooltip: '编辑资料',
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints.tightFor(width: 30, height: 30),
-                                      onPressed: () async {
-                                        await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (_) => const EditProfilePage()),
-                                        );
-                                        if (mounted) load();
-                                      },
-                                      icon: const Icon(Icons.edit_outlined, size: 18),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _InlineProfileStat(
-                                      label: '粉丝',
-                                      value: '${p?['followers'] ?? 0}',
-                                      onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const _UserRelationListPage(
-                                            relation: 'followers',
-                                            title: '粉丝',
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    _InlineProfileStat(
-                                      label: '关注',
-                                      value: '${p?['following'] ?? 0}',
-                                      onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const _UserRelationListPage(
-                                            relation: 'following',
-                                            title: '关注',
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    _InlineProfileStat(
-                                      label: '获赞',
-                                      value: '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
-                                      onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const _UserRelationListPage(
-                                            relation: 'likers',
-                                            title: '获赞',
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 32,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                ..._tags.map((tag) => Padding(
-                                      padding: const EdgeInsets.only(right: 6),
-                                      child: _ProfileTag(text: tag),
-                                    )),
-                                GestureDetector(
-                                  onTap: () async {
-                                    final selected = await Navigator.push<List<String>>(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => _ProfileTagEditorPage(selectedTags: _tags),
-                                      ),
-                                    );
-                                    if (selected != null && mounted) {
-                                      final t = await _token();
-                                      final updated = await service.updateMe(token: t, tags: selected);
-                                      setState(() {
-                                        _tags = selected;
-                                        profile = {
-                                          ...(profile ?? <String, dynamic>{}),
-                                          ...updated,
-                                          'tags': selected,
-                                        };
-                                      });
-                                    }
-                                  },
-                                  child: const _ProfileTag(text: '+'),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Card(
-                    margin: EdgeInsets.zero,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                        : Colors.white.withValues(alpha: .72),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                      leading: const Icon(Icons.groups_rounded, color: Color(0xffe6a51a)),
-                      title: Text(
-                        '${p?['clubName'] ?? p?['club'] ?? 'Free-Out地下说唱成员'}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      subtitle: Text(
-                        '${p?['clubMemberCount'] ?? p?['clubCount'] ?? '28/30'}',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                    ),
-                  ),
-                  ]),
+                        const SizedBox(height: 14),
+                        Card(
+                          margin: EdgeInsets.zero,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                              : Colors.white.withValues(alpha: .72),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 2),
+                            leading: const Icon(Icons.groups_rounded,
+                                color: Color(0xffe6a51a)),
+                            title: Text(
+                              '${p?['clubName'] ?? p?['club'] ?? 'Free-Out地下说唱成员'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            subtitle: Text(
+                              '${p?['clubMemberCount'] ?? p?['clubCount'] ?? '28/30'}',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                          ),
+                        ),
+                      ]),
                     ),
                   ),
                   SliverPersistentHeader(
@@ -4656,7 +4788,8 @@ class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
     BuildContext context,
     double shrinkOffset,
     bool overlapsContent,
-  ) => Material(
+  ) =>
+      Material(
         color: Theme.of(context).brightness == Brightness.dark
             ? Theme.of(context).colorScheme.surface
             : Theme.of(context).scaffoldBackgroundColor,
@@ -4712,14 +4845,14 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
       setState(() {
         final current = Map<String, dynamic>.from(users[index]);
         current['followingByViewer'] = followed;
-        current['followedByViewer'] =
-            current['followedByViewer'] == true;
+        current['followedByViewer'] = current['followedByViewer'] == true;
         users[index] = current;
         error = null;
       });
       await load();
     } catch (e) {
-      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -4795,25 +4928,27 @@ class _UserRelationListPageState extends State<_UserRelationListPage> {
                                             ),
                                           ),
                                   leading: '${user['avatar'] ?? ''}'.isEmpty
-                                      ? const CircleAvatar(child: Icon(Icons.person_outline))
+                                      ? const CircleAvatar(
+                                          child: Icon(Icons.person_outline))
                                       : ClipOval(
                                           child: _PermanentCachedImage(
-                                            url: DDPostService.mediaUrl('${user['avatar']}'),
+                                            url: DDPostService.mediaUrl(
+                                                '${user['avatar']}'),
                                             fit: BoxFit.cover,
                                           ),
-                                      ),
+                                        ),
                                   title: Text('${user['nickname'] ?? '用户'}'),
-                                  subtitle: Text(
-                                      widget.relation == 'history'
-                                          ? '${user['city'] ?? '未知地区'} · 访问 ${user['visitCount'] ?? 1} 次'
-                                          : '${user['city'] ?? '未知地区'}'),
+                                  subtitle: Text(widget.relation == 'history'
+                                      ? '${user['city'] ?? '未知地区'} · 访问 ${user['visitCount'] ?? 1} 次'
+                                      : '${user['city'] ?? '未知地区'}'),
                                   trailing: OutlinedButton(
                                     onPressed: userId == null
                                         ? null
                                         : () => _toggleRelation(index),
                                     style: OutlinedButton.styleFrom(
                                       minimumSize: const Size(0, 36),
-                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12),
                                       side: BorderSide(
                                         color: Theme.of(context)
                                             .colorScheme
@@ -4866,15 +5001,22 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
         final path = await recorder.stop();
         if (path == null || path.isEmpty) throw Exception('停止录音失败，未生成音频文件');
         final file = File(path);
-        if (!await file.exists() || await file.length() == 0) throw Exception('录音文件为空');
-        if (mounted) setState(() { recording = false; recordingPath = path; error = null; });
+        if (!await file.exists() || await file.length() == 0)
+          throw Exception('录音文件为空');
+        if (mounted)
+          setState(() {
+            recording = false;
+            recordingPath = path;
+            error = null;
+          });
         _recordingTimer?.cancel();
         return;
       }
       final permission = await recorder.hasPermission();
       if (!permission) throw Exception('没有麦克风权限，请在设置中允许 DD 使用麦克风');
       final dir = await getTemporaryDirectory();
-      final path = '${dir.path}/friend_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path =
+          '${dir.path}/friend_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await recorder.start(
         const RecordConfig(
           encoder: AudioEncoder.aacLc,
@@ -4900,16 +5042,25 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
           setState(() {});
         }
       });
-      if (mounted) setState(() { recording = true; error = null; });
+      if (mounted)
+        setState(() {
+          recording = true;
+          error = null;
+        });
     } catch (e) {
-      if (mounted) setState(() { recording = false; error = e.toString().replaceFirst('Exception: ', ''); });
+      if (mounted)
+        setState(() {
+          recording = false;
+          error = e.toString().replaceFirst('Exception: ', '');
+        });
     }
   }
 
   Future<void> _preview() async {
     final localPath = recordingPath;
     final url = widget.currentUrl;
-    if ((localPath == null || localPath.isEmpty) && (url == null || url.isEmpty)) {
+    if ((localPath == null || localPath.isEmpty) &&
+        (url == null || url.isEmpty)) {
       setState(() => error = '请先录制声音');
       return;
     }
@@ -4982,7 +5133,10 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
       return;
     }
     try {
-      setState(() { saving = true; error = null; });
+      setState(() {
+        saving = true;
+        error = null;
+      });
       final token = await _token();
       final bytes = await File(localPath).readAsBytes();
       final signed = await service.voiceUploadUrl(
@@ -4993,13 +5147,15 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
       final url = signed['url'];
       final key = signed['objectKey'];
       if (url is! String || key is! String) throw Exception('声音上传地址格式错误');
-      if (!await service.uploadAvatar(url: url, bytes: bytes, contentType: 'audio/mp4')) {
+      if (!await service.uploadAvatar(
+          url: url, bytes: bytes, contentType: 'audio/mp4')) {
         throw Exception('声音上传失败');
       }
       await service.updateMe(token: token, voiceKey: key);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -5034,7 +5190,8 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: saving ? null : _toggleSonic,
-                        icon: Icon(playing ? Icons.pause : Icons.cloud_outlined),
+                        icon:
+                            Icon(playing ? Icons.pause : Icons.cloud_outlined),
                         label: const Text('云端声音'),
                       ),
                     ),
@@ -5117,7 +5274,10 @@ class _SonicProfileButton extends StatelessWidget {
 }
 
 class _MyProfileIconTabs extends StatelessWidget {
-  const _MyProfileIconTabs({required this.selectedTab, required this.onSelect, this.postsOnly = false});
+  const _MyProfileIconTabs(
+      {required this.selectedTab,
+      required this.onSelect,
+      this.postsOnly = false});
   final int selectedTab;
   final ValueChanged<int> onSelect;
   final bool postsOnly;
@@ -5228,7 +5388,7 @@ class _MyProfilePostCard extends StatelessWidget {
               if (image != null && image.isNotEmpty)
                 LayoutBuilder(
                   builder: (context, constraints) => ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 300),
+                    constraints: const BoxConstraints(maxHeight: 300),
                     child: Image.network(
                       DDPostService.mediaUrl(image),
                       width: double.infinity,
@@ -5247,7 +5407,8 @@ class _MyProfilePostCard extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      if (post.thumbnailUrl != null && post.thumbnailUrl!.isNotEmpty)
+                      if (post.thumbnailUrl != null &&
+                          post.thumbnailUrl!.isNotEmpty)
                         SizedBox(
                           width: double.infinity,
                           child: ConstrainedBox(
@@ -5256,7 +5417,8 @@ class _MyProfilePostCard extends StatelessWidget {
                               post.thumbnailUrl!,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
                             ),
                           ),
                         )
@@ -5265,11 +5427,11 @@ class _MyProfilePostCard extends StatelessWidget {
                           height: 225,
                           child: ColoredBox(color: Colors.black26),
                         ),
-                  const Icon(
-                    Icons.play_circle_outline,
-                    size: 56,
-                    color: Colors.white,
-                  ),
+                      const Icon(
+                        Icons.play_circle_outline,
+                        size: 56,
+                        color: Colors.white,
+                      ),
                     ],
                   ),
                 )
@@ -5281,7 +5443,9 @@ class _MyProfilePostCard extends StatelessWidget {
                     alignment: Alignment.center,
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      post.content.trim().isEmpty ? '暂无动态内容' : post.content.trim(),
+                      post.content.trim().isEmpty
+                          ? '暂无动态内容'
+                          : post.content.trim(),
                       maxLines: 8,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -5312,7 +5476,8 @@ class _MyProfilePostCard extends StatelessWidget {
                   children: [
                     Icon(TIcons.thumb_up_1,
                         size: 16,
-                        color: post.liked ? Colors.red : scheme.onSurfaceVariant),
+                        color:
+                            post.liked ? Colors.red : scheme.onSurfaceVariant),
                     const SizedBox(width: 4),
                     Text('${post.likes}'),
                     const SizedBox(width: 12),
@@ -5458,7 +5623,8 @@ class _MyListCard extends StatelessWidget {
               if (post.imageUrl?.trim().isNotEmpty == true)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: _PostImageHolder(url: DDPostService.mediaUrl(post.imageUrl)),
+                  child: _PostImageHolder(
+                      url: DDPostService.mediaUrl(post.imageUrl)),
                 ),
               if (post.videoUrl?.trim().isNotEmpty == true)
                 Padding(
@@ -5480,11 +5646,11 @@ class _MyListCard extends StatelessWidget {
                           height: 225,
                           child: ColoredBox(color: Colors.black26),
                         ),
-                  const Icon(
-                    Icons.play_circle_outline,
-                    size: 56,
-                    color: Colors.white,
-                  ),
+                      const Icon(
+                        Icons.play_circle_outline,
+                        size: 56,
+                        color: Colors.white,
+                      ),
                     ],
                   ),
                 ),
@@ -5570,10 +5736,8 @@ class _InlineProfileStat extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
-                .withValues(alpha: .65),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
             fontSize: labelFontSize,
           ),
         ),
@@ -6335,7 +6499,8 @@ class _OnlineDot extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.greenAccent,
           shape: BoxShape.circle,
-          border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.surface, width: 2),
         ),
       );
 }
@@ -6725,9 +6890,9 @@ class _MyPostsPageState extends State<MyPostsPage> {
     );
     if (confirmed != true) return;
     try {
-      final token =
-          (await SharedPreferences.getInstance()).getString('friend.auth.token') ??
-              '';
+      final token = (await SharedPreferences.getInstance())
+              .getString('friend.auth.token') ??
+          '';
       if (token.isEmpty) throw Exception('请先登录');
       await service.deletePost(token, post.id);
       await DDPostService.clearProfileTabCaches();
@@ -6969,14 +7134,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   fit: BoxFit.contain,
                                 )
                               : (_avatarPreviewUrl == null
-                                  ? const Icon(Icons.add_a_photo_outlined, size: 30)
+                                  ? const Icon(Icons.add_a_photo_outlined,
+                                      size: 30)
                                   : Image.network(
                                       _avatarPreviewUrl!,
                                       width: 96,
                                       height: 96,
                                       fit: BoxFit.contain,
-                                      errorBuilder: (_, __, ___) =>
-                                          const Icon(Icons.broken_image_outlined),
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                          Icons.broken_image_outlined),
                                     )),
                         ),
                       ),
