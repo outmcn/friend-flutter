@@ -167,40 +167,27 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
     }
   }
 
-  Future<void> _showReady(FileImage provider, String requestedUrl) async {
-    _PermanentImageCache.rememberProvider(requestedUrl, provider);
-    if (mounted) {
-      await precacheImage(provider, context);
-    }
-    if (!mounted || requestedUrl != widget.url) return;
-    setState(() {
-      localPath = provider.file.path;
-      failed = false;
-    });
-  }
-
   Future<void> _load() async {
     final requestedUrl = widget.url;
     final cachedProvider = _PermanentImageCache.provider(requestedUrl);
     if (cachedProvider is FileImage) {
       localPath = cachedProvider.file.path;
-      if (mounted) setState(() {});
       return;
     }
     final memoryPath = _PermanentImageCache.peek(widget.url);
     if (memoryPath != null) {
-      await _showReady(FileImage(File(memoryPath)), requestedUrl);
+      if (mounted) setState(() => localPath = memoryPath);
       return;
     }
     final diskPath = await _PermanentImageCache._diskPath(widget.url);
-    if (diskPath != null && requestedUrl == widget.url) {
-      await _showReady(FileImage(File(diskPath)), requestedUrl);
+    if (diskPath != null && mounted && requestedUrl == widget.url) {
+      setState(() => localPath = diskPath);
       return;
     }
     final path = await _PermanentImageCache.get(requestedUrl);
     if (!mounted || requestedUrl != widget.url) return;
     if (path != null) {
-      await _showReady(FileImage(File(path)), requestedUrl);
+      setState(() => localPath = path);
     } else {
       setState(() => failed = localPath == null);
     }
@@ -217,6 +204,7 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
         width: widget.width,
         height: widget.height,
         fit: widget.fit,
+        gaplessPlayback: true,
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (frame != null || wasSynchronouslyLoaded) {
             final size = MediaQuery.sizeOf(context);
