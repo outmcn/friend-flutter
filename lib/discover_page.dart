@@ -116,37 +116,23 @@ class _DiscoverPageState extends State<DiscoverPage> {
           controller: feed.scroll,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            if (tab == 0)
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _card(feed, index, fullWidth: true),
-                  childCount: feed.posts.length,
-                  findChildIndexCallback: (key) {
-                    if (key is! ValueKey<int>) return null;
-                    final index =
-                        feed.posts.indexWhere((post) => post.id == key.value);
-                    return index < 0 ? null : index;
-                  },
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.all(8),
-                sliver: SliverToBoxAdapter(
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: MasonryGridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      itemCount: feed.posts.length,
-                      itemBuilder: (context, index) => _card(feed, index),
-                    ),
+            SliverPadding(
+              padding: const EdgeInsets.all(8),
+              sliver: SliverToBoxAdapter(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: MasonryGridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    itemCount: feed.posts.length,
+                    itemBuilder: (context, index) => _card(feed, index),
                   ),
                 ),
               ),
+            ),
             SliverToBoxAdapter(
                 child: Padding(
               padding: const EdgeInsets.all(24),
