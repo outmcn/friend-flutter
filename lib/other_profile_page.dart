@@ -48,6 +48,35 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
+  Future<void> _openPrivateChat() async {
+    final peerId = widget.userId;
+    if (peerId == null || isSelfProfile) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final conversationId =
+          await service.createDirectConversation(token, '$peerId');
+      if (!mounted) return;
+      final chat = _ChatPreview(
+        widget.name,
+        '开始一段新的聊天',
+        widget.avatarAsset ?? 'assets/figma/profile-portrait-2.jpg',
+        conversationId,
+        0,
+      );
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => _ChatDetailPage(chat: chat)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error')),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _profileScrollController.removeListener(_handleProfileScroll);
@@ -441,10 +470,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () => ScaffoldMessenger.of(context)
-                                      .showSnackBar(
-                                    const SnackBar(content: Text('私聊功能暂未接入')),
-                                  ),
+                                  onPressed:
+                                      isSelfProfile ? null : _openPrivateChat,
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor:
                                         Theme.of(context).colorScheme.primary,
