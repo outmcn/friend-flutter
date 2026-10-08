@@ -8,9 +8,7 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  int selectedSection = 0;
   int? selectedChat;
-  bool sidebarVisible = false;
   final searchController = TextEditingController();
   final messageController = TextEditingController();
   final conversations = const [
@@ -37,17 +35,9 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             _chatHeader(context),
             Expanded(
-              child: Row(
-                children: [
-                  if (sidebarVisible)
-                    SizedBox(width: 86, child: _chatSections(context)),
-                  Expanded(
-                    child: selected == null
-                        ? _conversationList(context)
-                        : _chatDetail(context, selected),
-                  ),
-                ],
-              ),
+              child: selected == null
+                  ? _conversationList(context)
+                  : _chatDetail(context, selected),
             ),
           ],
         ),
@@ -59,15 +49,8 @@ class _ChatPageState extends State<ChatPage> {
         padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
         child: Row(
           children: [
-            IconButton(
-              tooltip: sidebarVisible ? '隐藏侧栏' : '显示侧栏',
-              onPressed: () => setState(() => sidebarVisible = !sidebarVisible),
-              icon: Icon(
-                sidebarVisible ? Icons.menu_open : Icons.menu,
-              ),
-            ),
             Expanded(
-              child: Text('聊天',
+              child: Text('消息',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       )),
@@ -91,75 +74,41 @@ class _ChatPageState extends State<ChatPage> {
         ),
       );
 
-  Widget _chatSections(BuildContext context) {
-    final icons = [
-      TIcons.chat_bubble,
-      TIcons.user_avatar,
-      TIcons.user_blocked,
-    ];
-    final labels = ['聊天', '好友', '黑名单'];
-    return Column(
-      children: [
-        for (var i = 0; i < icons.length; i++)
-          Expanded(
-            child: InkWell(
-              onTap: () => setState(() => selectedSection = i),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icons[i],
-                      color: selectedSection == i
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).hintColor),
-                  const SizedBox(height: 6),
-                  Text(labels[i],
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: selectedSection == i
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).hintColor,
-                      )),
-                  const SizedBox(height: 5),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    width: selectedSection == i ? 24 : 0,
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   Widget _conversationList(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(8, 0, 18, 18),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Column(
           children: [
-            TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                hintText: '搜索聊天',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor:
-                    Theme.of(context).colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: '搜索消息',
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: '新建聊天',
+                  onPressed: () {},
+                  icon: Icon(TIcons.add_circle),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             Expanded(
               child: ListView.separated(
                 itemCount: conversations.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 6),
+                separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (_, index) {
                   final chat = conversations[index];
                   return _chatPreviewTile(context, chat, index);
@@ -173,26 +122,38 @@ class _ChatPageState extends State<ChatPage> {
   Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) =>
       InkWell(
         onTap: () => setState(() => selectedChat = index),
-        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           child: Row(
             children: [
-              CircleAvatar(backgroundImage: AssetImage(chat.avatar)),
-              const SizedBox(width: 10),
+              CircleAvatar(
+                radius: 27,
+                backgroundImage: AssetImage(chat.avatar),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(chat.name,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(chat.name,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                        Text('刚刚',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(context).hintColor)),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
                     Text(chat.preview,
                         maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right),
             ],
           ),
         ),
@@ -200,18 +161,23 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _chatDetail(BuildContext context, _ChatPreview chat) => Column(
         children: [
-          Row(
-            children: [
-              IconButton(
-                  onPressed: () => setState(() => selectedChat = null),
-                  icon: const Icon(Icons.arrow_back)),
-              CircleAvatar(backgroundImage: AssetImage(chat.avatar)),
-              const SizedBox(width: 8),
-              Text(chat.name,
-                  style: const TextStyle(fontWeight: FontWeight.w700)),
-              const Spacer(),
-              IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert)),
-            ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            child: Row(
+              children: [
+                IconButton(
+                    onPressed: () => setState(() => selectedChat = null),
+                    icon: const Icon(Icons.arrow_back)),
+                CircleAvatar(
+                    radius: 20, backgroundImage: AssetImage(chat.avatar)),
+                const SizedBox(width: 8),
+                Text(chat.name,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                const Spacer(),
+                IconButton(
+                    onPressed: () {}, icon: const Icon(Icons.more_horiz)),
+              ],
+            ),
           ),
           const Expanded(
             child: Center(
