@@ -75,58 +75,14 @@ class _ChatPageState extends State<ChatPage> {
       );
 
   Widget _conversationList(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      hintText: '搜索',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: false,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(22),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: IconButton(
-                    tooltip: '新建聊天',
-                    onPressed: () {},
-                    icon: const Icon(Icons.add),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Expanded(
-              child: ListView.separated(
-                itemCount: conversations.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 2),
-                itemBuilder: (_, index) {
-                  final chat = conversations[index];
-                  return _chatPreviewTile(context, chat, index);
-                },
-              ),
-            ),
-          ],
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: ListView.separated(
+          itemCount: conversations.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 2),
+          itemBuilder: (_, index) {
+            final chat = conversations[index];
+            return _chatPreviewTile(context, chat, index);
+          },
         ),
       );
 
@@ -134,14 +90,14 @@ class _ChatPageState extends State<ChatPage> {
       InkWell(
         onTap: () => setState(() => selectedChat = index),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
               CircleAvatar(
-                radius: 36,
+                radius: 27,
                 backgroundImage: AssetImage(chat.avatar),
               ),
-              const SizedBox(width: 18),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,20 +107,20 @@ class _ChatPageState extends State<ChatPage> {
                         Expanded(
                           child: Text(chat.name,
                               style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w700)),
+                                  fontSize: 15, fontWeight: FontWeight.w700)),
                         ),
                         Text('刚刚',
                             style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: Theme.of(context).hintColor)),
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 3),
                     Text(chat.preview,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            fontSize: 14, color: Theme.of(context).hintColor)),
+                            fontSize: 13, color: Theme.of(context).hintColor)),
                   ],
                 ),
               ),
