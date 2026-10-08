@@ -25,6 +25,7 @@ import 'auth_client.dart';
 import 'avatar_crop_page.dart';
 import 'post_service.dart';
 import 'discover_feed.dart';
+import 'im_socket.dart';
 
 part 'shared_core.dart';
 part 'figma_icon.dart';

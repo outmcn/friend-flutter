@@ -9,18 +9,17 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   int? selectedChat;
-  final searchController = TextEditingController();
   final messageController = TextEditingController();
   final conversations = const [
     _ChatPreview(
-        'HermesChat', '开始一段新的聊天', 'assets/figma/profile-portrait-2.jpg'),
-    _ChatPreview('好友消息', '暂无新的消息', 'assets/figma/profile-portrait-3.jpg'),
-    _ChatPreview('群组消息', '创建或加入一个群组', 'assets/figma/profile-portrait-4.jpg'),
+        'HermesChat', '开始一段新的聊天', 'assets/figma/profile-portrait-2.jpg', '1'),
+    _ChatPreview('好友消息', '暂无新的消息', 'assets/figma/profile-portrait-3.jpg', '2'),
+    _ChatPreview(
+        '群组消息', '创建或加入一个群组', 'assets/figma/profile-portrait-4.jpg', '3'),
   ];
 
   @override
   void dispose() {
-    searchController.dispose();
     messageController.dispose();
     super.dispose();
   }
@@ -29,48 +28,34 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _chatHeader(context),
-            Expanded(
-              child: _conversationList(context),
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        title: const Text('消息'),
+        actions: [
+          IconButton(
+            tooltip: '设置',
+            onPressed: () {},
+            icon: Icon(TIcons.setting),
+          ),
+          IconButton(
+            tooltip: '新建聊天',
+            onPressed: () {},
+            icon: Icon(TIcons.add_circle),
+          ),
+          IconButton(
+            tooltip: '好友申请',
+            onPressed: () {},
+            icon: Icon(TIcons.user_add),
+          ),
+        ],
       ),
+      body: _conversationList(context),
     );
   }
 
-  Widget _chatHeader(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text('消息',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      )),
-            ),
-            IconButton(
-              tooltip: '设置',
-              onPressed: () {},
-              icon: Icon(TIcons.setting),
-            ),
-            IconButton(
-              tooltip: '新建聊天',
-              onPressed: () {},
-              icon: Icon(TIcons.add_circle),
-            ),
-            IconButton(
-              tooltip: '好友申请',
-              onPressed: () {},
-              icon: Icon(TIcons.user_add),
-            ),
-          ],
-        ),
-      );
-
+  /*
+   * 聊天列表页统一使用 AppBar；此处只保留会话列表内容，避免自定义顶栏
+   * 与其他页面的系统安全区、标题高度和操作按钮间距产生差异。
+   */
   Widget _conversationList(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         child: ListView.separated(
@@ -180,10 +165,11 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class _ChatPreview {
-  const _ChatPreview(this.name, this.preview, this.avatar);
+  const _ChatPreview(this.name, this.preview, this.avatar, this.conversationId);
   final String name;
   final String preview;
   final String avatar;
+  final String conversationId;
 }
 
 class _ChatDetailPage extends StatefulWidget {
@@ -195,10 +181,39 @@ class _ChatDetailPage extends StatefulWidget {
 
 class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageController = TextEditingController();
+  FriendImSocket? imSocket;
+  final messages = <Map<String, dynamic>>[];
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_connectIm());
+  }
+
   @override
   void dispose() {
     messageController.dispose();
+    imSocket?.dispose();
     super.dispose();
+  }
+
+  Future<void> _connectIm() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) throw Exception('请先登录');
+    final socket = FriendImSocket(token: token);
+    imSocket = socket;
+    await socket.connect();
+    socket.events.listen((event) {
+      if (!mounted) return;
+      final type = event['type'];
+      if (type == 'message:new' || type == 'message:accepted') {
+        final message = event['message'];
+        if (message is Map) {
+          setState(() => messages.add(message.cast<String, dynamic>()));
+        }
+      }
+    });
   }
 
   @override
@@ -215,10 +230,29 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ],
         ),
         body: Column(children: [
-          const Expanded(
-              child: Center(
-                  child: Text('选择一个聊天开始交流',
-                      style: TextStyle(color: Colors.grey)))),
+          Expanded(
+            child: messages.isEmpty
+                ? const Center(
+                    child: Text('选择一个聊天开始交流',
+                        style: TextStyle(color: Colors.grey)))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: messages.length,
+                    itemBuilder: (_, index) => Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text('${messages[index]['text'] ?? ''}'),
+                      ),
+                    ),
+                  ),
+          ),
           SafeArea(
               top: false,
               child: Padding(
@@ -233,7 +267,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                               hintText: '输入消息',
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(22))))),
-                  IconButton(onPressed: () {}, icon: const Icon(Icons.send)),
+                  IconButton(
+                    onPressed: () {
+                      final text = messageController.text.trim();
+                      if (text.isEmpty) return;
+                      imSocket?.sendText(
+                        conversationId: widget.chat.conversationId,
+                        text: text,
+                        clientId:
+                            DateTime.now().microsecondsSinceEpoch.toString(),
+                      );
+                      messageController.clear();
+                    },
+                    icon: const Icon(Icons.send),
+                  ),
                 ]),
               )),
         ]),
