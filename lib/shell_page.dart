@@ -48,7 +48,7 @@ class _ChatPageState extends State<ChatPage> {
             .map((row) => _ChatPreview(
                   row.peer?.nickname ?? '会话 ${row.id}',
                   row.lastMessage?.text ?? '开始一段新的聊天',
-                  'assets/figma/profile-portrait-2.jpg',
+                  row.peer?.avatarUrl,
                   row.id,
                   row.unreadCount,
                 ))
@@ -141,8 +141,8 @@ class _ChatPageState extends State<ChatPage> {
       if (!mounted) return;
       final chat = conversations.firstWhere(
         (item) => item.conversationId == id,
-        orElse: () => _ChatPreview('${selected['nickname'] ?? '用户'}',
-            '开始一段新的聊天', 'assets/figma/profile-portrait-2.jpg', id, 0),
+        orElse: () => _ChatPreview(
+            '${selected['nickname'] ?? '用户'}', '开始一段新的聊天', null, id, 0),
       );
       await Navigator.push(context,
           MaterialPageRoute(builder: (_) => _ChatDetailPage(chat: chat)));
@@ -178,7 +178,11 @@ class _ChatPageState extends State<ChatPage> {
             children: [
               CircleAvatar(
                 radius: 27,
-                backgroundImage: AssetImage(chat.avatar),
+                backgroundImage: (chat.avatarUrl == null ||
+                        chat.avatarUrl!.isEmpty)
+                    ? (const AssetImage('assets/figma/profile-portrait-2.jpg')
+                        as ImageProvider)
+                    : NetworkImage(chat.avatarUrl!),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -243,7 +247,13 @@ class _ChatPageState extends State<ChatPage> {
                     onPressed: () => setState(() => selectedChat = null),
                     icon: const Icon(Icons.arrow_back)),
                 CircleAvatar(
-                    radius: 20, backgroundImage: AssetImage(chat.avatar)),
+                    radius: 20,
+                    backgroundImage:
+                        (chat.avatarUrl == null || chat.avatarUrl!.isEmpty)
+                            ? (const AssetImage(
+                                    'assets/figma/profile-portrait-2.jpg')
+                                as ImageProvider)
+                            : NetworkImage(chat.avatarUrl!)),
                 const SizedBox(width: 8),
                 Text(chat.name,
                     style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -283,11 +293,11 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class _ChatPreview {
-  const _ChatPreview(this.name, this.preview, this.avatar, this.conversationId,
-      this.unreadCount);
+  const _ChatPreview(this.name, this.preview, this.avatarUrl,
+      this.conversationId, this.unreadCount);
   final String name;
   final String preview;
-  final String avatar;
+  final String? avatarUrl;
   final String conversationId;
   final int unreadCount;
 }
@@ -430,7 +440,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         appBar: AppBar(
           title: Row(children: [
             CircleAvatar(
-                radius: 20, backgroundImage: AssetImage(widget.chat.avatar)),
+                radius: 20,
+                backgroundImage: (widget.chat.avatarUrl == null ||
+                        widget.chat.avatarUrl!.isEmpty)
+                    ? (const AssetImage('assets/figma/profile-portrait-2.jpg')
+                        as ImageProvider)
+                    : NetworkImage(widget.chat.avatarUrl!)),
             const SizedBox(width: 8),
             Text(widget.chat.name),
           ]),

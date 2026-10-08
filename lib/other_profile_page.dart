@@ -61,7 +61,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       final chat = _ChatPreview(
         widget.name,
         '开始一段新的聊天',
-        widget.avatarAsset ?? 'assets/figma/profile-portrait-2.jpg',
+        _avatarUrl,
         conversationId,
         0,
       );

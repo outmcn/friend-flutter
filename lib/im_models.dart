@@ -32,15 +32,21 @@ class DDConversation {
 }
 
 class DDImPeer {
-  const DDImPeer({required this.id, required this.nickname, this.avatarKey});
+  const DDImPeer(
+      {required this.id,
+      required this.nickname,
+      this.avatarKey,
+      this.avatarUrl});
   final String id;
   final String nickname;
   final String? avatarKey;
+  final String? avatarUrl;
 
   factory DDImPeer.fromJson(Map<String, dynamic> json) => DDImPeer(
         id: '${json['id'] ?? ''}',
         nickname: '${json['nickname'] ?? json['username'] ?? '用户'}',
         avatarKey: json['avatarKey'] as String?,
+        avatarUrl: json['avatarUrl'] as String?,
       );
 }
 
