@@ -1,12 +1,244 @@
 part of 'main.dart';
 
-class ChatPage extends StatelessWidget {
+class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-        body: SizedBox.shrink(),
+  State<ChatPage> createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<ChatPage> {
+  int selectedSection = 0;
+  int? selectedChat;
+  final searchController = TextEditingController();
+  final messageController = TextEditingController();
+  final conversations = const [
+    _ChatPreview(
+        'HermesChat', '开始一段新的聊天', 'assets/figma/profile-portrait-2.jpg'),
+    _ChatPreview('好友消息', '暂无新的消息', 'assets/figma/profile-portrait-3.jpg'),
+    _ChatPreview('群组消息', '创建或加入一个群组', 'assets/figma/profile-portrait-4.jpg'),
+  ];
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = selectedChat == null ? null : conversations[selectedChat!];
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _chatHeader(context),
+            Expanded(
+              child: Row(
+                children: [
+                  SizedBox(width: 86, child: _chatSections(context)),
+                  Expanded(
+                    child: selected == null
+                        ? _conversationList(context)
+                        : _chatDetail(context, selected),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chatHeader(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text('聊天',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      )),
+            ),
+            IconButton(
+              tooltip: '设置',
+              onPressed: () {},
+              icon: Icon(TIcons.setting),
+            ),
+            IconButton(
+              tooltip: '新建聊天',
+              onPressed: () {},
+              icon: Icon(TIcons.add_circle),
+            ),
+            IconButton(
+              tooltip: '好友申请',
+              onPressed: () {},
+              icon: Icon(TIcons.user_add),
+            ),
+          ],
+        ),
       );
+
+  Widget _chatSections(BuildContext context) {
+    final icons = [
+      TIcons.usergroup,
+      TIcons.user_avatar,
+      TIcons.call,
+      TIcons.calendar,
+    ];
+    final labels = ['全部', '好友', '通话', '日历'];
+    return Column(
+      children: [
+        for (var i = 0; i < icons.length; i++)
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => selectedSection = i),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icons[i],
+                      color: selectedSection == i
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).hintColor),
+                  const SizedBox(height: 6),
+                  Text(labels[i],
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: selectedSection == i
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).hintColor,
+                      )),
+                  const SizedBox(height: 5),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    width: selectedSection == i ? 24 : 0,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _conversationList(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(8, 0, 18, 18),
+        child: Column(
+          children: [
+            TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: '搜索聊天',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.separated(
+                itemCount: conversations.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 6),
+                itemBuilder: (_, index) {
+                  final chat = conversations[index];
+                  return _chatPreviewTile(context, chat, index);
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) =>
+      InkWell(
+        onTap: () => setState(() => selectedChat = index),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            children: [
+              CircleAvatar(backgroundImage: AssetImage(chat.avatar)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(chat.name,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(chat.preview,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      );
+
+  Widget _chatDetail(BuildContext context, _ChatPreview chat) => Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                  onPressed: () => setState(() => selectedChat = null),
+                  icon: const Icon(Icons.arrow_back)),
+              CircleAvatar(backgroundImage: AssetImage(chat.avatar)),
+              const SizedBox(width: 8),
+              Text(chat.name,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              const Spacer(),
+              IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert)),
+            ],
+          ),
+          const Expanded(
+            child: Center(
+              child: Text('选择一个聊天开始交流', style: TextStyle(color: Colors.grey)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
+            child: Row(
+              children: [
+                IconButton(
+                    onPressed: () {}, icon: const Icon(Icons.attach_file)),
+                Expanded(
+                  child: TextField(
+                    controller: messageController,
+                    decoration: InputDecoration(
+                      hintText: '输入消息',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22)),
+                    ),
+                  ),
+                ),
+                IconButton(onPressed: () {}, icon: const Icon(Icons.send)),
+              ],
+            ),
+          ),
+        ],
+      );
+}
+
+class _ChatPreview {
+  const _ChatPreview(this.name, this.preview, this.avatar);
+  final String name;
+  final String preview;
+  final String avatar;
 }
 
 class DDShell extends StatefulWidget {
