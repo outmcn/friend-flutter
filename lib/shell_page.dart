@@ -401,6 +401,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     final service = DDPostService();
     try {
+      await ImLocalStore.migrateLegacyAudioKeys();
       final profile = await service.fetchMe(token);
       currentUserId = '${profile['id'] ?? currentUserId}';
       if (currentUserId.isNotEmpty) {

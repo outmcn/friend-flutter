@@ -37,6 +37,10 @@ class FriendAuthClient {
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
+    final user = data['user'];
+    if (user is Map && user['id'] != null) {
+      await prefs.setString('friend.auth.userId', '${user['id']}');
+    }
     return token;
   }
 
@@ -70,6 +74,7 @@ class FriendAuthClient {
   Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
+    await prefs.remove('friend.auth.userId');
   }
 
   void dispose() => _client.close();

@@ -14,7 +14,7 @@ class ImLocalStore {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -33,6 +33,14 @@ class ImLocalStore {
           CREATE INDEX messages_cursor_idx
           ON messages(account_id, conversation_id, message_id)
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+              "ALTER TABLE messages ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'");
+          await db.execute(
+              "ALTER TABLE messages ADD COLUMN duration_ms INTEGER NOT NULL DEFAULT 0");
+        }
       },
     );
     return _database!;
@@ -70,6 +78,8 @@ class ImLocalStore {
           'client_id': message['clientId'],
           'sender_id': '${message['senderId'] ?? ''}',
           'text': '${message['text'] ?? ''}',
+          'kind': '${message['kind'] ?? 'text'}',
+          'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
           'created_at': '${message['createdAt'] ?? ''}',
           'status': '${message['status'] ?? 'sent'}',
         },
@@ -77,6 +87,13 @@ class ImLocalStore {
       );
     }
     await batch.commit(noResult: true);
+  }
+
+  static Future<void> migrateLegacyAudioKeys() async {
+    final db = await _db();
+    await db.rawUpdate(
+      "UPDATE messages SET kind = 'audio' WHERE kind = 'text' AND text LIKE 'friend/%/voices/%.m4a'",
+    );
   }
 
   static Future<String?> imagePath(String key) async {
