@@ -27,7 +27,6 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final selected = selectedChat == null ? null : conversations[selectedChat!];
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
@@ -35,9 +34,7 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             _chatHeader(context),
             Expanded(
-              child: selected == null
-                  ? _conversationList(context)
-                  : _chatDetail(context, selected),
+              child: _conversationList(context),
             ),
           ],
         ),
@@ -88,7 +85,10 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) =>
       InkWell(
-        onTap: () => setState(() => selectedChat = index),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => _ChatDetailPage(chat: chat)),
+        ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
@@ -129,6 +129,7 @@ class _ChatPageState extends State<ChatPage> {
         ),
       );
 
+  // ignore: unused_element
   Widget _chatDetail(BuildContext context, _ChatPreview chat) => Column(
         children: [
           Padding(
@@ -183,6 +184,60 @@ class _ChatPreview {
   final String name;
   final String preview;
   final String avatar;
+}
+
+class _ChatDetailPage extends StatefulWidget {
+  const _ChatDetailPage({required this.chat});
+  final _ChatPreview chat;
+  @override
+  State<_ChatDetailPage> createState() => _ChatDetailPageState();
+}
+
+class _ChatDetailPageState extends State<_ChatDetailPage> {
+  final messageController = TextEditingController();
+  @override
+  void dispose() {
+    messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: Row(children: [
+            CircleAvatar(
+                radius: 20, backgroundImage: AssetImage(widget.chat.avatar)),
+            const SizedBox(width: 8),
+            Text(widget.chat.name),
+          ]),
+          actions: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
+          ],
+        ),
+        body: Column(children: [
+          const Expanded(
+              child: Center(
+                  child: Text('选择一个聊天开始交流',
+                      style: TextStyle(color: Colors.grey)))),
+          SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
+                child: Row(children: [
+                  IconButton(
+                      onPressed: () {}, icon: const Icon(Icons.attach_file)),
+                  Expanded(
+                      child: TextField(
+                          controller: messageController,
+                          decoration: InputDecoration(
+                              hintText: '输入消息',
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(22))))),
+                  IconButton(onPressed: () {}, icon: const Icon(Icons.send)),
+                ]),
+              )),
+        ]),
+      );
 }
 
 class DDShell extends StatefulWidget {
