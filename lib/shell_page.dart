@@ -10,6 +10,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   int selectedSection = 0;
   int? selectedChat;
+  bool sidebarVisible = false;
   final searchController = TextEditingController();
   final messageController = TextEditingController();
   final conversations = const [
@@ -38,7 +39,8 @@ class _ChatPageState extends State<ChatPage> {
             Expanded(
               child: Row(
                 children: [
-                  SizedBox(width: 86, child: _chatSections(context)),
+                  if (sidebarVisible)
+                    SizedBox(width: 86, child: _chatSections(context)),
                   Expanded(
                     child: selected == null
                         ? _conversationList(context)
@@ -57,6 +59,13 @@ class _ChatPageState extends State<ChatPage> {
         padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
         child: Row(
           children: [
+            IconButton(
+              tooltip: sidebarVisible ? '隐藏侧栏' : '显示侧栏',
+              onPressed: () => setState(() => sidebarVisible = !sidebarVisible),
+              icon: Icon(
+                sidebarVisible ? Icons.menu_open : Icons.menu,
+              ),
+            ),
             Expanded(
               child: Text('聊天',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -84,12 +93,11 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _chatSections(BuildContext context) {
     final icons = [
-      TIcons.usergroup,
+      TIcons.chat_bubble,
       TIcons.user_avatar,
-      TIcons.call,
-      TIcons.calendar,
+      TIcons.user_blocked,
     ];
-    final labels = ['全部', '好友', '通话', '日历'];
+    final labels = ['聊天', '好友', '黑名单'];
     return Column(
       children: [
         for (var i = 0; i < icons.length; i++)
