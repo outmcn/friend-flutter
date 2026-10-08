@@ -13,6 +13,7 @@ class _ChatPageState extends State<ChatPage> {
   final userSearchController = TextEditingController();
   List<_ChatPreview> conversations = [];
   bool loading = true;
+  String? loadError;
 
   @override
   void initState() {
@@ -21,10 +22,24 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _loadConversations() async {
+    if (mounted) {
+      setState(() {
+        loading = true;
+        loadError = null;
+      });
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
-      if (token.isEmpty) return;
+      if (token.isEmpty) {
+        if (mounted) {
+          setState(() {
+            loading = false;
+            loadError = '登录状态尚未恢复，请重试';
+          });
+        }
+        return;
+      }
       final service = DDPostService();
       final rows = await service.fetchImConversations(token);
       if (!mounted) return;
@@ -42,7 +57,20 @@ class _ChatPageState extends State<ChatPage> {
       });
       service.dispose();
     } catch (_) {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          loadError = '会话加载失败，请重试';
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!loading && conversations.isEmpty && loadError == null) {
+      unawaited(_loadConversations());
     }
   }
 
@@ -79,7 +107,15 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : _conversationList(context),
+          : loadError != null
+              ? Center(
+                  child: FilledButton.icon(
+                    onPressed: _loadConversations,
+                    icon: const Icon(Icons.refresh),
+                    label: Text(loadError!),
+                  ),
+                )
+              : _conversationList(context),
     );
   }
 
