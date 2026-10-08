@@ -75,7 +75,7 @@ class _ChatPageState extends State<ChatPage> {
       );
 
   Widget _conversationList(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
         child: Column(
           children: [
             Row(
@@ -84,31 +84,42 @@ class _ChatPageState extends State<ChatPage> {
                   child: TextField(
                     controller: searchController,
                     decoration: InputDecoration(
-                      hintText: '搜索消息',
+                      hintText: '搜索',
                       prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      filled: false,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
-                  tooltip: '新建聊天',
-                  onPressed: () {},
-                  icon: Icon(TIcons.add_circle),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: IconButton(
+                    tooltip: '新建聊天',
+                    onPressed: () {},
+                    icon: const Icon(Icons.add),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
             Expanded(
               child: ListView.separated(
                 itemCount: conversations.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, __) => const SizedBox(height: 2),
                 itemBuilder: (_, index) {
                   final chat = conversations[index];
                   return _chatPreviewTile(context, chat, index);
@@ -123,14 +134,14 @@ class _ChatPageState extends State<ChatPage> {
       InkWell(
         onTap: () => setState(() => selectedChat = index),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
               CircleAvatar(
-                radius: 27,
+                radius: 36,
                 backgroundImage: AssetImage(chat.avatar),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 18),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,18 +150,21 @@ class _ChatPageState extends State<ChatPage> {
                       children: [
                         Expanded(
                           child: Text(chat.name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w700)),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w700)),
                         ),
                         Text('刚刚',
                             style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 12,
                                 color: Theme.of(context).hintColor)),
                       ],
                     ),
                     const SizedBox(height: 5),
                     Text(chat.preview,
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 14, color: Theme.of(context).hintColor)),
                   ],
                 ),
               ),
