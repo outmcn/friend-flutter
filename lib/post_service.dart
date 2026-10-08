@@ -133,10 +133,16 @@ class DDPostService {
     }
   }
 
-  Future<List<DDImMessage>> fetchImMessages(
-      String token, String conversationId) async {
+  Future<List<DDImMessage>> fetchImMessages(String token, String conversationId,
+      {String? afterId}) async {
+    final uri = _api('/im/conversations/$conversationId/messages').replace(
+      queryParameters: {
+        'limit': '100',
+        if (afterId != null && afterId.isNotEmpty) 'afterId': afterId,
+      },
+    );
     final response = await _client.get(
-      _api('/im/conversations/$conversationId/messages'),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
     final data = jsonDecode(response.body);

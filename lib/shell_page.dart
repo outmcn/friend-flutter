@@ -303,6 +303,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageController = TextEditingController();
   FriendImSocket? imSocket;
   final messages = <Map<String, dynamic>>[];
+  StreamSubscription<Map<String, dynamic>>? eventSubscription;
+  bool syncing = false;
 
   @override
   void initState() {
@@ -313,6 +315,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   @override
   void dispose() {
     messageController.dispose();
+    eventSubscription?.cancel();
     imSocket?.dispose();
     super.dispose();
   }
@@ -321,51 +324,91 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) throw Exception('请先登录');
+    final cached = await ImLocalStore.messages(widget.chat.conversationId);
+    if (mounted && cached.isNotEmpty) {
+      setState(() {
+        messages
+          ..clear()
+          ..addAll(cached);
+      });
+    }
     final socket = FriendImSocket(token: token);
     imSocket = socket;
+    eventSubscription = socket.events.listen(_handleImEvent);
     await socket.connect();
+    await _syncMessages(token);
+  }
+
+  Future<void> _syncMessages(String token) async {
+    if (syncing) return;
+    syncing = true;
     final service = DDPostService();
-    final history =
-        await service.fetchImMessages(token, widget.chat.conversationId);
-    if (mounted) {
-      setState(() {
-        messages.addAll(history.map((item) => <String, dynamic>{
-              'text': item.text,
-              'id': item.id,
-              'clientId': item.clientId,
-              'senderId': item.senderId,
-            }));
-      });
+    try {
+      final afterId = messages.isEmpty ? null : '${messages.last['id']}';
+      final history = await service.fetchImMessages(
+        token,
+        widget.chat.conversationId,
+        afterId: afterId,
+      );
+      if (!mounted) return;
+      for (final item in history) {
+        _appendMessage({
+          'text': item.text,
+          'id': item.id,
+          'clientId': item.clientId,
+          'senderId': item.senderId,
+          'createdAt': item.createdAt,
+        });
+      }
+      await ImLocalStore.saveMessages(widget.chat.conversationId, messages);
       if (messages.isNotEmpty) {
         try {
           await service.markImConversationRead(
               token, widget.chat.conversationId, '${messages.last['id']}');
         } catch (_) {}
       }
+    } finally {
+      syncing = false;
+      service.dispose();
     }
-    service.dispose();
-    socket.events.listen((event) {
-      if (!mounted) return;
-      final type = event['type'];
-      if (type == 'message:new' || type == 'message:accepted') {
-        final message = event['message'];
-        if (message is Map) {
-          final item = message.cast<String, dynamic>();
-          final id = '${item['id'] ?? ''}';
-          final clientId = '${item['clientId'] ?? ''}';
-          final duplicate = messages.any((existing) =>
-              '${existing['id'] ?? ''}' == id ||
-              (clientId.isNotEmpty &&
-                  '${existing['clientId'] ?? ''}' == clientId));
-          if (!duplicate) {
-            setState(() => messages.add(item));
-            imSocket?.markRead(
-                conversationId: widget.chat.conversationId, messageId: id);
-            unawaited(_markLatestRead());
-          }
-        }
+  }
+
+  void _handleImEvent(Map<String, dynamic> event) {
+    if (!mounted) return;
+    final type = event['type'];
+    if (type == 'closed' || type == 'connect_failed') {
+      final tokenFuture = SharedPreferences.getInstance()
+          .then((prefs) => prefs.getString('friend.auth.token') ?? '');
+      unawaited(tokenFuture.then((token) {
+        if (token.isNotEmpty) return _syncMessages(token);
+      }));
+      return;
+    }
+    if (type != 'message:new' && type != 'message:accepted') return;
+    final message = event['message'];
+    if (message is! Map) return;
+    final item = message.cast<String, dynamic>();
+    if (_appendMessage(item)) {
+      unawaited(
+          ImLocalStore.saveMessages(widget.chat.conversationId, messages));
+      final id = '${item['id'] ?? ''}';
+      if (id.isNotEmpty) {
+        imSocket?.markRead(
+            conversationId: widget.chat.conversationId, messageId: id);
       }
-    });
+      unawaited(_markLatestRead());
+    }
+  }
+
+  bool _appendMessage(Map<String, dynamic> item) {
+    final id = '${item['id'] ?? ''}';
+    final clientId = '${item['clientId'] ?? ''}';
+    final duplicate = messages.any((existing) =>
+        (id.isNotEmpty && '${existing['id'] ?? ''}' == id) ||
+        (clientId.isNotEmpty && '${existing['clientId'] ?? ''}' == clientId));
+    if (duplicate) return false;
+    setState(() => messages.add(item));
+    return true;
   }
 
   Future<void> _markLatestRead() async {

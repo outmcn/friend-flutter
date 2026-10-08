@@ -26,6 +26,7 @@ import 'avatar_crop_page.dart';
 import 'post_service.dart';
 import 'discover_feed.dart';
 import 'im_socket.dart';
+import 'im_local_store.dart';
 
 part 'im_new_chat.dart';
 part 'shared_core.dart';
