@@ -12,6 +12,8 @@ class _ChatPageState extends State<ChatPage> {
   final messageController = TextEditingController();
   final userSearchController = TextEditingController();
   List<_ChatPreview> conversations = [];
+  FriendImSocket? listSocket;
+  StreamSubscription<Map<String, dynamic>>? listEvents;
   bool loading = true;
   String? loadError;
 
@@ -19,6 +21,7 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     unawaited(_loadConversations());
+    unawaited(_connectListSocket());
   }
 
   Future<void> _loadConversations() async {
@@ -66,6 +69,20 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _connectListSocket() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final socket = FriendImSocket(token: token);
+    listSocket = socket;
+    listEvents = socket.events.listen((event) {
+      if (event['type'] == 'message:new') {
+        unawaited(_loadConversations());
+      }
+    });
+    await socket.connect();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -78,6 +95,8 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     messageController.dispose();
     userSearchController.dispose();
+    listEvents?.cancel();
+    listSocket?.dispose();
     super.dispose();
   }
 
@@ -332,19 +351,41 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageController = TextEditingController();
   FriendImSocket? imSocket;
   final messages = <Map<String, dynamic>>[];
+  final messageScrollController = ScrollController();
+  bool loadingOlder = false;
+  bool hasOlder = true;
+  bool blockedConversation = false;
   String currentUserId = '';
   StreamSubscription<Map<String, dynamic>>? eventSubscription;
+  bool typing = false;
+  bool peerTyping = false;
   bool syncing = false;
+  final AudioPlayer audioPlayer = AudioPlayer();
+  final Map<String, String> imageFiles = {};
+  String? playingAudioKey;
+  Timer? typingTimer;
 
   @override
   void initState() {
     super.initState();
+    messageScrollController.addListener(_handleMessageScroll);
     unawaited(_connectIm());
+  }
+
+  void _handleMessageScroll() {
+    if (messageScrollController.hasClients &&
+        messageScrollController.position.pixels <= 40) {
+      unawaited(_loadOlderMessages());
+    }
   }
 
   @override
   void dispose() {
     messageController.dispose();
+    messageScrollController.removeListener(_handleMessageScroll);
+    messageScrollController.dispose();
+    typingTimer?.cancel();
+    audioPlayer.dispose();
     eventSubscription?.cancel();
     imSocket?.dispose();
     super.dispose();
@@ -355,13 +396,22 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) throw Exception('请先登录');
     currentUserId = widget.currentUserId;
+    if (currentUserId.isEmpty) {
+      currentUserId = prefs.getString('friend.auth.userId') ?? '';
+    }
     final service = DDPostService();
     try {
       final profile = await service.fetchMe(token);
       currentUserId = '${profile['id'] ?? currentUserId}';
+      if (currentUserId.isNotEmpty) {
+        await prefs.setString('friend.auth.userId', currentUserId);
+      }
     } catch (_) {}
     service.dispose();
-    final cached = await ImLocalStore.messages(widget.chat.conversationId);
+    final cached = await ImLocalStore.messages(
+      accountId: currentUserId,
+      conversationId: widget.chat.conversationId,
+    );
     if (mounted && cached.isNotEmpty) {
       setState(() {
         messages
@@ -392,12 +442,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         _appendMessage({
           'text': item.text,
           'id': item.id,
+          'kind': item.kind,
+          'durationMs': item.durationMs,
           'clientId': item.clientId,
           'senderId': item.senderId,
           'createdAt': item.createdAt,
         });
       }
-      await ImLocalStore.saveMessages(widget.chat.conversationId, messages);
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: messages,
+      );
       if (messages.isNotEmpty) {
         try {
           await service.markImConversationRead(
@@ -410,9 +466,40 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
-  void _handleImEvent(Map<String, dynamic> event) {
+  Future<void> _handleImEvent(Map<String, dynamic> event) async {
     if (!mounted) return;
     final type = event['type'];
+    if (type == 'typing:start' || type == 'typing:stop') {
+      if ('${event['userId'] ?? ''}' != currentUserId) {
+        setState(() => peerTyping = type == 'typing:start');
+      }
+      return;
+    }
+    if (type == 'message:recalled' || type == 'message:deleted') {
+      final message = event['message'];
+      if (message is Map) {
+        final id = '${message['id'] ?? ''}';
+        final index =
+            messages.indexWhere((item) => '${item['id'] ?? ''}' == id);
+        if (index >= 0) {
+          setState(() => messages[index] = {
+                ...messages[index],
+                'status': type == 'message:recalled' ? 'recalled' : 'deleted',
+              });
+          await ImLocalStore.saveMessages(
+            accountId: currentUserId,
+            conversationId: widget.chat.conversationId,
+            messages: messages,
+          );
+        }
+      }
+      return;
+    }
+    if (type == 'error' && event['code'] == 'conversation_blocked') {
+      if (mounted) setState(() => blockedConversation = true);
+      return;
+    }
+
     if (type == 'closed' || type == 'connect_failed') {
       final tokenFuture = SharedPreferences.getInstance()
           .then((prefs) => prefs.getString('friend.auth.token') ?? '');
@@ -425,9 +512,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final message = event['message'];
     if (message is! Map) return;
     final item = message.cast<String, dynamic>();
+    if (type == 'message:accepted') {
+      _markPendingAccepted(item);
+      return;
+    }
+    if (type != 'message:new') return;
     if (_appendMessage(item)) {
-      unawaited(
-          ImLocalStore.saveMessages(widget.chat.conversationId, messages));
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: messages,
+      );
       final id = '${item['id'] ?? ''}';
       if (id.isNotEmpty) {
         imSocket?.markRead(
@@ -435,6 +530,29 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
       unawaited(_markLatestRead());
     }
+  }
+
+  Future<void> _markPendingAccepted(Map<String, dynamic> item) async {
+    final clientId = '${item['clientId'] ?? ''}';
+    if (clientId.isEmpty) return;
+    final index = messages
+        .indexWhere((message) => '${message['clientId'] ?? ''}' == clientId);
+    if (index < 0) {
+      _appendMessage({...item, 'status': 'sent'});
+    } else {
+      setState(() {
+        messages[index] = {
+          ...messages[index],
+          ...item,
+          'status': 'sent',
+        };
+      });
+    }
+    await ImLocalStore.saveMessages(
+      accountId: currentUserId,
+      conversationId: widget.chat.conversationId,
+      messages: messages,
+    );
   }
 
   bool _appendMessage(Map<String, dynamic> item) {
@@ -446,6 +564,346 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (duplicate) return false;
     setState(() => messages.add(item));
     return true;
+  }
+
+  Future<void> _loadOlderMessages() async {
+    if (loadingOlder || !hasOlder || messages.isEmpty) return;
+    loadingOlder = true;
+    final beforeId = '${messages.first['id']}';
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) {
+      loadingOlder = false;
+      return;
+    }
+    final service = DDPostService();
+    try {
+      final older = await service.fetchImMessages(
+        token,
+        widget.chat.conversationId,
+        beforeId: beforeId,
+      );
+      if (!mounted) return;
+      if (older.isEmpty) {
+        hasOlder = false;
+        return;
+      }
+      final previousExtent = messageScrollController.hasClients
+          ? messageScrollController.position.maxScrollExtent
+          : 0.0;
+      final previousOffset = messageScrollController.hasClients
+          ? messageScrollController.offset
+          : 0.0;
+      final additions = older
+          .map((item) => <String, dynamic>{
+                'text': item.text,
+                'id': item.id,
+                'clientId': item.clientId,
+                'senderId': item.senderId,
+                'createdAt': item.createdAt,
+              })
+          .toList();
+      setState(() {
+        for (final item in additions.reversed) {
+          if (!messages.any((old) => old['id'] == item['id'])) {
+            messages.insert(0, item);
+          }
+        }
+      });
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: messages,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!messageScrollController.hasClients) return;
+        final delta =
+            messageScrollController.position.maxScrollExtent - previousExtent;
+        messageScrollController.jumpTo(previousOffset + delta);
+      });
+    } finally {
+      loadingOlder = false;
+      service.dispose();
+    }
+  }
+
+  void _handleTypingChanged(String value) {
+    final shouldType = value.trim().isNotEmpty;
+    if (shouldType != typing) {
+      typing = shouldType;
+      imSocket?.sendTyping(
+          conversationId: widget.chat.conversationId, typing: shouldType);
+    }
+    typingTimer?.cancel();
+    if (shouldType) {
+      typingTimer = Timer(const Duration(seconds: 2), () {
+        typing = false;
+        imSocket?.sendTyping(
+            conversationId: widget.chat.conversationId, typing: false);
+      });
+    }
+  }
+
+  Future<void> _playAudioMessage(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    if (playingAudioKey == key) {
+      await audioPlayer.pause();
+      if (mounted) setState(() => playingAudioKey = null);
+      return;
+    }
+    final service = DDPostService();
+    try {
+      final url = await service.mediaUrlForKey(token, key);
+      await audioPlayer.play(UrlSource(url));
+      if (mounted) setState(() => playingAudioKey = key);
+    } finally {
+      service.dispose();
+    }
+  }
+
+  Widget _imageMessageBody(Map<String, dynamic> message) {
+    final key = '${message['text'] ?? ''}';
+    final filePath = imageFiles[key];
+    if (filePath == null) {
+      unawaited(_resolveImage(key));
+      return const SizedBox(
+        width: 120,
+        height: 90,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    return GestureDetector(
+      onTap: () => showDialog<void>(
+        context: context,
+        builder: (_) => Dialog(
+          child: InteractiveViewer(child: Image.file(File(filePath))),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.file(
+          File(filePath),
+          width: 180,
+          height: 140,
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _resolveImage(String key) async {
+    if (key.isEmpty || imageFiles.containsKey(key)) return;
+    final cached = await ImLocalStore.imagePath(key);
+    if (cached != null && mounted) {
+      setState(() => imageFiles[key] = cached);
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final url = await service.mediaUrlForKey(token, key);
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final filePath = await ImLocalStore.saveImage(key, response.bodyBytes);
+        if (mounted) setState(() => imageFiles[key] = filePath);
+      }
+    } catch (_) {
+      // A later rebuild can retry a transient signed URL or network failure.
+    } finally {
+      service.dispose();
+    }
+  }
+
+  Future<void> _pickAndSendAudio() async {
+    final recorder = AudioRecorder();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty || imSocket == null || !imSocket!.isConnected) {
+      await recorder.dispose();
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('网络未连接，语音未发送')));
+      }
+      return;
+    }
+    try {
+      if (!await recorder.hasPermission()) throw Exception('没有麦克风权限');
+      final dir = await getTemporaryDirectory();
+      final localPath =
+          '${dir.path}/im_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc, numChannels: 1),
+        path: localPath,
+      );
+      await Future<void>.delayed(const Duration(seconds: 1));
+      final pathValue = await recorder.stop();
+      if (pathValue == null) throw Exception('录音失败');
+      final service = DDPostService();
+      final upload = await service.voiceUploadUrl(
+          token: token, fileName: 'voice.m4a', contentType: 'audio/mp4');
+      final url = '${upload['url'] ?? upload['uploadUrl'] ?? ''}';
+      final key = '${upload['objectKey'] ?? upload['key'] ?? ''}';
+      final bytes = await File(pathValue).readAsBytes();
+      final response = await http.put(Uri.parse(url),
+          headers: {'Content-Type': 'audio/mp4'}, body: bytes);
+      service.dispose();
+      if (response.statusCode < 200 ||
+          response.statusCode >= 300 ||
+          key.isEmpty) {
+        throw Exception('语音上传失败');
+      }
+      imSocket!.sendText(
+        conversationId: widget.chat.conversationId,
+        kind: 'audio',
+        text: key,
+        clientId: DateTime.now().microsecondsSinceEpoch.toString(),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    } finally {
+      await recorder.dispose();
+    }
+  }
+
+  Future<void> _pickAndSendImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty || imSocket == null || !imSocket!.isConnected) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('网络未连接，图片未发送')),
+        );
+      }
+      return;
+    }
+    try {
+      final service = DDPostService();
+      final upload = await service.postMediaUploadUrl(
+        token: token,
+        fileName: picked.name,
+        contentType: 'image/${picked.name.split('.').last.toLowerCase()}',
+        kind: 'image',
+      );
+      final uploadUrl = '${upload['uploadUrl'] ?? upload['url'] ?? ''}';
+      final objectKey = '${upload['objectKey'] ?? upload['key'] ?? ''}';
+      if (uploadUrl.isEmpty || objectKey.isEmpty) {
+        throw Exception('图片上传地址无效');
+      }
+      final bytes = await picked.readAsBytes();
+      final response = await http.put(
+        Uri.parse(uploadUrl),
+        headers: {
+          'Content-Type': 'image/${picked.name.split('.').last.toLowerCase()}'
+        },
+        body: bytes,
+      );
+      service.dispose();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('图片上传失败');
+      }
+      final clientId = DateTime.now().microsecondsSinceEpoch.toString();
+      imSocket!.sendText(
+        conversationId: widget.chat.conversationId,
+        kind: 'image',
+        text: objectKey,
+        clientId: clientId,
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    }
+  }
+
+  Future<void> _showMessageMenu(Map<String, dynamic> message) async {
+    final isMine = currentUserId.isNotEmpty &&
+        '${message['senderId'] ?? ''}' == currentUserId;
+    final status = '${message['status'] ?? 'sent'}';
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('复制'),
+              onTap: () => Navigator.pop(context, 'copy'),
+            ),
+            if (isMine && status != 'recalled' && status != 'deleted')
+              ListTile(
+                leading: const Icon(Icons.undo),
+                title: const Text('撤回'),
+                onTap: () => Navigator.pop(context, 'recall'),
+              ),
+            if (isMine && status != 'deleted')
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('删除'),
+                onTap: () => Navigator.pop(context, 'delete'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'copy') {
+      await Clipboard.setData(ClipboardData(text: '${message['text'] ?? ''}'));
+      return;
+    }
+    final id = '${message['id'] ?? ''}';
+    if (id.isEmpty || id.startsWith('local:')) return;
+    if (choice == 'recall') {
+      imSocket?.recallMessage(
+          conversationId: widget.chat.conversationId, messageId: id);
+    } else if (choice == 'delete') {
+      imSocket?.deleteMessage(
+          conversationId: widget.chat.conversationId, messageId: id);
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    final text = messageController.text.trim();
+    if (text.isEmpty) return;
+    final socket = imSocket;
+    if (socket == null || !socket.isConnected || blockedConversation) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('网络未连接，消息未发送')),
+        );
+      }
+      return;
+    }
+    final clientId = DateTime.now().microsecondsSinceEpoch.toString();
+    final pending = <String, dynamic>{
+      'id': 'local:$clientId',
+      'clientId': clientId,
+      'senderId': currentUserId,
+      'text': text,
+      'createdAt': DateTime.now().toIso8601String(),
+      'status': 'pending',
+    };
+    _appendMessage(pending);
+    await ImLocalStore.saveMessages(
+      accountId: currentUserId,
+      conversationId: widget.chat.conversationId,
+      messages: messages,
+    );
+    socket.sendText(
+      conversationId: widget.chat.conversationId,
+      text: text,
+      clientId: clientId,
+    );
+    messageController.clear();
   }
 
   Future<void> _markLatestRead() async {
@@ -482,47 +940,113 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ),
         body: Column(children: [
           Expanded(
-            child: messages.isEmpty
-                ? const Center(
-                    child: Text('选择一个聊天开始交流',
-                        style: TextStyle(color: Colors.grey)))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: messages.length,
-                    itemBuilder: (_, index) {
-                      final message = messages[index];
-                      final isMine = currentUserId.isNotEmpty &&
-                          '${message['senderId'] ?? ''}' == currentUserId;
-                      return Align(
-                        alignment: isMine
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          margin: EdgeInsets.only(
-                            bottom: 8,
-                            left: isMine ? 64 : 0,
-                            right: isMine ? 0 : 64,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isMine
-                                ? Theme.of(context).colorScheme.primaryContainer
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(16),
-                              topRight: const Radius.circular(16),
-                              bottomLeft: Radius.circular(isMine ? 16 : 4),
-                              bottomRight: Radius.circular(isMine ? 4 : 16),
-                            ),
-                          ),
-                          child: Text('${message['text'] ?? ''}'),
-                        ),
-                      );
-                    },
+            child: Column(
+              children: [
+                if (peerTyping)
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 16, 0),
+                      child: Text('对方正在输入…',
+                          style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    ),
                   ),
+                Expanded(
+                  child: messages.isEmpty
+                      ? const Center(
+                          child: Text('选择一个聊天开始交流',
+                              style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                          controller: messageScrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          reverse: false,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: messages.length,
+                          itemBuilder: (_, index) {
+                            final message = messages[index];
+                            final isMine = currentUserId.isNotEmpty &&
+                                '${message['senderId'] ?? ''}' == currentUserId;
+                            final status = '${message['status'] ?? 'sent'}';
+                            final isRecalled = status == 'recalled';
+                            final isDeleted = status == 'deleted';
+                            return Align(
+                              alignment: isMine
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                margin: EdgeInsets.only(
+                                  bottom: 8,
+                                  left: isMine ? 64 : 0,
+                                  right: isMine ? 0 : 64,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isMine
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .primaryContainer
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(16),
+                                    topRight: const Radius.circular(16),
+                                    bottomLeft:
+                                        Radius.circular(isMine ? 16 : 4),
+                                    bottomRight:
+                                        Radius.circular(isMine ? 4 : 16),
+                                  ),
+                                ),
+                                child: GestureDetector(
+                                  onLongPress: () => _showMessageMenu(message),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      isRecalled || isDeleted
+                                          ? Text(isRecalled ? '消息已撤回' : '消息已删除',
+                                              style: const TextStyle(
+                                                  color: Colors.grey))
+                                          : message['kind'] == 'image'
+                                              ? _imageMessageBody(message)
+                                              : message['kind'] == 'audio'
+                                                  ? InkWell(
+                                                      onTap: () =>
+                                                          _playAudioMessage(
+                                                              '${message['text'] ?? ''}'),
+                                                      child: Text(
+                                                        playingAudioKey ==
+                                                                '${message['text'] ?? ''}'
+                                                            ? '⏸ 播放中'
+                                                            : '🔊 播放语音',
+                                                      ),
+                                                    )
+                                                  : Text(
+                                                      '${message['text'] ?? ''}'),
+                                      if (status == 'pending') ...[
+                                        const SizedBox(width: 6),
+                                        const SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 1.5),
+                                        ),
+                                      ],
+                                      if (status == 'failed') ...[
+                                        const SizedBox(width: 6),
+                                        const Icon(Icons.error_outline,
+                                            size: 16, color: Colors.orange),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
           SafeArea(
               top: false,
@@ -530,26 +1054,23 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
                 child: Row(children: [
                   IconButton(
-                      onPressed: () {}, icon: const Icon(Icons.attach_file)),
+                    onPressed: _pickAndSendImage,
+                    icon: const Icon(Icons.photo_outlined),
+                  ),
+                  IconButton(
+                    onPressed: _pickAndSendAudio,
+                    icon: const Icon(Icons.mic_none),
+                  ),
                   Expanded(
                       child: TextField(
                           controller: messageController,
+                          onChanged: _handleTypingChanged,
                           decoration: InputDecoration(
                               hintText: '输入消息',
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(22))))),
                   IconButton(
-                    onPressed: () {
-                      final text = messageController.text.trim();
-                      if (text.isEmpty) return;
-                      imSocket?.sendText(
-                        conversationId: widget.chat.conversationId,
-                        text: text,
-                        clientId:
-                            DateTime.now().microsecondsSinceEpoch.toString(),
-                      );
-                      messageController.clear();
-                    },
+                    onPressed: _sendMessage,
                     icon: const Icon(Icons.send),
                   ),
                 ]),

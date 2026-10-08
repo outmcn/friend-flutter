@@ -90,9 +90,34 @@ class FriendImSocket {
 
   void ping() => send({'type': 'ping'});
 
+  void sendTyping({required String conversationId, required bool typing}) {
+    send({
+      'type': typing ? 'typing:start' : 'typing:stop',
+      'conversationId': conversationId,
+    });
+  }
+
   void markRead({required String conversationId, required String messageId}) {
     send({
       'type': 'read:mark',
+      'conversationId': conversationId,
+      'messageId': messageId,
+    });
+  }
+
+  void recallMessage(
+      {required String conversationId, required String messageId}) {
+    send({
+      'type': 'message:recall',
+      'conversationId': conversationId,
+      'messageId': messageId,
+    });
+  }
+
+  void deleteMessage(
+      {required String conversationId, required String messageId}) {
+    send({
+      'type': 'message:delete',
       'conversationId': conversationId,
       'messageId': messageId,
     });
@@ -102,10 +127,12 @@ class FriendImSocket {
     required String conversationId,
     required String text,
     String? clientId,
+    String kind = 'text',
   }) {
     send({
       'type': 'message:send',
       'conversationId': conversationId,
+      'kind': kind,
       'text': text,
       if (clientId != null) 'clientId': clientId,
     });

@@ -25,6 +25,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool isFollowing = false;
   bool isProfileLiked = false;
   bool isSelfProfile = false;
+  bool blocked = false;
   int profileLikes = 0;
   int selectedContentTab = 0;
   bool _showStickyNickname = false;
@@ -102,6 +103,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       }
       final data = await service.fetchUserProfile(token, widget.userId!);
       final me = await service.fetchMe(token);
+      final currentBlocked =
+          await service.fetchUserBlocked(token, widget.userId!);
       final avatarKey = '${data['avatarKey'] ?? data['avatar'] ?? ''}'.trim();
       final signedAvatar = avatarKey.isEmpty
           ? null
@@ -124,6 +127,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           isFollowing = data['followingByViewer'] == true;
           isProfileLiked = data['likedByViewer'] == true;
           isSelfProfile = '${data['id']}' == '${me['id']}';
+          blocked = currentBlocked;
           profileLikes = int.tryParse('${data['receivedLikes'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(data['voiceUrl']?.toString());
           _avatarUrl = signedAvatar;
@@ -519,16 +523,40 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
+  Future<void> _toggleBlock() async {
+    final userId = widget.userId;
+    if (userId == null || actionLoading) return;
+    try {
+      setState(() => actionLoading = true);
+      final token = (await SharedPreferences.getInstance())
+          .getString('friend.auth.token');
+      if (token == null || token.isEmpty) throw Exception('请先登录');
+      final next = await service.toggleUserBlock(token, userId);
+      if (mounted) setState(() => blocked = next);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    } finally {
+      if (mounted) setState(() => actionLoading = false);
+    }
+  }
+
   void _showProfileMenu(BuildContext context) => showModalBottomSheet<void>(
         context: context,
         showDragHandle: true,
-        builder: (_) => const SafeArea(
+        builder: (_) => SafeArea(
           child: Wrap(
             children: [
               ListTile(leading: _FigmaIcon('link'), title: Text('分享主页')),
               ListTile(
-                leading: Icon(Icons.report_gmailerrorred_outlined),
-                title: Text('举报用户'),
+                leading: Icon(blocked ? Icons.lock_open : Icons.block),
+                title: Text(blocked ? '解除拉黑' : '拉黑用户'),
+                onTap: () {
+                  Navigator.pop(context);
+                  unawaited(_toggleBlock());
+                },
               ),
             ],
           ),

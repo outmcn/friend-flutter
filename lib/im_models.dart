@@ -69,6 +69,8 @@ class DDImMessage {
     required this.senderId,
     required this.text,
     required this.createdAt,
+    required this.kind,
+    this.durationMs = 0,
     this.clientId,
   });
   final String id;
@@ -76,6 +78,8 @@ class DDImMessage {
   final String senderId;
   final String text;
   final String createdAt;
+  final String kind;
+  final int durationMs;
   final String? clientId;
   factory DDImMessage.fromJson(Map<String, dynamic> json) => DDImMessage(
         id: '${json['id'] ?? ''}',
@@ -83,6 +87,8 @@ class DDImMessage {
         senderId: '${json['senderId'] ?? ''}',
         text: '${json['text'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
+        kind: '${json['kind'] ?? 'text'}',
+        durationMs: (json['durationMs'] as num?)?.toInt() ?? 0,
         clientId: json['clientId'] as String?,
       );
 }

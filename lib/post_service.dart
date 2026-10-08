@@ -80,6 +80,10 @@ class DDPostService {
     if (token is! String) throw Exception('登录响应格式错误');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('friend.auth.token', token);
+    final user = decoded['user'];
+    if (user is Map && user['id'] != null) {
+      await prefs.setString('friend.auth.userId', '${user['id']}');
+    }
     return token;
   }
 
@@ -133,12 +137,17 @@ class DDPostService {
     }
   }
 
-  Future<List<DDImMessage>> fetchImMessages(String token, String conversationId,
-      {String? afterId}) async {
+  Future<List<DDImMessage>> fetchImMessages(
+    String token,
+    String conversationId, {
+    String? afterId,
+    String? beforeId,
+  }) async {
     final uri = _api('/im/conversations/$conversationId/messages').replace(
       queryParameters: {
-        'limit': '100',
+        'limit': '50',
         if (afterId != null && afterId.isNotEmpty) 'afterId': afterId,
+        if (beforeId != null && beforeId.isNotEmpty) 'beforeId': beforeId,
       },
     );
     final response = await _client.get(
@@ -466,6 +475,36 @@ class DDPostService {
       throw Exception('${decoded['error'] ?? '点赞失败'}');
     }
     return decoded;
+  }
+
+  Future<bool> fetchUserBlocked(String token, int userId) async {
+    final response = await _client.get(
+      _api('/users/$userId/block-status'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode != 200 ||
+        decoded is! Map ||
+        decoded['blocked'] is! bool) {
+      throw Exception('拉黑状态加载失败');
+    }
+    return decoded['blocked'] as bool;
+  }
+
+  Future<bool> toggleUserBlock(String token, int userId) async {
+    final response = await _client.post(
+      _api('/users/$userId/block'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map ||
+        decoded['blocked'] is! bool) {
+      throw Exception(
+          decoded is Map ? '${decoded['error'] ?? '拉黑操作失败'}' : '拉黑操作失败');
+    }
+    return decoded['blocked'] as bool;
   }
 
   Future<bool> toggleFollow(String token, int userId) async {
