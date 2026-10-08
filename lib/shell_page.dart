@@ -136,6 +136,7 @@ class _ChatPageState extends State<ChatPage> {
       final service = DDPostService();
       final id =
           await service.createDirectConversation(token, '${selected['id']}');
+      final currentUserId = '${(await service.fetchMe(token))['id'] ?? ''}';
       service.dispose();
       await _loadConversations();
       if (!mounted) return;
@@ -144,8 +145,15 @@ class _ChatPageState extends State<ChatPage> {
         orElse: () => _ChatPreview(
             '${selected['nickname'] ?? '用户'}', '开始一段新的聊天', null, id, 0),
       );
-      await Navigator.push(context,
-          MaterialPageRoute(builder: (_) => _ChatDetailPage(chat: chat)));
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _ChatDetailPage(
+            chat: chat,
+            currentUserId: currentUserId,
+          ),
+        ),
+      );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -168,10 +176,20 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) =>
       InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => _ChatDetailPage(chat: chat)),
-        ),
+        onTap: () async {
+          final prefs = await SharedPreferences.getInstance();
+          final currentUserId = prefs.getString('friend.auth.userId') ?? '';
+          if (!context.mounted) return;
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => _ChatDetailPage(
+                chat: chat,
+                currentUserId: currentUserId,
+              ),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
@@ -303,8 +321,9 @@ class _ChatPreview {
 }
 
 class _ChatDetailPage extends StatefulWidget {
-  const _ChatDetailPage({required this.chat});
+  const _ChatDetailPage({required this.chat, this.currentUserId = ''});
   final _ChatPreview chat;
+  final String currentUserId;
   @override
   State<_ChatDetailPage> createState() => _ChatDetailPageState();
 }
@@ -313,6 +332,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageController = TextEditingController();
   FriendImSocket? imSocket;
   final messages = <Map<String, dynamic>>[];
+  String currentUserId = '';
   StreamSubscription<Map<String, dynamic>>? eventSubscription;
   bool syncing = false;
 
@@ -334,6 +354,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) throw Exception('请先登录');
+    currentUserId = widget.currentUserId;
+    final service = DDPostService();
+    try {
+      final profile = await service.fetchMe(token);
+      currentUserId = '${profile['id'] ?? currentUserId}';
+    } catch (_) {}
+    service.dispose();
     final cached = await ImLocalStore.messages(widget.chat.conversationId);
     if (mounted && cached.isNotEmpty) {
       setState(() {
@@ -462,19 +489,39 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: messages.length,
-                    itemBuilder: (_, index) => Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(16),
+                    itemBuilder: (_, index) {
+                      final message = messages[index];
+                      final isMine = currentUserId.isNotEmpty &&
+                          '${message['senderId'] ?? ''}' == currentUserId;
+                      return Align(
+                        alignment: isMine
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          margin: EdgeInsets.only(
+                            bottom: 8,
+                            left: isMine ? 64 : 0,
+                            right: isMine ? 0 : 64,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isMine
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(16),
+                              topRight: const Radius.circular(16),
+                              bottomLeft: Radius.circular(isMine ? 16 : 4),
+                              bottomRight: Radius.circular(isMine ? 4 : 16),
+                            ),
+                          ),
+                          child: Text('${message['text'] ?? ''}'),
                         ),
-                        child: Text('${messages[index]['text'] ?? ''}'),
-                      ),
-                    ),
+                      );
+                    },
                   ),
           ),
           SafeArea(
