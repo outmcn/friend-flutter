@@ -56,7 +56,20 @@ class ImLocalStore {
       whereArgs: [accountId, conversationId],
       orderBy: 'CAST(message_id AS INTEGER) ASC',
     );
-    return rows.map(Map<String, dynamic>.from).toList();
+    return rows.map((row) {
+      final item = Map<String, dynamic>.from(row);
+      return <String, dynamic>{
+        'id': '${item['message_id'] ?? ''}',
+        'conversationId': '${item['conversation_id'] ?? ''}',
+        'clientId': item['client_id'],
+        'senderId': '${item['sender_id'] ?? ''}',
+        'text': '${item['text'] ?? ''}',
+        'kind': '${item['kind'] ?? 'text'}',
+        'durationMs': (item['duration_ms'] as num?)?.toInt() ?? 0,
+        'createdAt': item['created_at'],
+        'status': '${item['status'] ?? 'sent'}',
+      };
+    }).toList();
   }
 
   static Future<void> saveMessages({

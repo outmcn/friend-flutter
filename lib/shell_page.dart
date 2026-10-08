@@ -440,7 +440,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       );
       if (!mounted) return;
       for (final item in history) {
-        _appendMessage({
+        _mergeMessage({
           'text': item.text,
           'id': item.id,
           'kind': item.kind,
@@ -448,7 +448,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           'clientId': item.clientId,
           'senderId': item.senderId,
           'createdAt': item.createdAt,
-        });
+        }, status: 'sent');
       }
       await ImLocalStore.saveMessages(
         accountId: currentUserId,
@@ -517,38 +517,28 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       _markPendingAccepted(item);
       return;
     }
-    if (type != 'message:new') return;
-    if (_appendMessage(item)) {
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: messages,
-      );
-      final id = '${item['id'] ?? ''}';
-      if (id.isNotEmpty) {
-        imSocket?.markRead(
-            conversationId: widget.chat.conversationId, messageId: id);
+    if (type == 'message:new') {
+      if (_mergeMessage(item, status: 'sent')) {
+        await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: messages,
+        );
+        final id = '${item['id'] ?? ''}';
+        if (id.isNotEmpty) {
+          imSocket?.markRead(
+              conversationId: widget.chat.conversationId, messageId: id);
+        }
+        unawaited(_markLatestRead());
       }
-      unawaited(_markLatestRead());
     }
   }
 
   Future<void> _markPendingAccepted(Map<String, dynamic> item) async {
     final clientId = '${item['clientId'] ?? ''}';
     if (clientId.isEmpty) return;
-    final index = messages
-        .indexWhere((message) => '${message['clientId'] ?? ''}' == clientId);
-    if (index < 0) {
-      _appendMessage({...item, 'status': 'sent'});
-    } else {
-      setState(() {
-        messages[index] = {
-          ...messages[index],
-          ...item,
-          'status': 'sent',
-        };
-      });
-    }
+    _mergeMessage(item, status: 'sent');
+
     await ImLocalStore.saveMessages(
       accountId: currentUserId,
       conversationId: widget.chat.conversationId,
@@ -556,14 +546,28 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     );
   }
 
-  bool _appendMessage(Map<String, dynamic> item) {
+  bool _mergeMessage(Map<String, dynamic> item, {String? status}) {
     final id = '${item['id'] ?? ''}';
     final clientId = '${item['clientId'] ?? ''}';
-    final duplicate = messages.any((existing) =>
-        (id.isNotEmpty && '${existing['id'] ?? ''}' == id) ||
-        (clientId.isNotEmpty && '${existing['clientId'] ?? ''}' == clientId));
-    if (duplicate) return false;
-    setState(() => messages.add(item));
+    final index = messages.indexWhere((existing) {
+      return (id.isNotEmpty && '${existing['id'] ?? ''}' == id) ||
+          (clientId.isNotEmpty && '${existing['clientId'] ?? ''}' == clientId);
+    });
+    final merged = <String, dynamic>{
+      ...(index >= 0 ? messages[index] : const <String, dynamic>{}),
+      ...item,
+      if (status != null) 'status': status,
+      if (status == null && index >= 0) 'status': messages[index]['status'],
+    };
+    if (index >= 0) {
+      final old = messages[index];
+      if (old['status'] == 'pending' && item['id'] != null) {
+        merged['status'] = status ?? 'sent';
+      }
+      setState(() => messages[index] = merged);
+      return true;
+    }
+    setState(() => messages.add(merged));
     return true;
   }
 
@@ -893,7 +897,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       'createdAt': DateTime.now().toIso8601String(),
       'status': 'pending',
     };
-    _appendMessage(pending);
+    _mergeMessage(pending);
+
     await ImLocalStore.saveMessages(
       accountId: currentUserId,
       conversationId: widget.chat.conversationId,
