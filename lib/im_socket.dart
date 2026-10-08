@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-/// Minimal Friend IM WebSocket client for the first transport slice.
+/// Authenticated IM WebSocket client with heartbeat and bounded reconnect.
 class FriendImSocket {
   FriendImSocket({required this.token, WebSocketChannel? channel})
       : _channel = channel;
@@ -12,45 +12,74 @@ class FriendImSocket {
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _subscription;
   final _events = StreamController<Map<String, dynamic>>.broadcast();
+  Timer? _pingTimer;
+  Timer? _reconnectTimer;
+  bool _closedByOwner = false;
+  int _reconnectAttempt = 0;
 
   Stream<Map<String, dynamic>> get events => _events.stream;
   bool get isConnected => _channel != null;
 
   Future<void> connect() async {
-    if (_channel != null) return;
-    final uri = Uri.parse('wss://friend.outmcn.net/ws');
-    final channel = WebSocketChannel.connect(uri);
+    if (_closedByOwner || _channel != null) return;
+    final channel = _channel ??
+        WebSocketChannel.connect(Uri.parse('wss://chat.outmcn.com/ws'));
     _channel = channel;
-    await channel.ready;
-    _subscription = channel.stream.listen(
-      (event) {
-        if (event is! String) return;
-        try {
-          final decoded = jsonDecode(event);
-          if (decoded is Map) {
-            _events.add(decoded.cast<String, dynamic>());
-          }
-        } catch (_) {
+    try {
+      await channel.ready;
+      _reconnectAttempt = 0;
+      _subscription = channel.stream.listen(
+        _handleEvent,
+        onError: (Object error, StackTrace stack) {
           _events.add(<String, dynamic>{
             'type': 'error',
-            'code': 'invalid_json',
+            'code': 'socket_error',
+            'message': '$error',
           });
-        }
-      },
-      onError: (Object error, StackTrace stack) {
-        _events.add(<String, dynamic>{
-          'type': 'error',
-          'code': 'socket_error',
-          'message': '$error',
-        });
-      },
-      onDone: () {
-        _events.add(<String, dynamic>{'type': 'closed'});
-        _channel = null;
-      },
-      cancelOnError: false,
-    );
-    send({'type': 'auth', 'token': token});
+        },
+        onDone: _handleClosed,
+        cancelOnError: false,
+      );
+      _pingTimer?.cancel();
+      _pingTimer = Timer.periodic(const Duration(seconds: 25), (_) => ping());
+      send({'type': 'auth', 'token': token});
+    } catch (error) {
+      _channel = null;
+      _events.add(<String, dynamic>{
+        'type': 'error',
+        'code': 'connect_failed',
+        'message': '$error',
+      });
+      _scheduleReconnect();
+    }
+  }
+
+  void _handleEvent(dynamic event) {
+    if (event is! String) return;
+    try {
+      final decoded = jsonDecode(event);
+      if (decoded is Map) _events.add(decoded.cast<String, dynamic>());
+    } catch (_) {
+      _events.add(<String, dynamic>{'type': 'error', 'code': 'invalid_json'});
+    }
+  }
+
+  void _handleClosed() {
+    _subscription = null;
+    _channel = null;
+    _pingTimer?.cancel();
+    _events.add(<String, dynamic>{'type': 'closed'});
+    _scheduleReconnect();
+  }
+
+  void _scheduleReconnect() {
+    if (_closedByOwner || _reconnectTimer?.isActive == true) return;
+    final seconds = (1 << _reconnectAttempt.clamp(0, 4)).clamp(1, 16);
+    _reconnectAttempt++;
+    _reconnectTimer = Timer(Duration(seconds: seconds), () {
+      _reconnectTimer = null;
+      unawaited(connect());
+    });
   }
 
   void send(Map<String, dynamic> event) {
@@ -60,6 +89,14 @@ class FriendImSocket {
   }
 
   void ping() => send({'type': 'ping'});
+
+  void markRead({required String conversationId, required String messageId}) {
+    send({
+      'type': 'read:mark',
+      'conversationId': conversationId,
+      'messageId': messageId,
+    });
+  }
 
   void sendText({
     required String conversationId,
@@ -75,6 +112,9 @@ class FriendImSocket {
   }
 
   Future<void> close() async {
+    _closedByOwner = true;
+    _reconnectTimer?.cancel();
+    _pingTimer?.cancel();
     await _subscription?.cancel();
     _subscription = null;
     await _channel?.sink.close();

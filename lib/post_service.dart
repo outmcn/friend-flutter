@@ -4,11 +4,12 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 part 'post_models.dart';
+part 'im_models.dart';
 
 class DDPostService {
   DDPostService({http.Client? client}) : _client = client ?? http.Client();
 
-  static final Uri _base = Uri.parse('https://friend.outmcn.net');
+  static final Uri _base = Uri.parse('https://api.outmcn.com');
   final http.Client _client;
   static const profileTabCachePrefix = 'dd.profile.tab.cache.';
 
@@ -80,6 +81,74 @@ class DDPostService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('friend.auth.token', token);
     return token;
+  }
+
+  Future<List<DDConversation>> fetchImConversations(String token) async {
+    final response = await _client.get(
+      _api('/im/conversations'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 ||
+        data is! Map ||
+        data['conversations'] is! List) {
+      throw Exception('会话加载失败');
+    }
+    return (data['conversations'] as List)
+        .whereType<Map>()
+        .map((item) => DDConversation.fromJson(item.cast<String, dynamic>()))
+        .toList();
+  }
+
+  Future<String> createDirectConversation(String token, String peerId) async {
+    final response = await _client.post(
+      _api('/im/conversations/direct'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'peerId': peerId}),
+    );
+    final data = jsonDecode(response.body);
+    if ((response.statusCode != 200 && response.statusCode != 201) ||
+        data is! Map ||
+        data['conversationId'] == null) {
+      throw Exception(data is Map ? '${data['error'] ?? '会话创建失败'}' : '会话创建失败');
+    }
+    return '${data['conversationId']}';
+  }
+
+  Future<void> markImConversationRead(
+      String token, String conversationId, String messageId) async {
+    final response = await _client.post(
+      _api('/im/conversations/$conversationId/read'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'messageId': messageId}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('已读状态更新失败');
+    }
+  }
+
+  Future<List<DDImMessage>> fetchImMessages(
+      String token, String conversationId) async {
+    final response = await _client.get(
+      _api('/im/conversations/$conversationId/messages'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 ||
+        data is! Map ||
+        data['messages'] is! List) {
+      throw Exception('消息加载失败');
+    }
+    return (data['messages'] as List)
+        .whereType<Map>()
+        .map((item) => DDImMessage.fromJson(item.cast<String, dynamic>()))
+        .toList();
   }
 
   Future<List<DDNotification>> fetchNotifications(String token) async =>
@@ -453,8 +522,26 @@ class DDPostService {
     return rows.whereType<Map<String, dynamic>>().toList();
   }
 
-  Future<List<Map<String, dynamic>>> fetchHistory(String token) =>
-      fetchUsers(token, relation: 'history');
+  Future<List<Map<String, dynamic>>> searchUsers(
+      String token, String query) async {
+    final uri = _api('/users/search').replace(queryParameters: {
+      'q': query,
+    });
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode != 200 ||
+        decoded is! Map ||
+        decoded['users'] is! List) {
+      throw Exception('用户搜索失败');
+    }
+    return (decoded['users'] as List)
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
+  }
 
   Future<Map<String, dynamic>> postMediaUploadUrl({
     required String token,

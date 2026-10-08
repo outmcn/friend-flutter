@@ -127,7 +127,7 @@ class _StartupNetworkGateState extends State<StartupNetworkGate> {
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
     try {
       final request = await client
-          .getUrl(Uri.parse('https://friend.outmcn.net/api'))
+          .getUrl(Uri.parse('https://api.outmcn.com/api'))
           .timeout(const Duration(seconds: 10));
       final response =
           await request.close().timeout(const Duration(seconds: 10));

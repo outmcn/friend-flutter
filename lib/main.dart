@@ -27,6 +27,7 @@ import 'post_service.dart';
 import 'discover_feed.dart';
 import 'im_socket.dart';
 
+part 'im_new_chat.dart';
 part 'shared_core.dart';
 part 'figma_icon.dart';
 part 'shared_clippers.dart';

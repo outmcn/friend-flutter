@@ -10,17 +10,46 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   int? selectedChat;
   final messageController = TextEditingController();
-  final conversations = const [
-    _ChatPreview(
-        'HermesChat', '开始一段新的聊天', 'assets/figma/profile-portrait-2.jpg', '1'),
-    _ChatPreview('好友消息', '暂无新的消息', 'assets/figma/profile-portrait-3.jpg', '2'),
-    _ChatPreview(
-        '群组消息', '创建或加入一个群组', 'assets/figma/profile-portrait-4.jpg', '3'),
-  ];
+  final userSearchController = TextEditingController();
+  List<_ChatPreview> conversations = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadConversations());
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) return;
+      final service = DDPostService();
+      final rows = await service.fetchImConversations(token);
+      if (!mounted) return;
+      setState(() {
+        conversations = rows
+            .map((row) => _ChatPreview(
+                  row.peer?.nickname ?? '会话 ${row.id}',
+                  row.lastMessage?.text ?? '开始一段新的聊天',
+                  'assets/figma/profile-portrait-2.jpg',
+                  row.id,
+                  row.unreadCount,
+                ))
+            .toList();
+        loading = false;
+      });
+      service.dispose();
+    } catch (_) {
+      if (mounted) setState(() => loading = false);
+    }
+  }
 
   @override
   void dispose() {
     messageController.dispose();
+    userSearchController.dispose();
     super.dispose();
   }
 
@@ -38,7 +67,7 @@ class _ChatPageState extends State<ChatPage> {
           ),
           IconButton(
             tooltip: '新建聊天',
-            onPressed: () {},
+            onPressed: _openNewChat,
             icon: Icon(TIcons.add_circle),
           ),
           IconButton(
@@ -48,7 +77,9 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ],
       ),
-      body: _conversationList(context),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : _conversationList(context),
     );
   }
 
@@ -56,6 +87,37 @@ class _ChatPageState extends State<ChatPage> {
    * 聊天列表页统一使用 AppBar；此处只保留会话列表内容，避免自定义顶栏
    * 与其他页面的系统安全区、标题高度和操作按钮间距产生差异。
    */
+  Future<void> _openNewChat() async {
+    final selected = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _NewChatSheet(controller: userSearchController),
+    );
+    if (selected == null || !mounted) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      final service = DDPostService();
+      final id =
+          await service.createDirectConversation(token, '${selected['id']}');
+      service.dispose();
+      await _loadConversations();
+      if (!mounted) return;
+      final chat = conversations.firstWhere(
+        (item) => item.conversationId == id,
+        orElse: () => _ChatPreview('${selected['nickname'] ?? '用户'}',
+            '开始一段新的聊天', 'assets/figma/profile-portrait-2.jpg', id, 0),
+      );
+      await Navigator.push(context,
+          MaterialPageRoute(builder: (_) => _ChatDetailPage(chat: chat)));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    }
+  }
+
   Widget _conversationList(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         child: ListView.separated(
@@ -98,6 +160,26 @@ class _ChatPageState extends State<ChatPage> {
                             style: TextStyle(
                                 fontSize: 11,
                                 color: Theme.of(context).hintColor)),
+                        if (chat.unreadCount > 0) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            constraints: const BoxConstraints(minWidth: 18),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.error,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              chat.unreadCount > 99
+                                  ? '99+'
+                                  : '${chat.unreadCount}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 10),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 3),
@@ -165,11 +247,13 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class _ChatPreview {
-  const _ChatPreview(this.name, this.preview, this.avatar, this.conversationId);
+  const _ChatPreview(this.name, this.preview, this.avatar, this.conversationId,
+      this.unreadCount);
   final String name;
   final String preview;
   final String avatar;
   final String conversationId;
+  final int unreadCount;
 }
 
 class _ChatDetailPage extends StatefulWidget {
@@ -204,16 +288,62 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final socket = FriendImSocket(token: token);
     imSocket = socket;
     await socket.connect();
+    final service = DDPostService();
+    final history =
+        await service.fetchImMessages(token, widget.chat.conversationId);
+    if (mounted) {
+      setState(() {
+        messages.addAll(history.map((item) => <String, dynamic>{
+              'text': item.text,
+              'id': item.id,
+              'clientId': item.clientId,
+              'senderId': item.senderId,
+            }));
+      });
+      if (messages.isNotEmpty) {
+        try {
+          await service.markImConversationRead(
+              token, widget.chat.conversationId, '${messages.last['id']}');
+        } catch (_) {}
+      }
+    }
+    service.dispose();
     socket.events.listen((event) {
       if (!mounted) return;
       final type = event['type'];
       if (type == 'message:new' || type == 'message:accepted') {
         final message = event['message'];
         if (message is Map) {
-          setState(() => messages.add(message.cast<String, dynamic>()));
+          final item = message.cast<String, dynamic>();
+          final id = '${item['id'] ?? ''}';
+          final clientId = '${item['clientId'] ?? ''}';
+          final duplicate = messages.any((existing) =>
+              '${existing['id'] ?? ''}' == id ||
+              (clientId.isNotEmpty &&
+                  '${existing['clientId'] ?? ''}' == clientId));
+          if (!duplicate) {
+            setState(() => messages.add(item));
+            imSocket?.markRead(
+                conversationId: widget.chat.conversationId, messageId: id);
+            unawaited(_markLatestRead());
+          }
         }
       }
     });
+  }
+
+  Future<void> _markLatestRead() async {
+    if (messages.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      await service.markImConversationRead(
+          token, widget.chat.conversationId, '${messages.last['id']}');
+    } finally {
+      service.dispose();
+    }
   }
 
   @override
