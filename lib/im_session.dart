@@ -125,6 +125,15 @@ class ImSession {
           }
         }
       }
+      if (type == 'message:recalled') {
+        final message = event['message'];
+        if (message is Map && _userId != null) {
+          unawaited(ImLocalStore.markRecalled(
+            accountId: _userId!,
+            message: message.cast<String, dynamic>(),
+          ));
+        }
+      }
       _events.add(event);
     });
     unawaited(socket.connect());

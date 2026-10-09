@@ -588,13 +588,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (type == 'message:recalled') {
       final message = event['message'];
       if (message is Map) {
-        final id = '${message['id'] ?? ''}';
-        final index =
-            messages.indexWhere((item) => '${item['id'] ?? ''}' == id);
+        final item = message.cast<String, dynamic>();
+        final messageId = '${item['id'] ?? ''}';
+        final clientId = '${item['clientId'] ?? ''}';
+        final index = messages.indexWhere((existing) {
+          return (messageId.isNotEmpty &&
+                  '${existing['id'] ?? ''}' == messageId) ||
+              (clientId.isNotEmpty &&
+                  '${existing['clientId'] ?? ''}' == clientId);
+        });
         if (index >= 0) {
           setState(() => messages[index] = {
                 ...messages[index],
-                'status': type == 'message:recalled' ? 'recalled' : 'deleted',
+                ...item,
+                'status': 'recalled',
               });
           await ImLocalStore.saveMessages(
             accountId: currentUserId,

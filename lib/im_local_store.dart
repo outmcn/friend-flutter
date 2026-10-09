@@ -174,6 +174,33 @@ class ImLocalStore {
     );
   }
 
+  static Future<void> markRecalled({
+    required String accountId,
+    required Map<String, dynamic> message,
+  }) async {
+    final conversationId = '${message['conversationId'] ?? ''}';
+    final messageId = '${message['id'] ?? ''}';
+    final clientId = '${message['clientId'] ?? ''}';
+    if (conversationId.isEmpty || messageId.isEmpty) return;
+    final db = await _db();
+    final where = clientId.isEmpty
+        ? 'account_id = ? AND conversation_id = ? AND message_id = ?'
+        : 'account_id = ? AND conversation_id = ? AND (message_id = ? OR client_id = ?)';
+    final args = clientId.isEmpty
+        ? [accountId, conversationId, messageId]
+        : [accountId, conversationId, messageId, clientId];
+    final rows = await db.query('messages',
+        columns: ['message_id'], where: where, whereArgs: args, limit: 1);
+    if (rows.isEmpty) return;
+    final oldId = '${rows.first['message_id'] ?? ''}';
+    await db.update(
+      'messages',
+      {'status': 'recalled'},
+      where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
+      whereArgs: [accountId, conversationId, oldId],
+    );
+  }
+
   static Future<void> deleteLocalMessage({
     required String accountId,
     required String conversationId,
