@@ -28,6 +28,7 @@ class ImSession {
   final _events = StreamController<Map<String, dynamic>>.broadcast();
   final _readyCallbacks = <void Function()>[];
   final _outbox = <_PendingImMessage>[];
+  final _inflight = <String, _PendingImMessage>{};
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -72,7 +73,17 @@ class ImSession {
       } else if (type == 'error' || type == 'connect_failed') {
         _setState(ImConnectionState.error);
       }
-      if (event['type'] == 'message:new') {
+      if (type == 'message:accepted') {
+        final clientId =
+            '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
+        if (clientId.isNotEmpty) _inflight.remove(clientId);
+      } else if (type == 'message:failed') {
+        final clientId =
+            '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
+        final failed = clientId.isNotEmpty ? _inflight.remove(clientId) : null;
+        if (failed != null) _outbox.add(failed);
+      }
+      if (type == 'message:new') {
         final message = event['message'];
         if (message is Map && message['id'] != null) {
           final conversationId = '${message['conversationId'] ?? ''}';
@@ -144,6 +155,9 @@ class ImSession {
         clientId: message.clientId,
       );
     }
+    _inflight.addAll({
+      for (final message in pending) message.clientId: message,
+    });
     _outbox.removeWhere(
         (queued) => pending.any((sent) => sent.clientId == queued.clientId));
   }
@@ -161,8 +175,17 @@ class ImSession {
     _flushOutbox();
   }
 
+  void whenReady(void Function() callback) {
+    if (isConnected) {
+      callback();
+    } else {
+      _readyCallbacks.add(callback);
+    }
+  }
+
   Future<void> stop({bool clearOutbox = true}) async {
     _readyCallbacks.clear();
+    _inflight.clear();
     if (clearOutbox) _outbox.clear();
     await _socketEvents?.cancel();
     _socketEvents = null;
