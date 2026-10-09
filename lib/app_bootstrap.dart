@@ -287,8 +287,8 @@ class _AuthPageState extends State<AuthPage> {
         username: username.text,
         password: password.text,
       );
-      if (mounted) widget.onAuthenticated(value);
       await ImSession.instance.start(value);
+      if (mounted) widget.onAuthenticated(value);
     } on FriendAuthException catch (e) {
       if (mounted) setState(() => error = e.message);
     } catch (_) {

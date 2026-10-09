@@ -513,7 +513,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ..addAll(cached);
     });
     unawaited(_scrollToLatest());
-    // Render the local cache before any network request; network work is background-only.
+    eventSubscription = ImSession.instance.events.listen(_handleImEvent);
     unawaited(_refreshIdentityAndConnect(token));
   }
 
