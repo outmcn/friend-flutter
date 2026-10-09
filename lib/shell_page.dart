@@ -1576,6 +1576,7 @@ class _DDShellState extends State<DDShell> {
     super.initState();
     pages = const [
       HomePage(),
+      GameCompanionPlazaPage(),
       DiscoverPage(),
       ChatPage(),
       DDProfilePage(),
@@ -1597,9 +1598,14 @@ class _DDShellState extends State<DDShell> {
           },
           destinations: const [
             NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: '主页',
+            ),
+            NavigationDestination(
               icon: Icon(Icons.sports_esports_outlined),
               selectedIcon: Icon(Icons.sports_esports),
-              label: '主页',
+              label: '娱乐',
             ),
             NavigationDestination(
               icon: Icon(Icons.explore_outlined),
