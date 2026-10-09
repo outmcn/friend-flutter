@@ -112,16 +112,16 @@ class ImSession {
           final conversationId = '${message['conversationId'] ?? ''}';
           final messageId = '${message['id'] ?? ''}';
           if (conversationId.isNotEmpty && messageId.isNotEmpty) {
-            _socket?.markDelivered(
-              conversationId: conversationId,
-              messageId: messageId,
-            );
             if (_userId != null) {
               unawaited(ImLocalStore.saveIncomingMessage(
                 accountId: _userId!,
                 message: message.cast<String, dynamic>(),
               ));
             }
+            _socket?.markDelivered(
+              conversationId: conversationId,
+              messageId: messageId,
+            );
           }
         }
       }
