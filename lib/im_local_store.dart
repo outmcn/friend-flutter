@@ -104,6 +104,24 @@ class ImLocalStore {
     await batch.commit(noResult: true);
   }
 
+  static Future<List<Map<String, dynamic>>> pendingMessages(
+      String accountId) async {
+    final rows = await (await _db()).query(
+      'messages',
+      columns: ['conversation_id', 'client_id', 'text'],
+      where: "account_id = ? AND status = 'pending' AND client_id IS NOT NULL",
+      whereArgs: [accountId],
+      orderBy: 'CAST(message_id AS INTEGER) ASC',
+    );
+    return rows
+        .map((row) => <String, dynamic>{
+              'conversationId': '${row['conversation_id'] ?? ''}',
+              'clientId': '${row['client_id'] ?? ''}',
+              'text': '${row['text'] ?? ''}',
+            })
+        .toList();
+  }
+
   static Future<void> saveConversations({
     required String accountId,
     required List<Map<String, dynamic>> conversations,

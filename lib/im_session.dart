@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'im_local_store.dart';
 import 'im_socket.dart';
 
 /// A text message retained until the authenticated socket can send it.
@@ -83,6 +84,27 @@ class ImSession {
       'state': value.name,
       'userId': _userId,
     });
+  }
+
+  Future<void> restorePending(String accountId) async {
+    try {
+      final pending = await ImLocalStore.pendingMessages(accountId);
+      for (final message in pending) {
+        final conversationId = '${message['conversationId'] ?? ''}';
+        final clientId = '${message['clientId'] ?? ''}';
+        final text = '${message['text'] ?? ''}';
+        if (conversationId.isNotEmpty &&
+            clientId.isNotEmpty &&
+            text.isNotEmpty) {
+          _outbox.add(_PendingImMessage(
+            conversationId: conversationId,
+            text: text,
+            clientId: clientId,
+          ));
+        }
+      }
+      _flushOutbox();
+    } catch (_) {}
   }
 
   void queueText({

@@ -534,8 +534,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
     _applyCurrentImState();
     _addDiagnostic('socket listener ready');
+    await ImSession.instance.restorePending(currentUserId);
+    _addDiagnostic('pending restored');
     unawaited(_syncMessages(token));
-    _addDiagnostic('history queued');
     try {
       _addDiagnostic('sqlite start');
       await ImLocalStore.migrateLegacyAudioKeys();
