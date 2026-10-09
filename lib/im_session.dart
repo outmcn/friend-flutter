@@ -79,10 +79,17 @@ class ImSession {
       if (type == 'message:accepted') {
         final clientId =
             '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
+        final message = event['message'];
         if (clientId.isNotEmpty) {
           _inflight.remove(clientId);
           _ackTimers.remove(clientId)?.cancel();
           _retryCounts.remove(clientId);
+          if (message is Map && _userId != null) {
+            unawaited(ImLocalStore.reconcileAccepted(
+              accountId: _userId!,
+              message: message.cast<String, dynamic>(),
+            ));
+          }
         }
       } else if (type == 'message:failed') {
         final clientId =
@@ -109,6 +116,12 @@ class ImSession {
               conversationId: conversationId,
               messageId: messageId,
             );
+            if (_userId != null) {
+              unawaited(ImLocalStore.saveIncomingMessage(
+                accountId: _userId!,
+                message: message.cast<String, dynamic>(),
+              ));
+            }
           }
         }
       }

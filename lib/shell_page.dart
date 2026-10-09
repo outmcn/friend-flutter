@@ -1089,6 +1089,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         afterId: afterId > 0 ? '$afterId' : null,
       );
       for (final message in remote) {
+        final id = message.id;
+        if (messages.any((item) => '${item['id'] ?? ''}' == id)) {
+          continue;
+        }
         final item = <String, dynamic>{
           'id': message.id,
           'conversationId': message.conversationId,

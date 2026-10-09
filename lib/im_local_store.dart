@@ -120,6 +120,60 @@ class ImLocalStore {
     await batch.commit(noResult: true);
   }
 
+  static Future<void> saveIncomingMessage({
+    required String accountId,
+    required Map<String, dynamic> message,
+  }) async {
+    final conversationId = '${message['conversationId'] ?? ''}';
+    final messageId = '${message['id'] ?? ''}';
+    if (conversationId.isEmpty || messageId.isEmpty) return;
+    final deleted = await localDeletedMessageIds(
+      accountId: accountId,
+      conversationId: conversationId,
+    );
+    if (deleted.contains(messageId)) return;
+    await saveMessages(
+      accountId: accountId,
+      conversationId: conversationId,
+      messages: [
+        {...message, 'status': 'sent'}
+      ],
+    );
+  }
+
+  static Future<void> reconcileAccepted({
+    required String accountId,
+    required Map<String, dynamic> message,
+  }) async {
+    final conversationId = '${message['conversationId'] ?? ''}';
+    final clientId = '${message['clientId'] ?? ''}';
+    if (conversationId.isEmpty || clientId.isEmpty) return;
+    final db = await _db();
+    final rows = await db.query(
+      'messages',
+      columns: ['message_id'],
+      where: 'account_id = ? AND conversation_id = ? AND client_id = ?',
+      whereArgs: [accountId, conversationId, clientId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+    final oldId = '${rows.first['message_id'] ?? ''}';
+    if (oldId != '${message['id'] ?? ''}') {
+      await db.delete(
+        'messages',
+        where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
+        whereArgs: [accountId, conversationId, oldId],
+      );
+    }
+    await saveMessages(
+      accountId: accountId,
+      conversationId: conversationId,
+      messages: [
+        {...message, 'status': 'sent'}
+      ],
+    );
+  }
+
   static Future<void> deleteLocalMessage({
     required String accountId,
     required String conversationId,
