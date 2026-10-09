@@ -1118,107 +1118,117 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                     ),
                   ),
                 Expanded(
-                  child: messages.isEmpty && !initialSyncCompleted
-                      ? const SizedBox.shrink()
-                      : messages.isEmpty
-                          ? const Center(
-                              child: Text('选择一个聊天开始交流',
-                                  style: TextStyle(color: Colors.grey)))
-                          : ListView.builder(
-                              controller: messageScrollController,
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              reverse: false,
-                              keyboardDismissBehavior:
-                                  ScrollViewKeyboardDismissBehavior.onDrag,
-                              padding: const EdgeInsets.all(16),
-                              itemCount: messages.length,
-                              itemBuilder: (_, index) {
-                                final message = messages[index];
-                                final isMine = currentUserId.isNotEmpty &&
-                                    '${message['senderId'] ?? ''}' ==
-                                        currentUserId;
-                                final status = '${message['status'] ?? 'sent'}';
-                                final isRecalled = status == 'recalled';
-                                final isDeleted = status == 'deleted';
-                                return Align(
-                                  alignment: isMine
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  child: Container(
-                                    margin: EdgeInsets.only(
-                                      bottom: 8,
-                                      left: isMine ? 64 : 0,
-                                      right: isMine ? 0 : 64,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: isMine
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .primaryContainer
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .surfaceContainerHighest,
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: const Radius.circular(16),
-                                        topRight: const Radius.circular(16),
-                                        bottomLeft:
-                                            Radius.circular(isMine ? 16 : 4),
-                                        bottomRight:
-                                            Radius.circular(isMine ? 4 : 16),
-                                      ),
-                                    ),
-                                    child: GestureDetector(
-                                      onLongPress: () =>
-                                          _showMessageMenu(message),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          isRecalled || isDeleted
-                                              ? Text(
-                                                  isRecalled
-                                                      ? '消息已撤回'
-                                                      : '消息已删除',
-                                                  style: const TextStyle(
-                                                      color: Colors.grey))
-                                              : message['kind'] == 'image'
-                                                  ? _imageMessageBody(message)
-                                                  : message['kind'] == 'audio'
-                                                      ? InkWell(
-                                                          onTap: () =>
-                                                              _playAudioMessage(
-                                                                  '${message['text'] ?? ''}'),
-                                                          child: Text(
-                                                            playingAudioKey ==
-                                                                    '${message['text'] ?? ''}'
-                                                                ? '⏸ 播放中'
-                                                                : '🔊 播放语音',
-                                                          ),
-                                                        )
-                                                      : Text(
-                                                          '${message['text'] ?? ''}'),
-                                          if (status == 'pending') ...[
-                                            const SizedBox(width: 6),
-                                            const SizedBox(
-                                              width: 12,
-                                              height: 12,
-                                              child: CircularProgressIndicator(
-                                                  strokeWidth: 1.5),
-                                            ),
-                                          ],
-                                          if (status == 'failed') ...[
-                                            const SizedBox(width: 6),
-                                            const Icon(Icons.error_outline,
-                                                size: 16, color: Colors.orange),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
+                  child: messages.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline,
+                                size: 42,
+                                color: Theme.of(context).hintColor,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                initialSyncCompleted
+                                    ? '选择一个聊天开始交流'
+                                    : '暂无本地聊天记录',
+                                style: TextStyle(
+                                    color: Theme.of(context).hintColor),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: messageScrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          reverse: false,
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: messages.length,
+                          itemBuilder: (_, index) {
+                            final message = messages[index];
+                            final isMine = currentUserId.isNotEmpty &&
+                                '${message['senderId'] ?? ''}' == currentUserId;
+                            final status = '${message['status'] ?? 'sent'}';
+                            final isRecalled = status == 'recalled';
+                            final isDeleted = status == 'deleted';
+                            return Align(
+                              alignment: isMine
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                margin: EdgeInsets.only(
+                                  bottom: 8,
+                                  left: isMine ? 64 : 0,
+                                  right: isMine ? 0 : 64,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isMine
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .primaryContainer
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(16),
+                                    topRight: const Radius.circular(16),
+                                    bottomLeft:
+                                        Radius.circular(isMine ? 16 : 4),
+                                    bottomRight:
+                                        Radius.circular(isMine ? 4 : 16),
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                                child: GestureDetector(
+                                  onLongPress: () => _showMessageMenu(message),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      isRecalled || isDeleted
+                                          ? Text(isRecalled ? '消息已撤回' : '消息已删除',
+                                              style: const TextStyle(
+                                                  color: Colors.grey))
+                                          : message['kind'] == 'image'
+                                              ? _imageMessageBody(message)
+                                              : message['kind'] == 'audio'
+                                                  ? InkWell(
+                                                      onTap: () =>
+                                                          _playAudioMessage(
+                                                              '${message['text'] ?? ''}'),
+                                                      child: Text(
+                                                        playingAudioKey ==
+                                                                '${message['text'] ?? ''}'
+                                                            ? '⏸ 播放中'
+                                                            : '🔊 播放语音',
+                                                      ),
+                                                    )
+                                                  : Text(
+                                                      '${message['text'] ?? ''}'),
+                                      if (status == 'pending') ...[
+                                        const SizedBox(width: 6),
+                                        const SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 1.5),
+                                        ),
+                                      ],
+                                      if (status == 'failed') ...[
+                                        const SizedBox(width: 6),
+                                        const Icon(Icons.error_outline,
+                                            size: 16, color: Colors.orange),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
