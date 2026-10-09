@@ -266,7 +266,7 @@ class ImLocalStore {
       String accountId) async {
     final rows = await (await _db()).query(
       'messages',
-      columns: ['conversation_id', 'client_id', 'text'],
+      columns: ['conversation_id', 'client_id', 'text', 'kind'],
       where: "account_id = ? AND status = 'pending' AND client_id IS NOT NULL",
       whereArgs: [accountId],
       orderBy: 'CAST(message_id AS INTEGER) ASC',
@@ -276,6 +276,7 @@ class ImLocalStore {
               'conversationId': '${row['conversation_id'] ?? ''}',
               'clientId': '${row['client_id'] ?? ''}',
               'text': '${row['text'] ?? ''}',
+              'kind': '${row['kind'] ?? 'text'}',
             })
         .toList();
   }

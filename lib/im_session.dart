@@ -12,11 +12,13 @@ class _PendingImMessage {
     required this.conversationId,
     required this.text,
     required this.clientId,
+    this.kind = 'text',
   });
 
   final String conversationId;
   final String text;
   final String clientId;
+  final String kind;
 }
 
 enum ImConnectionState { disconnected, connecting, ready, unauthorized, error }
@@ -195,6 +197,7 @@ class ImSession {
             conversationId: conversationId,
             text: text,
             clientId: clientId,
+            kind: '${message['kind'] ?? 'text'}',
           ));
         }
       }
@@ -215,6 +218,21 @@ class ImSession {
     _flushOutbox();
   }
 
+  void queueMessage({
+    required String conversationId,
+    required String text,
+    required String clientId,
+    required String kind,
+  }) {
+    _outbox.add(_PendingImMessage(
+      conversationId: conversationId,
+      text: text,
+      clientId: clientId,
+      kind: kind,
+    ));
+    _flushOutbox();
+  }
+
   void _flushOutbox() {
     final socket = _socket;
     if (socket == null || !isConnected || _outbox.isEmpty) return;
@@ -225,6 +243,7 @@ class ImSession {
         conversationId: message.conversationId,
         text: message.text,
         clientId: message.clientId,
+        kind: message.kind,
       );
       _ackTimers[message.clientId]?.cancel();
       _ackTimers[message.clientId] = Timer(const Duration(seconds: 15), () {

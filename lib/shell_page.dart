@@ -934,7 +934,23 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         throw Exception('图片上传失败');
       }
       final clientId = DateTime.now().microsecondsSinceEpoch.toString();
-      ImSession.instance.socket?.sendText(
+      final createdAt = DateTime.now().toIso8601String();
+      final pending = <String, dynamic>{
+        'id': 'local:$clientId',
+        'clientId': clientId,
+        'senderId': currentUserId,
+        'text': objectKey,
+        'kind': 'image',
+        'createdAt': createdAt,
+        'status': 'pending',
+      };
+      _mergeMessage(pending);
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: messages,
+      );
+      ImSession.instance.queueMessage(
         conversationId: widget.chat.conversationId,
         kind: 'image',
         text: objectKey,
