@@ -142,6 +142,7 @@ class DDPostService {
     required String text,
     required String clientId,
     String kind = 'text',
+    int durationMs = 0,
   }) async {
     final response = await _client.post(
       _api('/im/conversations/$conversationId/messages'),
@@ -149,7 +150,12 @@ class DDPostService {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'text': text, 'clientId': clientId, 'kind': kind}),
+      body: jsonEncode({
+        'text': text,
+        'clientId': clientId,
+        'kind': kind,
+        if (durationMs > 0) 'durationMs': durationMs,
+      }),
     );
     final data =
         response.body.trim().isEmpty ? null : jsonDecode(response.body);

@@ -878,11 +878,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           key.isEmpty) {
         throw Exception('语音上传失败');
       }
-      ImSession.instance.socket?.sendText(
-        conversationId: widget.chat.conversationId,
-        kind: 'audio',
+      const durationMs = 1000;
+      final clientId = DateTime.now().microsecondsSinceEpoch.toString();
+      final sent = await service.sendImMessage(
+        token,
+        widget.chat.conversationId,
         text: key,
-        clientId: DateTime.now().microsecondsSinceEpoch.toString(),
+        clientId: clientId,
+        kind: 'audio',
+        durationMs: durationMs,
+      );
+      _mergeMessage(sent, status: 'sent');
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: messages,
       );
     } catch (error) {
       if (mounted) {
@@ -950,11 +960,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         conversationId: widget.chat.conversationId,
         messages: messages,
       );
-      ImSession.instance.queueMessage(
-        conversationId: widget.chat.conversationId,
-        kind: 'image',
+      final sent = await service.sendImMessage(
+        token,
+        widget.chat.conversationId,
         text: objectKey,
         clientId: clientId,
+        kind: 'image',
+      );
+      _mergeMessage(sent, status: 'sent');
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: messages,
       );
     } catch (error) {
       if (mounted) {
