@@ -426,8 +426,7 @@ class _ChatDetailPage extends StatefulWidget {
   State<_ChatDetailPage> createState() => _ChatDetailPageState();
 }
 
-class _ChatDetailPageState extends State<_ChatDetailPage>
-    with WidgetsBindingObserver {
+class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageController = TextEditingController();
   final messageFocusNode = FocusNode();
   FriendImSocket? imSocket;
@@ -450,38 +449,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    messageScrollController.addListener(_handleMessageScroll);
     unawaited(_connectIm());
   }
 
-  @override
-  void didChangeMetrics() {
-    if (!mounted) return;
-    final bottomInset = WidgetsBinding
-        .instance.platformDispatcher.views.first.viewInsets.bottom;
-    if (bottomInset > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(_scrollToLatest());
-      });
-    }
-  }
-
-  Future<void> _scrollToLatest({bool animated = false}) async {
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(const Duration(milliseconds: 80));
+  Future<void> _scrollToLatest() async {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
     if (!mounted || !messageScrollController.hasClients) return;
-    final target = messageScrollController.position.maxScrollExtent;
-    if (animated) {
-      await messageScrollController.animateTo(target,
-          duration: const Duration(milliseconds: 180), curve: Curves.easeOut);
-    } else {
-      messageScrollController.jumpTo(target);
-    }
+    messageScrollController.jumpTo(
+      messageScrollController.position.maxScrollExtent,
+    );
   }
 
   void _handleMessageScroll() {
-    if (messageScrollController.hasClients &&
-        messageScrollController.position.pixels <= 40) {
+    if (!messageScrollController.hasClients) return;
+    if (messageScrollController.position.pixels <= 40) {
       unawaited(_loadOlderMessages());
     }
   }
@@ -495,7 +477,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
     }
     messageController.dispose();
     messageFocusNode.dispose();
-    WidgetsBinding.instance.removeObserver(this);
     messageScrollController.removeListener(_handleMessageScroll);
     messageScrollController.dispose();
     typingTimer?.cancel();
@@ -738,11 +719,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
         merged['status'] = status ?? 'sent';
       }
       setState(() => messages[index] = merged);
-      unawaited(_scrollToLatest(animated: true));
+      unawaited(_scrollToLatest());
       return true;
     }
     setState(() => messages.add(merged));
-    unawaited(_scrollToLatest(animated: true));
+    unawaited(_scrollToLatest());
     return true;
   }
 
@@ -1147,6 +1128,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
                               controller: messageScrollController,
                               physics: const AlwaysScrollableScrollPhysics(),
                               reverse: false,
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
                               padding: const EdgeInsets.all(16),
                               itemCount: messages.length,
                               itemBuilder: (_, index) {
@@ -1254,20 +1237,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
                   icon: const Icon(Icons.mic_none),
                 ),
                 Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => messageFocusNode.requestFocus(),
-                    child: TextField(
-                      focusNode: messageFocusNode,
-                      controller: messageController,
-                      onChanged: _handleTypingChanged,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(),
-                      decoration: InputDecoration(
-                        hintText: '输入消息',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
+                  child: TextField(
+                    focusNode: messageFocusNode,
+                    controller: messageController,
+                    onChanged: _handleTypingChanged,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendMessage(),
+                    decoration: InputDecoration(
+                      hintText: '输入消息',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
                       ),
                     ),
                   ),
