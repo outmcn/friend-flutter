@@ -90,6 +90,20 @@ class ImLocalStore {
     }).toList();
   }
 
+  static Future<Map<String, dynamic>?> latestMessage({
+    required String accountId,
+    required String conversationId,
+  }) async {
+    final rows = await (await _db()).query(
+      'messages',
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+      orderBy: 'created_at DESC, CAST(message_id AS INTEGER) DESC',
+      limit: 1,
+    );
+    return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first);
+  }
+
   static Future<void> saveMessages({
     required String accountId,
     required String conversationId,

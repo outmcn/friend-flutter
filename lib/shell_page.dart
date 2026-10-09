@@ -83,17 +83,26 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final rows = await service.fetchImConversations(token);
       if (!mounted) return;
-      final mapped = rows
-          .map((row) => _ChatPreview(
-                row.peer?.nickname ?? '会话 ${row.id}',
-                row.lastMessage?.text ?? '开始一段新的聊天',
-                row.peer?.avatarUrl,
-                row.peer?.avatarKey,
-                row.id,
-                row.unreadCount,
-                row.peerReadMessageId,
-              ))
-          .toList();
+      final mapped = <_ChatPreview>[];
+      for (final row in rows) {
+        final local = accountId.isEmpty
+            ? null
+            : await ImLocalStore.latestMessage(
+                accountId: accountId,
+                conversationId: row.id,
+              );
+        final preview =
+            _localMessagePreview(local) ?? row.lastMessage?.text ?? '开始一段新的聊天';
+        mapped.add(_ChatPreview(
+          row.peer?.nickname ?? '会话 ${row.id}',
+          preview,
+          row.peer?.avatarUrl,
+          row.peer?.avatarKey,
+          row.id,
+          row.unreadCount,
+          row.peerReadMessageId,
+        ));
+      }
       if (mounted) {
         setState(() {
           conversations = mapped;
@@ -396,6 +405,17 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ],
       );
+}
+
+String? _localMessagePreview(Map<String, dynamic>? row) {
+  if (row == null) return null;
+  final status = '${row['status'] ?? 'sent'}';
+  if (status == 'recalled') return '消息已撤回';
+  if (status == 'deleted') return '消息已删除';
+  final kind = '${row['kind'] ?? 'text'}';
+  if (kind == 'image') return '[图片]';
+  if (kind == 'audio') return '[语音]';
+  return '${row['text'] ?? ''}';
 }
 
 class _ChatPreview {
