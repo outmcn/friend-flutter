@@ -72,7 +72,7 @@ class ImLocalStore {
       'messages',
       where: 'account_id = ? AND conversation_id = ?',
       whereArgs: [accountId, conversationId],
-      orderBy: 'CAST(message_id AS INTEGER) ASC',
+      orderBy: 'created_at ASC, CAST(message_id AS INTEGER) ASC',
     );
     return rows.map((row) {
       final item = Map<String, dynamic>.from(row);

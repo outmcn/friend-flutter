@@ -711,13 +711,42 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     };
     if (index >= 0) {
       setState(() => messages[index] = merged);
-      unawaited(_scrollToLatest());
+      _sortMessagesFrom(index);
       return true;
     }
     setState(() => messages.add(merged));
-    unawaited(_scrollToLatest());
+    _sortMessagesFrom(messages.length - 1);
     return true;
   }
+
+  void _sortMessagesFrom(int startIndex) {
+    if (messages.length < 2) return;
+    var index = startIndex;
+    while (index > 0 &&
+        _messageTime(messages[index])
+            .isBefore(_messageTime(messages[index - 1]))) {
+      final current = messages[index];
+      messages[index] = messages[index - 1];
+      messages[index - 1] = current;
+      index--;
+    }
+    while (index + 1 < messages.length &&
+        _messageTime(messages[index + 1])
+            .isBefore(_messageTime(messages[index]))) {
+      final current = messages[index];
+      messages[index] = messages[index + 1];
+      messages[index + 1] = current;
+      index++;
+    }
+    if (mounted) {
+      setState(() {});
+      unawaited(_scrollToLatest());
+    }
+  }
+
+  DateTime _messageTime(Map<String, dynamic> message) =>
+      DateTime.tryParse('${message['createdAt'] ?? ''}') ??
+      DateTime.fromMillisecondsSinceEpoch(0);
 
   void _handleTypingChanged(String value) {
     final shouldType = value.trim().isNotEmpty;
