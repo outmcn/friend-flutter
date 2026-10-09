@@ -15,16 +15,18 @@ class FriendImSocket {
   Timer? _pingTimer;
   Timer? _reconnectTimer;
   bool _closedByOwner = false;
+  bool _ready = false;
+  bool _sessionReplaced = false;
   int _reconnectAttempt = 0;
-
   Stream<Map<String, dynamic>> get events => _events.stream;
-  bool get isConnected => _channel != null;
+  bool get isConnected => _channel != null && _ready;
 
   Future<void> connect() async {
     if (_closedByOwner || _channel != null) return;
     final channel = _channel ??
         WebSocketChannel.connect(Uri.parse('wss://chat.outmcn.com/ws'));
     _channel = channel;
+    _sessionReplaced = false;
     try {
       await channel.ready;
       _reconnectAttempt = 0;
@@ -45,6 +47,7 @@ class FriendImSocket {
       send({'type': 'auth', 'token': token});
     } catch (error) {
       _channel = null;
+      _ready = false;
       _events.add(<String, dynamic>{
         'type': 'error',
         'code': 'connect_failed',
@@ -58,7 +61,16 @@ class FriendImSocket {
     if (event is! String) return;
     try {
       final decoded = jsonDecode(event);
-      if (decoded is Map) _events.add(decoded.cast<String, dynamic>());
+      if (decoded is Map) {
+        final item = decoded.cast<String, dynamic>();
+        if (item['type'] == 'ready') _ready = true;
+        if (item['type'] == 'session:replaced') {
+          _sessionReplaced = true;
+          _events.add(item);
+          return;
+        }
+        _events.add(item);
+      }
     } catch (_) {
       _events.add(<String, dynamic>{'type': 'error', 'code': 'invalid_json'});
     }
@@ -67,9 +79,10 @@ class FriendImSocket {
   void _handleClosed() {
     _subscription = null;
     _channel = null;
+    _ready = false;
     _pingTimer?.cancel();
     _events.add(<String, dynamic>{'type': 'closed'});
-    _scheduleReconnect();
+    if (!_sessionReplaced) _scheduleReconnect();
   }
 
   void _scheduleReconnect() {
@@ -146,6 +159,7 @@ class FriendImSocket {
     _subscription = null;
     await _channel?.sink.close();
     _channel = null;
+    _ready = false;
   }
 
   Future<void> dispose() async {

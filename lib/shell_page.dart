@@ -360,6 +360,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool typing = false;
   bool peerTyping = false;
   bool syncing = false;
+  bool initialSyncCompleted = false;
   final AudioPlayer audioPlayer = AudioPlayer();
   final Map<String, String> imageFiles = {};
   String? playingAudioKey;
@@ -381,6 +382,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   @override
   void dispose() {
+    if (typing) {
+      typing = false;
+      imSocket?.sendTyping(
+          conversationId: widget.chat.conversationId, typing: false);
+    }
     messageController.dispose();
     messageScrollController.removeListener(_handleMessageScroll);
     messageScrollController.dispose();
@@ -413,18 +419,24 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       accountId: currentUserId,
       conversationId: widget.chat.conversationId,
     );
-    if (mounted && cached.isNotEmpty) {
-      setState(() {
-        messages
-          ..clear()
-          ..addAll(cached);
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      messages
+        ..clear()
+        ..addAll(cached);
+    });
+    // Cache is authoritative for the first frame; network sync continues in background.
+    unawaited(_finishImConnection(token));
+  }
+
+  Future<void> _finishImConnection(String token) async {
     final socket = FriendImSocket(token: token);
     imSocket = socket;
     eventSubscription = socket.events.listen(_handleImEvent);
     await socket.connect();
+    if (!mounted) return;
     await _syncMessages(token);
+    initialSyncCompleted = true;
   }
 
   Future<void> _syncMessages(String token) async {
@@ -461,6 +473,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
               token, widget.chat.conversationId, '${messages.last['id']}');
         } catch (_) {}
       }
+      initialSyncCompleted = true;
+      if (mounted) setState(() {});
     } finally {
       syncing = false;
       service.dispose();
@@ -470,10 +484,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Future<void> _handleImEvent(Map<String, dynamic> event) async {
     if (!mounted) return;
     final type = event['type'];
-    if (type == 'typing:start' || type == 'typing:stop') {
-      if ('${event['userId'] ?? ''}' != currentUserId) {
-        setState(() => peerTyping = type == 'typing:start');
+    if (type == 'session:replaced') {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('账号已在其他设备登录')),
+        );
       }
+      return;
+    }
+    if (type == 'typing:start' || type == 'typing:stop') {
+      final eventConversationId = '${event['conversationId'] ?? ''}';
+      if (eventConversationId != widget.chat.conversationId ||
+          '${event['userId'] ?? ''}' == currentUserId) {
+        return;
+      }
+      setState(() => peerTyping = type == 'typing:start');
       return;
     }
     if (type == 'message:recalled' || type == 'message:deleted') {
@@ -496,8 +521,27 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
       return;
     }
-    if (type == 'error' && event['code'] == 'conversation_blocked') {
-      if (mounted) setState(() => blockedConversation = true);
+    if (type == 'error' || type == 'message:failed') {
+      final pendingId =
+          '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
+      if (pendingId.isNotEmpty) {
+        final index = messages
+            .indexWhere((item) => '${item['clientId'] ?? ''}' == pendingId);
+        if (index >= 0) {
+          setState(() => messages[index] = {
+                ...messages[index],
+                'status': 'failed',
+              });
+          await ImLocalStore.saveMessages(
+            accountId: currentUserId,
+            conversationId: widget.chat.conversationId,
+            messages: messages,
+          );
+        }
+      }
+      if (event['code'] == 'conversation_blocked') {
+        if (mounted) setState(() => blockedConversation = true);
+      }
       return;
     }
 
@@ -889,6 +933,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     final clientId = DateTime.now().microsecondsSinceEpoch.toString();
+    if (typing) {
+      typing = false;
+      typingTimer?.cancel();
+      imSocket?.sendTyping(
+          conversationId: widget.chat.conversationId, typing: false);
+    }
     final pending = <String, dynamic>{
       'id': 'local:$clientId',
       'clientId': clientId,
@@ -958,98 +1008,105 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                     ),
                   ),
                 Expanded(
-                  child: messages.isEmpty
-                      ? const Center(
-                          child: Text('选择一个聊天开始交流',
-                              style: TextStyle(color: Colors.grey)))
-                      : ListView.builder(
-                          controller: messageScrollController,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          reverse: false,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: messages.length,
-                          itemBuilder: (_, index) {
-                            final message = messages[index];
-                            final isMine = currentUserId.isNotEmpty &&
-                                '${message['senderId'] ?? ''}' == currentUserId;
-                            final status = '${message['status'] ?? 'sent'}';
-                            final isRecalled = status == 'recalled';
-                            final isDeleted = status == 'deleted';
-                            return Align(
-                              alignment: isMine
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: Container(
-                                margin: EdgeInsets.only(
-                                  bottom: 8,
-                                  left: isMine ? 64 : 0,
-                                  right: isMine ? 0 : 64,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: isMine
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: const Radius.circular(16),
-                                    topRight: const Radius.circular(16),
-                                    bottomLeft:
-                                        Radius.circular(isMine ? 16 : 4),
-                                    bottomRight:
-                                        Radius.circular(isMine ? 4 : 16),
+                  child: messages.isEmpty && !initialSyncCompleted
+                      ? const SizedBox.shrink()
+                      : messages.isEmpty
+                          ? const Center(
+                              child: Text('选择一个聊天开始交流',
+                                  style: TextStyle(color: Colors.grey)))
+                          : ListView.builder(
+                              controller: messageScrollController,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              reverse: false,
+                              padding: const EdgeInsets.all(16),
+                              itemCount: messages.length,
+                              itemBuilder: (_, index) {
+                                final message = messages[index];
+                                final isMine = currentUserId.isNotEmpty &&
+                                    '${message['senderId'] ?? ''}' ==
+                                        currentUserId;
+                                final status = '${message['status'] ?? 'sent'}';
+                                final isRecalled = status == 'recalled';
+                                final isDeleted = status == 'deleted';
+                                return Align(
+                                  alignment: isMine
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
+                                  child: Container(
+                                    margin: EdgeInsets.only(
+                                      bottom: 8,
+                                      left: isMine ? 64 : 0,
+                                      right: isMine ? 0 : 64,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isMine
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primaryContainer
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: const Radius.circular(16),
+                                        topRight: const Radius.circular(16),
+                                        bottomLeft:
+                                            Radius.circular(isMine ? 16 : 4),
+                                        bottomRight:
+                                            Radius.circular(isMine ? 4 : 16),
+                                      ),
+                                    ),
+                                    child: GestureDetector(
+                                      onLongPress: () =>
+                                          _showMessageMenu(message),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          isRecalled || isDeleted
+                                              ? Text(
+                                                  isRecalled
+                                                      ? '消息已撤回'
+                                                      : '消息已删除',
+                                                  style: const TextStyle(
+                                                      color: Colors.grey))
+                                              : message['kind'] == 'image'
+                                                  ? _imageMessageBody(message)
+                                                  : message['kind'] == 'audio'
+                                                      ? InkWell(
+                                                          onTap: () =>
+                                                              _playAudioMessage(
+                                                                  '${message['text'] ?? ''}'),
+                                                          child: Text(
+                                                            playingAudioKey ==
+                                                                    '${message['text'] ?? ''}'
+                                                                ? '⏸ 播放中'
+                                                                : '🔊 播放语音',
+                                                          ),
+                                                        )
+                                                      : Text(
+                                                          '${message['text'] ?? ''}'),
+                                          if (status == 'pending') ...[
+                                            const SizedBox(width: 6),
+                                            const SizedBox(
+                                              width: 12,
+                                              height: 12,
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 1.5),
+                                            ),
+                                          ],
+                                          if (status == 'failed') ...[
+                                            const SizedBox(width: 6),
+                                            const Icon(Icons.error_outline,
+                                                size: 16, color: Colors.orange),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                child: GestureDetector(
-                                  onLongPress: () => _showMessageMenu(message),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      isRecalled || isDeleted
-                                          ? Text(isRecalled ? '消息已撤回' : '消息已删除',
-                                              style: const TextStyle(
-                                                  color: Colors.grey))
-                                          : message['kind'] == 'image'
-                                              ? _imageMessageBody(message)
-                                              : message['kind'] == 'audio'
-                                                  ? InkWell(
-                                                      onTap: () =>
-                                                          _playAudioMessage(
-                                                              '${message['text'] ?? ''}'),
-                                                      child: Text(
-                                                        playingAudioKey ==
-                                                                '${message['text'] ?? ''}'
-                                                            ? '⏸ 播放中'
-                                                            : '🔊 播放语音',
-                                                      ),
-                                                    )
-                                                  : Text(
-                                                      '${message['text'] ?? ''}'),
-                                      if (status == 'pending') ...[
-                                        const SizedBox(width: 6),
-                                        const SizedBox(
-                                          width: 12,
-                                          height: 12,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 1.5),
-                                        ),
-                                      ],
-                                      if (status == 'failed') ...[
-                                        const SizedBox(width: 6),
-                                        const Icon(Icons.error_outline,
-                                            size: 16, color: Colors.orange),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                                );
+                              },
+                            ),
                 ),
               ],
             ),
