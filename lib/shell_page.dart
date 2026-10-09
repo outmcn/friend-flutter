@@ -92,11 +92,13 @@ class _ChatPageState extends State<ChatPage> {
                 row.unreadCount,
               ))
           .toList();
-      setState(() {
-        conversations = mapped;
-        conversationCacheLoaded = true;
-        loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          conversations = mapped;
+          conversationCacheLoaded = true;
+          loading = false;
+        });
+      }
       if (accountId.isNotEmpty) {
         await ImLocalStore.saveConversations(
           accountId: accountId,
@@ -272,7 +274,10 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
           );
-          if (mounted) unawaited(_restartListSocket());
+          if (mounted) {
+            unawaited(_loadConversations(showLoading: false));
+            unawaited(_restartListSocket());
+          }
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
