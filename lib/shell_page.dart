@@ -681,9 +681,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (type == 'read:update') {
       final eventConversationId = '${event['conversationId'] ?? ''}';
+      final nextReadId = '${event['messageId'] ?? ''}';
       if (eventConversationId == widget.chat.conversationId &&
-          '${event['userId'] ?? ''}' != currentUserId) {
-        setState(() => peerReadMessageId = '${event['messageId'] ?? ''}');
+          '${event['userId'] ?? ''}' != currentUserId &&
+          int.tryParse(nextReadId) != null &&
+          (peerReadMessageId == null ||
+              int.tryParse(peerReadMessageId!) == null ||
+              int.parse(nextReadId) > int.parse(peerReadMessageId!))) {
+        setState(() => peerReadMessageId = nextReadId);
       }
       return;
     }
@@ -1303,7 +1308,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           Expanded(
             child: Column(
               children: [
-                if (peerTyping) _TypingBubble(),
                 Expanded(
                   child: messages.isEmpty
                       ? Center(
@@ -1323,6 +1327,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 style: TextStyle(
                                     color: Theme.of(context).hintColor),
                               ),
+                              if (peerTyping && messages.isEmpty)
+                                _TypingBubble(),
                             ],
                           ),
                         )
@@ -1333,8 +1339,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                           keyboardDismissBehavior:
                               ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: const EdgeInsets.all(16),
-                          itemCount: messages.length,
+                          itemCount: messages.length + (peerTyping ? 1 : 0),
                           itemBuilder: (_, index) {
+                            if (peerTyping && index == messages.length) {
+                              return _TypingBubble();
+                            }
                             final message = messages[index];
                             final isMine = currentUserId.isNotEmpty &&
                                 '${message['senderId'] ?? ''}' == currentUserId;
