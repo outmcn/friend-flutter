@@ -73,7 +73,7 @@ class DDApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const AuthGate(),
+      home: const StartupNetworkGate(),
     );
   }
 }
