@@ -1590,7 +1590,7 @@ class _DDShellState extends State<DDShell> {
             NavigationDestination(
               icon: Icon(Icons.sports_esports_outlined),
               selectedIcon: Icon(Icons.sports_esports),
-              label: '娱乐',
+              label: '主页',
             ),
             NavigationDestination(
               icon: Icon(Icons.explore_outlined),
