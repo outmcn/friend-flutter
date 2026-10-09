@@ -1453,10 +1453,24 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                                             '${message['text'] ?? ''}'
                                                                         ? '⏸ 播放中'
                                                                         : '🔊 播放语音',
+                                                                    style:
+                                                                        const TextStyle(
+                                                                      fontSize:
+                                                                          16,
+                                                                      height:
+                                                                          1.4,
+                                                                    ),
                                                                   ),
                                                                 )
                                                               : Text(
-                                                                  '${message['text'] ?? ''}'),
+                                                                  '${message['text'] ?? ''}',
+                                                                  style:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        16,
+                                                                    height: 1.4,
+                                                                  ),
+                                                                ),
                                                   if (status == 'pending') ...[
                                                     const SizedBox(width: 6),
                                                     const SizedBox(
