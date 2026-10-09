@@ -1009,17 +1009,45 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       'status': 'pending',
     };
     _mergeMessage(pending);
-
     await ImLocalStore.saveMessages(
       accountId: currentUserId,
       conversationId: widget.chat.conversationId,
       messages: messages,
     );
-    ImSession.instance.queueText(
-      conversationId: widget.chat.conversationId,
-      text: text,
-      clientId: clientId,
-    );
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    final service = DDPostService();
+    try {
+      final sent = await service.sendImMessage(
+        token,
+        widget.chat.conversationId,
+        text: text,
+        clientId: clientId,
+      );
+      _mergeMessage(sent, status: 'sent');
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: messages,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      final index = messages
+          .indexWhere((item) => '${item['clientId'] ?? ''}' == clientId);
+      if (index >= 0) {
+        setState(() => messages[index] = {
+              ...messages[index],
+              'status': 'failed',
+            });
+        await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: messages,
+        );
+      }
+    } finally {
+      service.dispose();
+    }
   }
 
   Future<void> _syncOfflineMessages(

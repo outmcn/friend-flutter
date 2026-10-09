@@ -122,6 +122,29 @@ class DDPostService {
     return '${data['conversationId']}';
   }
 
+  Future<Map<String, dynamic>> sendImMessage(
+    String token,
+    String conversationId, {
+    required String text,
+    required String clientId,
+    String kind = 'text',
+  }) async {
+    final response = await _client.post(
+      _api('/im/conversations/$conversationId/messages'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'text': text, 'clientId': clientId, 'kind': kind}),
+    );
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 201 || data is! Map || data['message'] is! Map) {
+      throw Exception(data is Map ? '${data['error'] ?? '消息发送失败'}' : '消息发送失败');
+    }
+    return (data['message'] as Map).cast<String, dynamic>();
+  }
+
   Future<void> markImConversationRead(
       String token, String conversationId, String messageId) async {
     final response = await _client.post(
