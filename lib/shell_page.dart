@@ -1028,8 +1028,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (choice == 'recall') {
       ImSession.instance.socket?.recallMessage(
           conversationId: widget.chat.conversationId, messageId: id);
-    } else if (choice == 'delete') {
-      return;
     }
   }
 
