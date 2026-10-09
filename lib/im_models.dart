@@ -72,6 +72,8 @@ class DDImMessage {
     required this.kind,
     this.durationMs = 0,
     this.clientId,
+    this.recalledAt,
+    this.deletedAt,
   });
   final String id;
   final String conversationId;
@@ -81,6 +83,8 @@ class DDImMessage {
   final String kind;
   final int durationMs;
   final String? clientId;
+  final String? recalledAt;
+  final String? deletedAt;
   factory DDImMessage.fromJson(Map<String, dynamic> json) => DDImMessage(
         id: '${json['id'] ?? ''}',
         conversationId: '${json['conversationId'] ?? ''}',
@@ -90,5 +94,7 @@ class DDImMessage {
         kind: '${json['kind'] ?? 'text'}',
         durationMs: (json['durationMs'] as num?)?.toInt() ?? 0,
         clientId: json['clientId'] as String?,
+        recalledAt: json['recalledAt'] as String?,
+        deletedAt: json['deletedAt'] as String?,
       );
 }

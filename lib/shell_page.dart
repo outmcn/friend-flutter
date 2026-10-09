@@ -579,7 +579,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           'clientId': item.clientId,
           'senderId': item.senderId,
           'createdAt': item.createdAt,
-        }, status: 'sent');
+        },
+            status: item.recalledAt != null
+                ? 'recalled'
+                : item.deletedAt != null
+                    ? 'deleted'
+                    : 'sent');
       }
       await ImLocalStore.saveMessages(
         accountId: currentUserId,
