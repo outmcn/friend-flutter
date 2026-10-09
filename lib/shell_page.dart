@@ -696,8 +696,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final id = '${item['id'] ?? ''}';
     final clientId = '${item['clientId'] ?? ''}';
     final index = messages.indexWhere((existing) {
-      return (id.isNotEmpty && '${existing['id'] ?? ''}' == id) ||
-          (clientId.isNotEmpty && '${existing['clientId'] ?? ''}' == clientId);
+      return (clientId.isNotEmpty &&
+              '${existing['clientId'] ?? ''}' == clientId) ||
+          (id.isNotEmpty && '${existing['id'] ?? ''}' == id);
     });
     final merged = <String, dynamic>{
       ...(index >= 0 ? messages[index] : const <String, dynamic>{}),
@@ -706,10 +707,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (status == null && index >= 0) 'status': messages[index]['status'],
     };
     if (index >= 0) {
-      final old = messages[index];
-      if (old['status'] == 'pending' && item['id'] != null) {
-        merged['status'] = status ?? 'sent';
-      }
       setState(() => messages[index] = merged);
       unawaited(_scrollToLatest());
       return true;

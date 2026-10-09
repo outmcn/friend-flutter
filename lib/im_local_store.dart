@@ -99,7 +99,16 @@ class ImLocalStore {
     final batch = db.batch();
     for (final message in messages) {
       final id = '${message['id'] ?? ''}';
+      final clientId = '${message['clientId'] ?? ''}';
       if (id.isEmpty) continue;
+      if (clientId.isNotEmpty) {
+        batch.delete(
+          'messages',
+          where:
+              'account_id = ? AND conversation_id = ? AND client_id = ? AND message_id <> ?',
+          whereArgs: [accountId, conversationId, clientId, id],
+        );
+      }
       batch.insert(
         'messages',
         {
