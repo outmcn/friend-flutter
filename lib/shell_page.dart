@@ -17,7 +17,6 @@ class _ChatPageState extends State<ChatPage> {
   final messageController = TextEditingController();
   final userSearchController = TextEditingController();
   List<_ChatPreview> conversations = [];
-  FriendImSocket? listSocket;
   StreamSubscription<Map<String, dynamic>>? listEvents;
   bool loading = true;
   bool conversationCacheLoaded = false;
@@ -28,7 +27,11 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     unawaited(_loadConversations());
-    unawaited(_connectListSocket());
+    listEvents = ImSession.instance.events.listen((event) {
+      if (event['type'] == 'message:new') {
+        unawaited(_loadConversations(showLoading: false));
+      }
+    });
   }
 
   Future<void> _cacheAvatar(_ChatPreview chat) async {
@@ -115,18 +118,20 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> _connectListSocket() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty) return;
-    final socket = FriendImSocket(token: token);
-    listSocket = socket;
-    listEvents = socket.events.listen((event) {
-      if (event['type'] == 'message:new') {
-        unawaited(_loadConversations(showLoading: false));
-      }
-    });
-    await socket.connect();
+  Future<void> _stopListSocket() async {
+    await listEvents?.cancel();
+    listEvents = null;
+  }
+
+  Future<void> _restartListSocket() async {
+    await _stopListSocket();
+    if (mounted) {
+      listEvents = ImSession.instance.events.listen((event) {
+        if (event['type'] == 'message:new') {
+          unawaited(_loadConversations(showLoading: false));
+        }
+      });
+    }
   }
 
   @override
@@ -142,7 +147,6 @@ class _ChatPageState extends State<ChatPage> {
     messageController.dispose();
     userSearchController.dispose();
     listEvents?.cancel();
-    listSocket?.dispose();
     super.dispose();
   }
 
@@ -210,6 +214,8 @@ class _ChatPageState extends State<ChatPage> {
         orElse: () => _ChatPreview(
             '${selected['nickname'] ?? '用户'}', '开始一段新的聊天', null, null, id, 0),
       );
+      await _stopListSocket();
+      if (!mounted) return;
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -255,6 +261,8 @@ class _ChatPageState extends State<ChatPage> {
           final prefs = await SharedPreferences.getInstance();
           final currentUserId = prefs.getString('friend.auth.userId') ?? '';
           if (!context.mounted) return;
+          await _stopListSocket();
+          if (!context.mounted) return;
           await Navigator.push(
             context,
             MaterialPageRoute(
@@ -264,6 +272,7 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
           );
+          if (mounted) unawaited(_restartListSocket());
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -429,14 +438,13 @@ class _ChatDetailPage extends StatefulWidget {
 class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageController = TextEditingController();
   final messageFocusNode = FocusNode();
-  FriendImSocket? imSocket;
+  StreamSubscription<Map<String, dynamic>>? eventSubscription;
   final messages = <Map<String, dynamic>>[];
   final messageScrollController = ScrollController();
   bool loadingOlder = false;
   bool hasOlder = true;
   bool blockedConversation = false;
   String currentUserId = '';
-  StreamSubscription<Map<String, dynamic>>? eventSubscription;
   bool typing = false;
   bool peerTyping = false;
   bool syncing = false;
@@ -472,7 +480,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   void dispose() {
     if (typing) {
       typing = false;
-      imSocket?.sendTyping(
+      ImSession.instance.socket?.sendTyping(
           conversationId: widget.chat.conversationId, typing: false);
     }
     messageController.dispose();
@@ -482,7 +490,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     typingTimer?.cancel();
     audioPlayer.dispose();
     eventSubscription?.cancel();
-    imSocket?.dispose();
     super.dispose();
   }
 
@@ -537,12 +544,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _finishImConnection(String token) async {
-    final socket = FriendImSocket(token: token);
-    imSocket = socket;
-    eventSubscription = socket.events.listen(_handleImEvent);
-    await socket.connect();
-    if (!mounted) return;
-    await _syncMessages(token);
+    eventSubscription = ImSession.instance.events.listen(_handleImEvent);
+    unawaited(_syncMessages(token));
     initialSyncCompleted = true;
   }
 
@@ -680,7 +683,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         );
         final id = '${item['id'] ?? ''}';
         if (id.isNotEmpty) {
-          imSocket?.markDelivered(
+          ImSession.instance.socket?.markDelivered(
               conversationId: widget.chat.conversationId, messageId: id);
         }
         unawaited(_markLatestRead());
@@ -792,14 +795,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final shouldType = value.trim().isNotEmpty;
     if (shouldType != typing) {
       typing = shouldType;
-      imSocket?.sendTyping(
+      ImSession.instance.socket?.sendTyping(
           conversationId: widget.chat.conversationId, typing: shouldType);
     }
     typingTimer?.cancel();
     if (shouldType) {
       typingTimer = Timer(const Duration(seconds: 2), () {
         typing = false;
-        imSocket?.sendTyping(
+        ImSession.instance.socket?.sendTyping(
             conversationId: widget.chat.conversationId, typing: false);
       });
     }
@@ -883,7 +886,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final recorder = AudioRecorder();
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty || imSocket == null || !imSocket!.isConnected) {
+    final connected = ImSession.instance.isConnected;
+    if (token.isEmpty || !connected) {
       await recorder.dispose();
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -917,7 +921,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           key.isEmpty) {
         throw Exception('语音上传失败');
       }
-      imSocket!.sendText(
+      ImSession.instance.socket?.sendText(
         conversationId: widget.chat.conversationId,
         kind: 'audio',
         text: key,
@@ -938,7 +942,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (picked == null) return;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty || imSocket == null || !imSocket!.isConnected) {
+    final connected = ImSession.instance.isConnected;
+    if (token.isEmpty || !connected) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('网络未连接，图片未发送')),
@@ -972,7 +977,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         throw Exception('图片上传失败');
       }
       final clientId = DateTime.now().microsecondsSinceEpoch.toString();
-      imSocket!.sendText(
+      ImSession.instance.socket?.sendText(
         conversationId: widget.chat.conversationId,
         kind: 'image',
         text: objectKey,
@@ -1024,10 +1029,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final id = '${message['id'] ?? ''}';
     if (id.isEmpty || id.startsWith('local:')) return;
     if (choice == 'recall') {
-      imSocket?.recallMessage(
+      ImSession.instance.socket?.recallMessage(
           conversationId: widget.chat.conversationId, messageId: id);
     } else if (choice == 'delete') {
-      imSocket?.deleteMessage(
+      ImSession.instance.socket?.deleteMessage(
           conversationId: widget.chat.conversationId, messageId: id);
     }
   }
@@ -1035,7 +1040,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Future<void> _sendMessage() async {
     final text = messageController.text.trim();
     if (text.isEmpty) return;
-    final socket = imSocket;
+    final socket = ImSession.instance.socket;
     if (socket == null || !socket.isConnected || blockedConversation) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1048,7 +1053,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (typing) {
       typing = false;
       typingTimer?.cancel();
-      imSocket?.sendTyping(
+      ImSession.instance.socket?.sendTyping(
           conversationId: widget.chat.conversationId, typing: false);
     }
     final pending = <String, dynamic>{

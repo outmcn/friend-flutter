@@ -221,6 +221,9 @@ class _AuthGateState extends State<AuthGate> {
 
   Future<void> _restore() async {
     final restored = await auth.restoreToken();
+    if (restored != null) {
+      await ImSession.instance.start(restored);
+    }
     if (!mounted) return;
     setState(() {
       token = restored;
@@ -285,6 +288,7 @@ class _AuthPageState extends State<AuthPage> {
         password: password.text,
       );
       if (mounted) widget.onAuthenticated(value);
+      await ImSession.instance.start(value);
     } on FriendAuthException catch (e) {
       if (mounted) setState(() => error = e.message);
     } catch (_) {
