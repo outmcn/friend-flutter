@@ -102,6 +102,34 @@ class ImLocalStore {
     await batch.commit(noResult: true);
   }
 
+  static Future<void> saveConversations({
+    required String accountId,
+    required List<Map<String, dynamic>> conversations,
+  }) async {
+    final dir = await getApplicationSupportDirectory();
+    final file = File(path.join(dir.path, 'im-conversations-$accountId.json'));
+    final temp = File('${file.path}.tmp');
+    await temp.writeAsString(jsonEncode(conversations), flush: true);
+    await temp.rename(file.path);
+  }
+
+  static Future<List<Map<String, dynamic>>> conversations(
+      String accountId) async {
+    final dir = await getApplicationSupportDirectory();
+    final file = File(path.join(dir.path, 'im-conversations-$accountId.json'));
+    if (!await file.exists()) return <Map<String, dynamic>>[];
+    try {
+      final data = jsonDecode(await file.readAsString());
+      if (data is List) {
+        return data
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList();
+      }
+    } catch (_) {}
+    return <Map<String, dynamic>>[];
+  }
+
   static Future<void> migrateLegacyAudioKeys() async {
     final db = await _db();
     await db.rawUpdate(

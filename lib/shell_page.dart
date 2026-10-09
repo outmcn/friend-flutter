@@ -51,42 +51,55 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _loadConversations({bool showLoading = true}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) {
+      if (mounted) setState(() => loadError = '登录状态尚未恢复，请重试');
+      return;
+    }
+    final accountId = prefs.getString('friend.auth.userId') ?? '';
+    if (accountId.isNotEmpty) {
+      final cachedRows = await ImLocalStore.conversations(accountId);
+      if (cachedRows.isNotEmpty && mounted) {
+        setState(() {
+          conversations =
+              cachedRows.map((row) => _ChatPreview.fromCache(row)).toList();
+          conversationCacheLoaded = true;
+          loading = false;
+        });
+      }
+    }
     if (mounted && showLoading && !conversationCacheLoaded) {
       setState(() {
         loading = true;
         loadError = null;
       });
     }
+    final service = DDPostService();
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('friend.auth.token') ?? '';
-      if (token.isEmpty) {
-        if (mounted) {
-          setState(() {
-            loading = false;
-            loadError = '登录状态尚未恢复，请重试';
-          });
-        }
-        return;
-      }
-      final service = DDPostService();
       final rows = await service.fetchImConversations(token);
       if (!mounted) return;
+      final mapped = rows
+          .map((row) => _ChatPreview(
+                row.peer?.nickname ?? '会话 ${row.id}',
+                row.lastMessage?.text ?? '开始一段新的聊天',
+                row.peer?.avatarUrl,
+                row.peer?.avatarKey,
+                row.id,
+                row.unreadCount,
+              ))
+          .toList();
       setState(() {
-        conversations = rows
-            .map((row) => _ChatPreview(
-                  row.peer?.nickname ?? '会话 ${row.id}',
-                  row.lastMessage?.text ?? '开始一段新的聊天',
-                  row.peer?.avatarUrl,
-                  row.peer?.avatarKey,
-                  row.id,
-                  row.unreadCount,
-                ))
-            .toList();
+        conversations = mapped;
         conversationCacheLoaded = true;
         loading = false;
       });
-      service.dispose();
+      if (accountId.isNotEmpty) {
+        await ImLocalStore.saveConversations(
+          accountId: accountId,
+          conversations: mapped.map((chat) => chat.toCache()).toList(),
+        );
+      }
       for (final chat in conversations) {
         unawaited(_cacheAvatar(chat));
       }
@@ -94,9 +107,11 @@ class _ChatPageState extends State<ChatPage> {
       if (mounted) {
         setState(() {
           loading = false;
-          loadError = '会话加载失败，请重试';
+          loadError = conversations.isEmpty ? '会话加载失败，请重试' : null;
         });
       }
+    } finally {
+      service.dispose();
     }
   }
 
@@ -375,6 +390,24 @@ class _ChatPreview {
   final String? avatarKey;
   final String conversationId;
   final int unreadCount;
+
+  factory _ChatPreview.fromCache(Map<String, dynamic> row) => _ChatPreview(
+        '${row['name'] ?? '用户'}',
+        '${row['preview'] ?? ''}',
+        row['avatarUrl'] as String?,
+        row['avatarKey'] as String?,
+        '${row['conversationId'] ?? ''}',
+        (row['unreadCount'] as num?)?.toInt() ?? 0,
+      );
+
+  Map<String, dynamic> toCache() => {
+        'name': name,
+        'preview': preview,
+        'avatarUrl': avatarUrl,
+        'avatarKey': avatarKey,
+        'conversationId': conversationId,
+        'unreadCount': unreadCount,
+      };
 }
 
 ImageProvider _chatAvatarFor(_ChatPreview chat) {
@@ -1207,36 +1240,30 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
           ),
           SafeArea(
             top: false,
-            child: AnimatedPadding(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              padding: EdgeInsets.only(
-                  bottom: MediaQuery.viewInsetsOf(context).bottom),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
-                child: Row(children: [
-                  IconButton(
-                    onPressed: _pickAndSendImage,
-                    icon: const Icon(Icons.photo_outlined),
-                  ),
-                  IconButton(
-                    onPressed: _pickAndSendAudio,
-                    icon: const Icon(Icons.mic_none),
-                  ),
-                  Expanded(
-                      child: TextField(
-                          controller: messageController,
-                          onChanged: _handleTypingChanged,
-                          decoration: InputDecoration(
-                              hintText: '输入消息',
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(22))))),
-                  IconButton(
-                    onPressed: _sendMessage,
-                    icon: const Icon(Icons.send),
-                  ),
-                ]),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
+              child: Row(children: [
+                IconButton(
+                  onPressed: _pickAndSendImage,
+                  icon: const Icon(Icons.photo_outlined),
+                ),
+                IconButton(
+                  onPressed: _pickAndSendAudio,
+                  icon: const Icon(Icons.mic_none),
+                ),
+                Expanded(
+                    child: TextField(
+                        controller: messageController,
+                        onChanged: _handleTypingChanged,
+                        decoration: InputDecoration(
+                            hintText: '输入消息',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(22))))),
+                IconButton(
+                  onPressed: _sendMessage,
+                  icon: const Icon(Icons.send),
+                ),
+              ]),
             ),
           ),
         ]),
