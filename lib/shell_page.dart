@@ -1073,17 +1073,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _markLatestRead() async {
-    if (messages.isEmpty) return;
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty) return;
-    final service = DDPostService();
-    try {
-      await service.markImConversationRead(
-          token, widget.chat.conversationId, '${messages.last['id']}');
-    } finally {
-      service.dispose();
-    }
+    if (messages.isEmpty || currentUserId.isEmpty) return;
+    final messageId = '${messages.last['id'] ?? ''}';
+    if (messageId.isEmpty || messageId.startsWith('local:')) return;
+    ImSession.instance.socket?.markRead(
+      conversationId: widget.chat.conversationId,
+      messageId: messageId,
+    );
   }
 
   @override
