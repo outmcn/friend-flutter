@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 import 'im_local_store.dart';
 import 'im_socket.dart';
@@ -145,6 +146,25 @@ class ImSession {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) return;
+    final kind = '${message['kind'] ?? 'text'}';
+    final objectKey = '${message['text'] ?? ''}';
+    if (kind == 'image' || kind == 'audio') {
+      final service = DDPostService();
+      try {
+        final url = await service.mediaUrlForKey(token, objectKey);
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode < 200 ||
+            response.statusCode >= 300 ||
+            response.bodyBytes.isEmpty) {
+          return;
+        }
+        await ImLocalStore.saveImage(objectKey, response.bodyBytes);
+      } catch (_) {
+        return;
+      } finally {
+        service.dispose();
+      }
+    }
     final durable = await ImLocalStore.durableMessages(
       accountId: accountId,
       conversationId: conversationId,
