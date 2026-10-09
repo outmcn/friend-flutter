@@ -149,15 +149,13 @@ class ImSession {
     if (socket == null || !isConnected || _outbox.isEmpty) return;
     final pending = List<_PendingImMessage>.from(_outbox);
     for (final message in pending) {
+      _inflight[message.clientId] = message;
       socket.sendText(
         conversationId: message.conversationId,
         text: message.text,
         clientId: message.clientId,
       );
     }
-    _inflight.addAll({
-      for (final message in pending) message.clientId: message,
-    });
     _outbox.removeWhere(
         (queued) => pending.any((sent) => sent.clientId == queued.clientId));
   }
