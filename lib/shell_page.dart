@@ -1208,102 +1208,125 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                             final timeText = createdAt == null
                                 ? ''
                                 : '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
-                            return Align(
-                              alignment: isMine
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: Container(
-                                margin: EdgeInsets.only(
-                                  bottom: 8,
-                                  left: isMine ? 64 : 0,
-                                  right: isMine ? 0 : 64,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: isMine
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: const Radius.circular(16),
-                                    topRight: const Radius.circular(16),
-                                    bottomLeft:
-                                        Radius.circular(isMine ? 16 : 4),
-                                    bottomRight:
-                                        Radius.circular(isMine ? 4 : 16),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: isMine
-                                      ? CrossAxisAlignment.end
-                                      : CrossAxisAlignment.start,
-                                  children: [
-                                    GestureDetector(
-                                      onLongPress: () =>
-                                          _showMessageMenu(message),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          isRecalled || isDeleted
-                                              ? Text(
-                                                  isRecalled
-                                                      ? '消息已撤回'
-                                                      : '消息已删除',
-                                                  style: const TextStyle(
-                                                      color: Colors.grey))
-                                              : message['kind'] == 'image'
-                                                  ? _imageMessageBody(message)
-                                                  : message['kind'] == 'audio'
-                                                      ? InkWell(
-                                                          onTap: () =>
-                                                              _playAudioMessage(
-                                                                  '${message['text'] ?? ''}'),
-                                                          child: Text(
-                                                            playingAudioKey ==
-                                                                    '${message['text'] ?? ''}'
-                                                                ? '⏸ 播放中'
-                                                                : '🔊 播放语音',
-                                                          ),
-                                                        )
-                                                      : Text(
-                                                          '${message['text'] ?? ''}'),
-                                          if (status == 'pending') ...[
-                                            const SizedBox(width: 6),
-                                            const SizedBox(
-                                              width: 12,
-                                              height: 12,
-                                              child: CircularProgressIndicator(
-                                                  strokeWidth: 1.5),
-                                            ),
-                                          ],
-                                          if (status == 'failed') ...[
-                                            const SizedBox(width: 6),
-                                            const Icon(Icons.error_outline,
-                                                size: 16, color: Colors.orange),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                    if (timeText.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 3),
-                                        child: Text(
-                                          timeText,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
+                            final previousCreatedAt = index > 0
+                                ? DateTime.tryParse(
+                                        '${messages[index - 1]['createdAt'] ?? ''}')
+                                    ?.toLocal()
+                                : null;
+                            final showTime = createdAt != null &&
+                                (previousCreatedAt == null ||
+                                    createdAt
+                                            .difference(previousCreatedAt)
+                                            .inMinutes >=
+                                        5);
+                            return Column(
+                              children: [
+                                if (showTime)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Center(
+                                      child: Text(
+                                        timeText,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
                                         ),
                                       ),
-                                  ],
+                                    ),
+                                  ),
+                                Align(
+                                  alignment: isMine
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
+                                  child: Container(
+                                    margin: EdgeInsets.only(
+                                      bottom: 8,
+                                      left: isMine ? 64 : 0,
+                                      right: isMine ? 0 : 64,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isMine
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primaryContainer
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: const Radius.circular(16),
+                                        topRight: const Radius.circular(16),
+                                        bottomLeft:
+                                            Radius.circular(isMine ? 16 : 4),
+                                        bottomRight:
+                                            Radius.circular(isMine ? 4 : 16),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: isMine
+                                          ? CrossAxisAlignment.end
+                                          : CrossAxisAlignment.start,
+                                      children: [
+                                        GestureDetector(
+                                          onLongPress: () =>
+                                              _showMessageMenu(message),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              isRecalled || isDeleted
+                                                  ? Text(
+                                                      isRecalled
+                                                          ? '消息已撤回'
+                                                          : '消息已删除',
+                                                      style: const TextStyle(
+                                                          color: Colors.grey))
+                                                  : message['kind'] == 'image'
+                                                      ? _imageMessageBody(
+                                                          message)
+                                                      : message['kind'] ==
+                                                              'audio'
+                                                          ? InkWell(
+                                                              onTap: () =>
+                                                                  _playAudioMessage(
+                                                                      '${message['text'] ?? ''}'),
+                                                              child: Text(
+                                                                playingAudioKey ==
+                                                                        '${message['text'] ?? ''}'
+                                                                    ? '⏸ 播放中'
+                                                                    : '🔊 播放语音',
+                                                              ),
+                                                            )
+                                                          : Text(
+                                                              '${message['text'] ?? ''}'),
+                                              if (status == 'pending') ...[
+                                                const SizedBox(width: 6),
+                                                const SizedBox(
+                                                  width: 12,
+                                                  height: 12,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 1.5),
+                                                ),
+                                              ],
+                                              if (status == 'failed') ...[
+                                                const SizedBox(width: 6),
+                                                const Icon(Icons.error_outline,
+                                                    size: 16,
+                                                    color: Colors.orange),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        if (timeText.isNotEmpty)
+                                          const SizedBox.shrink(),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             );
                           },
                         ),
