@@ -72,6 +72,19 @@ class ImSession {
       } else if (type == 'error' || type == 'connect_failed') {
         _setState(ImConnectionState.error);
       }
+      if (event['type'] == 'message:new') {
+        final message = event['message'];
+        if (message is Map && message['id'] != null) {
+          final conversationId = '${message['conversationId'] ?? ''}';
+          final messageId = '${message['id'] ?? ''}';
+          if (conversationId.isNotEmpty && messageId.isNotEmpty) {
+            _socket?.markDelivered(
+              conversationId: conversationId,
+              messageId: messageId,
+            );
+          }
+        }
+      }
       _events.add(event);
     });
     unawaited(socket.connect());
@@ -124,7 +137,6 @@ class ImSession {
     final socket = _socket;
     if (socket == null || !isConnected || _outbox.isEmpty) return;
     final pending = List<_PendingImMessage>.from(_outbox);
-    _outbox.clear();
     for (final message in pending) {
       socket.sendText(
         conversationId: message.conversationId,
@@ -132,6 +144,8 @@ class ImSession {
         clientId: message.clientId,
       );
     }
+    _outbox.removeWhere(
+        (queued) => pending.any((sent) => sent.clientId == queued.clientId));
   }
 
   void whenReady(void Function() callback) {

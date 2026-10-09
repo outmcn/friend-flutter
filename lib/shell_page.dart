@@ -1119,11 +1119,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Future<void> _sendMessage() async {
     final text = messageController.text.trim();
     if (text.isEmpty) return;
-    final socket = ImSession.instance.socket;
-    if (socket == null || blockedConversation) {
+    if (blockedConversation) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('网络未连接，消息未发送')),
+          const SnackBar(content: Text('当前会话不可发送')),
         );
       }
       return;
@@ -1146,11 +1145,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     };
     _mergeMessage(pending);
 
-    unawaited(ImLocalStore.saveMessages(
+    await ImLocalStore.saveMessages(
       accountId: currentUserId,
       conversationId: widget.chat.conversationId,
       messages: messages,
-    ));
+    );
     ImSession.instance.queueText(
       conversationId: widget.chat.conversationId,
       text: text,
