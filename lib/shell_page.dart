@@ -1254,14 +1254,24 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
                   icon: const Icon(Icons.mic_none),
                 ),
                 Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => messageFocusNode.requestFocus(),
                     child: TextField(
-                        focusNode: messageFocusNode,
-                        controller: messageController,
-                        onChanged: _handleTypingChanged,
-                        decoration: InputDecoration(
-                            hintText: '输入消息',
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(22))))),
+                      focusNode: messageFocusNode,
+                      controller: messageController,
+                      onChanged: _handleTypingChanged,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
+                      decoration: InputDecoration(
+                        hintText: '输入消息',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 IconButton(
                   onPressed: _sendMessage,
                   icon: const Icon(Icons.send),
