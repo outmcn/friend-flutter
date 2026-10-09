@@ -1137,6 +1137,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                             final status = '${message['status'] ?? 'sent'}';
                             final isRecalled = status == 'recalled';
                             final isDeleted = status == 'deleted';
+                            final createdAt = DateTime.tryParse(
+                                    '${message['createdAt'] ?? ''}')
+                                ?.toLocal();
+                            final timeText = createdAt == null
+                                ? ''
+                                : '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
                             return Align(
                               alignment: isMine
                                   ? Alignment.centerRight
@@ -1166,47 +1172,71 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                         Radius.circular(isMine ? 4 : 16),
                                   ),
                                 ),
-                                child: GestureDetector(
-                                  onLongPress: () => _showMessageMenu(message),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      isRecalled || isDeleted
-                                          ? Text(isRecalled ? '消息已撤回' : '消息已删除',
-                                              style: const TextStyle(
-                                                  color: Colors.grey))
-                                          : message['kind'] == 'image'
-                                              ? _imageMessageBody(message)
-                                              : message['kind'] == 'audio'
-                                                  ? InkWell(
-                                                      onTap: () =>
-                                                          _playAudioMessage(
-                                                              '${message['text'] ?? ''}'),
-                                                      child: Text(
-                                                        playingAudioKey ==
-                                                                '${message['text'] ?? ''}'
-                                                            ? '⏸ 播放中'
-                                                            : '🔊 播放语音',
-                                                      ),
-                                                    )
-                                                  : Text(
-                                                      '${message['text'] ?? ''}'),
-                                      if (status == 'pending') ...[
-                                        const SizedBox(width: 6),
-                                        const SizedBox(
-                                          width: 12,
-                                          height: 12,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 1.5),
+                                child: Column(
+                                  crossAxisAlignment: isMine
+                                      ? CrossAxisAlignment.end
+                                      : CrossAxisAlignment.start,
+                                  children: [
+                                    GestureDetector(
+                                      onLongPress: () =>
+                                          _showMessageMenu(message),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          isRecalled || isDeleted
+                                              ? Text(
+                                                  isRecalled
+                                                      ? '消息已撤回'
+                                                      : '消息已删除',
+                                                  style: const TextStyle(
+                                                      color: Colors.grey))
+                                              : message['kind'] == 'image'
+                                                  ? _imageMessageBody(message)
+                                                  : message['kind'] == 'audio'
+                                                      ? InkWell(
+                                                          onTap: () =>
+                                                              _playAudioMessage(
+                                                                  '${message['text'] ?? ''}'),
+                                                          child: Text(
+                                                            playingAudioKey ==
+                                                                    '${message['text'] ?? ''}'
+                                                                ? '⏸ 播放中'
+                                                                : '🔊 播放语音',
+                                                          ),
+                                                        )
+                                                      : Text(
+                                                          '${message['text'] ?? ''}'),
+                                          if (status == 'pending') ...[
+                                            const SizedBox(width: 6),
+                                            const SizedBox(
+                                              width: 12,
+                                              height: 12,
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 1.5),
+                                            ),
+                                          ],
+                                          if (status == 'failed') ...[
+                                            const SizedBox(width: 6),
+                                            const Icon(Icons.error_outline,
+                                                size: 16, color: Colors.orange),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    if (timeText.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 3),
+                                        child: Text(
+                                          timeText,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
                                         ),
-                                      ],
-                                      if (status == 'failed') ...[
-                                        const SizedBox(width: 6),
-                                        const Icon(Icons.error_outline,
-                                            size: 16, color: Colors.orange),
-                                      ],
-                                    ],
-                                  ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             );
