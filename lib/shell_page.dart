@@ -453,6 +453,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   final Map<String, String> imageFiles = {};
   String? playingAudioKey;
   Timer? typingTimer;
+  String connectionLabel = '连接中';
 
   @override
   void initState() {
@@ -594,6 +595,33 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  void _setConnectionLabel(String value) {
+    if (!mounted || connectionLabel == value) return;
+    setState(() => connectionLabel = value);
+  }
+
+  void _markPendingMessagesFailed(String reason) {
+    final changed = <Map<String, dynamic>>[];
+    for (final message in messages) {
+      if (message['status'] == 'pending') {
+        changed.add({...message, 'status': 'failed', 'error': reason});
+      }
+    }
+    if (changed.isEmpty) return;
+    setState(() {
+      for (final message in changed) {
+        final index = messages
+            .indexWhere((item) => item['clientId'] == message['clientId']);
+        if (index >= 0) messages[index] = message;
+      }
+    });
+    unawaited(ImLocalStore.saveMessages(
+      accountId: currentUserId,
+      conversationId: widget.chat.conversationId,
+      messages: messages,
+    ));
+  }
+
   Future<void> _handleImEvent(Map<String, dynamic> event) async {
     if (!mounted) return;
     final type = event['type'];
@@ -632,6 +660,28 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           );
         }
       }
+      return;
+    }
+    if (type == 'socket:state') {
+      if (event['code'] == 'socket:ready') {
+        _setConnectionLabel('已连接');
+      } else if (event['code'] == 'socket:connecting' ||
+          event['code'] == 'socket:auth-sent') {
+        _setConnectionLabel('连接中');
+      } else if (event['code'] == 'socket:closed' ||
+          event['code'] == 'socket:error') {
+        _setConnectionLabel('未连接');
+        _markPendingMessagesFailed(event['message']?.toString() ?? '连接已断开');
+      }
+      return;
+    }
+    if (type == 'ready') {
+      _setConnectionLabel('已连接');
+      return;
+    }
+    if (type == 'auth:invalid') {
+      _setConnectionLabel('未连接');
+      _markPendingMessagesFailed('登录状态已失效');
       return;
     }
     if (type == 'error' || type == 'message:failed') {
@@ -1104,6 +1154,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             ),
             const SizedBox(width: 8),
             Text(widget.chat.name),
+            const SizedBox(width: 6),
+            Text(connectionLabel,
+                style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ]),
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
