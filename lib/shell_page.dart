@@ -1,5 +1,10 @@
 part of 'main.dart';
 
+final Map<String, ImageProvider> _avatarProviderCache = {};
+
+ImageProvider _cachedAvatarProvider(String url) =>
+    _avatarProviderCache.putIfAbsent(url, () => NetworkImage(url));
+
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
@@ -221,7 +226,7 @@ class _ChatPageState extends State<ChatPage> {
                         chat.avatarUrl!.isEmpty)
                     ? (const AssetImage('assets/figma/profile-portrait-2.jpg')
                         as ImageProvider)
-                    : NetworkImage(chat.avatarUrl!),
+                    : _cachedAvatarProvider(chat.avatarUrl!),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -292,7 +297,7 @@ class _ChatPageState extends State<ChatPage> {
                             ? (const AssetImage(
                                     'assets/figma/profile-portrait-2.jpg')
                                 as ImageProvider)
-                            : NetworkImage(chat.avatarUrl!)),
+                            : _cachedAvatarProvider(chat.avatarUrl!)),
                 const SizedBox(width: 8),
                 Text(chat.name,
                     style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -375,6 +380,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     unawaited(_connectIm());
   }
 
+  Future<void> _scrollToLatest({bool animated = false}) async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted || !messageScrollController.hasClients) return;
+    final target = messageScrollController.position.maxScrollExtent;
+    if (animated) {
+      await messageScrollController.animateTo(target,
+          duration: const Duration(milliseconds: 180), curve: Curves.easeOut);
+    } else {
+      messageScrollController.jumpTo(target);
+    }
+  }
+
   void _handleMessageScroll() {
     if (messageScrollController.hasClients &&
         messageScrollController.position.pixels <= 40) {
@@ -418,6 +435,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ..clear()
         ..addAll(cached);
     });
+    unawaited(_scrollToLatest());
     // Render the local cache before any network request; network work is background-only.
     unawaited(_refreshIdentityAndConnect(token));
   }
@@ -628,9 +646,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         merged['status'] = status ?? 'sent';
       }
       setState(() => messages[index] = merged);
+      unawaited(_scrollToLatest(animated: true));
       return true;
     }
     setState(() => messages.add(merged));
+    unawaited(_scrollToLatest(animated: true));
     return true;
   }
 

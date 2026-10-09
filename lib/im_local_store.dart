@@ -109,6 +109,10 @@ class ImLocalStore {
     );
   }
 
+  static Future<String?> avatarPath(String key) => imagePath('avatar:$key');
+
+  static Future<String> saveAvatar(String key, List<int> bytes) =>
+      saveImage('avatar:$key', bytes);
   static Future<String?> imagePath(String key) async {
     final dir = await getApplicationSupportDirectory();
     final safe = base64Url.encode(utf8.encode(key));
