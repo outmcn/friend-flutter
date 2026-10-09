@@ -54,14 +54,23 @@ class DDImPeer {
 }
 
 class DDImLastMessage {
-  const DDImLastMessage({required this.text, required this.createdAt});
+  const DDImLastMessage({
+    required this.text,
+    required this.createdAt,
+    this.recalledAt,
+    this.deletedAt,
+  });
   final String text;
   final String createdAt;
+  final String? recalledAt;
+  final String? deletedAt;
 
   factory DDImLastMessage.fromJson(Map<String, dynamic> json) =>
       DDImLastMessage(
         text: '${json['text'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
+        recalledAt: json['recalledAt']?.toString(),
+        deletedAt: json['deletedAt']?.toString(),
       );
 }
 

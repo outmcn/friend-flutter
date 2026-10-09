@@ -28,7 +28,8 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
     unawaited(_loadConversations());
     listEvents = ImSession.instance.events.listen((event) {
-      if (event['type'] == 'message:new') {
+      if (event['type'] == 'message:new' ||
+          event['type'] == 'message:recalled') {
         unawaited(_loadConversations(showLoading: false));
       }
     });
@@ -130,7 +131,8 @@ class _ChatPageState extends State<ChatPage> {
     await _stopListSocket();
     if (mounted) {
       listEvents = ImSession.instance.events.listen((event) {
-        if (event['type'] == 'message:new') {
+        if (event['type'] == 'message:new' ||
+            event['type'] == 'message:recalled') {
           unawaited(_loadConversations(showLoading: false));
         }
       });
