@@ -67,10 +67,11 @@ class ImSession {
       if (type == 'auth:invalid') {
         _readySnapshot = false;
         _setState(ImConnectionState.unauthorized);
-      } else if (type == 'closed') {
+      } else if (type == 'closed' || type == 'connect_failed') {
         _readySnapshot = false;
         _setState(ImConnectionState.disconnected);
-      } else if (type == 'error' || type == 'connect_failed') {
+        _requeueInflight();
+      } else if (type == 'error') {
         _setState(ImConnectionState.error);
       }
       if (type == 'message:accepted') {
@@ -99,6 +100,16 @@ class ImSession {
       _events.add(event);
     });
     unawaited(socket.connect());
+  }
+
+  void _requeueInflight() {
+    if (_inflight.isEmpty) return;
+    for (final message in _inflight.values) {
+      if (!_outbox.any((queued) => queued.clientId == message.clientId)) {
+        _outbox.add(message);
+      }
+    }
+    _inflight.clear();
   }
 
   void _setState(ImConnectionState value) {
