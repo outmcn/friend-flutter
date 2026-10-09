@@ -515,7 +515,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     });
     unawaited(_scrollToLatest());
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
+    if (ImSession.instance.isConnected) {
+      _setConnectionLabel('已连接');
+    }
     unawaited(_refreshIdentityAndConnect(token));
+    unawaited(_syncMessages(token));
   }
 
   Future<void> _refreshIdentityAndConnect(String token) async {
@@ -545,7 +549,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _finishImConnection(String token) async {
-    eventSubscription = ImSession.instance.events.listen(_handleImEvent);
     unawaited(_syncMessages(token));
     initialSyncCompleted = true;
   }
