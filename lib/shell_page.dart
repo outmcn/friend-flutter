@@ -543,6 +543,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
       );
+      var normalizedPending = false;
+      for (final item in cached) {
+        if (item['status'] == 'pending' &&
+            '${item['clientId'] ?? ''}'.isNotEmpty) {
+          item['status'] = 'sent';
+          normalizedPending = true;
+        }
+      }
       final deletedIds = await ImLocalStore.localDeletedMessageIds(
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
@@ -555,6 +563,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..clear()
           ..addAll(cached);
       });
+      if (normalizedPending) {
+        await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: cached,
+        );
+      }
       ImSession.instance.whenReady(() {
         unawaited(_syncOfflineMessages(token, cached));
       });
