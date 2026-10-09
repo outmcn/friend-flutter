@@ -500,7 +500,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (token.isEmpty) throw Exception('请先登录');
     currentUserId = widget.currentUserId;
     if (currentUserId.isEmpty) {
-      currentUserId = prefs.getString('friend.auth.userId') ?? '';
+      currentUserId = ImSession.instance.userId ??
+          prefs.getString('friend.auth.userId') ??
+          '';
+    }
+    if (currentUserId.isEmpty) {
+      final service = DDPostService();
+      try {
+        final profile = await service.fetchMe(token);
+        currentUserId = '${profile['id'] ?? ''}';
+        if (currentUserId.isNotEmpty) {
+          await prefs.setString('friend.auth.userId', currentUserId);
+        }
+      } finally {
+        service.dispose();
+      }
     }
     await ImLocalStore.migrateLegacyAudioKeys();
     final cached = await ImLocalStore.messages(
@@ -517,40 +531,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
     if (ImSession.instance.isConnected) {
       _setConnectionLabel('已连接');
+    } else {
+      _setConnectionLabel('连接中');
     }
-    unawaited(_refreshIdentityAndConnect(token));
-    unawaited(_syncMessages(token));
-  }
 
-  Future<void> _refreshIdentityAndConnect(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    final service = DDPostService();
-    try {
-      final profile = await service.fetchMe(token);
-      final latestUserId = '${profile['id'] ?? currentUserId}';
-      if (latestUserId.isNotEmpty && latestUserId != currentUserId) {
-        currentUserId = latestUserId;
-        await prefs.setString('friend.auth.userId', currentUserId);
-        final refreshed = await ImLocalStore.messages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-        );
-        if (mounted) {
-          setState(() {
-            messages
-              ..clear()
-              ..addAll(refreshed);
-          });
-        }
-      }
-    } catch (_) {}
-    service.dispose();
-    unawaited(_finishImConnection(token));
-  }
-
-  Future<void> _finishImConnection(String token) async {
     unawaited(_syncMessages(token));
-    initialSyncCompleted = true;
   }
 
   Future<void> _syncMessages(String token) async {
@@ -665,17 +650,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
       return;
     }
-    if (type == 'socket:state') {
-      if (event['code'] == 'socket:ready') {
-        _setConnectionLabel('已连接');
-      } else if (event['code'] == 'socket:connecting' ||
-          event['code'] == 'socket:auth-sent') {
-        _setConnectionLabel('连接中');
-      } else if (event['code'] == 'socket:closed' ||
-          event['code'] == 'socket:error') {
-        _setConnectionLabel('未连接');
-        _markPendingMessagesFailed(event['message']?.toString() ?? '连接已断开');
-      }
+    if (type == 'im:state') {
+      final state = '${event['state'] ?? ''}';
+      _setConnectionLabel(state == 'ready'
+          ? '已连接'
+          : state == 'connecting'
+              ? '连接中'
+              : '未连接');
       return;
     }
     if (type == 'ready') {

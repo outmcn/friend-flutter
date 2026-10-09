@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'im_socket.dart';
 
-/// A text message retained in memory until the authenticated socket is ready.
+/// A text message retained until the authenticated socket can send it.
 class _PendingImMessage {
   const _PendingImMessage({
     required this.conversationId,
@@ -26,19 +26,26 @@ class ImSession {
   final _readyCallbacks = <void Function()>[];
   final _outbox = <_PendingImMessage>[];
   String? _token;
+  String? _userId;
+  ImConnectionState _state = ImConnectionState.disconnected;
 
   Stream<Map<String, dynamic>> get events => _events.stream;
   FriendImSocket? get socket => _socket;
-  bool get isConnected => _socket?.isConnected == true;
+  String? get userId => _userId;
+  ImConnectionState get state => _state;
+  bool get isConnected => _state == ImConnectionState.ready;
 
   Future<void> start(String token) async {
     if (token.isEmpty) return;
     if (_socket != null && _token == token) return;
-    await stop();
+    await stop(clearOutbox: false);
     _token = token;
+    _setState(ImConnectionState.connecting);
     final socket = FriendImSocket(token: token);
     _socket = socket;
-    socket.setOnReady(() {
+    socket.setOnReady((userId) {
+      _userId = userId;
+      _setState(ImConnectionState.ready);
       final callbacks = List<void Function()>.from(_readyCallbacks);
       _readyCallbacks.clear();
       for (final callback in callbacks) {
@@ -46,8 +53,27 @@ class ImSession {
       }
       _flushOutbox();
     });
-    _socketEvents = socket.events.listen(_events.add);
+    _socketEvents = socket.events.listen((event) {
+      final type = event['type'];
+      if (type == 'auth:invalid') {
+        _setState(ImConnectionState.unauthorized);
+      } else if (type == 'closed') {
+        _setState(ImConnectionState.disconnected);
+      } else if (type == 'error' || type == 'connect_failed') {
+        _setState(ImConnectionState.error);
+      }
+      _events.add(event);
+    });
     unawaited(socket.connect());
+  }
+
+  void _setState(ImConnectionState value) {
+    _state = value;
+    _events.add(<String, dynamic>{
+      'type': 'im:state',
+      'state': value.name,
+      'userId': _userId,
+    });
   }
 
   void queueText({
@@ -65,7 +91,7 @@ class ImSession {
 
   void _flushOutbox() {
     final socket = _socket;
-    if (socket == null || !socket.isConnected || _outbox.isEmpty) return;
+    if (socket == null || !isConnected || _outbox.isEmpty) return;
     final pending = List<_PendingImMessage>.from(_outbox);
     _outbox.clear();
     for (final message in pending) {
@@ -78,22 +104,24 @@ class ImSession {
   }
 
   void whenReady(void Function() callback) {
-    final socket = _socket;
-    if (socket == null) return;
-    if (socket.isConnected) {
+    if (isConnected) {
       callback();
     } else {
       _readyCallbacks.add(callback);
     }
   }
 
-  Future<void> stop() async {
+  Future<void> stop({bool clearOutbox = true}) async {
     _readyCallbacks.clear();
-    _outbox.clear();
+    if (clearOutbox) _outbox.clear();
     await _socketEvents?.cancel();
     _socketEvents = null;
     await _socket?.dispose();
     _socket = null;
     _token = null;
+    _userId = null;
+    _state = ImConnectionState.disconnected;
   }
 }
+
+enum ImConnectionState { disconnected, connecting, ready, unauthorized, error }
