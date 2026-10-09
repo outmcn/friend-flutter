@@ -407,16 +407,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (currentUserId.isEmpty) {
       currentUserId = prefs.getString('friend.auth.userId') ?? '';
     }
-    final service = DDPostService();
-    try {
-      await ImLocalStore.migrateLegacyAudioKeys();
-      final profile = await service.fetchMe(token);
-      currentUserId = '${profile['id'] ?? currentUserId}';
-      if (currentUserId.isNotEmpty) {
-        await prefs.setString('friend.auth.userId', currentUserId);
-      }
-    } catch (_) {}
-    service.dispose();
+    await ImLocalStore.migrateLegacyAudioKeys();
     final cached = await ImLocalStore.messages(
       accountId: currentUserId,
       conversationId: widget.chat.conversationId,
@@ -427,7 +418,33 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ..clear()
         ..addAll(cached);
     });
-    // Cache is authoritative for the first frame; network sync continues in background.
+    // Render the local cache before any network request; network work is background-only.
+    unawaited(_refreshIdentityAndConnect(token));
+  }
+
+  Future<void> _refreshIdentityAndConnect(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    final service = DDPostService();
+    try {
+      final profile = await service.fetchMe(token);
+      final latestUserId = '${profile['id'] ?? currentUserId}';
+      if (latestUserId.isNotEmpty && latestUserId != currentUserId) {
+        currentUserId = latestUserId;
+        await prefs.setString('friend.auth.userId', currentUserId);
+        final refreshed = await ImLocalStore.messages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+        );
+        if (mounted) {
+          setState(() {
+            messages
+              ..clear()
+              ..addAll(refreshed);
+          });
+        }
+      }
+    } catch (_) {}
+    service.dispose();
     unawaited(_finishImConnection(token));
   }
 
