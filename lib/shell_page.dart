@@ -1094,7 +1094,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 title: const Text('撤回'),
                 onTap: () => Navigator.pop(context, 'recall'),
               ),
-            if (isMine && status != 'deleted')
+            if (status != 'deleted')
               ListTile(
                 leading: const Icon(Icons.delete_outline),
                 title: const Text('删除'),
@@ -1110,6 +1110,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     final id = '${message['id'] ?? ''}';
+    if (choice == 'delete') {
+      final index = messages.indexWhere((item) => '${item['id'] ?? ''}' == id);
+      if (index >= 0) {
+        setState(() => messages.removeAt(index));
+        await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: messages,
+        );
+      }
+      return;
+    }
     if (id.isEmpty || id.startsWith('local:')) {
       if (choice == 'recall') {
         if (mounted) {
@@ -1124,15 +1136,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       ImSession.instance.socket?.recallMessage(
           conversationId: widget.chat.conversationId, messageId: id);
     } else if (choice == 'delete') {
-      final index = messages.indexWhere((item) => '${item['id'] ?? ''}' == id);
-      if (index >= 0) {
-        setState(() => messages.removeAt(index));
-        await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: messages,
-        );
-      }
+      return;
     }
   }
 
