@@ -535,7 +535,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     _addDiagnostic('socket listener ready');
     await ImSession.instance.restorePending(currentUserId);
     _addDiagnostic('pending restored');
-    unawaited(_syncMessages(token));
+    if (mounted) setState(() => initialSyncCompleted = true);
     try {
       _addDiagnostic('sqlite start');
       await ImLocalStore.migrateLegacyAudioKeys();
@@ -558,62 +558,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       unawaited(_scrollToLatest());
     } catch (error) {
       _addDiagnostic('sqlite error $error');
-    }
-  }
-
-  Future<void> _syncMessages(String token) async {
-    if (syncing) return;
-    syncing = true;
-    final service = DDPostService();
-    final deletedIds = await ImLocalStore.localDeletedMessageIds(
-      accountId: currentUserId,
-      conversationId: widget.chat.conversationId,
-    );
-    try {
-      final afterId = messages.isEmpty ? null : '${messages.last['id']}';
-      final history = await service.fetchImMessages(
-        token,
-        widget.chat.conversationId,
-        afterId: afterId,
-      );
-      _addDiagnostic('history count=${history.length}');
-      if (!mounted) return;
-      for (final item in history) {
-        if (deletedIds.contains(item.id)) continue;
-        _mergeMessage({
-          'text': item.text,
-          'id': item.id,
-          'kind': item.kind,
-          'durationMs': item.durationMs,
-          'clientId': item.clientId,
-          'senderId': item.senderId,
-          'createdAt': item.createdAt,
-        },
-            status: item.recalledAt != null
-                ? 'recalled'
-                : item.deletedAt != null
-                    ? 'deleted'
-                    : 'sent');
-      }
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: messages,
-      );
-      if (messages.isNotEmpty) {
-        try {
-          await service.markImConversationRead(
-              token, widget.chat.conversationId, '${messages.last['id']}');
-        } catch (_) {}
-      }
-      initialSyncCompleted = true;
-      if (mounted) {
-        setState(() {});
-        unawaited(_scrollToLatest());
-      }
-    } finally {
-      syncing = false;
-      service.dispose();
     }
   }
 
@@ -746,11 +690,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
 
     if (type == 'closed' || type == 'connect_failed') {
-      final tokenFuture = SharedPreferences.getInstance()
-          .then((prefs) => prefs.getString('friend.auth.token') ?? '');
-      unawaited(tokenFuture.then((token) {
-        if (token.isNotEmpty) return _syncMessages(token);
-      }));
       return;
     }
     if (type != 'message:new' && type != 'message:accepted') return;
@@ -818,64 +757,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _loadOlderMessages() async {
-    if (loadingOlder || !hasOlder || messages.isEmpty) return;
-    loadingOlder = true;
-    final beforeId = '${messages.first['id']}';
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty) {
-      loadingOlder = false;
-      return;
-    }
-    final service = DDPostService();
-    try {
-      final older = await service.fetchImMessages(
-        token,
-        widget.chat.conversationId,
-        beforeId: beforeId,
-      );
-      if (!mounted) return;
-      if (older.isEmpty) {
-        hasOlder = false;
-        return;
-      }
-      final previousExtent = messageScrollController.hasClients
-          ? messageScrollController.position.maxScrollExtent
-          : 0.0;
-      final previousOffset = messageScrollController.hasClients
-          ? messageScrollController.offset
-          : 0.0;
-      final additions = older
-          .map((item) => <String, dynamic>{
-                'text': item.text,
-                'id': item.id,
-                'clientId': item.clientId,
-                'senderId': item.senderId,
-                'createdAt': item.createdAt,
-              })
-          .toList();
-      setState(() {
-        for (final item in additions.reversed) {
-          if (!messages.any((old) => old['id'] == item['id'])) {
-            messages.insert(0, item);
-          }
-        }
-      });
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: messages,
-      );
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!messageScrollController.hasClients) return;
-        final delta =
-            messageScrollController.position.maxScrollExtent - previousExtent;
-        messageScrollController.jumpTo(previousOffset + delta);
-      });
-    } finally {
-      loadingOlder = false;
-      service.dispose();
-    }
+    // Server history is intentionally disabled; older messages are local-only.
   }
 
   void _handleTypingChanged(String value) {
