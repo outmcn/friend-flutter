@@ -148,12 +148,17 @@ class ImSession {
         (queued) => pending.any((sent) => sent.clientId == queued.clientId));
   }
 
-  void whenReady(void Function() callback) {
-    if (isConnected) {
-      callback();
-    } else {
-      _readyCallbacks.add(callback);
-    }
+  void requeueText({
+    required String conversationId,
+    required String text,
+    required String clientId,
+  }) {
+    _outbox.add(_PendingImMessage(
+      conversationId: conversationId,
+      text: text,
+      clientId: clientId,
+    ));
+    _flushOutbox();
   }
 
   Future<void> stop({bool clearOutbox = true}) async {
