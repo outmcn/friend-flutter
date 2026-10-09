@@ -90,6 +90,7 @@ class _ChatPageState extends State<ChatPage> {
                 row.peer?.avatarKey,
                 row.id,
                 row.unreadCount,
+                row.peerReadMessageId,
               ))
           .toList();
       if (mounted) {
@@ -396,14 +397,16 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class _ChatPreview {
-  const _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
-      this.conversationId, this.unreadCount);
+  _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
+      this.conversationId, this.unreadCount,
+      [this.peerReadMessageId]);
   final String name;
   final String preview;
   final String? avatarUrl;
   final String? avatarKey;
   final String conversationId;
   final int unreadCount;
+  final String? peerReadMessageId;
 
   factory _ChatPreview.fromCache(Map<String, dynamic> row) => _ChatPreview(
         '${row['name'] ?? '用户'}',
@@ -412,6 +415,7 @@ class _ChatPreview {
         row['avatarKey'] as String?,
         '${row['conversationId'] ?? ''}',
         (row['unreadCount'] as num?)?.toInt() ?? 0,
+        row['peerReadMessageId']?.toString(),
       );
 
   Map<String, dynamic> toCache() => {
@@ -421,6 +425,7 @@ class _ChatPreview {
         'avatarKey': avatarKey,
         'conversationId': conversationId,
         'unreadCount': unreadCount,
+        'peerReadMessageId': peerReadMessageId,
       };
 }
 
@@ -430,6 +435,59 @@ ImageProvider _chatAvatarFor(_ChatPreview chat) {
     return const AssetImage('assets/figma/profile-portrait-2.jpg');
   }
   return _cachedAvatarProvider(url);
+}
+
+class _TypingBubble extends StatefulWidget {
+  @override
+  State<_TypingBubble> createState() => _TypingBubbleState();
+}
+
+class _TypingBubbleState extends State<_TypingBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.centerLeft,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (_, __) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(3, (index) {
+                    final phase = (_controller.value + index / 3) % 1;
+                    final opacity = 0.35 + (phase < 0.5 ? phase : 1 - phase);
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Opacity(
+                        opacity: opacity.clamp(0.35, 0.95),
+                        child: const Text('•', style: TextStyle(fontSize: 18)),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class _ChatDetailPage extends StatefulWidget {
@@ -507,6 +565,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) throw Exception('请先登录');
     currentUserId = widget.currentUserId;
+    peerReadMessageId = widget.chat.peerReadMessageId;
     if (currentUserId.isEmpty) {
       currentUserId = ImSession.instance.userId ??
           prefs.getString('friend.auth.userId') ??
@@ -1224,15 +1283,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           Expanded(
             child: Column(
               children: [
-                if (peerTyping)
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 16, 0),
-                      child: Text('对方正在输入…',
-                          style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    ),
-                  ),
+                if (peerTyping) _TypingBubble(),
                 Expanded(
                   child: messages.isEmpty
                       ? Center(

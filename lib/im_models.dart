@@ -7,6 +7,7 @@ class DDConversation {
     this.peer,
     this.lastMessage,
     this.updatedAt,
+    this.peerReadMessageId,
     this.unreadCount = 0,
   });
   final String id;
@@ -14,6 +15,7 @@ class DDConversation {
   final DDImPeer? peer;
   final DDImLastMessage? lastMessage;
   final String? updatedAt;
+  final String? peerReadMessageId;
   final int unreadCount;
 
   factory DDConversation.fromJson(Map<String, dynamic> json) => DDConversation(
@@ -27,6 +29,7 @@ class DDConversation {
                 (json['lastMessage'] as Map).cast<String, dynamic>())
             : null,
         updatedAt: '${json['updatedAt'] ?? ''}',
+        peerReadMessageId: json['peerReadMessageId']?.toString(),
         unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
       );
 }
