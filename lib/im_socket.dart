@@ -71,6 +71,7 @@ class FriendImSocket {
         if (item['type'] == 'ready') {
           _ready = true;
           _onReady?.call();
+          _events.add(item);
         }
         if (item['type'] == 'session:replaced') {
           _sessionReplaced = true;
