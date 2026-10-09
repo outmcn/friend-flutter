@@ -518,7 +518,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
     await ImSession.instance.restorePending(currentUserId);
-    if (mounted) setState(() => initialSyncCompleted = true);
     try {
       await ImLocalStore.migrateLegacyAudioKeys();
       final cached = await ImLocalStore.messages(
@@ -536,9 +535,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..clear()
           ..addAll(cached);
       });
-      ImSession.instance.whenReady(() {
-        unawaited(_syncOfflineMessages(token, cached));
-      });
+      if (mounted) setState(() => initialSyncCompleted = true);
       unawaited(_scrollToLatest());
     } catch (_) {}
   }
@@ -1074,52 +1071,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           conversationId: widget.chat.conversationId,
           messages: messages,
         );
-      }
-    } finally {
-      service.dispose();
-    }
-  }
-
-  Future<void> _syncOfflineMessages(
-      String token, List<Map<String, dynamic>> cached) async {
-    final afterId = cached
-        .map((item) => int.tryParse('${item['id'] ?? ''}'))
-        .whereType<int>()
-        .fold<int>(0, (max, value) => value > max ? value : max);
-    final service = DDPostService();
-    try {
-      final remote = await service.fetchImMessages(
-        token,
-        widget.chat.conversationId,
-        afterId: afterId > 0 ? '$afterId' : null,
-      );
-      for (final message in remote) {
-        final id = message.id;
-        if (messages.any((item) => '${item['id'] ?? ''}' == id)) {
-          continue;
-        }
-        final item = <String, dynamic>{
-          'id': message.id,
-          'conversationId': message.conversationId,
-          'senderId': message.senderId,
-          'text': message.text,
-          'createdAt': message.createdAt,
-          'kind': message.kind,
-          'durationMs': message.durationMs,
-          'clientId': message.clientId,
-          'recalledAt': message.recalledAt,
-          'deletedAt': message.deletedAt,
-        };
-        _mergeMessage(item, status: 'sent');
-      }
-      if (remote.isNotEmpty) {
-        await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: messages,
-        );
-        await _markLatestRead();
-        if (mounted) setState(() {});
       }
     } finally {
       service.dispose();
