@@ -555,6 +555,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..clear()
           ..addAll(cached);
       });
+      ImSession.instance.whenReady(() {
+        unawaited(_markLatestRead());
+      });
       unawaited(_scrollToLatest());
     } catch (error) {
       _addDiagnostic('sqlite error $error');
