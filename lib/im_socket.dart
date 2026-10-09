@@ -63,9 +63,9 @@ class FriendImSocket {
   }
 
   void _handleEvent(dynamic event) {
-    if (event is! String) return;
+    final payload = event is String ? event : utf8.decode(event as List<int>);
     try {
-      final decoded = jsonDecode(event);
+      final decoded = jsonDecode(payload);
       if (decoded is Map) {
         final item = decoded.cast<String, dynamic>();
         if (item['type'] == 'ready') {
