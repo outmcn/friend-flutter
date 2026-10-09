@@ -63,6 +63,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         widget.name,
         '开始一段新的聊天',
         _avatarUrl,
+        null,
         conversationId,
         0,
       );

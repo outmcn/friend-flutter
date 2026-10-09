@@ -22,12 +22,32 @@ class _ChatPageState extends State<ChatPage> {
   bool loading = true;
   bool conversationCacheLoaded = false;
   String? loadError;
+  final Map<String, String> _avatarPaths = {};
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadConversations());
     unawaited(_connectListSocket());
+  }
+
+  Future<void> _cacheAvatar(_ChatPreview chat) async {
+    final key = chat.avatarKey ?? '';
+    if (key.isEmpty || _avatarPaths.containsKey(key)) return;
+    final local = await ImLocalStore.avatarPath(key);
+    if (local != null && mounted) {
+      setState(() => _avatarPaths[key] = local);
+      return;
+    }
+    final url = chat.avatarUrl;
+    if (url == null || url.isEmpty) return;
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final saved = await ImLocalStore.saveAvatar(key, response.bodyBytes);
+        if (mounted) setState(() => _avatarPaths[key] = saved);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadConversations({bool showLoading = true}) async {
@@ -58,6 +78,7 @@ class _ChatPageState extends State<ChatPage> {
                   row.peer?.nickname ?? '会话 ${row.id}',
                   row.lastMessage?.text ?? '开始一段新的聊天',
                   row.peer?.avatarUrl,
+                  row.peer?.avatarKey,
                   row.id,
                   row.unreadCount,
                 ))
@@ -66,6 +87,9 @@ class _ChatPageState extends State<ChatPage> {
         loading = false;
       });
       service.dispose();
+      for (final chat in conversations) {
+        unawaited(_cacheAvatar(chat));
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -169,7 +193,7 @@ class _ChatPageState extends State<ChatPage> {
       final chat = conversations.firstWhere(
         (item) => item.conversationId == id,
         orElse: () => _ChatPreview(
-            '${selected['nickname'] ?? '用户'}', '开始一段新的聊天', null, id, 0),
+            '${selected['nickname'] ?? '用户'}', '开始一段新的聊天', null, null, id, 0),
       );
       await Navigator.push(
         context,
@@ -200,6 +224,16 @@ class _ChatPageState extends State<ChatPage> {
         ),
       );
 
+  ImageProvider _avatarFor(_ChatPreview chat) {
+    final local = _avatarPaths[chat.avatarKey];
+    if (local != null) return FileImage(File(local));
+    final url = chat.avatarUrl;
+    if (url == null || url.isEmpty) {
+      return const AssetImage('assets/figma/profile-portrait-2.jpg');
+    }
+    return _cachedAvatarProvider(url);
+  }
+
   Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) =>
       InkWell(
         onTap: () async {
@@ -222,11 +256,7 @@ class _ChatPageState extends State<ChatPage> {
             children: [
               CircleAvatar(
                 radius: 27,
-                backgroundImage: (chat.avatarUrl == null ||
-                        chat.avatarUrl!.isEmpty)
-                    ? (const AssetImage('assets/figma/profile-portrait-2.jpg')
-                        as ImageProvider)
-                    : _cachedAvatarProvider(chat.avatarUrl!),
+                backgroundImage: _avatarFor(chat),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -337,13 +367,22 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class _ChatPreview {
-  const _ChatPreview(this.name, this.preview, this.avatarUrl,
+  const _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.conversationId, this.unreadCount);
   final String name;
   final String preview;
   final String? avatarUrl;
+  final String? avatarKey;
   final String conversationId;
   final int unreadCount;
+}
+
+ImageProvider _chatAvatarFor(_ChatPreview chat) {
+  final url = chat.avatarUrl;
+  if (url == null || url.isEmpty) {
+    return const AssetImage('assets/figma/profile-portrait-2.jpg');
+  }
+  return _cachedAvatarProvider(url);
 }
 
 class _ChatDetailPage extends StatefulWidget {
@@ -382,6 +421,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   Future<void> _scrollToLatest({bool animated = false}) async {
     await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted || !messageScrollController.hasClients) return;
     final target = messageScrollController.position.maxScrollExtent;
     if (animated) {
@@ -511,7 +551,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         } catch (_) {}
       }
       initialSyncCompleted = true;
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+        unawaited(_scrollToLatest());
+      }
     } finally {
       syncing = false;
       service.dispose();
@@ -1020,12 +1063,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         appBar: AppBar(
           title: Row(children: [
             CircleAvatar(
-                radius: 20,
-                backgroundImage: (widget.chat.avatarUrl == null ||
-                        widget.chat.avatarUrl!.isEmpty)
-                    ? (const AssetImage('assets/figma/profile-portrait-2.jpg')
-                        as ImageProvider)
-                    : NetworkImage(widget.chat.avatarUrl!)),
+              radius: 20,
+              backgroundImage: _chatAvatarFor(widget.chat),
+            ),
             const SizedBox(width: 8),
             Text(widget.chat.name),
           ]),
