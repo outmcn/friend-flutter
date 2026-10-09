@@ -157,15 +157,6 @@ class FriendImSocket {
     });
   }
 
-  void recallMessage(
-      {required String conversationId, required String messageId}) {
-    send({
-      'type': 'message:recall',
-      'conversationId': conversationId,
-      'messageId': messageId,
-    });
-  }
-
   void sendText({
     required String conversationId,
     required String text,

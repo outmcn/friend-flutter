@@ -122,6 +122,20 @@ class DDPostService {
     return '${data['conversationId']}';
   }
 
+  Future<Map<String, dynamic>> recallImMessage(
+      String token, String conversationId, String messageId) async {
+    final response = await _client.post(
+      _api('/im/conversations/$conversationId/messages/$messageId/recall'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map || data['message'] is! Map) {
+      throw Exception(data is Map ? '${data['error'] ?? '撤回失败'}' : '撤回失败');
+    }
+    return (data['message'] as Map).cast<String, dynamic>();
+  }
+
   Future<Map<String, dynamic>> sendImMessage(
     String token,
     String conversationId, {

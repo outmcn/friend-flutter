@@ -976,8 +976,38 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     if (choice == 'recall') {
-      ImSession.instance.socket?.recallMessage(
-          conversationId: widget.chat.conversationId, messageId: id);
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      final service = DDPostService();
+      try {
+        final recalled = await service.recallImMessage(
+          token,
+          widget.chat.conversationId,
+          id,
+        );
+        final index = messages.indexWhere((item) =>
+            '${item['id'] ?? ''}' == id ||
+            '${item['clientId'] ?? ''}' == '${message['clientId'] ?? ''}');
+        if (index >= 0) {
+          setState(() => messages[index] = {
+                ...messages[index],
+                ...recalled,
+                'status': 'recalled',
+              });
+          await ImLocalStore.saveMessages(
+            accountId: currentUserId,
+            conversationId: widget.chat.conversationId,
+            messages: messages,
+          );
+        }
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('$error')));
+        }
+      } finally {
+        service.dispose();
+      }
     }
   }
 
