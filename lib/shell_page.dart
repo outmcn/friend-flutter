@@ -553,7 +553,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..addAll(cached);
       });
       if (mounted) setState(() => initialSyncCompleted = true);
-      unawaited(_syncUndeliveredMessages(token));
       unawaited(_markLatestRead());
       unawaited(_scrollToLatest());
     } catch (_) {}
@@ -1109,54 +1108,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         widget.chat.conversationId,
         confirmedIds,
       );
-    } finally {
-      service.dispose();
-    }
-  }
-
-  Future<void> _syncUndeliveredMessages(String token) async {
-    final service = DDPostService();
-    try {
-      final remote = await service.fetchImMessages(
-        token,
-        widget.chat.conversationId,
-      );
-      for (final message in remote) {
-        final item = <String, dynamic>{
-          'id': message.id,
-          'conversationId': message.conversationId,
-          'senderId': message.senderId,
-          'text': message.text,
-          'createdAt': message.createdAt,
-          'kind': message.kind,
-          'durationMs': message.durationMs,
-          'clientId': message.clientId,
-          'recalledAt': message.recalledAt,
-          'deletedAt': message.deletedAt,
-          'status': 'sent',
-        };
-        _mergeMessage(item, status: 'sent');
-      }
-      if (remote.isNotEmpty) {
-        await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: messages,
-        );
-        final durable = await ImLocalStore.durableMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messageIds: remote.map((message) => message.id).toList(),
-        );
-        await service.confirmImMessagesSynced(
-          token,
-          widget.chat.conversationId,
-          durable.map((row) => '${row['message_id']}').toList(),
-        );
-        await _markLatestRead();
-      }
-    } catch (_) {
-      // 本地聊天仍保持可用；下一次进入详情继续补偿同步。
     } finally {
       service.dispose();
     }

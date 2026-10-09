@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'im_local_store.dart';
 import 'im_socket.dart';
+import 'post_service.dart';
 
 /// A text message retained until the authenticated socket can send it.
 class _PendingImMessage {
@@ -108,17 +111,8 @@ class ImSession {
       }
       if (type == 'message:new') {
         final message = event['message'];
-        if (message is Map && message['id'] != null) {
-          final conversationId = '${message['conversationId'] ?? ''}';
-          final messageId = '${message['id'] ?? ''}';
-          if (conversationId.isNotEmpty && messageId.isNotEmpty) {
-            if (_userId != null) {
-              unawaited(ImLocalStore.saveIncomingMessage(
-                accountId: _userId!,
-                message: message.cast<String, dynamic>(),
-              ));
-            }
-          }
+        if (message is Map && message['id'] != null && _userId != null) {
+          unawaited(_persistIncoming(message.cast<String, dynamic>()));
         }
       }
       if (type == 'message:recalled') {
@@ -133,6 +127,35 @@ class ImSession {
       _events.add(event);
     });
     unawaited(socket.connect());
+  }
+
+  Future<void> _persistIncoming(Map<String, dynamic> message) async {
+    final accountId = _userId;
+    final conversationId = '${message['conversationId'] ?? ''}';
+    final messageId = '${message['id'] ?? ''}';
+    if (accountId == null || conversationId.isEmpty || messageId.isEmpty) {
+      return;
+    }
+    await ImLocalStore.saveIncomingMessage(
+      accountId: accountId,
+      message: message,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final durable = await ImLocalStore.durableMessages(
+      accountId: accountId,
+      conversationId: conversationId,
+      messageIds: [messageId],
+    );
+    final ids = durable.map((row) => '${row['message_id']}').toList();
+    if (ids.isEmpty) return;
+    final service = DDPostService();
+    try {
+      await service.confirmImMessagesSynced(token, conversationId, ids);
+    } finally {
+      service.dispose();
+    }
   }
 
   void _requeueInflight() {
