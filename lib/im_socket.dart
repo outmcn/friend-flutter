@@ -18,9 +18,11 @@ class FriendImSocket {
   bool _ready = false;
   bool _sessionReplaced = false;
   int _reconnectAttempt = 0;
+  void Function()? _onReady;
   Stream<Map<String, dynamic>> get events => _events.stream;
   bool get isConnected => _channel != null && _ready;
 
+  void setOnReady(void Function()? callback) => _onReady = callback;
   Future<void> connect() async {
     if (_closedByOwner || _channel != null) return;
     final channel = _channel ??
@@ -63,7 +65,10 @@ class FriendImSocket {
       final decoded = jsonDecode(event);
       if (decoded is Map) {
         final item = decoded.cast<String, dynamic>();
-        if (item['type'] == 'ready') _ready = true;
+        if (item['type'] == 'ready') {
+          _ready = true;
+          _onReady?.call();
+        }
         if (item['type'] == 'session:replaced') {
           _sessionReplaced = true;
           _events.add(item);

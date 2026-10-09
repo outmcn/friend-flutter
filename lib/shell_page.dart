@@ -1041,7 +1041,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final text = messageController.text.trim();
     if (text.isEmpty) return;
     final socket = ImSession.instance.socket;
-    if (socket == null || !socket.isConnected || blockedConversation) {
+    if (socket == null || blockedConversation) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('网络未连接，消息未发送')),
@@ -1071,11 +1071,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       conversationId: widget.chat.conversationId,
       messages: messages,
     );
-    socket.sendText(
-      conversationId: widget.chat.conversationId,
-      text: text,
-      clientId: clientId,
-    );
+    ImSession.instance.whenReady(() {
+      ImSession.instance.socket?.sendText(
+        conversationId: widget.chat.conversationId,
+        text: text,
+        clientId: clientId,
+      );
+    });
     messageController.clear();
   }
 
