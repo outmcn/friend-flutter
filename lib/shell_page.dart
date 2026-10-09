@@ -1060,6 +1060,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           title: Row(children: [
             CircleAvatar(
@@ -1191,7 +1192,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             ),
           ),
           SafeArea(
-              top: false,
+            top: false,
+            child: AnimatedPadding(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(context).bottom),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
                 child: Row(children: [
@@ -1216,7 +1222,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                     icon: const Icon(Icons.send),
                   ),
                 ]),
-              )),
+              ),
+            ),
+          ),
         ]),
       );
 }
