@@ -1453,23 +1453,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                                             '${message['text'] ?? ''}'
                                                                         ? '⏸ 播放中'
                                                                         : '🔊 播放语音',
-                                                                    style:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          16,
-                                                                      height:
-                                                                          1.4,
-                                                                    ),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyLarge,
                                                                   ),
                                                                 )
                                                               : Text(
                                                                   '${message['text'] ?? ''}',
-                                                                  style:
-                                                                      const TextStyle(
-                                                                    fontSize:
-                                                                        16,
-                                                                    height: 1.4,
-                                                                  ),
+                                                                  style: Theme.of(
+                                                                          context)
+                                                                      .textTheme
+                                                                      .bodyLarge,
                                                                 ),
                                                   if (status == 'pending') ...[
                                                     const SizedBox(width: 6),
