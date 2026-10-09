@@ -15,6 +15,7 @@ class _ChatPageState extends State<ChatPage> {
   FriendImSocket? listSocket;
   StreamSubscription<Map<String, dynamic>>? listEvents;
   bool loading = true;
+  bool conversationCacheLoaded = false;
   String? loadError;
 
   @override
@@ -24,8 +25,8 @@ class _ChatPageState extends State<ChatPage> {
     unawaited(_connectListSocket());
   }
 
-  Future<void> _loadConversations() async {
-    if (mounted) {
+  Future<void> _loadConversations({bool showLoading = true}) async {
+    if (mounted && showLoading && !conversationCacheLoaded) {
       setState(() {
         loading = true;
         loadError = null;
@@ -56,6 +57,7 @@ class _ChatPageState extends State<ChatPage> {
                   row.unreadCount,
                 ))
             .toList();
+        conversationCacheLoaded = true;
         loading = false;
       });
       service.dispose();
@@ -77,7 +79,7 @@ class _ChatPageState extends State<ChatPage> {
     listSocket = socket;
     listEvents = socket.events.listen((event) {
       if (event['type'] == 'message:new') {
-        unawaited(_loadConversations());
+        unawaited(_loadConversations(showLoading: false));
       }
     });
     await socket.connect();
@@ -87,7 +89,7 @@ class _ChatPageState extends State<ChatPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!loading && conversations.isEmpty && loadError == null) {
-      unawaited(_loadConversations());
+      unawaited(_loadConversations(showLoading: false));
     }
   }
 
@@ -124,7 +126,7 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ],
       ),
-      body: loading
+      body: loading && !conversationCacheLoaded
           ? const Center(child: CircularProgressIndicator())
           : loadError != null
               ? Center(
@@ -570,7 +572,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         );
         final id = '${item['id'] ?? ''}';
         if (id.isNotEmpty) {
-          imSocket?.markRead(
+          imSocket?.markDelivered(
               conversationId: widget.chat.conversationId, messageId: id);
         }
         unawaited(_markLatestRead());
