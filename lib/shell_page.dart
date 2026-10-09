@@ -496,8 +496,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _connectIm() async {
+    _addDiagnostic('connect start');
+    try {
+      await _connectImInternal();
+    } catch (error) {
+      _addDiagnostic('connect error $error');
+      if (mounted) setState(() => connectionLabel = '未连接');
+    }
+  }
+
+  Future<void> _connectImInternal() async {
+    _addDiagnostic('prefs start');
     final prefs = await SharedPreferences.getInstance();
+    _addDiagnostic('prefs done');
     final token = prefs.getString('friend.auth.token') ?? '';
+    _addDiagnostic('token ${token.isEmpty ? 'missing' : 'loaded'}');
     if (token.isEmpty) throw Exception('请先登录');
     currentUserId = widget.currentUserId;
     if (currentUserId.isEmpty) {
@@ -505,35 +518,42 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           prefs.getString('friend.auth.userId') ??
           '';
     }
+    _addDiagnostic('userId $currentUserId');
     if (currentUserId.isEmpty) {
       final service = DDPostService();
       try {
+        _addDiagnostic('profile start');
         final profile = await service.fetchMe(token);
         currentUserId = '${profile['id'] ?? ''}';
-        if (currentUserId.isNotEmpty) {
-          await prefs.setString('friend.auth.userId', currentUserId);
-        }
+        await prefs.setString('friend.auth.userId', currentUserId);
+        _addDiagnostic('profile userId $currentUserId');
       } finally {
         service.dispose();
       }
     }
-    await ImLocalStore.migrateLegacyAudioKeys();
-    final cached = await ImLocalStore.messages(
-      accountId: currentUserId,
-      conversationId: widget.chat.conversationId,
-    );
-    if (!mounted) return;
-    setState(() {
-      messages
-        ..clear()
-        ..addAll(cached);
-    });
-    unawaited(_scrollToLatest());
-    _addDiagnostic(
-        'page userId=$currentUserId conv=${widget.chat.conversationId}');
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
     _applyCurrentImState();
+    _addDiagnostic('socket listener ready');
     unawaited(_syncMessages(token));
+    _addDiagnostic('history queued');
+    try {
+      _addDiagnostic('sqlite start');
+      await ImLocalStore.migrateLegacyAudioKeys();
+      final cached = await ImLocalStore.messages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+      );
+      _addDiagnostic('sqlite done count=${cached.length}');
+      if (!mounted) return;
+      setState(() {
+        messages
+          ..clear()
+          ..addAll(cached);
+      });
+      unawaited(_scrollToLatest());
+    } catch (error) {
+      _addDiagnostic('sqlite error $error');
+    }
   }
 
   Future<void> _syncMessages(String token) async {
