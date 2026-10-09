@@ -1106,7 +1106,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     final id = '${message['id'] ?? ''}';
-    if (id.isEmpty || id.startsWith('local:')) return;
+    if (id.isEmpty || id.startsWith('local:')) {
+      if (choice == 'recall') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('消息尚未发送成功，无法撤回')),
+          );
+        }
+      }
+      return;
+    }
     if (choice == 'recall') {
       ImSession.instance.socket?.recallMessage(
           conversationId: widget.chat.conversationId, messageId: id);
