@@ -556,7 +556,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..addAll(cached);
       });
       ImSession.instance.whenReady(() {
-        unawaited(_markLatestRead());
+        unawaited(_syncOfflineMessages(token, cached));
       });
       unawaited(_scrollToLatest());
     } catch (error) {
@@ -1073,6 +1073,48 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       text: text,
       clientId: clientId,
     );
+  }
+
+  Future<void> _syncOfflineMessages(
+      String token, List<Map<String, dynamic>> cached) async {
+    final afterId = cached
+        .map((item) => int.tryParse('${item['id'] ?? ''}'))
+        .whereType<int>()
+        .fold<int>(0, (max, value) => value > max ? value : max);
+    final service = DDPostService();
+    try {
+      final remote = await service.fetchImMessages(
+        token,
+        widget.chat.conversationId,
+        afterId: afterId > 0 ? '$afterId' : null,
+      );
+      for (final message in remote) {
+        final item = <String, dynamic>{
+          'id': message.id,
+          'conversationId': message.conversationId,
+          'senderId': message.senderId,
+          'text': message.text,
+          'createdAt': message.createdAt,
+          'kind': message.kind,
+          'durationMs': message.durationMs,
+          'clientId': message.clientId,
+          'recalledAt': message.recalledAt,
+          'deletedAt': message.deletedAt,
+        };
+        _mergeMessage(item, status: 'sent');
+      }
+      if (remote.isNotEmpty) {
+        await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: messages,
+        );
+        await _markLatestRead();
+        if (mounted) setState(() {});
+      }
+    } finally {
+      service.dispose();
+    }
   }
 
   Future<void> _markLatestRead() async {
