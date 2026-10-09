@@ -548,6 +548,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..addAll(cached);
       });
       if (mounted) setState(() => initialSyncCompleted = true);
+      unawaited(_markLatestRead());
       unawaited(_scrollToLatest());
     } catch (_) {}
   }
@@ -1094,6 +1095,19 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       conversationId: widget.chat.conversationId,
       messageId: messageId,
     );
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      await service.markImConversationRead(
+        token,
+        widget.chat.conversationId,
+        messageId,
+      );
+    } finally {
+      service.dispose();
+    }
   }
 
   @override
