@@ -166,15 +166,6 @@ class FriendImSocket {
     });
   }
 
-  void deleteMessage(
-      {required String conversationId, required String messageId}) {
-    send({
-      'type': 'message:delete',
-      'conversationId': conversationId,
-      'messageId': messageId,
-    });
-  }
-
   void sendText({
     required String conversationId,
     required String text,
