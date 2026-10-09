@@ -24,6 +24,8 @@ class ImLocalStore {
             client_id TEXT,
             sender_id TEXT NOT NULL,
             text TEXT NOT NULL,
+            kind TEXT NOT NULL DEFAULT 'text',
+            duration_ms INTEGER NOT NULL DEFAULT 0,
             created_at TEXT,
             status TEXT NOT NULL DEFAULT 'sent',
             PRIMARY KEY (account_id, conversation_id, message_id)
@@ -132,6 +134,16 @@ class ImLocalStore {
 
   static Future<void> migrateLegacyAudioKeys() async {
     final db = await _db();
+    final columns = await db.rawQuery('PRAGMA table_info(messages)');
+    final names = columns.map((row) => '${row['name']}').toSet();
+    if (!names.contains('kind')) {
+      await db.execute(
+          "ALTER TABLE messages ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'");
+    }
+    if (!names.contains('duration_ms')) {
+      await db.execute(
+          "ALTER TABLE messages ADD COLUMN duration_ms INTEGER NOT NULL DEFAULT 0");
+    }
     await db.rawUpdate(
       "UPDATE messages SET kind = 'audio' WHERE kind = 'text' AND text LIKE 'friend/%/voices/%.m4a'",
     );
