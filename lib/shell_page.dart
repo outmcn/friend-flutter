@@ -453,7 +453,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   final Map<String, String> imageFiles = {};
   String? playingAudioKey;
   Timer? typingTimer;
-  String connectionLabel = '连接中';
 
   @override
   void initState() {
@@ -472,9 +471,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   void _handleMessageScroll() {
     if (!messageScrollController.hasClients) return;
-    if (messageScrollController.position.pixels <= 40) {
-      unawaited(_loadOlderMessages());
-    }
   }
 
   @override
@@ -495,21 +491,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _connectIm() async {
-    _addDiagnostic('connect start');
     try {
       await _connectImInternal();
-    } catch (error) {
-      _addDiagnostic('connect error $error');
-      if (mounted) setState(() => connectionLabel = '未连接');
-    }
+    } catch (_) {}
   }
 
   Future<void> _connectImInternal() async {
-    _addDiagnostic('prefs start');
     final prefs = await SharedPreferences.getInstance();
-    _addDiagnostic('prefs done');
     final token = prefs.getString('friend.auth.token') ?? '';
-    _addDiagnostic('token ${token.isEmpty ? 'missing' : 'loaded'}');
     if (token.isEmpty) throw Exception('请先登录');
     currentUserId = widget.currentUserId;
     if (currentUserId.isEmpty) {
@@ -517,27 +506,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           prefs.getString('friend.auth.userId') ??
           '';
     }
-    _addDiagnostic('userId $currentUserId');
     if (currentUserId.isEmpty) {
       final service = DDPostService();
       try {
-        _addDiagnostic('profile start');
         final profile = await service.fetchMe(token);
         currentUserId = '${profile['id'] ?? ''}';
         await prefs.setString('friend.auth.userId', currentUserId);
-        _addDiagnostic('profile userId $currentUserId');
       } finally {
         service.dispose();
       }
     }
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
-    _applyCurrentImState();
-    _addDiagnostic('socket listener ready');
     await ImSession.instance.restorePending(currentUserId);
-    _addDiagnostic('pending restored');
     if (mounted) setState(() => initialSyncCompleted = true);
     try {
-      _addDiagnostic('sqlite start');
       await ImLocalStore.migrateLegacyAudioKeys();
       final cached = await ImLocalStore.messages(
         accountId: currentUserId,
@@ -548,7 +530,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         conversationId: widget.chat.conversationId,
       );
       cached.removeWhere((item) => deletedIds.contains('${item['id']}'));
-      _addDiagnostic('sqlite done count=${cached.length}');
       if (!mounted) return;
       setState(() {
         messages
@@ -559,26 +540,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         unawaited(_syncOfflineMessages(token, cached));
       });
       unawaited(_scrollToLatest());
-    } catch (error) {
-      _addDiagnostic('sqlite error $error');
-    }
-  }
-
-  void _addDiagnostic(String value) {
-    // Temporary diagnostics removed from visible UI; keep initialization non-blocking.
-  }
-  void _applyCurrentImState() {
-    final state = ImSession.instance.state;
-    _setConnectionLabel(state == ImConnectionState.ready
-        ? '已连接'
-        : state == ImConnectionState.connecting
-            ? '连接中'
-            : '未连接');
-  }
-
-  void _setConnectionLabel(String value) {
-    if (!mounted || connectionLabel == value) return;
-    setState(() => connectionLabel = value);
+    } catch (_) {}
   }
 
   void _markPendingMessagesFailed(String reason) {
@@ -643,28 +605,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
       return;
     }
-    if (type == 'im:socket') {
-      final state = '${event['state'] ?? ''}';
-      _addDiagnostic('socket $state ${event['code'] ?? ''}');
-      _setConnectionLabel(state == 'ready'
-          ? '已连接'
-          : state == 'connecting' || state == 'auth_sent'
-              ? '连接中'
-              : '未连接');
-      return;
-    }
-    if (type == 'im:state') {
-      _applyCurrentImState();
-      return;
-    }
-    if (type == 'ready') {
-      _addDiagnostic('ready userId=${event['userId'] ?? ''}');
-      _setConnectionLabel('已连接');
+    if (type == 'im:socket' || type == 'im:state' || type == 'ready') {
       return;
     }
     if (type == 'auth:invalid') {
-      _addDiagnostic('auth invalid');
-      _setConnectionLabel('未连接');
       _markPendingMessagesFailed('登录状态已失效');
       return;
     }
@@ -757,10 +701,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     setState(() => messages.add(merged));
     unawaited(_scrollToLatest());
     return true;
-  }
-
-  Future<void> _loadOlderMessages() async {
-    // Server history is intentionally disabled; older messages are local-only.
   }
 
   void _handleTypingChanged(String value) {
