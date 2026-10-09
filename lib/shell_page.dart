@@ -393,7 +393,8 @@ class _ChatDetailPage extends StatefulWidget {
   State<_ChatDetailPage> createState() => _ChatDetailPageState();
 }
 
-class _ChatDetailPageState extends State<_ChatDetailPage> {
+class _ChatDetailPageState extends State<_ChatDetailPage>
+    with WidgetsBindingObserver {
   final messageController = TextEditingController();
   FriendImSocket? imSocket;
   final messages = <Map<String, dynamic>>[];
@@ -415,15 +416,27 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   @override
   void initState() {
     super.initState();
-    messageScrollController.addListener(_handleMessageScroll);
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_connectIm());
+  }
+
+  @override
+  void didChangeMetrics() {
+    if (!mounted) return;
+    final bottomInset = WidgetsBinding
+        .instance.platformDispatcher.views.first.viewInsets.bottom;
+    if (bottomInset > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_scrollToLatest());
+      });
+    }
   }
 
   Future<void> _scrollToLatest({bool animated = false}) async {
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted || !messageScrollController.hasClients) return;
-    final target = messageScrollController.position.maxScrollExtent;
+    final target = messageScrollController.position.minScrollExtent;
     if (animated) {
       await messageScrollController.animateTo(target,
           duration: const Duration(milliseconds: 180), curve: Curves.easeOut);
@@ -447,6 +460,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           conversationId: widget.chat.conversationId, typing: false);
     }
     messageController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     messageScrollController.removeListener(_handleMessageScroll);
     messageScrollController.dispose();
     typingTimer?.cancel();
@@ -1097,7 +1111,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                           : ListView.builder(
                               controller: messageScrollController,
                               physics: const AlwaysScrollableScrollPhysics(),
-                              reverse: false,
+                              reverse: true,
                               padding: const EdgeInsets.all(16),
                               itemCount: messages.length,
                               itemBuilder: (_, index) {
