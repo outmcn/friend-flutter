@@ -454,6 +454,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   String? playingAudioKey;
   Timer? typingTimer;
   String connectionLabel = '连接中';
+  final List<String> diagnostics = <String>[];
 
   @override
   void initState() {
@@ -528,6 +529,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ..addAll(cached);
     });
     unawaited(_scrollToLatest());
+    _addDiagnostic(
+        'page userId=$currentUserId conv=${widget.chat.conversationId}');
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
     _applyCurrentImState();
     unawaited(_syncMessages(token));
@@ -544,6 +547,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         widget.chat.conversationId,
         afterId: afterId,
       );
+      _addDiagnostic('history count=${history.length}');
       if (!mounted) return;
       for (final item in history) {
         _mergeMessage({
@@ -576,6 +580,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       syncing = false;
       service.dispose();
     }
+  }
+
+  void _addDiagnostic(String value) {
+    if (!mounted) return;
+    setState(() {
+      diagnostics
+          .add('${DateTime.now().toIso8601String().substring(11, 19)} $value');
+      if (diagnostics.length > 12) diagnostics.removeAt(0);
+    });
   }
 
   void _applyCurrentImState() {
@@ -656,6 +669,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (type == 'im:socket') {
       final state = '${event['state'] ?? ''}';
+      _addDiagnostic('socket $state ${event['code'] ?? ''}');
       _setConnectionLabel(state == 'ready'
           ? '已连接'
           : state == 'connecting' || state == 'auth_sent'
@@ -668,10 +682,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     if (type == 'ready') {
+      _addDiagnostic('ready userId=${event['userId'] ?? ''}');
       _setConnectionLabel('已连接');
       return;
     }
     if (type == 'auth:invalid') {
+      _addDiagnostic('auth invalid');
       _setConnectionLabel('未连接');
       _markPendingMessagesFailed('登录状态已失效');
       return;
@@ -1158,6 +1174,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           Expanded(
             child: Column(
               children: [
+                if (diagnostics.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    color: Colors.black87,
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      diagnostics.join('\\n'),
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 10, height: 1.25),
+                    ),
+                  ),
                 if (peerTyping)
                   const Align(
                     alignment: Alignment.centerLeft,
