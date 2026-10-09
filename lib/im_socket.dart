@@ -19,15 +19,18 @@ class FriendImSocket {
   bool _sessionReplaced = false;
   int _reconnectAttempt = 0;
   void Function()? _onReady;
+
   Stream<Map<String, dynamic>> get events => _events.stream;
   bool get isConnected => _channel != null && _ready;
 
   void setOnReady(void Function()? callback) => _onReady = callback;
+
   Future<void> connect() async {
     if (_closedByOwner || _channel != null) return;
     final channel = _channel ??
         WebSocketChannel.connect(Uri.parse('wss://chat.outmcn.com/ws'));
     _channel = channel;
+    _ready = false;
     _sessionReplaced = false;
     try {
       await channel.ready;
@@ -102,8 +105,25 @@ class FriendImSocket {
 
   void send(Map<String, dynamic> event) {
     final channel = _channel;
-    if (channel == null) return;
-    channel.sink.add(jsonEncode(event));
+    if (channel == null) {
+      _events.add(<String, dynamic>{
+        'type': 'error',
+        'code': 'transport_closed',
+        'message': 'WebSocket 尚未建立',
+        if (event['clientId'] != null) 'clientId': event['clientId'],
+      });
+      return;
+    }
+    try {
+      channel.sink.add(jsonEncode(event));
+    } catch (error) {
+      _events.add(<String, dynamic>{
+        'type': 'error',
+        'code': 'send_failed',
+        'message': '$error',
+        if (event['clientId'] != null) 'clientId': event['clientId'],
+      });
+    }
   }
 
   void ping() => send({'type': 'ping'});

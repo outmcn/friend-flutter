@@ -1067,19 +1067,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     };
     _mergeMessage(pending);
 
-    await ImLocalStore.saveMessages(
+    unawaited(ImLocalStore.saveMessages(
       accountId: currentUserId,
       conversationId: widget.chat.conversationId,
       messages: messages,
+    ));
+    ImSession.instance.queueText(
+      conversationId: widget.chat.conversationId,
+      text: text,
+      clientId: clientId,
     );
-    ImSession.instance.whenReady(() {
-      ImSession.instance.socket?.sendText(
-        conversationId: widget.chat.conversationId,
-        text: text,
-        clientId: clientId,
-      );
-    });
-    messageController.clear();
   }
 
   Future<void> _markLatestRead() async {
