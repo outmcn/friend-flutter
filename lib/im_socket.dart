@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-/// Authenticated IM WebSocket client with heartbeat and bounded reconnect.
+/// Authenticated IM WebSocket client with explicit state and diagnostics.
 class FriendImSocket {
-  FriendImSocket({required this.token, WebSocketChannel? channel})
-      : _channel = channel;
+  FriendImSocket({required this.token});
 
   final String token;
   WebSocketChannel? _channel;
@@ -28,22 +28,21 @@ class FriendImSocket {
 
   Future<void> connect() async {
     if (_closedByOwner || _channel != null) return;
-    final channel = _channel ??
-        WebSocketChannel.connect(Uri.parse('wss://chat.outmcn.com/ws'));
-    _channel = channel;
-    _ready = false;
-    _sessionReplaced = false;
+    _emitState('connecting');
     try {
+      final channel = IOWebSocketChannel.connect(
+        Uri.parse('wss://chat.outmcn.com/ws'),
+        pingInterval: const Duration(seconds: 25),
+      );
+      _channel = channel;
+      _ready = false;
+      _sessionReplaced = false;
       await channel.ready;
       _reconnectAttempt = 0;
       _subscription = channel.stream.listen(
         _handleEvent,
         onError: (Object error, StackTrace stack) {
-          _events.add(<String, dynamic>{
-            'type': 'error',
-            'code': 'socket_error',
-            'message': '$error',
-          });
+          _emitError('socket_error', '$error');
         },
         onDone: _handleClosed,
         cancelOnError: false,
@@ -51,38 +50,35 @@ class FriendImSocket {
       _pingTimer?.cancel();
       _pingTimer = Timer.periodic(const Duration(seconds: 25), (_) => ping());
       send({'type': 'auth', 'token': token});
+      _emitState('auth_sent');
     } catch (error) {
       _channel = null;
       _ready = false;
-      _events.add(<String, dynamic>{
-        'type': 'error',
-        'code': 'connect_failed',
-        'message': '$error',
-      });
+      _emitError('connect_failed', '$error');
       _scheduleReconnect();
     }
   }
 
-  void _handleEvent(dynamic event) {
-    final payload = event is String ? event : utf8.decode(event as List<int>);
+  void _handleEvent(dynamic raw) {
     try {
+      final payload = raw is String ? raw : utf8.decode(raw as List<int>);
       final decoded = jsonDecode(payload);
-      if (decoded is Map) {
-        final item = decoded.cast<String, dynamic>();
-        if (item['type'] == 'ready') {
-          _ready = true;
-          _onReady?.call('${item['userId'] ?? ''}');
-          _events.add(item);
-        }
-        if (item['type'] == 'session:replaced') {
-          _sessionReplaced = true;
-          _events.add(item);
-          return;
-        }
-        _events.add(item);
+      if (decoded is! Map) {
+        _emitError('invalid_frame', 'WebSocket 返回的不是 JSON 对象');
+        return;
       }
-    } catch (_) {
-      _events.add(<String, dynamic>{'type': 'error', 'code': 'invalid_json'});
+      final event = decoded.cast<String, dynamic>();
+      _events.add(event);
+      if (event['type'] == 'ready') {
+        _ready = true;
+        _onReady?.call('${event['userId'] ?? ''}');
+        _emitState('ready', userId: event['userId']);
+      } else if (event['type'] == 'auth:invalid') {
+        _ready = false;
+        _emitState('unauthorized');
+      }
+    } catch (error) {
+      _emitError('invalid_frame', '$error');
     }
   }
 
@@ -91,7 +87,7 @@ class FriendImSocket {
     _channel = null;
     _ready = false;
     _pingTimer?.cancel();
-    _events.add(<String, dynamic>{'type': 'closed'});
+    _emitState('closed');
     if (!_sessionReplaced) _scheduleReconnect();
   }
 
@@ -105,26 +101,33 @@ class FriendImSocket {
     });
   }
 
+  void _emitState(String state, {dynamic userId}) {
+    _events.add(<String, dynamic>{
+      'type': 'im:socket',
+      'state': state,
+      if (userId != null) 'userId': userId,
+    });
+  }
+
+  void _emitError(String code, String message) {
+    _events.add(<String, dynamic>{
+      'type': 'im:socket',
+      'state': 'error',
+      'code': code,
+      'message': message,
+    });
+  }
+
   void send(Map<String, dynamic> event) {
     final channel = _channel;
     if (channel == null) {
-      _events.add(<String, dynamic>{
-        'type': 'error',
-        'code': 'transport_closed',
-        'message': 'WebSocket 尚未建立',
-        if (event['clientId'] != null) 'clientId': event['clientId'],
-      });
+      _emitError('not_open', 'WebSocket 尚未打开');
       return;
     }
     try {
       channel.sink.add(jsonEncode(event));
     } catch (error) {
-      _events.add(<String, dynamic>{
-        'type': 'error',
-        'code': 'send_failed',
-        'message': '$error',
-        if (event['clientId'] != null) 'clientId': event['clientId'],
-      });
+      _emitError('send_failed', '$error');
     }
   }
 
@@ -187,19 +190,14 @@ class FriendImSocket {
     });
   }
 
-  Future<void> close() async {
+  Future<void> dispose() async {
     _closedByOwner = true;
     _reconnectTimer?.cancel();
     _pingTimer?.cancel();
     await _subscription?.cancel();
-    _subscription = null;
     await _channel?.sink.close();
+    await _events.close();
     _channel = null;
     _ready = false;
-  }
-
-  Future<void> dispose() async {
-    await close();
-    await _events.close();
   }
 }

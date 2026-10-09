@@ -654,6 +654,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
       return;
     }
+    if (type == 'im:socket') {
+      final state = '${event['state'] ?? ''}';
+      _setConnectionLabel(state == 'ready'
+          ? '已连接'
+          : state == 'connecting' || state == 'auth_sent'
+              ? '连接中'
+              : '未连接');
+      return;
+    }
     if (type == 'im:state') {
       _applyCurrentImState();
       return;
