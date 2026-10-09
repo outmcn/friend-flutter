@@ -308,8 +308,7 @@ class _ChatPageState extends State<ChatPage> {
                       children: [
                         Expanded(
                           child: Text(chat.name,
-                              style: const TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w700)),
+                              style: Theme.of(context).textTheme.bodyLarge),
                         ),
                         Text('刚刚',
                             style: TextStyle(
@@ -341,8 +340,7 @@ class _ChatPageState extends State<ChatPage> {
                     Text(chat.preview,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontSize: 13, color: Theme.of(context).hintColor)),
+                        style: Theme.of(context).textTheme.bodyLarge),
                   ],
                 ),
               ),
@@ -370,8 +368,7 @@ class _ChatPageState extends State<ChatPage> {
                                 as ImageProvider)
                             : _cachedAvatarProvider(chat.avatarUrl!)),
                 const SizedBox(width: 8),
-                Text(chat.name,
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(chat.name, style: Theme.of(context).textTheme.bodyLarge),
                 const Spacer(),
                 IconButton(
                     onPressed: () {}, icon: const Icon(Icons.more_horiz)),
@@ -1295,7 +1292,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
               backgroundImage: _chatAvatarFor(widget.chat),
             ),
             const SizedBox(width: 8),
-            Text(widget.chat.name),
+            Text(widget.chat.name,
+                style: Theme.of(context).textTheme.bodyLarge),
           ]),
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
