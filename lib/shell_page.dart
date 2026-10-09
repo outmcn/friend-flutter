@@ -429,6 +429,7 @@ class _ChatDetailPage extends StatefulWidget {
 class _ChatDetailPageState extends State<_ChatDetailPage>
     with WidgetsBindingObserver {
   final messageController = TextEditingController();
+  final messageFocusNode = FocusNode();
   FriendImSocket? imSocket;
   final messages = <Map<String, dynamic>>[];
   final messageScrollController = ScrollController();
@@ -493,6 +494,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
           conversationId: widget.chat.conversationId, typing: false);
     }
     messageController.dispose();
+    messageFocusNode.dispose();
     WidgetsBinding.instance.removeObserver(this);
     messageScrollController.removeListener(_handleMessageScroll);
     messageScrollController.dispose();
@@ -1253,6 +1255,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
                 ),
                 Expanded(
                     child: TextField(
+                        focusNode: messageFocusNode,
                         controller: messageController,
                         onChanged: _handleTypingChanged,
                         decoration: InputDecoration(
