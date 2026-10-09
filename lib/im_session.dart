@@ -29,6 +29,7 @@ class ImSession {
   final _readyCallbacks = <void Function()>[];
   final _outbox = <_PendingImMessage>[];
   final _inflight = <String, _PendingImMessage>{};
+  final _ackTimers = <String, Timer>{};
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -77,11 +78,15 @@ class ImSession {
       if (type == 'message:accepted') {
         final clientId =
             '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
-        if (clientId.isNotEmpty) _inflight.remove(clientId);
+        if (clientId.isNotEmpty) {
+          _inflight.remove(clientId);
+          _ackTimers.remove(clientId)?.cancel();
+        }
       } else if (type == 'message:failed') {
         final clientId =
             '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
         final failed = clientId.isNotEmpty ? _inflight.remove(clientId) : null;
+        _ackTimers.remove(clientId)?.cancel();
         if (failed != null) _outbox.add(failed);
       }
       if (type == 'message:new') {
@@ -108,6 +113,7 @@ class ImSession {
       if (!_outbox.any((queued) => queued.clientId == message.clientId)) {
         _outbox.add(message);
       }
+      _ackTimers.remove(message.clientId)?.cancel();
     }
     _inflight.clear();
   }
@@ -130,7 +136,9 @@ class ImSession {
         final text = '${message['text'] ?? ''}';
         if (conversationId.isNotEmpty &&
             clientId.isNotEmpty &&
-            text.isNotEmpty) {
+            text.isNotEmpty &&
+            !_outbox.any((item) => item.clientId == clientId) &&
+            !_inflight.containsKey(clientId)) {
           _outbox.add(_PendingImMessage(
             conversationId: conversationId,
             text: text,
@@ -166,6 +174,19 @@ class ImSession {
         text: message.text,
         clientId: message.clientId,
       );
+      _ackTimers[message.clientId]?.cancel();
+      _ackTimers[message.clientId] = Timer(const Duration(seconds: 15), () {
+        final timedOut = _inflight.remove(message.clientId);
+        if (timedOut != null) {
+          _outbox.add(timedOut);
+          _events.add(<String, dynamic>{
+            'type': 'message:failed',
+            'code': 'ack_timeout',
+            'clientId': message.clientId,
+          });
+        }
+        _ackTimers.remove(message.clientId);
+      });
     }
     _outbox.removeWhere(
         (queued) => pending.any((sent) => sent.clientId == queued.clientId));
@@ -194,6 +215,10 @@ class ImSession {
 
   Future<void> stop({bool clearOutbox = true}) async {
     _readyCallbacks.clear();
+    for (final timer in _ackTimers.values) {
+      timer.cancel();
+    }
+    _ackTimers.clear();
     _inflight.clear();
     if (clearOutbox) _outbox.clear();
     await _socketEvents?.cancel();
