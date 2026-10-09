@@ -1050,6 +1050,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     final clientId = DateTime.now().microsecondsSinceEpoch.toString();
+    messageController.clear();
     if (typing) {
       typing = false;
       typingTimer?.cancel();
