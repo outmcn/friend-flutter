@@ -454,7 +454,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   String? playingAudioKey;
   Timer? typingTimer;
   String connectionLabel = '连接中';
-  final List<String> diagnostics = <String>[];
 
   @override
   void initState() {
@@ -609,14 +608,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   void _addDiagnostic(String value) {
-    if (!mounted) return;
-    setState(() {
-      diagnostics
-          .add('${DateTime.now().toIso8601String().substring(11, 19)} $value');
-      if (diagnostics.length > 12) diagnostics.removeAt(0);
-    });
+    // Temporary diagnostics removed from visible UI; keep initialization non-blocking.
   }
-
   void _applyCurrentImState() {
     final state = ImSession.instance.state;
     _setConnectionLabel(state == ImConnectionState.ready
@@ -673,7 +666,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       setState(() => peerTyping = type == 'typing:start');
       return;
     }
-    if (type == 'message:recalled' || type == 'message:deleted') {
+    if (type == 'message:recalled') {
       final message = event['message'];
       if (message is Map) {
         final id = '${message['id'] ?? ''}';
@@ -1079,6 +1072,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final isMine = currentUserId.isNotEmpty &&
         '${message['senderId'] ?? ''}' == currentUserId;
     final status = '${message['status'] ?? 'sent'}';
+    final createdAt = DateTime.tryParse('${message['createdAt'] ?? ''}');
+    final canRecall = isMine &&
+        status != 'recalled' &&
+        status != 'deleted' &&
+        createdAt != null &&
+        DateTime.now().difference(createdAt).inSeconds <= 180;
     final choice = await showModalBottomSheet<String>(
       context: context,
       builder: (_) => SafeArea(
@@ -1089,7 +1088,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
               title: const Text('复制'),
               onTap: () => Navigator.pop(context, 'copy'),
             ),
-            if (isMine && status != 'recalled' && status != 'deleted')
+            if (canRecall)
               ListTile(
                 leading: const Icon(Icons.undo),
                 title: const Text('撤回'),
@@ -1125,8 +1124,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       ImSession.instance.socket?.recallMessage(
           conversationId: widget.chat.conversationId, messageId: id);
     } else if (choice == 'delete') {
-      ImSession.instance.socket?.deleteMessage(
-          conversationId: widget.chat.conversationId, messageId: id);
+      final index = messages.indexWhere((item) => '${item['id'] ?? ''}' == id);
+      if (index >= 0) {
+        setState(() => messages.removeAt(index));
+        await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: messages,
+        );
+      }
     }
   }
 
@@ -1196,9 +1202,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             ),
             const SizedBox(width: 8),
             Text(widget.chat.name),
-            const SizedBox(width: 6),
-            Text(connectionLabel,
-                style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ]),
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
@@ -1208,17 +1211,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           Expanded(
             child: Column(
               children: [
-                if (diagnostics.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    color: Colors.black87,
-                    padding: const EdgeInsets.all(8),
-                    child: Text(
-                      diagnostics.join('\\n'),
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 10, height: 1.25),
-                    ),
-                  ),
                 if (peerTyping)
                   const Align(
                     alignment: Alignment.centerLeft,
