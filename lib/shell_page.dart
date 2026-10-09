@@ -529,12 +529,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     });
     unawaited(_scrollToLatest());
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
-    if (ImSession.instance.isConnected) {
-      _setConnectionLabel('已连接');
-    } else {
-      _setConnectionLabel('连接中');
-    }
-
+    _applyCurrentImState();
     unawaited(_syncMessages(token));
   }
 
@@ -581,6 +576,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       syncing = false;
       service.dispose();
     }
+  }
+
+  void _applyCurrentImState() {
+    final state = ImSession.instance.state;
+    _setConnectionLabel(state == ImConnectionState.ready
+        ? '已连接'
+        : state == ImConnectionState.connecting
+            ? '连接中'
+            : '未连接');
   }
 
   void _setConnectionLabel(String value) {
@@ -651,12 +655,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     if (type == 'im:state') {
-      final state = '${event['state'] ?? ''}';
-      _setConnectionLabel(state == 'ready'
-          ? '已连接'
-          : state == 'connecting'
-              ? '连接中'
-              : '未连接');
+      _applyCurrentImState();
       return;
     }
     if (type == 'ready') {

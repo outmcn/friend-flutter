@@ -15,7 +15,9 @@ class _PendingImMessage {
   final String clientId;
 }
 
-/// App-wide IM session. Pages subscribe to events but never own the socket.
+enum ImConnectionState { disconnected, connecting, ready, unauthorized, error }
+
+/// App-wide IM store. It owns the only socket and the authoritative connection state.
 class ImSession {
   ImSession._();
   static final ImSession instance = ImSession._();
@@ -28,23 +30,28 @@ class ImSession {
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
+  bool _readySnapshot = false;
 
   Stream<Map<String, dynamic>> get events => _events.stream;
   FriendImSocket? get socket => _socket;
   String? get userId => _userId;
   ImConnectionState get state => _state;
   bool get isConnected => _state == ImConnectionState.ready;
+  bool get hasReadySnapshot => _readySnapshot;
 
   Future<void> start(String token) async {
     if (token.isEmpty) return;
     if (_socket != null && _token == token) return;
     await stop(clearOutbox: false);
     _token = token;
+    _userId = null;
+    _readySnapshot = false;
     _setState(ImConnectionState.connecting);
     final socket = FriendImSocket(token: token);
     _socket = socket;
     socket.setOnReady((userId) {
       _userId = userId;
+      _readySnapshot = true;
       _setState(ImConnectionState.ready);
       final callbacks = List<void Function()>.from(_readyCallbacks);
       _readyCallbacks.clear();
@@ -56,8 +63,10 @@ class ImSession {
     _socketEvents = socket.events.listen((event) {
       final type = event['type'];
       if (type == 'auth:invalid') {
+        _readySnapshot = false;
         _setState(ImConnectionState.unauthorized);
       } else if (type == 'closed') {
+        _readySnapshot = false;
         _setState(ImConnectionState.disconnected);
       } else if (type == 'error' || type == 'connect_failed') {
         _setState(ImConnectionState.error);
@@ -120,8 +129,7 @@ class ImSession {
     _socket = null;
     _token = null;
     _userId = null;
+    _readySnapshot = false;
     _state = ImConnectionState.disconnected;
   }
 }
-
-enum ImConnectionState { disconnected, connecting, ready, unauthorized, error }
