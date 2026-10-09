@@ -203,6 +203,25 @@ class DDPostService {
         .toList();
   }
 
+  Future<void> confirmImMessagesSynced(
+    String token,
+    String conversationId,
+    List<String> messageIds,
+  ) async {
+    if (messageIds.isEmpty) return;
+    final response = await _client.post(
+      _api('/im/conversations/$conversationId/messages/sync-confirm'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'messageIds': messageIds}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('消息同步确认失败');
+    }
+  }
+
   Future<List<DDNotification>> fetchNotifications(String token) async =>
       <DDNotification>[];
 

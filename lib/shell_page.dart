@@ -678,10 +678,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           messages: messages,
         );
         final id = '${item['id'] ?? ''}';
-        if (id.isNotEmpty) {
-          ImSession.instance.socket?.markDelivered(
-              conversationId: widget.chat.conversationId, messageId: id);
-        }
+        await _confirmDurableMessages(<String>[id]);
         unawaited(_markLatestRead());
       }
     }
@@ -1093,6 +1090,30 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  Future<void> _confirmDurableMessages(List<String> messageIds) async {
+    if (messageIds.isEmpty || currentUserId.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final durable = await ImLocalStore.durableMessages(
+      accountId: currentUserId,
+      conversationId: widget.chat.conversationId,
+      messageIds: messageIds,
+    );
+    final confirmedIds = durable.map((row) => '${row['message_id']}').toList();
+    if (confirmedIds.isEmpty) return;
+    final service = DDPostService();
+    try {
+      await service.confirmImMessagesSynced(
+        token,
+        widget.chat.conversationId,
+        confirmedIds,
+      );
+    } finally {
+      service.dispose();
+    }
+  }
+
   Future<void> _syncUndeliveredMessages(String token) async {
     final service = DDPostService();
     try {
@@ -1122,6 +1143,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           conversationId: widget.chat.conversationId,
           messages: messages,
         );
+        final durable = await ImLocalStore.durableMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messageIds: remote.map((message) => message.id).toList(),
+        );
+        await service.confirmImMessagesSynced(
+          token,
+          widget.chat.conversationId,
+          durable.map((row) => '${row['message_id']}').toList(),
+        );
         await _markLatestRead();
       }
     } catch (_) {
@@ -1135,10 +1166,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (messages.isEmpty || currentUserId.isEmpty) return;
     final messageId = '${messages.last['id'] ?? ''}';
     if (messageId.isEmpty || messageId.startsWith('local:')) return;
-    ImSession.instance.socket?.markRead(
-      conversationId: widget.chat.conversationId,
-      messageId: messageId,
-    );
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) return;

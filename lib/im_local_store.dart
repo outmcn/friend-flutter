@@ -183,6 +183,23 @@ class ImLocalStore {
     );
   }
 
+  /// Returns durable local rows for server IDs after the SQLite commit completes.
+  static Future<List<Map<String, dynamic>>> durableMessages({
+    required String accountId,
+    required String conversationId,
+    required List<String> messageIds,
+  }) async {
+    if (messageIds.isEmpty) return <Map<String, dynamic>>[];
+    final placeholders = List.filled(messageIds.length, '?').join(',');
+    final rows = await (await _db()).query(
+      'messages',
+      where:
+          'account_id = ? AND conversation_id = ? AND message_id IN ($placeholders)',
+      whereArgs: [accountId, conversationId, ...messageIds],
+    );
+    return rows.map((row) => Map<String, dynamic>.from(row)).toList();
+  }
+
   static Future<void> markRecalled({
     required String accountId,
     required Map<String, dynamic> message,

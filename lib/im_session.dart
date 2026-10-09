@@ -118,10 +118,6 @@ class ImSession {
                 message: message.cast<String, dynamic>(),
               ));
             }
-            _socket?.markDelivered(
-              conversationId: conversationId,
-              messageId: messageId,
-            );
           }
         }
       }
