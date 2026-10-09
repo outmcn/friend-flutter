@@ -140,15 +140,6 @@ class FriendImSocket {
     });
   }
 
-  void markDelivered(
-      {required String conversationId, required String messageId}) {
-    send({
-      'type': 'message:delivered',
-      'conversationId': conversationId,
-      'messageId': messageId,
-    });
-  }
-
   void markRead({required String conversationId, required String messageId}) {
     send({
       'type': 'read:mark',
