@@ -517,7 +517,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
     }
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
-    await ImSession.instance.restorePending(currentUserId);
     try {
       await ImLocalStore.migrateLegacyAudioKeys();
       final cached = await ImLocalStore.messages(
@@ -529,6 +528,19 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         conversationId: widget.chat.conversationId,
       );
       cached.removeWhere((item) => deletedIds.contains('${item['id']}'));
+      final normalized = <String, Map<String, dynamic>>{};
+      for (final item in cached) {
+        final key = '${item['clientId'] ?? item['id'] ?? ''}';
+        final old = normalized[key];
+        if (old == null ||
+            '${old['id'] ?? ''}'.startsWith('local:') &&
+                !'${item['id'] ?? ''}'.startsWith('local:')) {
+          normalized[key] = item;
+        }
+      }
+      cached
+        ..clear()
+        ..addAll(normalized.values);
       if (!mounted) return;
       setState(() {
         messages
