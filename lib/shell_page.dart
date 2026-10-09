@@ -469,7 +469,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted || !messageScrollController.hasClients) return;
-    final target = messageScrollController.position.minScrollExtent;
+    final target = messageScrollController.position.maxScrollExtent;
     if (animated) {
       await messageScrollController.animateTo(target,
           duration: const Duration(milliseconds: 180), curve: Curves.easeOut);
@@ -1144,7 +1144,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage>
                           : ListView.builder(
                               controller: messageScrollController,
                               physics: const AlwaysScrollableScrollPhysics(),
-                              reverse: true,
+                              reverse: false,
                               padding: const EdgeInsets.all(16),
                               itemCount: messages.length,
                               itemBuilder: (_, index) {
