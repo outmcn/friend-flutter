@@ -543,6 +543,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
       );
+      final deletedIds = await ImLocalStore.localDeletedMessageIds(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+      );
+      cached.removeWhere((item) => deletedIds.contains('${item['id']}'));
       _addDiagnostic('sqlite done count=${cached.length}');
       if (!mounted) return;
       setState(() {
@@ -560,6 +565,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (syncing) return;
     syncing = true;
     final service = DDPostService();
+    final deletedIds = await ImLocalStore.localDeletedMessageIds(
+      accountId: currentUserId,
+      conversationId: widget.chat.conversationId,
+    );
     try {
       final afterId = messages.isEmpty ? null : '${messages.last['id']}';
       final history = await service.fetchImMessages(
@@ -570,6 +579,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       _addDiagnostic('history count=${history.length}');
       if (!mounted) return;
       for (final item in history) {
+        if (deletedIds.contains(item.id)) continue;
         _mergeMessage({
           'text': item.text,
           'id': item.id,
@@ -1113,11 +1123,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (choice == 'delete') {
       final index = messages.indexWhere((item) => '${item['id'] ?? ''}' == id);
       if (index >= 0) {
+        final messageId = '${messages[index]['id'] ?? ''}';
         setState(() => messages.removeAt(index));
-        await ImLocalStore.saveMessages(
+        await ImLocalStore.deleteLocalMessage(
           accountId: currentUserId,
           conversationId: widget.chat.conversationId,
-          messages: messages,
+          messageId: messageId,
         );
       }
       return;

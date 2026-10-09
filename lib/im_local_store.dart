@@ -14,7 +14,7 @@ class ImLocalStore {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -32,8 +32,13 @@ class ImLocalStore {
           )
         ''');
         await db.execute('''
-          CREATE INDEX messages_cursor_idx
-          ON messages(account_id, conversation_id, message_id)
+          CREATE TABLE local_deleted_messages (
+            account_id TEXT NOT NULL,
+            conversation_id TEXT NOT NULL,
+            message_id TEXT NOT NULL,
+            deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (account_id, conversation_id, message_id)
+          )
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
@@ -42,6 +47,17 @@ class ImLocalStore {
               "ALTER TABLE messages ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'");
           await db.execute(
               "ALTER TABLE messages ADD COLUMN duration_ms INTEGER NOT NULL DEFAULT 0");
+        }
+        if (oldVersion < 3) {
+          await db.execute('''
+            CREATE TABLE local_deleted_messages (
+              account_id TEXT NOT NULL,
+              conversation_id TEXT NOT NULL,
+              message_id TEXT NOT NULL,
+              deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (account_id, conversation_id, message_id)
+            )
+          ''');
         }
       },
     );
@@ -102,6 +118,41 @@ class ImLocalStore {
       );
     }
     await batch.commit(noResult: true);
+  }
+
+  static Future<void> deleteLocalMessage({
+    required String accountId,
+    required String conversationId,
+    required String messageId,
+  }) async {
+    final db = await _db();
+    await db.delete(
+      'messages',
+      where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
+      whereArgs: [accountId, conversationId, messageId],
+    );
+    await db.insert(
+      'local_deleted_messages',
+      {
+        'account_id': accountId,
+        'conversation_id': conversationId,
+        'message_id': messageId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  static Future<Set<String>> localDeletedMessageIds({
+    required String accountId,
+    required String conversationId,
+  }) async {
+    final rows = await (await _db()).query(
+      'local_deleted_messages',
+      columns: ['message_id'],
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+    );
+    return rows.map((row) => '${row['message_id']}').toSet();
   }
 
   static Future<List<Map<String, dynamic>>> pendingMessages(
