@@ -30,6 +30,7 @@ class ImSession {
   final _outbox = <_PendingImMessage>[];
   final _inflight = <String, _PendingImMessage>{};
   final _ackTimers = <String, Timer>{};
+  final _retryCounts = <String, int>{};
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -81,13 +82,22 @@ class ImSession {
         if (clientId.isNotEmpty) {
           _inflight.remove(clientId);
           _ackTimers.remove(clientId)?.cancel();
+          _retryCounts.remove(clientId);
         }
       } else if (type == 'message:failed') {
         final clientId =
             '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
         final failed = clientId.isNotEmpty ? _inflight.remove(clientId) : null;
         _ackTimers.remove(clientId)?.cancel();
-        if (failed != null) _outbox.add(failed);
+        if (failed != null) {
+          _retryCounts[clientId] = (_retryCounts[clientId] ?? 0) + 1;
+          if ((_retryCounts[clientId] ?? 0) <= 3) {
+            _outbox.add(failed);
+            _flushOutbox();
+          } else {
+            _retryCounts.remove(clientId);
+          }
+        }
       }
       if (type == 'message:new') {
         final message = event['message'];
@@ -114,6 +124,7 @@ class ImSession {
         _outbox.add(message);
       }
       _ackTimers.remove(message.clientId)?.cancel();
+      _retryCounts.remove(message.clientId);
     }
     _inflight.clear();
   }
@@ -178,7 +189,14 @@ class ImSession {
       _ackTimers[message.clientId] = Timer(const Duration(seconds: 15), () {
         final timedOut = _inflight.remove(message.clientId);
         if (timedOut != null) {
-          _outbox.add(timedOut);
+          final retries = (_retryCounts[message.clientId] ?? 0) + 1;
+          _retryCounts[message.clientId] = retries;
+          if (retries <= 3) {
+            _outbox.add(timedOut);
+            _flushOutbox();
+          } else {
+            _retryCounts.remove(message.clientId);
+          }
           _events.add(<String, dynamic>{
             'type': 'message:failed',
             'code': 'ack_timeout',
@@ -219,6 +237,7 @@ class ImSession {
       timer.cancel();
     }
     _ackTimers.clear();
+    _retryCounts.clear();
     _inflight.clear();
     if (clearOutbox) _outbox.clear();
     await _socketEvents?.cancel();
