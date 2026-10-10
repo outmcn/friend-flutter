@@ -1263,6 +1263,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (clientId.isEmpty || text.isEmpty) return;
     setState(() {
       message['status'] = 'pending';
+      message['lastError'] = null;
     });
     unawaited(ImLocalStore.saveMessages(
       accountId: currentUserId,

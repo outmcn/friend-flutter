@@ -184,6 +184,35 @@ class ImLocalStore {
     );
   }
 
+  static Future<Map<String, dynamic>?> retryState({
+    required String accountId,
+    required String conversationId,
+    required String clientId,
+  }) async {
+    final rows = await (await _db()).query(
+      'messages',
+      columns: [
+        'status',
+        'retry_started_at',
+        'retry_until',
+        'retry_count',
+        'last_error',
+      ],
+      where: 'account_id = ? AND conversation_id = ? AND client_id = ?',
+      whereArgs: [accountId, conversationId, clientId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return <String, dynamic>{
+      'status': '${row['status'] ?? ''}',
+      'retryStartedAt': row['retry_started_at'],
+      'retryUntil': row['retry_until'],
+      'retryCount': (row['retry_count'] as num?)?.toInt() ?? 0,
+      'lastError': row['last_error'],
+    };
+  }
+
   static Future<void> saveIncomingMessage({
     required String accountId,
     required Map<String, dynamic> message,
