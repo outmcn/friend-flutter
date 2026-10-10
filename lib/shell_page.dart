@@ -27,12 +27,72 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     unawaited(_loadConversations());
-    listEvents = ImSession.instance.events.listen((event) {
-      if (event['type'] == 'message:new' ||
-          event['type'] == 'message:recalled') {
-        unawaited(_loadConversations(showLoading: false));
+    listEvents = ImSession.instance.events.listen(_handleListEvent);
+  }
+
+  void _handleListEvent(Map<String, dynamic> event) {
+    if (event['type'] == 'message:new' || event['type'] == 'message:recalled') {
+      unawaited(_loadConversations(showLoading: false));
+    }
+    if (event['type'] == 'call:incoming') {
+      final call = event['call'];
+      if (call is Map) {
+        unawaited(_showIncomingCall(call.cast<String, dynamic>()));
       }
-    });
+    }
+  }
+
+  Future<void> _showIncomingCall(Map<String, dynamic> call) async {
+    final callId = '${call['id'] ?? ''}';
+    if (!mounted || callId.isEmpty) return;
+    final accepted = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('来电'),
+        content: const Text('对方发起了一次语音通话'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, 'reject'),
+            child: const Text('拒绝'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, 'answer'),
+            child: const Text('接听'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || accepted == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final result = await service.updateImCall(token, callId, accepted);
+      if (accepted == 'answer' && mounted) {
+        final answeredCall =
+            (result['call'] as Map?)?.cast<String, dynamic>() ?? call;
+        final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => _AudioCallPage(
+              call: answeredCall,
+              rtc: rtc,
+              token: token,
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$error')),
+        );
+      }
+    } finally {
+      service.dispose();
+    }
   }
 
   Future<void> _cacheAvatar(_ChatPreview chat) async {
@@ -140,12 +200,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _restartListSocket() async {
     await _stopListSocket();
     if (mounted) {
-      listEvents = ImSession.instance.events.listen((event) {
-        if (event['type'] == 'message:new' ||
-            event['type'] == 'message:recalled') {
-          unawaited(_loadConversations(showLoading: false));
-        }
-      });
+      listEvents = ImSession.instance.events.listen(_handleListEvent);
     }
   }
 
@@ -772,6 +827,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('账号已在其他设备登录')),
         );
+      }
+      return;
+    }
+    if (type == 'call:update') {
+      final call = event['call'];
+      if (call is Map && '${call['status'] ?? ''}' == 'ended') {
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
       }
       return;
     }
