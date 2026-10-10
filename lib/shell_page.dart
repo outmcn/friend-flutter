@@ -548,12 +548,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     unawaited(_connectIm());
   }
 
-  Future<void> _scrollToLatest() async {
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    if (!mounted || !messageScrollController.hasClients) return;
-    messageScrollController.jumpTo(
-      messageScrollController.position.maxScrollExtent,
-    );
+  void _scrollToLatest() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !messageScrollController.hasClients) return;
+      messageScrollController.jumpTo(
+        messageScrollController.position.maxScrollExtent,
+      );
+    });
   }
 
   void _handleMessageScroll() {
@@ -715,7 +717,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         initialSyncCompleted = true;
       });
       unawaited(_markLatestRead());
-      unawaited(_scrollToLatest());
+      _scrollToLatest();
       unawaited(_refreshDetailFromServer(token));
     } catch (_) {}
   }
@@ -996,7 +998,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (mounted) {
       setState(() {});
-      unawaited(_scrollToLatest());
+      _scrollToLatest();
     }
   }
 
