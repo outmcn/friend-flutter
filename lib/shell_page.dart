@@ -805,6 +805,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 ...messages[index],
                 'status': 'recalled',
                 'text': '',
+                'recalledAt':
+                    item['recalledAt'] ?? DateTime.now().toIso8601String(),
               });
           await ImLocalStore.saveMessages(
             accountId: currentUserId,
@@ -1255,6 +1257,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 ...recalled,
                 'status': 'recalled',
                 'text': '',
+                'recalledAt':
+                    recalled['recalledAt'] ?? DateTime.now().toIso8601String(),
               });
           await ImLocalStore.saveMessages(
             accountId: currentUserId,

@@ -98,7 +98,13 @@ class ImLocalStore {
         'kind': '${item['kind'] ?? 'text'}',
         'durationMs': (item['duration_ms'] as num?)?.toInt() ?? 0,
         'createdAt': item['created_at'],
-        'status': '${item['status'] ?? 'sent'}',
+        'recalledAt': item['recalled_at'],
+        'deletedAt': item['deleted_at'],
+        'status': item['recalled_at'] != null
+            ? 'recalled'
+            : item['deleted_at'] != null
+                ? 'deleted'
+                : '${item['status'] ?? 'sent'}',
       };
     }).toList();
   }
@@ -149,6 +155,8 @@ class ImLocalStore {
           'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
           'created_at': '${message['createdAt'] ?? ''}',
           'status': '${message['status'] ?? 'sent'}',
+          'recalled_at': message['recalledAt'],
+          'deleted_at': message['deletedAt'],
           'retry_started_at': message['retryStartedAt'],
           'retry_until': message['retryUntil'],
           'retry_count': (message['retryCount'] as num?)?.toInt() ?? 0,
@@ -307,7 +315,11 @@ class ImLocalStore {
     final oldId = '${rows.first['message_id'] ?? ''}';
     await db.update(
       'messages',
-      {'status': 'recalled', 'text': ''},
+      {
+        'status': 'recalled',
+        'text': '',
+        'recalled_at': message['recalledAt'] ?? DateTime.now().toIso8601String()
+      },
       where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
       whereArgs: [accountId, conversationId, oldId],
     );
