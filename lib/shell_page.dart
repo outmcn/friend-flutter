@@ -248,16 +248,14 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Widget _conversationList(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: ListView.separated(
-          itemCount: conversations.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 2),
-          itemBuilder: (_, index) {
-            final chat = conversations[index];
-            return _chatPreviewTile(context, chat, index);
-          },
-        ),
+  Widget _conversationList(BuildContext context) => ListView.separated(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+        itemCount: conversations.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (_, index) {
+          final chat = conversations[index];
+          return _chatPreviewTile(context, chat, index);
+        },
       );
 
   ImageProvider _avatarFor(_ChatPreview chat) {
@@ -292,60 +290,76 @@ class _ChatPageState extends State<ChatPage> {
             unawaited(_restartListSocket());
           }
         },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: _avatarFor(chat),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(chat.name,
-                              style: Theme.of(context).textTheme.bodyLarge),
-                        ),
-                        Text(formatDDTime(chat.updatedAt ?? ''),
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: Theme.of(context).hintColor)),
-                        if (chat.unreadCount > 0) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            constraints: const BoxConstraints(minWidth: 18),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.error,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              chat.unreadCount > 99
-                                  ? '99+'
-                                  : '${chat.unreadCount}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10),
-                            ),
-                          ),
-                        ],
-                      ],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: 0.32),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: Image(
+                      image: _avatarFor(chat),
+                      fit: BoxFit.cover,
                     ),
-                    const SizedBox(height: 3),
-                    Text(chat.preview,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Theme.of(context).hintColor)),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(chat.name,
+                                style: Theme.of(context).textTheme.bodyLarge),
+                          ),
+                          Text(formatDDTime(chat.updatedAt ?? ''),
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(context).hintColor)),
+                          if (chat.unreadCount > 0) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              constraints: const BoxConstraints(minWidth: 18),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.error,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                chat.unreadCount > 99
+                                    ? '99+'
+                                    : '${chat.unreadCount}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 10),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(chat.preview,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Theme.of(context).hintColor)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
