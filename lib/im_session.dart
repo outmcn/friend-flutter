@@ -379,54 +379,8 @@ class ImSession {
   }
 
   void _flushOutbox() {
-    final socket = _socket;
-    if (socket == null || !isConnected || _outbox.isEmpty) return;
-    final pending = List<_PendingImMessage>.from(_outbox);
-    for (final message in pending) {
-      _inflight[message.clientId] = message;
-      socket.sendText(
-        conversationId: message.conversationId,
-        text: message.text,
-        clientId: message.clientId,
-        kind: message.kind,
-      );
-      _ackTimers[message.clientId]?.cancel();
-      _ackTimers[message.clientId] = Timer(const Duration(seconds: 15), () {
-        final timedOut = _inflight.remove(message.clientId);
-        if (timedOut != null) {
-          final retryCount = _retryCounts[message.clientId] =
-              (_retryCounts[message.clientId] ?? 0) + 1;
-          final until = _retryUntil[message.clientId] ?? DateTime.now();
-          if (DateTime.now().isBefore(until)) {
-            _outbox.add(timedOut);
-            _setRetryState(
-              message.clientId,
-              conversationId: timedOut.conversationId,
-              status: 'pending',
-              retryCount: retryCount,
-              error: 'ack_timeout',
-            );
-            _flushOutbox();
-          } else {
-            _setRetryState(
-              message.clientId,
-              conversationId: timedOut.conversationId,
-              status: 'failed',
-              error: 'retry_expired',
-              retryCount: retryCount,
-            );
-            _events.add(<String, dynamic>{
-              'type': 'message:failed',
-              'code': 'retry_expired',
-              'clientId': message.clientId,
-            });
-          }
-        }
-        _ackTimers.remove(message.clientId);
-      });
-    }
-    _outbox.removeWhere(
-        (queued) => pending.any((sent) => sent.clientId == queued.clientId));
+    // 消息发送统一由 HTTPS API 负责；WebSocket 只接收实时事件和输入状态。
+    _outbox.clear();
   }
 
   void requeueText({

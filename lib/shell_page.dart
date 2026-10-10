@@ -1326,18 +1326,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           messages: messages,
         );
       }
-      ImSession.instance.queueMessage(
+      unawaited(_retryTextViaApi(
+        token: token,
         conversationId: widget.chat.conversationId,
         text: text,
         clientId: clientId,
-        kind: 'text',
-      );
+      ));
     } finally {
       service.dispose();
     }
   }
 
-  void _retryMessage(Map<String, dynamic> message) {
+  Future<void> _retryMessage(Map<String, dynamic> message) async {
     final clientId = '${message['clientId'] ?? ''}';
     final conversationId = widget.chat.conversationId;
     final text = '${message['text'] ?? ''}';
@@ -1351,12 +1351,43 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       conversationId: conversationId,
       messages: messages,
     ));
-    ImSession.instance.queueMessage(
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    unawaited(_retryTextViaApi(
+      token: token,
       conversationId: conversationId,
       text: text,
       clientId: clientId,
-      kind: '${message['kind'] ?? 'text'}',
-    );
+    ));
+  }
+
+  Future<void> _retryTextViaApi({
+    required String token,
+    required String conversationId,
+    required String text,
+    required String clientId,
+  }) async {
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final sent = await service.sendImMessage(
+        token,
+        conversationId,
+        text: text,
+        clientId: clientId,
+      );
+      if (!mounted) return;
+      _mergeMessage(sent, status: 'sent');
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: conversationId,
+        messages: messages,
+      );
+    } catch (_) {
+      // 失败状态由当前消息保留，用户可以再次点击感叹号。
+    } finally {
+      service.dispose();
+    }
   }
 
   Future<void> _confirmDurableMessages(List<String> messageIds) async {
