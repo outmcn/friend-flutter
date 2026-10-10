@@ -60,7 +60,7 @@ import AliVCSDK_ARTC
       result(rtcEngine?.subscribeAllRemoteAudioStreams(enabled) == 0)
     case "mute":
       let muted = (call.arguments as? Bool) ?? false
-      result(rtcEngine?.muteLocalMic(muted, mode: .default) == 0)
+      result(rtcEngine?.muteLocalMic(muted, mode: .muteAudioModeDefault) == 0)
     case "leave":
       let code = rtcEngine?.leaveChannel() ?? 0
       result(code == 0)
