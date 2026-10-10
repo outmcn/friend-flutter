@@ -1247,6 +1247,27 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  void _retryMessage(Map<String, dynamic> message) {
+    final clientId = '${message['clientId'] ?? ''}';
+    final conversationId = widget.chat.conversationId;
+    final text = '${message['text'] ?? ''}';
+    if (clientId.isEmpty || text.isEmpty) return;
+    setState(() {
+      message['status'] = 'pending';
+    });
+    unawaited(ImLocalStore.saveMessages(
+      accountId: currentUserId,
+      conversationId: conversationId,
+      messages: messages,
+    ));
+    ImSession.instance.queueMessage(
+      conversationId: conversationId,
+      text: text,
+      clientId: clientId,
+      kind: '${message['kind'] ?? 'text'}',
+    );
+  }
+
   Future<void> _confirmDurableMessages(List<String> messageIds) async {
     if (messageIds.isEmpty || currentUserId.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
@@ -1487,13 +1508,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                               strokeWidth: 1.5),
                                                     ),
                                                   ],
-                                                  if (status == 'failed') ...[
-                                                    const SizedBox(width: 6),
-                                                    const Icon(
+                                                  if (status == 'failed')
+                                                    GestureDetector(
+                                                      onTap: () =>
+                                                          _retryMessage(
+                                                              message),
+                                                      child: const Icon(
                                                         Icons.error_outline,
                                                         size: 16,
-                                                        color: Colors.orange),
-                                                  ],
+                                                        color: Colors.orange,
+                                                      ),
+                                                    ),
                                                 ],
                                               ),
                                             ),

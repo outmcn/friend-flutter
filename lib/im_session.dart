@@ -36,7 +36,7 @@ class ImSession {
   final _outbox = <_PendingImMessage>[];
   final _inflight = <String, _PendingImMessage>{};
   final _ackTimers = <String, Timer>{};
-  final _retryCounts = <String, int>{};
+  final _retryUntil = <String, DateTime>{};
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -90,7 +90,7 @@ class ImSession {
         if (clientId.isNotEmpty) {
           _inflight.remove(clientId);
           _ackTimers.remove(clientId)?.cancel();
-          _retryCounts.remove(clientId);
+          _retryUntil.remove(clientId);
           if (message is Map && _userId != null) {
             unawaited(ImLocalStore.reconcileAccepted(
               accountId: _userId!,
@@ -104,12 +104,17 @@ class ImSession {
         final failed = clientId.isNotEmpty ? _inflight.remove(clientId) : null;
         _ackTimers.remove(clientId)?.cancel();
         if (failed != null) {
-          _retryCounts[clientId] = (_retryCounts[clientId] ?? 0) + 1;
-          if ((_retryCounts[clientId] ?? 0) <= 3) {
+          final until = _retryUntil[clientId] ?? DateTime.now();
+          if (DateTime.now().isBefore(until)) {
             _outbox.add(failed);
             _flushOutbox();
           } else {
-            _retryCounts.remove(clientId);
+            _retryUntil.remove(clientId);
+            _events.add(<String, dynamic>{
+              'type': 'message:failed',
+              'code': 'retry_expired',
+              'clientId': clientId,
+            });
           }
         }
       }
@@ -188,7 +193,7 @@ class ImSession {
         _outbox.add(message);
       }
       _ackTimers.remove(message.clientId)?.cancel();
-      _retryCounts.remove(message.clientId);
+      _retryUntil.remove(message.clientId);
     }
     _inflight.clear();
   }
@@ -212,17 +217,12 @@ class ImSession {
       if (conversationId.isEmpty || clientId.isEmpty) continue;
       final service = DDPostService();
       try {
-        final message = await service.reconcilePending(
-          token,
-          conversationId,
-          clientId,
-        );
+        final message =
+            await service.reconcilePending(token, conversationId, clientId);
         await ImLocalStore.reconcileAccepted(
-          accountId: accountId,
-          message: message,
-        );
+            accountId: accountId, message: message);
       } on StateError {
-        // Server has not accepted it; keep pending for the normal retry path.
+        // 未被服务器接受，保留 pending。
       } finally {
         service.dispose();
       }
@@ -258,6 +258,7 @@ class ImSession {
     required String text,
     required String clientId,
   }) {
+    _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
     _outbox.add(_PendingImMessage(
       conversationId: conversationId,
       text: text,
@@ -272,6 +273,7 @@ class ImSession {
     required String clientId,
     required String kind,
   }) {
+    _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
     _outbox.add(_PendingImMessage(
       conversationId: conversationId,
       text: text,
@@ -297,19 +299,17 @@ class ImSession {
       _ackTimers[message.clientId] = Timer(const Duration(seconds: 15), () {
         final timedOut = _inflight.remove(message.clientId);
         if (timedOut != null) {
-          final retries = (_retryCounts[message.clientId] ?? 0) + 1;
-          _retryCounts[message.clientId] = retries;
-          if (retries <= 3) {
+          final until = _retryUntil[message.clientId] ?? DateTime.now();
+          if (DateTime.now().isBefore(until)) {
             _outbox.add(timedOut);
             _flushOutbox();
           } else {
-            _retryCounts.remove(message.clientId);
+            _events.add(<String, dynamic>{
+              'type': 'message:failed',
+              'code': 'retry_expired',
+              'clientId': message.clientId,
+            });
           }
-          _events.add(<String, dynamic>{
-            'type': 'message:failed',
-            'code': 'ack_timeout',
-            'clientId': message.clientId,
-          });
         }
         _ackTimers.remove(message.clientId);
       });
@@ -323,6 +323,7 @@ class ImSession {
     required String text,
     required String clientId,
   }) {
+    _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
     _outbox.add(_PendingImMessage(
       conversationId: conversationId,
       text: text,
@@ -345,7 +346,7 @@ class ImSession {
       timer.cancel();
     }
     _ackTimers.clear();
-    _retryCounts.clear();
+    _retryUntil.clear();
     _inflight.clear();
     if (clearOutbox) _outbox.clear();
     await _socketEvents?.cancel();
