@@ -2237,15 +2237,58 @@ class _AudioCallPage extends StatefulWidget {
 class _AudioCallPageState extends State<_AudioCallPage> {
   bool muted = false;
   bool joined = false;
+  bool remoteLeft = false;
+  StreamSubscription<Map<String, dynamic>>? imEvents;
 
   @override
   void initState() {
     super.initState();
+    AliyunRtcBridge.setEventHandler(_handleRtcEvent);
+    imEvents = ImSession.instance.events.listen(_handleImEvent);
     unawaited(_joinRtc());
+  }
+
+  void _handleRtcEvent(String method, dynamic args) {
+    if (!mounted) return;
+    if (method == 'remoteLeft') {
+      setState(() => remoteLeft = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('对方已挂断')),
+      );
+      unawaited(_finishRemoteHangup());
+    } else if (method == 'error') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('RTC 连接失败：${args is Map ? args['code'] : ''}')),
+      );
+    }
+  }
+
+  void _handleImEvent(Map<String, dynamic> event) {
+    if (event['type'] != 'call:update') return;
+    final call = event['call'];
+    if (call is! Map || '${call['id'] ?? ''}' != '${widget.call['id'] ?? ''}') {
+      return;
+    }
+    final status = '${call['status'] ?? ''}';
+    if (status == 'ended' || status == 'cancelled' || status == 'rejected') {
+      if (mounted) {
+        setState(() => remoteLeft = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('对方已挂断')),
+        );
+      }
+      unawaited(_finishRemoteHangup());
+    }
+  }
+
+  Future<void> _finishRemoteHangup() async {
+    await AliyunRtcBridge.leave();
+    if (mounted) Navigator.pop(context);
   }
 
   Future<void> _joinRtc() async {
     try {
+      await AliyunRtcBridge.subscribeRemoteAudio(true);
       await AliyunRtcBridge.join(widget.rtc);
       if (mounted) setState(() => joined = true);
     } catch (error) {
@@ -2269,6 +2312,13 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     } finally {
       if (mounted) Navigator.pop(context);
     }
+  }
+
+  @override
+  void dispose() {
+    imEvents?.cancel();
+    AliyunRtcBridge.setEventHandler(null);
+    super.dispose();
   }
 
   @override

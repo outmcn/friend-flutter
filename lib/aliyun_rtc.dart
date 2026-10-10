@@ -20,4 +20,16 @@ class AliyunRtcBridge {
   static Future<void> leave() async {
     await _channel.invokeMethod('leave');
   }
+
+  /// Subscribes to remote audio and forwards native lifecycle events to Dart.
+  static Future<void> subscribeRemoteAudio(bool enabled) async {
+    await _channel.invokeMethod('subscribeRemoteAudio', enabled);
+  }
+
+  static void setEventHandler(
+      void Function(String method, dynamic args)? handler) {
+    _channel.setMethodCallHandler((call) async {
+      handler?.call(call.method, call.arguments);
+    });
+  }
 }

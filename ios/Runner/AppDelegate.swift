@@ -15,10 +15,7 @@ import DingRTC
     guard let controller = window?.rootViewController as? FlutterViewController else {
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
-    let channel = FlutterMethodChannel(
-      name: "com.outmcn.dd/aliyun_rtc",
-      binaryMessenger: controller.binaryMessenger
-    )
+    let channel = FlutterMethodChannel(name: "com.outmcn.dd/aliyun_rtc", binaryMessenger: controller.binaryMessenger)
     rtcChannel = channel
     channel.setMethodCallHandler { [weak self] call, result in
       self?.handleRtc(call: call, result: result)
@@ -44,6 +41,10 @@ import DingRTC
       auth.channelId = channelId
       auth.userId = userId
       auth.token = token
+      _ = engine.subscribeAllRemoteAudioStreams(true)
+      _ = engine.enableSpeakerphone(true)
+      _ = engine.startAudioPlayer()
+      _ = engine.startAudioCapture()
       _ = engine.publishLocalAudioStream(true)
       let code = engine.joinChannel(auth, name: userId) { [weak self] (errorCode: Int, channelName: String, joinedUserId: String, _ elapsed: Int) in
         DispatchQueue.main.async {
@@ -54,16 +55,41 @@ import DingRTC
           }
         }
       }
-      if code != 0 { result(FlutterError(code: "join_failed", message: "加入 RTC 频道失败", details: code)) }
-      else { result(true) }
+      if code != 0 {
+        result(FlutterError(code: "join_failed", message: "加入 RTC 频道失败", details: code))
+      } else {
+        result(true)
+      }
+    case "subscribeRemoteAudio":
+      let enabled = (call.arguments as? Bool) ?? true
+      result(rtcEngine?.subscribeAllRemoteAudioStreams(enabled) == 0)
     case "mute":
-      let enabled = (call.arguments as? Bool) ?? false
-      result(rtcEngine?.publishLocalAudioStream(!enabled) == 0)
+      let muted = (call.arguments as? Bool) ?? false
+      result(rtcEngine?.muteLocalAudio(muted) == 0)
     case "leave":
-      result(rtcEngine?.leaveChannel() == 0)
+      let code = rtcEngine?.leaveChannel() ?? 0
+      result(code == 0)
       rtcEngine = nil
     default:
       result(FlutterMethodNotImplemented)
+    }
+  }
+
+  func onRemoteUserOffLineNotify(_ uid: String, offlineReason reason: DingRtcUserOfflineReason) {
+    DispatchQueue.main.async { [weak self] in
+      self?.rtcChannel?.invokeMethod("remoteLeft", arguments: ["userId": uid, "reason": reason.rawValue])
+    }
+  }
+
+  func onRemoteTrackAvailableNotify(_ uid: String, audioTrack: DingRtcAudioTrack, videoTrack: DingRtcVideoTrack) {
+    DispatchQueue.main.async { [weak self] in
+      self?.rtcChannel?.invokeMethod("remoteTrack", arguments: ["userId": uid, "audio": audioTrack.rawValue])
+    }
+  }
+
+  func onLeaveChannelResult(_ result: Int32, stats: DingRtcStats) {
+    DispatchQueue.main.async { [weak self] in
+      self?.rtcChannel?.invokeMethod("left", arguments: ["code": result])
     }
   }
 }
