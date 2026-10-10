@@ -540,6 +540,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   final Map<String, String> imageFiles = {};
   String? playingAudioKey;
   Timer? typingTimer;
+  bool voiceMode = false;
+  AudioRecorder? holdRecorder;
+  String? holdRecordingPath;
+  bool recordingVoice = false;
+  bool cancelVoice = false;
+  Offset? holdStartPosition;
 
   @override
   void initState() {
@@ -574,6 +580,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     messageScrollController.removeListener(_handleMessageScroll);
     messageScrollController.dispose();
     typingTimer?.cancel();
+    unawaited(holdRecorder?.dispose());
     audioPlayer.dispose();
     eventSubscription?.cancel();
     super.dispose();
@@ -1031,46 +1038,94 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
-  Future<void> _pickAndSendAudio() async {
+  Future<void> _startHoldRecording(LongPressStartDetails details) async {
+    if (!voiceMode || recordingVoice) return;
+    holdStartPosition = details.localPosition;
+    cancelVoice = false;
     final recorder = AudioRecorder();
+    holdRecorder = recorder;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
-    final connected = ImSession.instance.isConnected;
-    if (token.isEmpty || !connected) {
+    if (token.isEmpty) {
       await recorder.dispose();
+      holdRecorder = null;
+      return;
+    }
+    if (!await recorder.hasPermission()) {
+      await recorder.dispose();
+      holdRecorder = null;
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('网络未连接，语音未发送')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('没有麦克风权限')),
+        );
       }
       return;
     }
+    final dir = await getTemporaryDirectory();
+    final path =
+        '${dir.path}/im_voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
+    await recorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc, numChannels: 1),
+      path: path,
+    );
+    holdRecordingPath = path;
+    if (mounted) setState(() => recordingVoice = true);
+  }
+
+  void _updateHoldRecording(LongPressMoveUpdateDetails details) {
+    if (!recordingVoice || holdStartPosition == null) return;
+    final dx = details.localPosition.dx - holdStartPosition!.dx;
+    final dy = details.localPosition.dy - holdStartPosition!.dy;
+    if (dx.abs() > 80 || dy < -60) {
+      cancelVoice = true;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _finishHoldRecording(LongPressEndDetails details) async {
+    final recorder = holdRecorder;
+    final path = holdRecordingPath;
+    final cancelled = cancelVoice;
+    holdRecorder = null;
+    holdRecordingPath = null;
+    if (!recordingVoice || recorder == null || path == null) return;
+    if (mounted) setState(() => recordingVoice = false);
+    final output = await recorder.stop();
+    await recorder.dispose();
+    if (cancelled || output == null) {
+      if (mounted && cancelled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已取消录音')),
+        );
+      }
+      return;
+    }
+    await _sendRecordedAudio(output);
+  }
+
+  Future<void> _sendRecordedAudio(String pathValue) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
     try {
-      if (!await recorder.hasPermission()) throw Exception('没有麦克风权限');
-      final dir = await getTemporaryDirectory();
-      final localPath =
-          '${dir.path}/im_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await recorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc, numChannels: 1),
-        path: localPath,
-      );
-      await Future<void>.delayed(const Duration(seconds: 1));
-      final pathValue = await recorder.stop();
-      if (pathValue == null) throw Exception('录音失败');
-      final service = DDPostService();
       final upload = await service.voiceUploadUrl(
-          token: token, fileName: 'voice.m4a', contentType: 'audio/mp4');
+        token: token,
+        fileName: 'voice.m4a',
+        contentType: 'audio/mp4',
+      );
       final url = '${upload['url'] ?? upload['uploadUrl'] ?? ''}';
       final key = '${upload['objectKey'] ?? upload['key'] ?? ''}';
+      if (url.isEmpty || key.isEmpty) throw Exception('语音上传地址无效');
       final bytes = await File(pathValue).readAsBytes();
-      final response = await http.put(Uri.parse(url),
-          headers: {'Content-Type': 'audio/mp4'}, body: bytes);
-      service.dispose();
-      if (response.statusCode < 200 ||
-          response.statusCode >= 300 ||
-          key.isEmpty) {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {'Content-Type': 'audio/mp4'},
+        body: bytes,
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('语音上传失败');
       }
-      const durationMs = 1000;
       final clientId = DateTime.now().microsecondsSinceEpoch.toString();
       final sent = await service.sendImMessage(
         token,
@@ -1078,7 +1133,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         text: key,
         clientId: clientId,
         kind: 'audio',
-        durationMs: durationMs,
+        durationMs: 1000,
       );
       _mergeMessage(sent, status: 'sent');
       await ImLocalStore.saveMessages(
@@ -1088,11 +1143,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$error')),
+        );
       }
     } finally {
-      await recorder.dispose();
+      service.dispose();
     }
   }
 
@@ -1703,23 +1759,51 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                   icon: const Icon(Icons.photo_outlined),
                 ),
                 IconButton(
-                  onPressed: _pickAndSendAudio,
-                  icon: const Icon(Icons.mic_none),
+                  onPressed: () => setState(() => voiceMode = !voiceMode),
+                  icon: Icon(voiceMode ? Icons.keyboard : Icons.mic_none),
                 ),
                 Expanded(
-                  child: TextField(
-                    focusNode: messageFocusNode,
-                    controller: messageController,
-                    onChanged: _handleTypingChanged,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendMessage(),
-                    decoration: InputDecoration(
-                      hintText: '输入消息',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                    ),
-                  ),
+                  child: voiceMode
+                      ? GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onLongPressStart: _startHoldRecording,
+                          onLongPressMoveUpdate: _updateHoldRecording,
+                          onLongPressEnd: _finishHoldRecording,
+                          child: Container(
+                            height: 48,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              borderRadius: BorderRadius.circular(22),
+                              color: recordingVoice
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer
+                                  : null,
+                            ),
+                            child: Text(
+                              recordingVoice
+                                  ? (cancelVoice ? '松开取消' : '松开发送')
+                                  : '按住说话',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                        )
+                      : TextField(
+                          focusNode: messageFocusNode,
+                          controller: messageController,
+                          onChanged: _handleTypingChanged,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _sendMessage(),
+                          decoration: InputDecoration(
+                            hintText: '输入消息',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                          ),
+                        ),
                 ),
                 IconButton(
                   onPressed: _sendMessage,
