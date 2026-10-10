@@ -1232,6 +1232,50 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  Future<void> _reportImMessage(Map<String, dynamic> message) async {
+    final id = '${message['id'] ?? ''}';
+    if (id.isEmpty || id.startsWith('local:')) return;
+    final reason = await showModalBottomSheet<String>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Wrap(
+          children: [
+            for (final item in const ['垃圾广告', '骚扰辱骂', '色情或违规内容', '其他'])
+              ListTile(
+                title: Text(item),
+                onTap: () => Navigator.pop(context, item),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || reason == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    final service = DDPostService();
+    try {
+      await service.reportImMessage(
+        token,
+        widget.chat.conversationId,
+        id,
+        reason,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('举报已提交')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$error')),
+        );
+      }
+    } finally {
+      service.dispose();
+    }
+  }
+
   Future<void> _showMessageMenu(Map<String, dynamic> message) async {
     final isMine = currentUserId.isNotEmpty &&
         '${message['senderId'] ?? ''}' == currentUserId;
@@ -1252,6 +1296,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
               title: const Text('复制'),
               onTap: () => Navigator.pop(context, 'copy'),
             ),
+            if (!isMine)
+              ListTile(
+                leading: const Icon(Icons.report_outlined),
+                title: const Text('举报'),
+                onTap: () => Navigator.pop(context, 'report'),
+              ),
             if (canRecall)
               ListTile(
                 leading: const Icon(Icons.undo),
@@ -1271,6 +1321,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (!mounted || choice == null) return;
     if (choice == 'copy') {
       await Clipboard.setData(ClipboardData(text: '${message['text'] ?? ''}'));
+      return;
+    }
+    if (choice == 'report') {
+      await _reportImMessage(message);
       return;
     }
     final id = '${message['id'] ?? ''}';

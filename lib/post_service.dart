@@ -165,6 +165,25 @@ class DDPostService {
     return (data['message'] as Map).cast<String, dynamic>();
   }
 
+  Future<void> reportImMessage(String token, String conversationId,
+      String messageId, String reason) async {
+    final response = await _client.post(
+      _api('/im/conversations/$conversationId/messages/$messageId/report'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'reason': reason}),
+    );
+    final body =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 201 ||
+        body is! Map ||
+        body['reported'] != true) {
+      throw Exception(body is Map ? '${body['error'] ?? '举报消息失败'}' : '举报消息失败');
+    }
+  }
+
   Future<void> markImConversationRead(
       String token, String conversationId, String messageId) async {
     final response = await _client.post(
