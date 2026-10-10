@@ -621,76 +621,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           initialSyncCompleted = true;
         });
       }
-      final service = DDPostService();
-      try {
-        final recovered = await service.fetchImMessages(
-          token,
-          widget.chat.conversationId,
-        );
-        final recoveredByKey = <String, Map<String, dynamic>>{};
-        for (final item in recovered) {
-          final row = <String, dynamic>{
-            'id': item.id,
-            'conversationId': item.conversationId,
-            'senderId': item.senderId,
-            'text': item.text,
-            'kind': item.kind,
-            'durationMs': item.durationMs,
-            'clientId': item.clientId,
-            'createdAt': item.createdAt,
-            'recalledAt': item.recalledAt,
-            'deletedAt': item.deletedAt,
-            'updatedAt': item.updatedAt,
-            'mutationId': item.mutationId,
-            'status': item.recalledAt != null
-                ? 'recalled'
-                : item.deletedAt != null
-                    ? 'deleted'
-                    : 'sent',
-          };
-          final key =
-              item.clientId?.isNotEmpty == true ? item.clientId! : item.id;
-          recoveredByKey[key] = row;
-        }
-        for (final row in recoveredByKey.values) {
-          final index = cached.indexWhere((existing) =>
-              '${existing['id'] ?? ''}' == row['id'] ||
-              (row['clientId'] != null &&
-                  '${existing['clientId'] ?? ''}' == '${row['clientId']}'));
-          if (index >= 0) {
-            cached[index] = {...cached[index], ...row};
-          } else {
-            cached.add(row);
-          }
-        }
-        final changes = <DDImMessage>[];
-        for (final item in changes) {
-          final index = cached.indexWhere((existing) =>
-              '${existing['id'] ?? ''}' == item.id ||
-              (item.clientId != null &&
-                  '${existing['clientId'] ?? ''}' == item.clientId));
-          if (index >= 0) {
-            cached[index] = {
-              ...cached[index],
-              'id': item.id,
-              'text': item.text,
-              'recalledAt': item.recalledAt,
-              'deletedAt': item.deletedAt,
-              'updatedAt': item.updatedAt,
-              'mutationId': item.mutationId,
-              'status': item.recalledAt != null
-                  ? 'recalled'
-                  : item.deletedAt != null
-                      ? 'deleted'
-                      : cached[index]['status'],
-            };
-          }
-        }
-      } catch (_) {
-        // 本地缓存仍可先展示；下次 ready 或重新进入详情继续补偿。
-      } finally {
-        service.dispose();
-      }
       final deletedIds = await ImLocalStore.localDeletedMessageIds(
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
@@ -759,27 +689,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         final key =
             item.clientId?.isNotEmpty == true ? item.clientId! : item.id;
         merged[key] = {...?merged[key], ...row};
-      }
-      final changes = <DDImMessage>[];
-      for (final item in changes) {
-        final key =
-            item.clientId?.isNotEmpty == true ? item.clientId! : item.id;
-        final old = merged[key];
-        if (old == null) continue;
-        merged[key] = {
-          ...old,
-          'id': item.id,
-          'text': item.text,
-          'recalledAt': item.recalledAt,
-          'deletedAt': item.deletedAt,
-          'updatedAt': item.updatedAt,
-          'mutationId': item.mutationId,
-          'status': item.recalledAt != null
-              ? 'recalled'
-              : item.deletedAt != null
-                  ? 'deleted'
-                  : old['status'],
-        };
       }
       final next = merged.values.toList()
         ..sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
