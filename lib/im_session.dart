@@ -119,8 +119,9 @@ class ImSession {
         if (failed != null) {
           final retryCount =
               _retryCounts[clientId] = (_retryCounts[clientId] ?? 0) + 1;
+          final retryable = _isRetryableFailure('${event['code'] ?? ''}');
           final until = _retryUntil[clientId] ?? DateTime.now();
-          if (DateTime.now().isBefore(until)) {
+          if (retryable && DateTime.now().isBefore(until)) {
             _outbox.add(failed);
             _setRetryState(
               clientId,
@@ -138,12 +139,16 @@ class ImSession {
               clientId,
               conversationId: failed.conversationId,
               status: 'failed',
-              error: 'retry_expired',
+              error: retryable
+                  ? 'retry_expired'
+                  : '${event['code'] ?? 'send_failed'}',
               retryCount: retryCount,
             );
             _events.add(<String, dynamic>{
               'type': 'message:failed',
-              'code': 'retry_expired',
+              'code': retryable
+                  ? 'retry_expired'
+                  : '${event['code'] ?? 'send_failed'}',
               'clientId': clientId,
             });
           }
@@ -304,6 +309,20 @@ class ImSession {
       }
       _flushOutbox();
     } catch (_) {}
+  }
+
+  bool _isRetryableFailure(String code) {
+    const permanentCodes = {
+      'empty_message',
+      'conversation_required',
+      'conversation_forbidden',
+      'conversation_blocked',
+      'message_too_large',
+      'unsupported_kind',
+      'auth_invalid',
+      'unauthorized',
+    };
+    return !permanentCodes.contains(code);
   }
 
   void _setRetryState(
