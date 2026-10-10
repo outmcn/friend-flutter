@@ -546,6 +546,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool recordingVoice = false;
   bool cancelVoice = false;
   Offset? holdStartPosition;
+  bool moreExpanded = false;
+  bool emojiExpanded = false;
 
   @override
   void initState() {
@@ -1152,8 +1154,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
-  Future<void> _pickAndSendImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _pickAndSendImage(
+      {ImageSource source = ImageSource.gallery}) async {
+    final picked = await ImagePicker().pickImage(source: source);
     if (picked == null) return;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
@@ -1751,68 +1754,215 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ),
           SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
-              child: Row(children: [
-                IconButton(
-                  onPressed: _pickAndSendImage,
-                  icon: const Icon(Icons.photo_outlined),
-                ),
-                IconButton(
-                  onPressed: () => setState(() => voiceMode = !voiceMode),
-                  icon: Icon(voiceMode ? Icons.keyboard : Icons.mic_none),
-                ),
-                Expanded(
-                  child: voiceMode
-                      ? GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onLongPressStart: _startHoldRecording,
-                          onLongPressMoveUpdate: _updateHoldRecording,
-                          onLongPressEnd: _finishHoldRecording,
-                          child: Container(
-                            height: 48,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                              borderRadius: BorderRadius.circular(22),
-                              color: recordingVoice
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer
-                                  : null,
-                            ),
-                            child: Text(
-                              recordingVoice
-                                  ? (cancelVoice ? '松开取消' : '松开发送')
-                                  : '按住说话',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                        )
-                      : TextField(
-                          focusNode: messageFocusNode,
-                          controller: messageController,
-                          onChanged: _handleTypingChanged,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _sendMessage(),
-                          decoration: InputDecoration(
-                            hintText: '输入消息',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(22),
-                            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (moreExpanded)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _ComposerAction(
+                          icon: Icons.camera_alt_outlined,
+                          label: '拍摄',
+                          onPressed: () => _pickAndSendImage(
+                            source: ImageSource.camera,
                           ),
                         ),
+                        _ComposerAction(
+                          icon: Icons.photo_outlined,
+                          label: '照片',
+                          onPressed: _pickAndSendImage,
+                        ),
+                        _ComposerAction(
+                          icon: Icons.phone_in_talk_outlined,
+                          label: '语音通话',
+                          onPressed: () =>
+                              ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('语音通话暂未接入')),
+                          ),
+                        ),
+                        _ComposerAction(
+                          icon: Icons.location_on_outlined,
+                          label: '位置',
+                          onPressed: () =>
+                              ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('位置消息暂未接入')),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (emojiExpanded && !voiceMode)
+                  SizedBox(
+                    height: 180,
+                    child: GridView.count(
+                      crossAxisCount: 8,
+                      padding: const EdgeInsets.all(10),
+                      children: [
+                        for (final emoji in [
+                          '😀',
+                          '😂',
+                          '🤣',
+                          '😊',
+                          '😍',
+                          '😘',
+                          '😎',
+                          '🤔',
+                          '😭',
+                          '😡',
+                          '👍',
+                          '👏',
+                          '🙏',
+                          '❤️',
+                          '🎉',
+                          '🔥',
+                        ])
+                          InkWell(
+                            onTap: () {
+                              final value = messageController.value;
+                              final text = value.text;
+                              final start = value.selection.start < 0
+                                  ? text.length
+                                  : value.selection.start;
+                              final end = value.selection.end < 0
+                                  ? start
+                                  : value.selection.end;
+                              messageController.value = value.copyWith(
+                                text: text.replaceRange(start, end, emoji),
+                                selection: TextSelection.collapsed(
+                                  offset: start + emoji.length,
+                                ),
+                              );
+                            },
+                            child: Center(
+                              child: Text(emoji,
+                                  style: const TextStyle(fontSize: 24)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => setState(() {
+                          voiceMode = !voiceMode;
+                          emojiExpanded = false;
+                        }),
+                        icon: Icon(voiceMode ? Icons.keyboard : Icons.mic_none),
+                      ),
+                      Expanded(
+                        child: voiceMode
+                            ? GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onLongPressStart: _startHoldRecording,
+                                onLongPressMoveUpdate: _updateHoldRecording,
+                                onLongPressEnd: _finishHoldRecording,
+                                child: Container(
+                                  height: 48,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color:
+                                          Theme.of(context).colorScheme.outline,
+                                    ),
+                                    borderRadius: BorderRadius.circular(22),
+                                    color: recordingVoice
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    recordingVoice
+                                        ? (cancelVoice ? '松开取消' : '松开发送')
+                                        : '按住说话',
+                                    style:
+                                        Theme.of(context).textTheme.bodyLarge,
+                                  ),
+                                ),
+                              )
+                            : TextField(
+                                focusNode: messageFocusNode,
+                                controller: messageController,
+                                onChanged: _handleTypingChanged,
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => _sendMessage(),
+                                decoration: InputDecoration(
+                                  hintText: '输入消息',
+                                  suffixIcon: IconButton(
+                                    tooltip: '表情',
+                                    onPressed: () => setState(() {
+                                      emojiExpanded = !emojiExpanded;
+                                      moreExpanded = false;
+                                    }),
+                                    icon: const Icon(
+                                        Icons.sentiment_satisfied_alt),
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
+                                ),
+                              ),
+                      ),
+                      IconButton(
+                        tooltip: '更多',
+                        onPressed: () => setState(() {
+                          moreExpanded = !moreExpanded;
+                          emojiExpanded = false;
+                        }),
+                        icon: Icon(
+                          moreExpanded ? Icons.close : Icons.add_circle_outline,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  onPressed: _sendMessage,
-                  icon: const Icon(Icons.send),
-                ),
-              ]),
+              ],
             ),
-          ),
+          )
         ]),
+      );
+}
+
+class _ComposerAction extends StatelessWidget {
+  const _ComposerAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 72,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon),
+              ),
+              const SizedBox(height: 4),
+              Text(label, style: Theme.of(context).textTheme.labelSmall),
+            ],
+          ),
+        ),
       );
 }
 
