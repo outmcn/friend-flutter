@@ -30,6 +30,9 @@ import DingRTC
             let appId = args["appId"] as? String,
             let channelId = args["channelId"] as? String,
             let userId = args["userId"] as? String,
+            let userName = args["userName"] as? String,
+            let nonce = args["nonce"] as? String,
+            let timestampText = args["timestamp"] as? String,
             let token = args["token"] as? String else {
         result(FlutterError(code: "invalid_args", message: "RTC 参数无效", details: nil))
         return
@@ -46,7 +49,7 @@ import DingRTC
       _ = engine.startAudioPlayer()
       _ = engine.startAudioCapture()
       _ = engine.publishLocalAudioStream(true)
-      let code = engine.joinChannel(auth, name: userId) { [weak self] (errorCode: Int, channelName: String, joinedUserId: String, _ elapsed: Int) in
+      let code = engine.joinChannel(auth, name: userName) { [weak self] (errorCode: Int, channelName: String, joinedUserId: String, _ elapsed: Int) in
         DispatchQueue.main.async {
           if errorCode == 0 {
             self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": channelName, "userId": joinedUserId])

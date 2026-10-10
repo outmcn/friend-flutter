@@ -9,6 +9,9 @@ class AliyunRtcBridge {
       'appId': '${rtc['appId'] ?? ''}',
       'channelId': '${rtc['channelId'] ?? ''}',
       'userId': '${rtc['userId'] ?? ''}',
+      'userName': '${rtc['userName'] ?? rtc['userId'] ?? ''}',
+      'nonce': '${rtc['nonce'] ?? ''}',
+      'timestamp': '${rtc['timestamp'] ?? ''}',
       'token': '${rtc['token'] ?? ''}',
     });
   }
