@@ -871,8 +871,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         if (index >= 0) {
           setState(() => messages[index] = {
                 ...messages[index],
-                ...item,
                 'status': 'recalled',
+                'text': '',
               });
           await ImLocalStore.saveMessages(
             accountId: currentUserId,
@@ -1322,6 +1322,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 ...messages[index],
                 ...recalled,
                 'status': 'recalled',
+                'text': '',
               });
           await ImLocalStore.saveMessages(
             accountId: currentUserId,

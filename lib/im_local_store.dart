@@ -305,7 +305,7 @@ class ImLocalStore {
     final oldId = '${rows.first['message_id'] ?? ''}';
     await db.update(
       'messages',
-      {'status': 'recalled'},
+      {'status': 'recalled', 'text': ''},
       where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
       whereArgs: [accountId, conversationId, oldId],
     );
