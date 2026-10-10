@@ -656,11 +656,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (!mounted) return;
     final service = DDPostService();
     try {
-      final latest = await service.syncImMessages(
+      final afterMutationId = await ImLocalStore.mutationId(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+      );
+      final sync = await service.syncImMessages(
         token,
         widget.chat.conversationId,
-        '0',
+        afterMutationId,
       );
+      final latest = (sync['messages'] as List).cast<DDImMessage>();
+      final nextMutationId = '${sync['nextMutationId'] ?? afterMutationId}';
       final merged = <String, Map<String, dynamic>>{};
       for (final current in messages) {
         final key = '${current['clientId'] ?? current['id'] ?? ''}';
@@ -696,6 +702,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
         messages: next,
+      );
+      await ImLocalStore.saveMutationId(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        mutationId: nextMutationId,
       );
       if (!mounted) return;
       setState(() {

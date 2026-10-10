@@ -209,7 +209,7 @@ class DDPostService {
         .toList();
   }
 
-  Future<List<DDImMessage>> syncImMessages(
+  Future<Map<String, dynamic>> syncImMessages(
     String token,
     String conversationId,
     String afterMutationId, {
@@ -231,10 +231,14 @@ class DDPostService {
         data['messages'] is! List) {
       throw Exception('消息同步失败');
     }
-    return (data['messages'] as List)
-        .whereType<Map>()
-        .map((item) => DDImMessage.fromJson(item.cast<String, dynamic>()))
-        .toList();
+    return {
+      'messages': (data['messages'] as List)
+          .whereType<Map>()
+          .map((item) => DDImMessage.fromJson(item.cast<String, dynamic>()))
+          .toList(),
+      'nextMutationId': '${data['nextMutationId'] ?? afterMutationId}',
+      'hasMore': data['hasMore'] == true,
+    };
   }
 
   Future<Map<String, dynamic>> reconcilePending(

@@ -32,6 +32,7 @@ class ImLocalStore {
             retry_until TEXT,
             retry_count INTEGER NOT NULL DEFAULT 0,
             last_error TEXT,
+            mutation_id TEXT,
             PRIMARY KEY (account_id, conversation_id, message_id)
           )
         ''');
@@ -69,7 +70,7 @@ class ImLocalStore {
           await db.execute('ALTER TABLE messages ADD COLUMN retry_until TEXT');
           await db.execute(
               'ALTER TABLE messages ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0');
-          await db.execute('ALTER TABLE messages ADD COLUMN last_error TEXT');
+          await db.execute('ALTER TABLE messages ADD COLUMN mutation_id TEXT');
         }
       },
     );
@@ -152,6 +153,7 @@ class ImLocalStore {
           'retry_until': message['retryUntil'],
           'retry_count': (message['retryCount'] as num?)?.toInt() ?? 0,
           'last_error': message['lastError'],
+          'mutation_id': message['mutationId'],
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -376,6 +378,35 @@ class ImLocalStore {
               'lastError': row['last_error'],
             })
         .toList();
+  }
+
+  static Future<String> mutationId({
+    required String accountId,
+    required String conversationId,
+  }) async {
+    final rows = await (await _db()).query(
+      'messages',
+      columns: ['mutation_id'],
+      where:
+          'account_id = ? AND conversation_id = ? AND mutation_id IS NOT NULL',
+      whereArgs: [accountId, conversationId],
+      orderBy: 'CAST(mutation_id AS INTEGER) DESC',
+      limit: 1,
+    );
+    return rows.isEmpty ? '0' : '${rows.first['mutation_id'] ?? '0'}';
+  }
+
+  static Future<void> saveMutationId({
+    required String accountId,
+    required String conversationId,
+    required String mutationId,
+  }) async {
+    await (await _db()).update(
+      'messages',
+      {'mutation_id': mutationId},
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+    );
   }
 
   static Future<void> saveConversations({
