@@ -1590,7 +1590,7 @@ class _DDShellState extends State<DDShell> {
           children: pages,
         ),
         bottomNavigationBar: NavigationBar(
-          height: 70,
+          height: 60,
           selectedIndex: index,
           onDestinationSelected: (value) {
             HapticFeedback.selectionClick();
