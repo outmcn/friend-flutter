@@ -14,7 +14,7 @@ class ImLocalStore {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 4,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -28,6 +28,8 @@ class ImLocalStore {
             duration_ms INTEGER NOT NULL DEFAULT 0,
             created_at TEXT,
             status TEXT NOT NULL DEFAULT 'sent',
+            recalled_at TEXT,
+            deleted_at TEXT,
             retry_started_at TEXT,
             retry_until TEXT,
             retry_count INTEGER NOT NULL DEFAULT 0,
@@ -43,6 +45,14 @@ class ImLocalStore {
             message_id TEXT NOT NULL,
             deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (account_id, conversation_id, message_id)
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE im_sync_state (
+            account_id TEXT NOT NULL,
+            conversation_id TEXT NOT NULL,
+            mutation_id TEXT NOT NULL DEFAULT '0',
+            PRIMARY KEY (account_id, conversation_id)
           )
         ''');
       },
@@ -72,6 +82,20 @@ class ImLocalStore {
               'ALTER TABLE messages ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0');
           await db.execute('ALTER TABLE messages ADD COLUMN mutation_id TEXT');
         }
+        if (oldVersion < 5) {
+          await db.execute('ALTER TABLE messages ADD COLUMN recalled_at TEXT');
+          await db.execute('ALTER TABLE messages ADD COLUMN deleted_at TEXT');
+        }
+        if (oldVersion < 6) {
+          await db.execute('''
+            CREATE TABLE im_sync_state (
+              account_id TEXT NOT NULL,
+              conversation_id TEXT NOT NULL,
+              mutation_id TEXT NOT NULL DEFAULT '0',
+              PRIMARY KEY (account_id, conversation_id)
+            )
+          ''');
+        }
       },
     );
     return _database!;
@@ -100,6 +124,7 @@ class ImLocalStore {
         'createdAt': item['created_at'],
         'recalledAt': item['recalled_at'],
         'deletedAt': item['deleted_at'],
+        'mutationId': item['mutation_id'],
         'status': item['recalled_at'] != null
             ? 'recalled'
             : item['deleted_at'] != null
@@ -384,6 +409,7 @@ class ImLocalStore {
               'clientId': '${row['client_id'] ?? ''}',
               'text': '${row['text'] ?? ''}',
               'kind': '${row['kind'] ?? 'text'}',
+              'durationMs': (row['duration_ms'] as num?)?.toInt() ?? 0,
               'retryStartedAt': row['retry_started_at'],
               'retryUntil': row['retry_until'],
               'retryCount': (row['retry_count'] as num?)?.toInt() ?? 0,
@@ -397,12 +423,10 @@ class ImLocalStore {
     required String conversationId,
   }) async {
     final rows = await (await _db()).query(
-      'messages',
+      'im_sync_state',
       columns: ['mutation_id'],
-      where:
-          'account_id = ? AND conversation_id = ? AND mutation_id IS NOT NULL',
+      where: 'account_id = ? AND conversation_id = ?',
       whereArgs: [accountId, conversationId],
-      orderBy: 'CAST(mutation_id AS INTEGER) DESC',
       limit: 1,
     );
     return rows.isEmpty ? '0' : '${rows.first['mutation_id'] ?? '0'}';
@@ -413,11 +437,14 @@ class ImLocalStore {
     required String conversationId,
     required String mutationId,
   }) async {
-    await (await _db()).update(
-      'messages',
-      {'mutation_id': mutationId},
-      where: 'account_id = ? AND conversation_id = ?',
-      whereArgs: [accountId, conversationId],
+    await (await _db()).insert(
+      'im_sync_state',
+      {
+        'account_id': accountId,
+        'conversation_id': conversationId,
+        'mutation_id': mutationId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
