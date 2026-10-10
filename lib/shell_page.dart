@@ -611,6 +611,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
       );
+      if (mounted) {
+        setState(() {
+          messages
+            ..clear()
+            ..addAll(cached);
+          initialSyncCompleted = true;
+        });
+      }
       final service = DDPostService();
       try {
         final recovered = await service.fetchImMessages(
@@ -708,11 +716,94 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         messages
           ..clear()
           ..addAll(cached);
+        initialSyncCompleted = true;
       });
-      if (mounted) setState(() => initialSyncCompleted = true);
       unawaited(_markLatestRead());
       unawaited(_scrollToLatest());
+      unawaited(_refreshDetailFromServer(token));
     } catch (_) {}
+  }
+
+  Future<void> _refreshDetailFromServer(String token) async {
+    if (!mounted) return;
+    final service = DDPostService();
+    try {
+      final latest = await service.fetchImMessages(
+        token,
+        widget.chat.conversationId,
+      );
+      final merged = <String, Map<String, dynamic>>{};
+      for (final current in messages) {
+        final key = '${current['clientId'] ?? current['id'] ?? ''}';
+        if (key.isNotEmpty) merged[key] = current;
+      }
+      for (final item in latest) {
+        final row = <String, dynamic>{
+          'id': item.id,
+          'conversationId': item.conversationId,
+          'senderId': item.senderId,
+          'text': item.text,
+          'kind': item.kind,
+          'durationMs': item.durationMs,
+          'clientId': item.clientId,
+          'createdAt': item.createdAt,
+          'recalledAt': item.recalledAt,
+          'deletedAt': item.deletedAt,
+          'updatedAt': item.updatedAt,
+          'mutationId': item.mutationId,
+          'status': item.recalledAt != null
+              ? 'recalled'
+              : item.deletedAt != null
+                  ? 'deleted'
+                  : 'sent',
+        };
+        final key =
+            item.clientId?.isNotEmpty == true ? item.clientId! : item.id;
+        merged[key] = {...?merged[key], ...row};
+      }
+      final changes = await service.fetchImStatusChanges(
+        token,
+        widget.chat.conversationId,
+        null,
+      );
+      for (final item in changes) {
+        final key =
+            item.clientId?.isNotEmpty == true ? item.clientId! : item.id;
+        final old = merged[key];
+        if (old == null) continue;
+        merged[key] = {
+          ...old,
+          'id': item.id,
+          'text': item.text,
+          'recalledAt': item.recalledAt,
+          'deletedAt': item.deletedAt,
+          'updatedAt': item.updatedAt,
+          'mutationId': item.mutationId,
+          'status': item.recalledAt != null
+              ? 'recalled'
+              : item.deletedAt != null
+                  ? 'deleted'
+                  : old['status'],
+        };
+      }
+      final next = merged.values.toList()
+        ..sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: next,
+      );
+      if (!mounted) return;
+      setState(() {
+        messages
+          ..clear()
+          ..addAll(next);
+      });
+    } catch (_) {
+      // 已显示 SQLite；后台刷新失败不覆盖当前聊天内容。
+    } finally {
+      service.dispose();
+    }
   }
 
   void _markPendingMessagesFailed(String reason) {
