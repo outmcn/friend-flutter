@@ -618,7 +618,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           widget.chat.conversationId,
         );
         for (final item in recovered) {
-          cached.add({
+          final recoveredRow = <String, dynamic>{
             'id': item.id,
             'conversationId': item.conversationId,
             'senderId': item.senderId,
@@ -636,7 +636,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 : item.deletedAt != null
                     ? 'deleted'
                     : 'sent',
-          });
+          };
+          final index = cached.indexWhere((existing) =>
+              '${existing['id'] ?? ''}' == item.id ||
+              (item.clientId != null &&
+                  '${existing['clientId'] ?? ''}' == item.clientId));
+          if (index >= 0) {
+            cached[index] = {...cached[index], ...recoveredRow};
+          } else {
+            cached.add(recoveredRow);
+          }
         }
         final changes = await service.fetchImStatusChanges(
           token,
