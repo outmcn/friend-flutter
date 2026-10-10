@@ -37,6 +37,7 @@ class ImSession {
   final _inflight = <String, _PendingImMessage>{};
   final _ackTimers = <String, Timer>{};
   final _retryUntil = <String, DateTime>{};
+  final _retryCounts = <String, int>{};
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -95,6 +96,7 @@ class ImSession {
           final accepted = _inflight.remove(clientId);
           _ackTimers.remove(clientId)?.cancel();
           _retryUntil.remove(clientId);
+          _retryCounts.remove(clientId);
           if (accepted != null) {
             _setRetryState(
               clientId,
@@ -115,6 +117,8 @@ class ImSession {
         final failed = clientId.isNotEmpty ? _inflight.remove(clientId) : null;
         _ackTimers.remove(clientId)?.cancel();
         if (failed != null) {
+          final retryCount =
+              _retryCounts[clientId] = (_retryCounts[clientId] ?? 0) + 1;
           final until = _retryUntil[clientId] ?? DateTime.now();
           if (DateTime.now().isBefore(until)) {
             _outbox.add(failed);
@@ -122,17 +126,20 @@ class ImSession {
               clientId,
               conversationId: failed.conversationId,
               status: 'pending',
+              retryCount: retryCount,
               error: '${event['code'] ?? 'send_failed'}',
             );
             _flushOutbox();
             suppressEvent = true;
           } else {
             _retryUntil.remove(clientId);
+            _retryCounts.remove(clientId);
             _setRetryState(
               clientId,
               conversationId: failed.conversationId,
               status: 'failed',
               error: 'retry_expired',
+              retryCount: retryCount,
             );
             _events.add(<String, dynamic>{
               'type': 'message:failed',
@@ -304,6 +311,7 @@ class ImSession {
     required String conversationId,
     required String status,
     String? error,
+    int? retryCount,
   }) {
     final now = DateTime.now();
     final until = _retryUntil[clientId];
@@ -314,6 +322,7 @@ class ImSession {
       status: status,
       retryStartedAt: status == 'pending' ? now.toIso8601String() : null,
       retryUntil: status == 'pending' ? until?.toIso8601String() : null,
+      retryCount: retryCount,
       lastError: error,
     ));
   }
@@ -366,6 +375,8 @@ class ImSession {
       _ackTimers[message.clientId] = Timer(const Duration(seconds: 15), () {
         final timedOut = _inflight.remove(message.clientId);
         if (timedOut != null) {
+          final retryCount = _retryCounts[message.clientId] =
+              (_retryCounts[message.clientId] ?? 0) + 1;
           final until = _retryUntil[message.clientId] ?? DateTime.now();
           if (DateTime.now().isBefore(until)) {
             _outbox.add(timedOut);
@@ -373,6 +384,7 @@ class ImSession {
               message.clientId,
               conversationId: timedOut.conversationId,
               status: 'pending',
+              retryCount: retryCount,
               error: 'ack_timeout',
             );
             _flushOutbox();
@@ -382,6 +394,7 @@ class ImSession {
               conversationId: timedOut.conversationId,
               status: 'failed',
               error: 'retry_expired',
+              retryCount: retryCount,
             );
             _events.add(<String, dynamic>{
               'type': 'message:failed',
@@ -427,6 +440,7 @@ class ImSession {
     }
     _ackTimers.clear();
     _retryUntil.clear();
+    _retryCounts.clear();
     _inflight.clear();
     if (clearOutbox) _outbox.clear();
     await _socketEvents?.cancel();
