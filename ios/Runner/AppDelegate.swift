@@ -45,6 +45,8 @@ import DingRTC
       auth.channelId = channelId
       auth.userId = userId
       auth.token = token
+      auth.nonce = nonce
+      auth.timestamp = Int64(timestampText) ?? 0
       auth.gslbServer = gslb.isEmpty ? nil : gslb
       _ = engine.subscribeAllRemoteAudioStreams(true)
       _ = engine.enableSpeakerphone(true)
