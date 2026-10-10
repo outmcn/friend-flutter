@@ -41,6 +41,7 @@ class ImSession {
     _userId = null;
     _readySnapshot = false;
     _setState(ImConnectionState.connecting);
+    unawaited(_startApiRetry(token));
     final socket = FriendImSocket(token: token);
     _socket = socket;
     socket.setOnReady((userId) {
@@ -129,6 +130,15 @@ class ImSession {
     } finally {
       service.dispose();
     }
+  }
+
+  Future<void> _startApiRetry(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accountId = prefs.getString('friend.auth.userId');
+    if (accountId == null || accountId.isEmpty) return;
+    _userId ??= accountId;
+    _schedulePendingRetry();
+    await _retryPendingMessages();
   }
 
   void _schedulePendingRetry() {
