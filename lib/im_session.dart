@@ -69,6 +69,7 @@ class ImSession {
         callback();
       }
       _flushOutbox();
+      unawaited(reconcilePendingMessages(token));
     });
     _socketEvents = socket.events.listen((event) {
       final type = event['type'];
@@ -199,6 +200,33 @@ class ImSession {
       'state': value.name,
       'userId': _userId,
     });
+  }
+
+  Future<void> reconcilePendingMessages(String token) async {
+    final accountId = _userId;
+    if (accountId == null) return;
+    final pending = await ImLocalStore.pendingMessages(accountId);
+    for (final item in pending) {
+      final conversationId = '${item['conversationId'] ?? ''}';
+      final clientId = '${item['clientId'] ?? ''}';
+      if (conversationId.isEmpty || clientId.isEmpty) continue;
+      final service = DDPostService();
+      try {
+        final message = await service.reconcilePending(
+          token,
+          conversationId,
+          clientId,
+        );
+        await ImLocalStore.reconcileAccepted(
+          accountId: accountId,
+          message: message,
+        );
+      } on StateError {
+        // Server has not accepted it; keep pending for the normal retry path.
+      } finally {
+        service.dispose();
+      }
+    }
   }
 
   Future<void> restorePending(String accountId) async {

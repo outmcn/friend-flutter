@@ -209,6 +209,24 @@ class DDPostService {
         .toList();
   }
 
+  Future<Map<String, dynamic>> reconcilePending(
+    String token,
+    String conversationId,
+    String clientId,
+  ) async {
+    final response = await _client.get(
+      _api('/im/conversations/$conversationId/messages/by-client/$clientId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 404) throw StateError('message_not_found');
+    if (response.statusCode != 200) throw Exception('消息状态查询失败');
+    final data = jsonDecode(response.body);
+    if (data is! Map || data['message'] is! Map) {
+      throw Exception('消息状态格式错误');
+    }
+    return (data['message'] as Map).cast<String, dynamic>();
+  }
+
   Future<void> confirmImMessagesSynced(
     String token,
     String conversationId,
