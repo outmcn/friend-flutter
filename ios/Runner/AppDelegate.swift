@@ -3,7 +3,7 @@ import Flutter
 import DingRTC
 
 @UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, DingRtcEngineDelegate {
   private var rtcEngine: DingRtcEngine?
   private var rtcChannel: FlutterMethodChannel?
 
@@ -45,7 +45,7 @@ import DingRTC
       auth.userId = userId
       auth.token = token
       _ = engine.publishLocalAudioStream(true)
-      let code = engine.joinChannel(auth, name: userId) { [weak self] errorCode, channelName, joinedUserId, _ in
+      let code = engine.joinChannel(auth, name: userId) { [weak self] (errorCode: Int, channelName: String, joinedUserId: String, _ elapsed: Int) in
         DispatchQueue.main.async {
           if errorCode == 0 {
             self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": channelName, "userId": joinedUserId])
