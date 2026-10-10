@@ -166,7 +166,9 @@ class _StartupNetworkGateState extends State<StartupNetworkGate> {
   @override
   Widget build(BuildContext context) {
     if (checking) {
-      return const DDShell();
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
     if (!connected) {
       return Scaffold(
