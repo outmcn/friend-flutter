@@ -1503,8 +1503,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                         ),
                                       ),
                                       if (isReadByPeer)
-                                        const Positioned(
-                                          left: -1,
+                                        Positioned(
+                                          left: isMine ? 60 : -1,
                                           bottom: 7,
                                           child: DecoratedBox(
                                             decoration: BoxDecoration(
