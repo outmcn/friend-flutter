@@ -1,10 +1,10 @@
 import UIKit
 import Flutter
-import DingRTC
+import AliVCSDK_ARTC
 
 @UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate, DingRtcEngineDelegate {
-  private var rtcEngine: DingRtcEngine?
+@objc class AppDelegate: FlutterAppDelegate, AliRtcEngineDelegate {
+  private var rtcEngine: AliRtcEngine?
   private var rtcChannel: FlutterMethodChannel?
 
   override func application(
@@ -31,38 +31,30 @@ import DingRTC
             let channelId = args["channelId"] as? String,
             let userId = args["userId"] as? String,
             let userName = args["userName"] as? String,
-            let token = args["token"] as? String,
-            let gslb = args["gslb"] as? String else {
+            let token = args["token"] as? String else {
         result(FlutterError(code: "invalid_args", message: "RTC 参数无效", details: nil))
         return
       }
-      let engine = DingRtcEngine.createInstance(self, extras: nil)
+      let engine = AliRtcEngine.sharedInstance(self, extras: nil)
       rtcEngine = engine
-      let auth = DingRtcAuthInfo()
-      auth.appId = appId
-      auth.channelId = channelId
-      auth.userId = userId
-      auth.token = token
-      auth.gslbServer = gslb.isEmpty ? nil : gslb
-      _ = engine.subscribeAllRemoteAudioStreams(true)
-      _ = engine.enableSpeakerphone(true)
-      _ = engine.startAudioPlayer()
-      _ = engine.startAudioCapture()
-      _ = engine.publishLocalAudioStream(true)
-      let code = engine.joinChannel(auth, name: userName) { [weak self] (errorCode: Int, channelName: String, joinedUserId: String, _ elapsed: Int) in
+      engine.setDefaultSubscribeAllRemoteAudioStreams(true)
+      engine.subscribeAllRemoteAudioStreams(true)
+      engine.publishLocalAudioStream(true)
+      let code = engine.joinChannel(
+        token,
+        channelId: channelId,
+        userId: userId,
+        name: userName
+      ) { [weak self] errorCode, joinedChannel, joinedUserId, _ in
         DispatchQueue.main.async {
           if errorCode == 0 {
-            self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": channelName, "userId": joinedUserId])
+            self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": joinedChannel, "userId": joinedUserId])
           } else {
             self?.rtcChannel?.invokeMethod("error", arguments: ["code": errorCode])
           }
         }
       }
-      if code != 0 {
-        result(FlutterError(code: "join_failed", message: "加入 RTC 频道失败", details: code))
-      } else {
-        result(true)
-      }
+      result(code == 0 ? true : FlutterError(code: "join_failed", message: "加入 RTC 频道失败", details: code))
     case "subscribeRemoteAudio":
       let enabled = (call.arguments as? Bool) ?? true
       result(rtcEngine?.subscribeAllRemoteAudioStreams(enabled) == 0)
@@ -72,25 +64,26 @@ import DingRTC
     case "leave":
       let code = rtcEngine?.leaveChannel() ?? 0
       result(code == 0)
+      AliRtcEngine.destroy()
       rtcEngine = nil
     default:
       result(FlutterMethodNotImplemented)
     }
   }
 
-  func onRemoteUserOffLineNotify(_ uid: String, offlineReason reason: DingRtcUserOfflineReason) {
+  func onRemoteUserOffLineNotify(_ uid: String, offlineReason reason: AliRtcUserOfflineReason) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("remoteLeft", arguments: ["userId": uid, "reason": reason.rawValue])
     }
   }
 
-  func onRemoteTrackAvailableNotify(_ uid: String, audioTrack: DingRtcAudioTrack, videoTrack: DingRtcVideoTrack) {
+  func onRemoteTrackAvailableNotify(_ uid: String, audioTrack: AliRtcAudioTrack, videoTrack: AliRtcVideoTrack) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("remoteTrack", arguments: ["userId": uid, "audio": audioTrack.rawValue])
     }
   }
 
-  func onLeaveChannelResult(_ result: Int32, stats: DingRtcStats) {
+  func onLeaveChannelResult(_ result: Int32, stats: AliRtcStats) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("left", arguments: ["code": result])
     }

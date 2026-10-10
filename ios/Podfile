@@ -26,7 +26,7 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-  pod 'DingRTC_iOS', '3.9.0'
+  pod 'AliVCSDK_ARTC', '7.10.0'
 end
 
 post_install do |installer|
