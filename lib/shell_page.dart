@@ -694,7 +694,19 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         };
         final key =
             item.clientId?.isNotEmpty == true ? item.clientId! : item.id;
-        merged[key] = {...?merged[key], ...row};
+        final local = merged[key];
+        final isLocalPending = local != null &&
+            local['status'] == 'pending' &&
+            '${local['id'] ?? ''}'.startsWith('local:');
+        if (isLocalPending && item.id.isEmpty) continue;
+        merged[key] = {
+          ...?local,
+          ...row,
+          if (isLocalPending &&
+              item.recalledAt == null &&
+              item.deletedAt == null)
+            'status': 'pending',
+        };
       }
       final next = merged.values.toList()
         ..sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));

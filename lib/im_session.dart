@@ -128,6 +128,8 @@ class ImSession {
     }
   }
 
+  /// Reconciles pending rows after login/socket readiness without depending on
+  /// the currently visible chat page. Sending itself remains HTTP-only.
   Future<void> _reconcilePendingMessages(String token) async {
     final accountId = _userId;
     if (accountId == null) return;
@@ -135,17 +137,36 @@ class ImSession {
     for (final item in pending) {
       final conversationId = '${item['conversationId'] ?? ''}';
       final clientId = '${item['clientId'] ?? ''}';
-      if (conversationId.isEmpty || clientId.isEmpty) continue;
+      final text = '${item['text'] ?? ''}';
+      final kind = '${item['kind'] ?? 'text'}';
+      if (conversationId.isEmpty || clientId.isEmpty || text.isEmpty) continue;
       final service = DDPostService();
       try {
-        final message =
-            await service.reconcilePending(token, conversationId, clientId);
+        final message = await service.reconcilePending(
+          token,
+          conversationId,
+          clientId,
+        );
         await ImLocalStore.reconcileAccepted(
           accountId: accountId,
           message: message,
         );
       } on StateError {
-        // 服务器尚未接受，保留本地 pending，由发送页面的 API 重试逻辑处理。
+        try {
+          final message = await service.sendImMessage(
+            token,
+            conversationId,
+            text: text,
+            clientId: clientId,
+            kind: kind,
+          );
+          await ImLocalStore.reconcileAccepted(
+            accountId: accountId,
+            message: message,
+          );
+        } catch (_) {
+          // 保留 pending；下一次启动或用户手动重试继续使用同一 clientId。
+        }
       } finally {
         service.dispose();
       }
