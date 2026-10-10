@@ -1105,6 +1105,32 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     await _sendRecordedAudio(output);
   }
 
+  Future<void> _startAudioCall() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final result =
+          await service.startImCall(token, widget.chat.conversationId);
+      if (!mounted) return;
+      final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
+      final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    } finally {
+      service.dispose();
+    }
+  }
+
   Future<void> _sendRecordedAudio(String pathValue) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
@@ -1826,10 +1852,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                         _ComposerAction(
                           icon: Icons.phone_in_talk_outlined,
                           label: '语音通话',
-                          onPressed: () =>
-                              ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('语音通话暂未接入')),
-                          ),
+                          onPressed: _startAudioCall,
                         ),
                         _ComposerAction(
                           icon: Icons.location_on_outlined,
@@ -2131,6 +2154,92 @@ class _VoiceWaveState extends State<_VoiceWave>
                 ),
               );
             }),
+          ),
+        ),
+      );
+}
+
+class _AudioCallPage extends StatefulWidget {
+  const _AudioCallPage(
+      {required this.call, required this.rtc, required this.token});
+  final Map<String, dynamic> call;
+  final Map<String, dynamic> rtc;
+  final String token;
+
+  @override
+  State<_AudioCallPage> createState() => _AudioCallPageState();
+}
+
+class _AudioCallPageState extends State<_AudioCallPage> {
+  bool muted = false;
+  bool joined = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_joinRtc());
+  }
+
+  Future<void> _joinRtc() async {
+    try {
+      await AliyunRtcBridge.join(widget.rtc);
+      if (mounted) setState(() => joined = true);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    }
+  }
+
+  Future<void> _leave() async {
+    try {
+      await AliyunRtcBridge.leave();
+      final service = DDPostService();
+      try {
+        await service.updateImCall(
+            widget.token, '${widget.call['id'] ?? ''}', 'hangup');
+      } finally {
+        service.dispose();
+      }
+    } finally {
+      if (mounted) Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('语音通话')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircleAvatar(
+                  radius: 42, child: Icon(Icons.person, size: 42)),
+              const SizedBox(height: 16),
+              Text(joined ? '通话中' : '正在连接',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton.filled(
+                    onPressed: () async {
+                      final next = !muted;
+                      await AliyunRtcBridge.setMuted(next);
+                      if (mounted) setState(() => muted = next);
+                    },
+                    icon: Icon(muted ? Icons.mic_off : Icons.mic),
+                  ),
+                  const SizedBox(width: 28),
+                  IconButton.filled(
+                    style: IconButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: _leave,
+                    icon: const Icon(Icons.call_end),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       );

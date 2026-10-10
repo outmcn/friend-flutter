@@ -136,6 +136,39 @@ class DDPostService {
     return (data['message'] as Map).cast<String, dynamic>();
   }
 
+  Future<Map<String, dynamic>> startImCall(
+      String token, String conversationId) async {
+    final response = await _client.post(
+        _api('/im/conversations/$conversationId/calls'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'kind': 'audio'}));
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 201 || data is! Map || data['call'] is! Map) {
+      throw Exception(data is Map ? '${data['error'] ?? '发起通话失败'}' : '发起通话失败');
+    }
+    return data.cast<String, dynamic>();
+  }
+
+  Future<Map<String, dynamic>> updateImCall(
+      String token, String callId, String action) async {
+    final response = await _client.post(_api('/im/calls/$callId/action'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'action': action}));
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map || data['call'] is! Map) {
+      throw Exception(data is Map ? '${data['error'] ?? '通话操作失败'}' : '通话操作失败');
+    }
+    return data.cast<String, dynamic>();
+  }
+
   Future<Map<String, dynamic>> sendImMessage(
     String token,
     String conversationId, {
