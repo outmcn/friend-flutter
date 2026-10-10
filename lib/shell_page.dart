@@ -661,11 +661,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             cached.add(row);
           }
         }
-        final changes = await service.fetchImStatusChanges(
-          token,
-          widget.chat.conversationId,
-          null,
-        );
+        final changes = <DDImMessage>[];
         for (final item in changes) {
           final index = cached.indexWhere((existing) =>
               '${existing['id'] ?? ''}' == item.id ||
@@ -728,9 +724,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (!mounted) return;
     final service = DDPostService();
     try {
-      final latest = await service.fetchImMessages(
+      final latest = await service.syncImMessages(
         token,
         widget.chat.conversationId,
+        '0',
       );
       final merged = <String, Map<String, dynamic>>{};
       for (final current in messages) {
@@ -761,11 +758,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             item.clientId?.isNotEmpty == true ? item.clientId! : item.id;
         merged[key] = {...?merged[key], ...row};
       }
-      final changes = await service.fetchImStatusChanges(
-        token,
-        widget.chat.conversationId,
-        null,
-      );
+      final changes = <DDImMessage>[];
       for (final item in changes) {
         final key =
             item.clientId?.isNotEmpty == true ? item.clientId! : item.id;

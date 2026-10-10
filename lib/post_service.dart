@@ -209,16 +209,18 @@ class DDPostService {
         .toList();
   }
 
-  Future<List<DDImMessage>> fetchImStatusChanges(
+  Future<List<DDImMessage>> syncImMessages(
     String token,
     String conversationId,
-    String? since,
-  ) async {
-    final uri =
-        _api('/im/conversations/$conversationId/messages/status-changes')
-            .replace(queryParameters: {
-      if (since != null && since.isNotEmpty) 'since': since,
-    });
+    String afterMutationId, {
+    int limit = 100,
+  }) async {
+    final uri = _api('/im/conversations/$conversationId/sync').replace(
+      queryParameters: {
+        'afterMutationId': afterMutationId,
+        'limit': '$limit',
+      },
+    );
     final response = await _client.get(
       uri,
       headers: {'Authorization': 'Bearer $token'},
@@ -227,7 +229,7 @@ class DDPostService {
     if (response.statusCode != 200 ||
         data is! Map ||
         data['messages'] is! List) {
-      throw Exception('消息状态变更加载失败');
+      throw Exception('消息同步失败');
     }
     return (data['messages'] as List)
         .whereType<Map>()
