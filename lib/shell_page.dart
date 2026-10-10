@@ -1296,9 +1296,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       'id': 'local:$clientId',
       'clientId': clientId,
       'senderId': currentUserId,
+      'conversationId': widget.chat.conversationId,
       'text': text,
       'createdAt': DateTime.now().toIso8601String(),
       'status': 'pending',
+      'retryStartedAt': DateTime.now().toIso8601String(),
+      'retryUntil':
+          DateTime.now().add(const Duration(minutes: 1)).toIso8601String(),
     };
     _mergeMessage(pending);
     await ImLocalStore.saveMessages(
@@ -1396,7 +1400,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         messages: messages,
       );
     } catch (_) {
-      // 失败状态由当前消息保留，用户可以再次点击感叹号。
+      // 全局 ImSession 负责继续重试并在窗口到期后发出失败事件。
     } finally {
       service.dispose();
     }

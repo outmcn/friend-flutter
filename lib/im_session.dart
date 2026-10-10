@@ -19,6 +19,8 @@ class ImSession {
   StreamSubscription<Map<String, dynamic>>? _socketEvents;
   final _events = StreamController<Map<String, dynamic>>.broadcast();
   final _readyCallbacks = <void Function()>[];
+  Timer? _pendingRetryTimer;
+  bool _pendingRetryRunning = false;
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -51,6 +53,7 @@ class ImSession {
         callback();
       }
       unawaited(_reconcilePendingMessages(token));
+      _schedulePendingRetry();
     });
     _socketEvents = socket.events.listen((event) {
       final type = event['type'];
@@ -128,6 +131,72 @@ class ImSession {
     }
   }
 
+  void _schedulePendingRetry() {
+    _pendingRetryTimer ??= Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => unawaited(_retryPendingMessages()),
+    );
+  }
+
+  Future<void> _retryPendingMessages() async {
+    if (_pendingRetryRunning || _token == null || _userId == null) return;
+    _pendingRetryRunning = true;
+    try {
+      final pending = await ImLocalStore.pendingMessages(_userId!);
+      final now = DateTime.now();
+      for (final item in pending) {
+        final conversationId = '${item['conversationId'] ?? ''}';
+        final clientId = '${item['clientId'] ?? ''}';
+        final text = '${item['text'] ?? ''}';
+        final kind = '${item['kind'] ?? 'text'}';
+        if (conversationId.isEmpty || clientId.isEmpty || text.isEmpty) {
+          continue;
+        }
+        final retryUntil = DateTime.tryParse('${item['retryUntil'] ?? ''}');
+        if (retryUntil != null && !now.isBefore(retryUntil)) {
+          await ImLocalStore.updateRetryState(
+            accountId: _userId!,
+            conversationId: conversationId,
+            clientId: clientId,
+            status: 'failed',
+            lastError: 'retry_expired',
+          );
+          _events.add({
+            'type': 'message:failed',
+            'code': 'retry_expired',
+            'clientId': clientId,
+          });
+          continue;
+        }
+        final service = DDPostService();
+        try {
+          final message = await service.sendImMessage(
+            _token!,
+            conversationId,
+            text: text,
+            clientId: clientId,
+            kind: kind,
+          );
+          await ImLocalStore.reconcileAccepted(
+            accountId: _userId!,
+            message: message,
+          );
+          _events.add({
+            'type': 'message:accepted',
+            'clientId': clientId,
+            'message': message,
+          });
+        } catch (_) {
+          // 保持 pending，直到 retryUntil 到期或用户手动重试。
+        } finally {
+          service.dispose();
+        }
+      }
+    } finally {
+      _pendingRetryRunning = false;
+    }
+  }
+
   /// Reconciles pending rows after login/socket readiness without depending on
   /// the currently visible chat page. Sending itself remains HTTP-only.
   Future<void> _reconcilePendingMessages(String token) async {
@@ -192,6 +261,9 @@ class ImSession {
 
   Future<void> stop() async {
     _readyCallbacks.clear();
+    _pendingRetryTimer?.cancel();
+    _pendingRetryTimer = null;
+    _pendingRetryRunning = false;
     await _socketEvents?.cancel();
     _socketEvents = null;
     await _socket?.dispose();
