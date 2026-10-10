@@ -1235,19 +1235,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Future<void> _reportImMessage(Map<String, dynamic> message) async {
     final id = '${message['id'] ?? ''}';
     if (id.isEmpty || id.startsWith('local:')) return;
-    final reason = await showModalBottomSheet<String>(
-      context: context,
-      builder: (_) => SafeArea(
-        child: Wrap(
-          children: [
-            for (final item in const ['垃圾广告', '骚扰辱骂', '色情或违规内容', '其他'])
-              ListTile(
-                title: Text(item),
-                onTap: () => Navigator.pop(context, item),
-              ),
-          ],
-        ),
-      ),
+    const reasons = [
+      '色情低俗',
+      '政治敏感',
+      '诈骗信息',
+      '种族歧视',
+      '攻击谩骂',
+      '导流到站外',
+      '违法违规',
+      '涉未成年人',
+    ];
+    final reason = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => _ChatReportPage(reasons: reasons)),
     );
     if (!mounted || reason == null) return;
     final prefs = await SharedPreferences.getInstance();
@@ -1255,11 +1254,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final service = DDPostService();
     try {
       await service.reportImMessage(
-        token,
-        widget.chat.conversationId,
-        id,
-        reason,
-      );
+          token, widget.chat.conversationId, id, reason);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('举报已提交')),
@@ -1267,9 +1262,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$error')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
       }
     } finally {
       service.dispose();
@@ -1980,6 +1974,85 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             ),
           )
         ]),
+      );
+}
+
+class _ChatReportPage extends StatefulWidget {
+  const _ChatReportPage({required this.reasons});
+  final List<String> reasons;
+
+  @override
+  State<_ChatReportPage> createState() => _ChatReportPageState();
+}
+
+class _ChatReportPageState extends State<_ChatReportPage> {
+  String? selected;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('举报聊天内容')),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 18, 24, 12),
+                child: Text(
+                  '请选择最符合的举报原因，帮助我们准确处理',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: widget.reasons.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, index) {
+                    final reason = widget.reasons[index];
+                    return RadioListTile<String>(
+                      value: reason,
+                      // ignore: deprecated_member_use
+                      groupValue: selected,
+                      title: Text(reason),
+                      // ignore: deprecated_member_use
+                      onChanged: (value) => setState(() => selected = value),
+                      activeColor: Theme.of(context).colorScheme.primary,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 18),
+                child: Column(
+                  children: [
+                    Text(
+                      '聊天消息将发送给平台审核',
+                      style: TextStyle(
+                        color: Theme.of(context).hintColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: selected == null
+                            ? null
+                            : () => Navigator.pop(context, selected),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        child: const Text('提交'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       );
 }
 
