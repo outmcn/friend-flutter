@@ -33,7 +33,8 @@ import DingRTC
             let userName = args["userName"] as? String,
             let nonce = args["nonce"] as? String,
             let timestampText = args["timestamp"] as? String,
-            let token = args["token"] as? String else {
+            let token = args["token"] as? String,
+            let gslb = args["gslb"] as? String else {
         result(FlutterError(code: "invalid_args", message: "RTC 参数无效", details: nil))
         return
       }
@@ -44,6 +45,7 @@ import DingRTC
       auth.channelId = channelId
       auth.userId = userId
       auth.token = token
+      auth.gslbServer = gslb.isEmpty ? nil : gslb
       _ = engine.subscribeAllRemoteAudioStreams(true)
       _ = engine.enableSpeakerphone(true)
       _ = engine.startAudioPlayer()

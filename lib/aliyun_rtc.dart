@@ -13,6 +13,9 @@ class AliyunRtcBridge {
       'nonce': '${rtc['nonce'] ?? ''}',
       'timestamp': '${rtc['timestamp'] ?? ''}',
       'token': '${rtc['token'] ?? ''}',
+      'gslb': (rtc['gslb'] is List && (rtc['gslb'] as List).isNotEmpty)
+          ? '${(rtc['gslb'] as List).first}'
+          : '',
     });
   }
 
