@@ -31,6 +31,8 @@ import AliVCSDK_ARTC
             let channelId = args["channelId"] as? String,
             let userId = args["userId"] as? String,
             let userName = args["userName"] as? String,
+            let nonce = args["nonce"] as? String,
+            let timestampText = args["timestamp"] as? String,
             let token = args["token"] as? String else {
         result(FlutterError(code: "invalid_args", message: "RTC 参数无效", details: nil))
         return
@@ -42,8 +44,8 @@ import AliVCSDK_ARTC
       engine.publishLocalAudioStream(true)
       let code = engine.joinChannel(
         token,
-        channelId: channelId,
-        userId: userId,
+        channelId: nil,
+        userId: nil,
         name: userName
       ) { [weak self] errorCode, joinedChannel, joinedUserId, _ in
         DispatchQueue.main.async {
