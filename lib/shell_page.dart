@@ -611,6 +611,65 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
       );
+      final service = DDPostService();
+      try {
+        final recovered = await service.fetchImMessages(
+          token,
+          widget.chat.conversationId,
+        );
+        for (final item in recovered) {
+          cached.add({
+            'id': item.id,
+            'conversationId': item.conversationId,
+            'senderId': item.senderId,
+            'text': item.text,
+            'kind': item.kind,
+            'durationMs': item.durationMs,
+            'clientId': item.clientId,
+            'createdAt': item.createdAt,
+            'recalledAt': item.recalledAt,
+            'deletedAt': item.deletedAt,
+            'updatedAt': item.updatedAt,
+            'mutationId': item.mutationId,
+            'status': item.recalledAt != null
+                ? 'recalled'
+                : item.deletedAt != null
+                    ? 'deleted'
+                    : 'sent',
+          });
+        }
+        final changes = await service.fetchImStatusChanges(
+          token,
+          widget.chat.conversationId,
+          null,
+        );
+        for (final item in changes) {
+          final index = cached.indexWhere((existing) =>
+              '${existing['id'] ?? ''}' == item.id ||
+              (item.clientId != null &&
+                  '${existing['clientId'] ?? ''}' == item.clientId));
+          if (index >= 0) {
+            cached[index] = {
+              ...cached[index],
+              'id': item.id,
+              'text': item.text,
+              'recalledAt': item.recalledAt,
+              'deletedAt': item.deletedAt,
+              'updatedAt': item.updatedAt,
+              'mutationId': item.mutationId,
+              'status': item.recalledAt != null
+                  ? 'recalled'
+                  : item.deletedAt != null
+                      ? 'deleted'
+                      : cached[index]['status'],
+            };
+          }
+        }
+      } catch (_) {
+        // 本地缓存仍可先展示；下次 ready 或重新进入详情继续补偿。
+      } finally {
+        service.dispose();
+      }
       final deletedIds = await ImLocalStore.localDeletedMessageIds(
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,

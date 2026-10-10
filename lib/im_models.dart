@@ -8,6 +8,7 @@ class DDConversation {
     this.lastMessage,
     this.updatedAt,
     this.peerReadMessageId,
+    this.mutationId,
     this.unreadCount = 0,
   });
   final String id;
@@ -16,6 +17,7 @@ class DDConversation {
   final DDImLastMessage? lastMessage;
   final String? updatedAt;
   final String? peerReadMessageId;
+  final String? mutationId;
   final int unreadCount;
 
   factory DDConversation.fromJson(Map<String, dynamic> json) => DDConversation(
@@ -30,6 +32,7 @@ class DDConversation {
             : null,
         updatedAt: '${json['updatedAt'] ?? ''}',
         peerReadMessageId: json['peerReadMessageId']?.toString(),
+        mutationId: json['mutationId']?.toString(),
         unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
       );
 }
@@ -59,11 +62,15 @@ class DDImLastMessage {
     required this.createdAt,
     this.recalledAt,
     this.deletedAt,
+    this.updatedAt,
+    this.mutationId,
   });
   final String text;
   final String createdAt;
   final String? recalledAt;
   final String? deletedAt;
+  final String? updatedAt;
+  final String? mutationId;
 
   factory DDImLastMessage.fromJson(Map<String, dynamic> json) =>
       DDImLastMessage(
@@ -71,6 +78,8 @@ class DDImLastMessage {
         createdAt: '${json['createdAt'] ?? ''}',
         recalledAt: json['recalledAt']?.toString(),
         deletedAt: json['deletedAt']?.toString(),
+        updatedAt: json['updatedAt']?.toString(),
+        mutationId: json['mutationId']?.toString(),
       );
 }
 
@@ -86,6 +95,8 @@ class DDImMessage {
     this.clientId,
     this.recalledAt,
     this.deletedAt,
+    this.updatedAt,
+    this.mutationId,
   });
   final String id;
   final String conversationId;
@@ -97,6 +108,8 @@ class DDImMessage {
   final String? clientId;
   final String? recalledAt;
   final String? deletedAt;
+  final String? updatedAt;
+  final String? mutationId;
   factory DDImMessage.fromJson(Map<String, dynamic> json) => DDImMessage(
         id: '${json['id'] ?? ''}',
         conversationId: '${json['conversationId'] ?? ''}',
@@ -108,5 +121,7 @@ class DDImMessage {
         clientId: json['clientId'] as String?,
         recalledAt: json['recalledAt'] as String?,
         deletedAt: json['deletedAt'] as String?,
+        updatedAt: json['updatedAt'] as String?,
+        mutationId: json['mutationId'] as String?,
       );
 }

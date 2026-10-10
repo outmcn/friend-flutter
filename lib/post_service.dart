@@ -209,6 +209,32 @@ class DDPostService {
         .toList();
   }
 
+  Future<List<DDImMessage>> fetchImStatusChanges(
+    String token,
+    String conversationId,
+    String? since,
+  ) async {
+    final uri =
+        _api('/im/conversations/$conversationId/messages/status-changes')
+            .replace(queryParameters: {
+      if (since != null && since.isNotEmpty) 'since': since,
+    });
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 ||
+        data is! Map ||
+        data['messages'] is! List) {
+      throw Exception('消息状态变更加载失败');
+    }
+    return (data['messages'] as List)
+        .whereType<Map>()
+        .map((item) => DDImMessage.fromJson(item.cast<String, dynamic>()))
+        .toList();
+  }
+
   Future<Map<String, dynamic>> reconcilePending(
     String token,
     String conversationId,
