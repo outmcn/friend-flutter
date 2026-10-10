@@ -101,6 +101,7 @@ class _ChatPageState extends State<ChatPage> {
           row.id,
           row.unreadCount,
           row.peerReadMessageId,
+          row.updatedAt,
         ));
       }
       if (mounted) {
@@ -310,7 +311,7 @@ class _ChatPageState extends State<ChatPage> {
                           child: Text(chat.name,
                               style: Theme.of(context).textTheme.bodyLarge),
                         ),
-                        Text('刚刚',
+                        Text(formatDDTime(chat.updatedAt ?? ''),
                             style: TextStyle(
                                 fontSize: 11,
                                 color: Theme.of(context).hintColor)),
@@ -422,7 +423,7 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.conversationId, this.unreadCount,
-      [this.peerReadMessageId]);
+      [this.peerReadMessageId, this.updatedAt]);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -430,6 +431,7 @@ class _ChatPreview {
   final String conversationId;
   final int unreadCount;
   final String? peerReadMessageId;
+  final String? updatedAt;
 
   factory _ChatPreview.fromCache(Map<String, dynamic> row) => _ChatPreview(
         '${row['name'] ?? '用户'}',
@@ -439,6 +441,7 @@ class _ChatPreview {
         '${row['conversationId'] ?? ''}',
         (row['unreadCount'] as num?)?.toInt() ?? 0,
         row['peerReadMessageId']?.toString(),
+        row['updatedAt']?.toString(),
       );
 
   Map<String, dynamic> toCache() => {
@@ -449,6 +452,7 @@ class _ChatPreview {
         'conversationId': conversationId,
         'unreadCount': unreadCount,
         'peerReadMessageId': peerReadMessageId,
+        'updatedAt': updatedAt,
       };
 }
 
