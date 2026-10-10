@@ -1785,8 +1785,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                               color: Colors.green,
                                               shape: BoxShape.circle,
                                             ),
-                                            child:
-                                                SizedBox(width: 7, height: 7),
+                                            child: SizedBox(
+                                                width: 3.5, height: 3.5),
                                           ),
                                         ),
                                     ],
