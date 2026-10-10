@@ -1,30 +1,16 @@
 import 'dart:async';
 
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'im_local_store.dart';
 import 'im_socket.dart';
 import 'post_service.dart';
 
-/// A text message retained until the authenticated socket can send it.
-class _PendingImMessage {
-  const _PendingImMessage({
-    required this.conversationId,
-    required this.text,
-    required this.clientId,
-    this.kind = 'text',
-  });
-
-  final String conversationId;
-  final String text;
-  final String clientId;
-  final String kind;
-}
-
 enum ImConnectionState { disconnected, connecting, ready, unauthorized, error }
 
-/// App-wide IM store. It owns the only socket and the authoritative connection state.
+/// App-wide IM session. WebSocket is receive-only for realtime events;
+/// user-originated state changes are performed by HTTP APIs.
 class ImSession {
   ImSession._();
   static final ImSession instance = ImSession._();
@@ -33,11 +19,6 @@ class ImSession {
   StreamSubscription<Map<String, dynamic>>? _socketEvents;
   final _events = StreamController<Map<String, dynamic>>.broadcast();
   final _readyCallbacks = <void Function()>[];
-  final _outbox = <_PendingImMessage>[];
-  final _inflight = <String, _PendingImMessage>{};
-  final _ackTimers = <String, Timer>{};
-  final _retryUntil = <String, DateTime>{};
-  final _retryCounts = <String, int>{};
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -53,7 +34,7 @@ class ImSession {
   Future<void> start(String token) async {
     if (token.isEmpty) return;
     if (_socket != null && _token == token) return;
-    await stop(clearOutbox: false);
+    await stop();
     _token = token;
     _userId = null;
     _readySnapshot = false;
@@ -69,14 +50,9 @@ class ImSession {
       for (final callback in callbacks) {
         callback();
       }
-      if (_userId != null) {
-        unawaited(restorePending(_userId!));
-      }
-      _flushOutbox();
-      unawaited(reconcilePendingMessages(token));
+      unawaited(_reconcilePendingMessages(token));
     });
     _socketEvents = socket.events.listen((event) {
-      var suppressEvent = false;
       final type = event['type'];
       if (type == 'auth:invalid') {
         _readySnapshot = false;
@@ -84,83 +60,15 @@ class ImSession {
       } else if (type == 'closed' || type == 'connect_failed') {
         _readySnapshot = false;
         _setState(ImConnectionState.disconnected);
-        _requeueInflight();
       } else if (type == 'error') {
         _setState(ImConnectionState.error);
-      }
-      if (type == 'message:accepted') {
-        final clientId =
-            '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
-        final message = event['message'];
-        if (clientId.isNotEmpty) {
-          final accepted = _inflight.remove(clientId);
-          _ackTimers.remove(clientId)?.cancel();
-          _retryUntil.remove(clientId);
-          _retryCounts.remove(clientId);
-          if (accepted != null) {
-            _setRetryState(
-              clientId,
-              conversationId: accepted.conversationId,
-              status: 'sent',
-            );
-          }
-          if (message is Map && _userId != null) {
-            unawaited(ImLocalStore.reconcileAccepted(
-              accountId: _userId!,
-              message: message.cast<String, dynamic>(),
-            ));
-          }
-        }
-      } else if (type == 'message:failed') {
-        final clientId =
-            '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
-        final failed = clientId.isNotEmpty ? _inflight.remove(clientId) : null;
-        _ackTimers.remove(clientId)?.cancel();
-        if (failed != null) {
-          final retryCount =
-              _retryCounts[clientId] = (_retryCounts[clientId] ?? 0) + 1;
-          final retryable = _isRetryableFailure('${event['code'] ?? ''}');
-          final until = _retryUntil[clientId] ?? DateTime.now();
-          if (retryable && DateTime.now().isBefore(until)) {
-            _outbox.add(failed);
-            _setRetryState(
-              clientId,
-              conversationId: failed.conversationId,
-              status: 'pending',
-              retryCount: retryCount,
-              error: '${event['code'] ?? 'send_failed'}',
-            );
-            _flushOutbox();
-            suppressEvent = true;
-          } else {
-            _retryUntil.remove(clientId);
-            _retryCounts.remove(clientId);
-            _setRetryState(
-              clientId,
-              conversationId: failed.conversationId,
-              status: 'failed',
-              error: retryable
-                  ? 'retry_expired'
-                  : '${event['code'] ?? 'send_failed'}',
-              retryCount: retryCount,
-            );
-            _events.add(<String, dynamic>{
-              'type': 'message:failed',
-              'code': retryable
-                  ? 'retry_expired'
-                  : '${event['code'] ?? 'send_failed'}',
-              'clientId': clientId,
-            });
-          }
-        }
       }
       if (type == 'message:new') {
         final message = event['message'];
         if (message is Map && message['id'] != null && _userId != null) {
           unawaited(_persistIncoming(message.cast<String, dynamic>()));
         }
-      }
-      if (type == 'message:recalled') {
+      } else if (type == 'message:recalled') {
         final message = event['message'];
         if (message is Map && _userId != null) {
           unawaited(ImLocalStore.markRecalled(
@@ -169,7 +77,7 @@ class ImSession {
           ));
         }
       }
-      if (!suppressEvent) _events.add(event);
+      _events.add(event);
     });
     unawaited(socket.connect());
   }
@@ -182,9 +90,7 @@ class ImSession {
       return;
     }
     await ImLocalStore.saveIncomingMessage(
-      accountId: accountId,
-      message: message,
-    );
+        accountId: accountId, message: message);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) return;
@@ -222,29 +128,7 @@ class ImSession {
     }
   }
 
-  void _requeueInflight() {
-    if (_inflight.isEmpty) return;
-    for (final message in _inflight.values) {
-      if (!_outbox.any((queued) => queued.clientId == message.clientId)) {
-        _outbox.add(message);
-      }
-      _ackTimers.remove(message.clientId)?.cancel();
-      _retryUntil[message.clientId] ??=
-          DateTime.now().add(const Duration(minutes: 1));
-    }
-    _inflight.clear();
-  }
-
-  void _setState(ImConnectionState value) {
-    _state = value;
-    _events.add(<String, dynamic>{
-      'type': 'im:state',
-      'state': value.name,
-      'userId': _userId,
-    });
-  }
-
-  Future<void> reconcilePendingMessages(String token) async {
+  Future<void> _reconcilePendingMessages(String token) async {
     final accountId = _userId;
     if (accountId == null) return;
     final pending = await ImLocalStore.pendingMessages(accountId);
@@ -257,145 +141,24 @@ class ImSession {
         final message =
             await service.reconcilePending(token, conversationId, clientId);
         await ImLocalStore.reconcileAccepted(
-            accountId: accountId, message: message);
+          accountId: accountId,
+          message: message,
+        );
       } on StateError {
-        // 未被服务器接受，保留 pending。
+        // 服务器尚未接受，保留本地 pending，由发送页面的 API 重试逻辑处理。
       } finally {
         service.dispose();
       }
     }
   }
 
-  Future<void> restorePending(String accountId) async {
-    try {
-      final pending = await ImLocalStore.pendingMessages(accountId);
-      for (final message in pending) {
-        final conversationId = '${message['conversationId'] ?? ''}';
-        final clientId = '${message['clientId'] ?? ''}';
-        final text = '${message['text'] ?? ''}';
-        final persistedUntil = DateTime.tryParse(
-          '${message['retryUntil'] ?? ''}',
-        );
-        final retryUntil =
-            persistedUntil ?? DateTime.now().add(const Duration(minutes: 1));
-        if (clientId.isNotEmpty && !DateTime.now().isBefore(retryUntil)) {
-          await ImLocalStore.updateRetryState(
-            accountId: accountId,
-            conversationId: conversationId,
-            clientId: clientId,
-            status: 'failed',
-            lastError: 'retry_expired',
-          );
-          _events.add(<String, dynamic>{
-            'type': 'message:failed',
-            'code': 'retry_expired',
-            'clientId': clientId,
-          });
-          continue;
-        }
-        _retryUntil[clientId] = retryUntil;
-        if (conversationId.isNotEmpty &&
-            clientId.isNotEmpty &&
-            text.isNotEmpty &&
-            !_outbox.any((item) => item.clientId == clientId) &&
-            !_inflight.containsKey(clientId)) {
-          _outbox.add(_PendingImMessage(
-            conversationId: conversationId,
-            text: text,
-            clientId: clientId,
-            kind: '${message['kind'] ?? 'text'}',
-          ));
-        }
-      }
-      _flushOutbox();
-    } catch (_) {}
-  }
-
-  bool _isRetryableFailure(String code) {
-    const permanentCodes = {
-      'empty_message',
-      'conversation_required',
-      'conversation_forbidden',
-      'conversation_blocked',
-      'message_too_large',
-      'unsupported_kind',
-      'auth_invalid',
-      'unauthorized',
-    };
-    return !permanentCodes.contains(code);
-  }
-
-  void _setRetryState(
-    String clientId, {
-    required String conversationId,
-    required String status,
-    String? error,
-    int? retryCount,
-  }) {
-    final now = DateTime.now();
-    final until = _retryUntil[clientId];
-    unawaited(ImLocalStore.updateRetryState(
-      accountId: _userId ?? '',
-      conversationId: conversationId,
-      clientId: clientId,
-      status: status,
-      retryStartedAt: status == 'pending' ? now.toIso8601String() : null,
-      retryUntil: status == 'pending' ? until?.toIso8601String() : null,
-      retryCount: retryCount,
-      lastError: error,
-    ));
-  }
-
-  void queueText({
-    required String conversationId,
-    required String text,
-    required String clientId,
-  }) {
-    _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
-    _setRetryState(clientId, conversationId: conversationId, status: 'pending');
-    _outbox.add(_PendingImMessage(
-      conversationId: conversationId,
-      text: text,
-      clientId: clientId,
-    ));
-    _flushOutbox();
-  }
-
-  void queueMessage({
-    required String conversationId,
-    required String text,
-    required String clientId,
-    required String kind,
-  }) {
-    _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
-    _setRetryState(clientId, conversationId: conversationId, status: 'pending');
-    _outbox.add(_PendingImMessage(
-      conversationId: conversationId,
-      text: text,
-      clientId: clientId,
-      kind: kind,
-    ));
-    _flushOutbox();
-  }
-
-  void _flushOutbox() {
-    // 消息发送统一由 HTTPS API 负责；WebSocket 只接收实时事件和输入状态。
-    _outbox.clear();
-  }
-
-  void requeueText({
-    required String conversationId,
-    required String text,
-    required String clientId,
-  }) {
-    _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
-    _setRetryState(clientId, conversationId: conversationId, status: 'pending');
-    _outbox.add(_PendingImMessage(
-      conversationId: conversationId,
-      text: text,
-      clientId: clientId,
-    ));
-    _flushOutbox();
+  void _setState(ImConnectionState value) {
+    _state = value;
+    _events.add(<String, dynamic>{
+      'type': 'im:state',
+      'state': value.name,
+      'userId': _userId,
+    });
   }
 
   void whenReady(void Function() callback) {
@@ -406,16 +169,8 @@ class ImSession {
     }
   }
 
-  Future<void> stop({bool clearOutbox = true}) async {
+  Future<void> stop() async {
     _readyCallbacks.clear();
-    for (final timer in _ackTimers.values) {
-      timer.cancel();
-    }
-    _ackTimers.clear();
-    _retryUntil.clear();
-    _retryCounts.clear();
-    _inflight.clear();
-    if (clearOutbox) _outbox.clear();
     await _socketEvents?.cancel();
     _socketEvents = null;
     await _socket?.dispose();
