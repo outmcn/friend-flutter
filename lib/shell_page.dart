@@ -1925,13 +1925,36 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                             .primaryContainer
                                         : null,
                                   ),
-                                  child: Text(
-                                    recordingVoice
-                                        ? (cancelVoice ? '松开取消' : '松开发送')
-                                        : '按住说话',
-                                    style:
-                                        Theme.of(context).textTheme.bodyLarge,
-                                  ),
+                                  child: recordingVoice
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            _VoiceWave(
+                                              active: !cancelVoice,
+                                              color: cancelVoice
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .error
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              cancelVoice ? '松开取消' : '松开发送',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyLarge,
+                                            ),
+                                          ],
+                                        )
+                                      : Text(
+                                          '按住说话',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge,
+                                        ),
                                 ),
                               )
                             : TextField(
@@ -2051,6 +2074,63 @@ class _ChatReportPageState extends State<_ChatReportPage> {
                 ),
               ),
             ],
+          ),
+        ),
+      );
+}
+
+class _VoiceWave extends StatefulWidget {
+  const _VoiceWave({required this.active, required this.color});
+  final bool active;
+  final Color color;
+
+  @override
+  State<_VoiceWave> createState() => _VoiceWaveState();
+}
+
+class _VoiceWaveState extends State<_VoiceWave>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        builder: (_, __) => SizedBox(
+          width: 38,
+          height: 24,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: List.generate(5, (index) {
+              final distance = (index - 2).abs();
+              final value = widget.active
+                  ? 0.35 + (1 - distance / 2) * _controller.value * 0.65
+                  : 0.28;
+              return Container(
+                width: 3,
+                height: 8 + value * 16,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              );
+            }),
           ),
         ),
       );
