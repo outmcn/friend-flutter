@@ -14,7 +14,7 @@ class ImLocalStore {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 3,
+      version: 4,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -28,6 +28,10 @@ class ImLocalStore {
             duration_ms INTEGER NOT NULL DEFAULT 0,
             created_at TEXT,
             status TEXT NOT NULL DEFAULT 'sent',
+            retry_started_at TEXT,
+            retry_until TEXT,
+            retry_count INTEGER NOT NULL DEFAULT 0,
+            last_error TEXT,
             PRIMARY KEY (account_id, conversation_id, message_id)
           )
         ''');
@@ -58,6 +62,14 @@ class ImLocalStore {
               PRIMARY KEY (account_id, conversation_id, message_id)
             )
           ''');
+        }
+        if (oldVersion < 4) {
+          await db
+              .execute('ALTER TABLE messages ADD COLUMN retry_started_at TEXT');
+          await db.execute('ALTER TABLE messages ADD COLUMN retry_until TEXT');
+          await db.execute(
+              'ALTER TABLE messages ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0');
+          await db.execute('ALTER TABLE messages ADD COLUMN last_error TEXT');
         }
       },
     );
@@ -136,11 +148,40 @@ class ImLocalStore {
           'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
           'created_at': '${message['createdAt'] ?? ''}',
           'status': '${message['status'] ?? 'sent'}',
+          'retry_started_at': message['retryStartedAt'],
+          'retry_until': message['retryUntil'],
+          'retry_count': (message['retryCount'] as num?)?.toInt() ?? 0,
+          'last_error': message['lastError'],
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
     await batch.commit(noResult: true);
+  }
+
+  static Future<void> updateRetryState({
+    required String accountId,
+    required String conversationId,
+    required String clientId,
+    required String status,
+    String? retryStartedAt,
+    String? retryUntil,
+    int? retryCount,
+    String? lastError,
+  }) async {
+    final values = <String, dynamic>{
+      'status': status,
+      'retry_started_at': retryStartedAt,
+      'retry_until': retryUntil,
+      'last_error': lastError,
+    };
+    if (retryCount != null) values['retry_count'] = retryCount;
+    await (await _db()).update(
+      'messages',
+      values,
+      where: 'account_id = ? AND conversation_id = ? AND client_id = ?',
+      whereArgs: [accountId, conversationId, clientId],
+    );
   }
 
   static Future<void> saveIncomingMessage({
@@ -280,7 +321,16 @@ class ImLocalStore {
       String accountId) async {
     final rows = await (await _db()).query(
       'messages',
-      columns: ['conversation_id', 'client_id', 'text', 'kind'],
+      columns: [
+        'conversation_id',
+        'client_id',
+        'text',
+        'kind',
+        'retry_started_at',
+        'retry_until',
+        'retry_count',
+        'last_error'
+      ],
       where: "account_id = ? AND status = 'pending' AND client_id IS NOT NULL",
       whereArgs: [accountId],
       orderBy: 'CAST(message_id AS INTEGER) ASC',
@@ -291,6 +341,10 @@ class ImLocalStore {
               'clientId': '${row['client_id'] ?? ''}',
               'text': '${row['text'] ?? ''}',
               'kind': '${row['kind'] ?? 'text'}',
+              'retryStartedAt': row['retry_started_at'],
+              'retryUntil': row['retry_until'],
+              'retryCount': (row['retry_count'] as num?)?.toInt() ?? 0,
+              'lastError': row['last_error'],
             })
         .toList();
   }

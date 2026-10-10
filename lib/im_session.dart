@@ -68,10 +68,14 @@ class ImSession {
       for (final callback in callbacks) {
         callback();
       }
+      if (_userId != null) {
+        unawaited(restorePending(_userId!));
+      }
       _flushOutbox();
       unawaited(reconcilePendingMessages(token));
     });
     _socketEvents = socket.events.listen((event) {
+      var suppressEvent = false;
       final type = event['type'];
       if (type == 'auth:invalid') {
         _readySnapshot = false;
@@ -88,9 +92,16 @@ class ImSession {
             '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
         final message = event['message'];
         if (clientId.isNotEmpty) {
-          _inflight.remove(clientId);
+          final accepted = _inflight.remove(clientId);
           _ackTimers.remove(clientId)?.cancel();
           _retryUntil.remove(clientId);
+          if (accepted != null) {
+            _setRetryState(
+              clientId,
+              conversationId: accepted.conversationId,
+              status: 'sent',
+            );
+          }
           if (message is Map && _userId != null) {
             unawaited(ImLocalStore.reconcileAccepted(
               accountId: _userId!,
@@ -107,9 +118,22 @@ class ImSession {
           final until = _retryUntil[clientId] ?? DateTime.now();
           if (DateTime.now().isBefore(until)) {
             _outbox.add(failed);
+            _setRetryState(
+              clientId,
+              conversationId: failed.conversationId,
+              status: 'pending',
+              error: '${event['code'] ?? 'send_failed'}',
+            );
             _flushOutbox();
+            suppressEvent = true;
           } else {
             _retryUntil.remove(clientId);
+            _setRetryState(
+              clientId,
+              conversationId: failed.conversationId,
+              status: 'failed',
+              error: 'retry_expired',
+            );
             _events.add(<String, dynamic>{
               'type': 'message:failed',
               'code': 'retry_expired',
@@ -133,7 +157,7 @@ class ImSession {
           ));
         }
       }
-      _events.add(event);
+      if (!suppressEvent) _events.add(event);
     });
     unawaited(socket.connect());
   }
@@ -193,7 +217,8 @@ class ImSession {
         _outbox.add(message);
       }
       _ackTimers.remove(message.clientId)?.cancel();
-      _retryUntil.remove(message.clientId);
+      _retryUntil[message.clientId] ??=
+          DateTime.now().add(const Duration(minutes: 1));
     }
     _inflight.clear();
   }
@@ -236,6 +261,27 @@ class ImSession {
         final conversationId = '${message['conversationId'] ?? ''}';
         final clientId = '${message['clientId'] ?? ''}';
         final text = '${message['text'] ?? ''}';
+        final persistedUntil = DateTime.tryParse(
+          '${message['retryUntil'] ?? ''}',
+        );
+        final retryUntil =
+            persistedUntil ?? DateTime.now().add(const Duration(minutes: 1));
+        if (clientId.isNotEmpty && !DateTime.now().isBefore(retryUntil)) {
+          await ImLocalStore.updateRetryState(
+            accountId: accountId,
+            conversationId: conversationId,
+            clientId: clientId,
+            status: 'failed',
+            lastError: 'retry_expired',
+          );
+          _events.add(<String, dynamic>{
+            'type': 'message:failed',
+            'code': 'retry_expired',
+            'clientId': clientId,
+          });
+          continue;
+        }
+        _retryUntil[clientId] = retryUntil;
         if (conversationId.isNotEmpty &&
             clientId.isNotEmpty &&
             text.isNotEmpty &&
@@ -253,12 +299,32 @@ class ImSession {
     } catch (_) {}
   }
 
+  void _setRetryState(
+    String clientId, {
+    required String conversationId,
+    required String status,
+    String? error,
+  }) {
+    final now = DateTime.now();
+    final until = _retryUntil[clientId];
+    unawaited(ImLocalStore.updateRetryState(
+      accountId: _userId ?? '',
+      conversationId: conversationId,
+      clientId: clientId,
+      status: status,
+      retryStartedAt: status == 'pending' ? now.toIso8601String() : null,
+      retryUntil: status == 'pending' ? until?.toIso8601String() : null,
+      lastError: error,
+    ));
+  }
+
   void queueText({
     required String conversationId,
     required String text,
     required String clientId,
   }) {
     _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
+    _setRetryState(clientId, conversationId: conversationId, status: 'pending');
     _outbox.add(_PendingImMessage(
       conversationId: conversationId,
       text: text,
@@ -274,6 +340,7 @@ class ImSession {
     required String kind,
   }) {
     _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
+    _setRetryState(clientId, conversationId: conversationId, status: 'pending');
     _outbox.add(_PendingImMessage(
       conversationId: conversationId,
       text: text,
@@ -302,8 +369,20 @@ class ImSession {
           final until = _retryUntil[message.clientId] ?? DateTime.now();
           if (DateTime.now().isBefore(until)) {
             _outbox.add(timedOut);
+            _setRetryState(
+              message.clientId,
+              conversationId: timedOut.conversationId,
+              status: 'pending',
+              error: 'ack_timeout',
+            );
             _flushOutbox();
           } else {
+            _setRetryState(
+              message.clientId,
+              conversationId: timedOut.conversationId,
+              status: 'failed',
+              error: 'retry_expired',
+            );
             _events.add(<String, dynamic>{
               'type': 'message:failed',
               'code': 'retry_expired',
@@ -324,6 +403,7 @@ class ImSession {
     required String clientId,
   }) {
     _retryUntil[clientId] = DateTime.now().add(const Duration(minutes: 1));
+    _setRetryState(clientId, conversationId: conversationId, status: 'pending');
     _outbox.add(_PendingImMessage(
       conversationId: conversationId,
       text: text,

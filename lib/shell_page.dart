@@ -731,6 +731,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     if (type == 'error' || type == 'message:failed') {
+      if (event['retrying'] == true) return;
       final pendingId =
           '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
       if (pendingId.isNotEmpty) {
@@ -740,6 +741,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           setState(() => messages[index] = {
                 ...messages[index],
                 'status': 'failed',
+                'lastError': 'retry_expired',
               });
           await ImLocalStore.saveMessages(
             accountId: currentUserId,
@@ -1234,7 +1236,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (index >= 0) {
         setState(() => messages[index] = {
               ...messages[index],
-              'status': 'failed',
+              'status': 'pending',
+              'lastError': 'send_failed',
             });
         await ImLocalStore.saveMessages(
           accountId: currentUserId,
@@ -1242,6 +1245,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           messages: messages,
         );
       }
+      ImSession.instance.queueMessage(
+        conversationId: widget.chat.conversationId,
+        text: text,
+        clientId: clientId,
+        kind: 'text',
+      );
     } finally {
       service.dispose();
     }
