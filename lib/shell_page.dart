@@ -296,7 +296,7 @@ class _ChatPageState extends State<ChatPage> {
           child: Row(
             children: [
               CircleAvatar(
-                radius: 27,
+                radius: 24,
                 backgroundImage: _avatarFor(chat),
               ),
               const SizedBox(width: 12),
