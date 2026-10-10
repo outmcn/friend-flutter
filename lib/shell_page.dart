@@ -341,11 +341,7 @@ class _ChatPageState extends State<ChatPage> {
                     Text(chat.preview,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            )),
+                        style: TextStyle(color: Theme.of(context).hintColor)),
                   ],
                 ),
               ),
