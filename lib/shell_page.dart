@@ -127,17 +127,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final local = await ImLocalStore.avatarPath(key);
     if (local != null && mounted) {
       setState(() => _avatarPaths[key] = local);
-      return;
     }
-    final url = chat.avatarUrl;
-    if (url == null || url.isEmpty) return;
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final saved = await ImLocalStore.saveAvatar(key, response.bodyBytes);
-        if (mounted) setState(() => _avatarPaths[key] = saved);
-      }
-    } catch (_) {}
+    // 聊天页面只读取本地头像，不在这里联网刷新。
   }
 
   Future<void> _loadConversations({bool showLoading = true}) async {
@@ -641,68 +632,31 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _loadChatAvatars() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty || !mounted) return;
-    final service = DDPostService();
+    if (!mounted) return;
     try {
-      final me = await service.fetchMe(token);
-      final myKey = '${me['avatarKey'] ?? me['avatar_key'] ?? ''}'.trim();
+      final prefs = await SharedPreferences.getInstance();
+      final myKey = prefs.getString('friend.profile.avatarKey')?.trim() ?? '';
+      final myUrl = prefs.getString('friend.profile.avatarUrl')?.trim() ?? '';
       final peerKey = (widget.chat.avatarKey ?? '').trim();
-      final cachedMy =
-          myKey.isEmpty ? null : await ImLocalStore.avatarPath(myKey);
+      final cachedMy = myKey.isNotEmpty
+          ? await ImLocalStore.avatarPath(myKey)
+          : (myUrl.isNotEmpty
+              ? await _PermanentImageCache.localPath(myUrl)
+              : null);
       final cachedPeer =
           peerKey.isEmpty ? null : await ImLocalStore.avatarPath(peerKey);
-      if (cachedMy != null || cachedPeer != null) {
-        if (mounted) {
-          setState(() {
-            myAvatarPath = cachedMy;
-            peerAvatarPath = cachedPeer;
-            if (cachedMy != null) myAvatarProvider = FileImage(File(cachedMy));
-            if (cachedPeer != null) {
-              peerAvatarProvider = FileImage(File(cachedPeer));
-            }
-            avatarsReady = true;
-          });
-        }
-      }
-      final myUrl = myKey.isEmpty
-          ? '${me['avatarUrl'] ?? me['avatar_url'] ?? ''}'
-          : await service.avatarUrl(token, myKey);
-      final peerUrl = peerKey.isEmpty
-          ? (widget.chat.avatarUrl ?? '')
-          : await service.avatarUrl(token, peerKey);
-      if (myKey.isNotEmpty && myUrl.isNotEmpty) {
-        final response = await http.get(Uri.parse(myUrl));
-        if (response.statusCode == 200) {
-          final saved =
-              await ImLocalStore.saveAvatar(myKey, response.bodyBytes);
-          myAvatarPath = saved;
-        }
-      }
-      if (peerKey.isNotEmpty && peerUrl.isNotEmpty) {
-        final response = await http.get(Uri.parse(peerUrl));
-        if (response.statusCode == 200) {
-          final saved =
-              await ImLocalStore.saveAvatar(peerKey, response.bodyBytes);
-          peerAvatarPath = saved;
-        }
-      }
       if (!mounted) return;
       setState(() {
-        if (myAvatarPath != null) {
-          myAvatarProvider = FileImage(File(myAvatarPath!));
-        }
-        if (peerAvatarPath != null) {
-          peerAvatarProvider = FileImage(File(peerAvatarPath!));
+        myAvatarPath = cachedMy;
+        peerAvatarPath = cachedPeer;
+        if (cachedMy != null) myAvatarProvider = FileImage(File(cachedMy));
+        if (cachedPeer != null) {
+          peerAvatarProvider = FileImage(File(cachedPeer));
         }
         avatarsReady = true;
       });
     } catch (_) {
       if (mounted) setState(() => avatarsReady = true);
-      // 头像读取失败时保留稳定占位，不触发列表重新滚动。
-    } finally {
-      service.dispose();
     }
   }
 

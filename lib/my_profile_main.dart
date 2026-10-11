@@ -117,6 +117,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
         final avatar = avatarKey.isEmpty
             ? null
             : await service.resolveAvatarUrl(t, avatarKey);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('friend.profile.avatarKey', avatarKey);
+        await prefs.setString('friend.profile.avatarUrl', avatar ?? '');
         final profileTags = loadedProfile['tags'];
         final tags = profileTags is List
             ? profileTags

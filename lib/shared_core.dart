@@ -33,6 +33,12 @@ class _PermanentImageCache {
   static ImageProvider<Object>? provider(String url) =>
       _providers[identity(url)];
 
+  static Future<String?> localPath(String url) async {
+    final cached = _localPaths[identity(url)];
+    if (cached != null && await File(cached).exists()) return cached;
+    return _diskPath(url);
+  }
+
   static void rememberProvider(String url, ImageProvider<Object> provider) {
     final key = identity(url);
     if (key.isNotEmpty) _providers[key] = provider;
