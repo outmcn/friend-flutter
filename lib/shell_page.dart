@@ -871,7 +871,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   List<Map<String, dynamic>> get _timeline {
     final combined = <Map<String, dynamic>>[...messages];
-    combined.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
+    combined.sort((a, b) => _messageTime(b).compareTo(_messageTime(a)));
     return combined;
   }
 
@@ -1844,9 +1844,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 final timeText = createdAt == null
                                     ? ''
                                     : '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
-                                final previousCreatedAt = index > 0
+                                final previousCreatedAt = index + 1 <
+                                        _timeline.length
                                     ? DateTime.tryParse(
-                                            '${_timeline[index - 1]['createdAt'] ?? ''}')
+                                            '${_timeline[index + 1]['createdAt'] ?? ''}')
                                         ?.toLocal()
                                     : null;
                                 final showTime = createdAt != null &&
