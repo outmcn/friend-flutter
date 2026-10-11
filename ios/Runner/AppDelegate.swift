@@ -27,13 +27,8 @@ import AliVCSDK_ARTC
     switch call.method {
     case "join":
       guard let args = call.arguments as? [String: Any],
-            let appId = args["appId"] as? String,
-            let channelId = args["channelId"] as? String,
-            let userId = args["userId"] as? String,
-            let userName = args["userName"] as? String,
-            let nonce = args["nonce"] as? String,
-            let timestampText = args["timestamp"] as? String,
-            let token = args["token"] as? String else {
+            let token = args["token"] as? String,
+            !token.isEmpty else {
         result(FlutterError(code: "invalid_args", message: "RTC 参数无效", details: nil))
         return
       }
@@ -42,7 +37,7 @@ import AliVCSDK_ARTC
       engine.setDefaultSubscribeAllRemoteAudioStreams(true)
       engine.subscribeAllRemoteAudioStreams(true)
       engine.publishLocalAudioStream(true)
-      let code = engine.joinChannel(token, channelId: nil, userId: nil, name: userName) { [weak self] errorCode, joinedChannel, joinedUserId, _ in
+      let code = engine.joinChannel(token, channelId: nil, userId: nil, name: nil) { [weak self] errorCode, joinedChannel, joinedUserId, _ in
         DispatchQueue.main.async {
           if errorCode == 0 {
             self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": joinedChannel, "userId": joinedUserId])
