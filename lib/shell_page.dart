@@ -82,8 +82,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       'calleeId': raw['calleeId'] ?? raw['callee_id'],
       '_timelineKind': 'call',
       'kind': 'call',
-      'endedAt': raw['endedAt'] ?? raw['ended_at'],
-      'answeredAt': raw['answeredAt'] ?? raw['answered_at'],
+      'localDurationSeconds':
+          raw['localDurationSeconds'] ?? raw['local_duration_seconds'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           DateTime.now().toIso8601String(),
@@ -95,11 +95,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (index >= 0) {
       final previous = existing[index];
       final merged = {...previous, ...call};
-      if (call['answeredAt'] == null && previous['answeredAt'] != null) {
-        merged['answeredAt'] = previous['answeredAt'];
-      }
-      if (call['endedAt'] == null && previous['endedAt'] != null) {
-        merged['endedAt'] = previous['endedAt'];
+      if (call['localDurationSeconds'] == null &&
+          previous['localDurationSeconds'] != null) {
+        merged['localDurationSeconds'] = previous['localDurationSeconds'];
       }
       existing[index] = merged;
     } else {
@@ -255,8 +253,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 ...local,
                 'kind': '${local['kind'] ?? 'text'}',
                 'status': '${local['status'] ?? 'sent'}',
-                'answeredAt': local['answered_at'] ?? local['answeredAt'],
-                'endedAt': local['ended_at'] ?? local['endedAt'],
+                'localDurationSeconds': local['local_duration_seconds'] ??
+                    local['localDurationSeconds'],
               });
         final preview = localPreview ?? row.lastMessage?.text ?? '开始一段新的聊天';
         mapped.add(_ChatPreview(
@@ -563,20 +561,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
 String _callPreviewStatus(Map<String, dynamic> row) {
   final status = '${row['status'] ?? ''}';
-  final answered = DateTime.tryParse(
-    '${row['answeredAt'] ?? row['answered_at'] ?? ''}',
+  final durationSeconds = int.tryParse(
+    '${row['localDurationSeconds'] ?? row['local_duration_seconds'] ?? ''}',
   );
-  final ended = DateTime.tryParse(
-    '${row['endedAt'] ?? row['ended_at'] ?? ''}',
-  );
+  if (durationSeconds != null) {
+    final duration =
+        '${(durationSeconds ~/ 60).toString().padLeft(2, '0')}:${(durationSeconds % 60).toString().padLeft(2, '0')}';
+    return '已接听 · 通话时间 $duration';
+  }
   if (status == 'cancelled') return '已取消';
   if (status == 'rejected') return '已拒绝';
-  if (answered == null) return '未接听';
-  final seconds =
-      (ended ?? DateTime.now()).difference(answered).inSeconds.clamp(0, 86400);
-  final duration =
-      '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
-  return '已接听 · 通话时间 $duration';
+  if (status == 'answered' || status == 'ended') return '已接听';
+  return '未接听';
 }
 
 String? _localMessagePreview(Map<String, dynamic>? row) {
@@ -721,6 +717,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool initialSyncCompleted = false;
   final AudioPlayer audioPlayer = AudioPlayer();
   bool outgoingCallStarting = false;
+  bool callDialogShowing = false;
   String? activeCallId;
   final Map<String, String> imageFiles = {};
   String? playingAudioKey;
@@ -980,8 +977,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       'calleeId': raw['calleeId'] ?? raw['callee_id'],
       '_timelineKind': 'call',
       'kind': 'call',
-      'endedAt': raw['endedAt'] ?? raw['ended_at'],
-      'answeredAt': raw['answeredAt'] ?? raw['answered_at'],
+      'localDurationSeconds':
+          raw['localDurationSeconds'] ?? raw['local_duration_seconds'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           DateTime.now().toIso8601String(),
@@ -994,9 +991,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ? {
             ...messages[index],
             ...call,
-            if (call['answeredAt'] == null)
-              'answeredAt': messages[index]['answeredAt'],
-            if (call['endedAt'] == null) 'endedAt': messages[index]['endedAt'],
+            if (call['localDurationSeconds'] == null)
+              'localDurationSeconds': messages[index]['localDurationSeconds'],
           }
         : call;
     final callerId = '${mergedCall['callerId'] ?? ''}';
@@ -1017,9 +1013,85 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     );
   }
 
+  Future<void> _showIncomingCall(Map<String, dynamic> call) async {
+    final callId = '${call['id'] ?? ''}';
+    if (callId.isEmpty || activeCallId != null || callDialogShowing) return;
+    final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
+    final calleeId = '${call['calleeId'] ?? call['callee_id'] ?? ''}';
+    if (callerId.isEmpty ||
+        callerId == currentUserId ||
+        (calleeId.isNotEmpty && calleeId != currentUserId)) {
+      return;
+    }
+    activeCallId = callId;
+    callDialogShowing = true;
+    try {
+      final accepted = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('来电'),
+          content: Text(
+            '${call['callerName'] ?? call['nickname'] ?? '对方'} 邀请您进行语音通话',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'reject'),
+              child: const Text('拒绝'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, 'answer'),
+              child: const Text('接听'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || accepted == null) return;
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) return;
+      final service = DDPostService();
+      try {
+        final result = await service.updateImCall(token, callId, accepted);
+        if (accepted == 'answer' && mounted) {
+          final answeredCall =
+              (result['call'] as Map?)?.cast<String, dynamic>() ?? call;
+          final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
+          await Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => _AudioCallPage(
+              call: answeredCall,
+              rtc: rtc,
+              token: token,
+            ),
+          ));
+        }
+      } finally {
+        service.dispose();
+      }
+    } finally {
+      callDialogShowing = false;
+      activeCallId = null;
+    }
+  }
+
   Future<void> _handleImEvent(Map<String, dynamic> event) async {
     if (!mounted) return;
     final type = event['type'];
+    if (type == 'call:incoming') {
+      final raw = event['call'];
+      if (raw is Map) {
+        final call = raw.cast<String, dynamic>();
+        final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
+        final calleeId = '${call['calleeId'] ?? call['callee_id'] ?? ''}';
+        final selfId = currentUserId;
+        if (callerId.isNotEmpty &&
+            callerId != selfId &&
+            (calleeId.isEmpty || calleeId == selfId)) {
+          unawaited(_showIncomingCall(call));
+        }
+      }
+      return;
+    }
     if (type == 'session:replaced') {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1040,11 +1112,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
       if (call is Map) {
         await _saveCallEvent(call.cast<String, dynamic>());
-        if ('${call['status'] ?? ''}' == 'ended' &&
-            mounted &&
-            Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
       }
       return;
     }
@@ -2755,21 +2822,17 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   bool _endedNoticeShown = false;
   Timer? callTimer;
   Timer? durationTimer;
-  DateTime? answeredAt;
+  DateTime? localTimerStartedAt;
+  int localElapsedSeconds = 0;
+  bool rtcJoined = false;
   late String callStatus;
 
   @override
   void initState() {
     super.initState();
     callStatus = '${widget.call['status'] ?? 'ringing'}';
-    final initialAnswered =
-        DateTime.tryParse('${widget.call['answeredAt'] ?? ''}');
-    if (initialAnswered != null) answeredAt = initialAnswered;
     if (callStatus == 'answered') {
-      answeredAt ??= DateTime.now();
-      durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
+      _startLocalTimer();
     }
     if (callStatus == 'ringing') {
       callTimer = Timer(const Duration(seconds: 30), _cancelAfterTimeout);
@@ -2777,6 +2840,29 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     AliyunRtcBridge.setEventHandler(_handleRtcEvent);
     imEvents = ImSession.instance.events.listen(_handleImEvent);
     unawaited(_joinRtc());
+  }
+
+  void _startLocalTimer() {
+    if (localTimerStartedAt != null) return;
+    localTimerStartedAt = DateTime.now();
+    localElapsedSeconds = 0;
+    durationTimer?.cancel();
+    durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || localTimerStartedAt == null) return;
+      setState(() {
+        localElapsedSeconds =
+            DateTime.now().difference(localTimerStartedAt!).inSeconds;
+      });
+    });
+  }
+
+  void _stopLocalTimer() {
+    if (localTimerStartedAt != null) {
+      localElapsedSeconds =
+          DateTime.now().difference(localTimerStartedAt!).inSeconds;
+    }
+    durationTimer?.cancel();
+    durationTimer = null;
   }
 
   void _showEndedNotice() {
@@ -2790,8 +2876,8 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   Future<void> _finishRemoteHangup() async {
     if (_ending) return;
     _ending = true;
-    durationTimer?.cancel();
     _showEndedNotice();
+    _stopLocalTimer();
     try {
       await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
     } catch (_) {}
@@ -2834,7 +2920,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
       if (mounted) setState(() {});
       unawaited(_finishRemoteHangup());
     } else if (method == 'joined') {
-      callStatus = 'rtc_joined';
+      rtcJoined = true;
       if (mounted) setState(() {});
     } else if (method == 'remoteJoined' ||
         method == 'audioPublishState' ||
@@ -2861,26 +2947,22 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     }
     final status = '${call['status'] ?? ''}';
     callStatus = status;
-    final nextAnswered = DateTime.tryParse('${call['answeredAt'] ?? ''}');
-    if (nextAnswered != null) answeredAt = nextAnswered;
     if (status == 'answered') {
       callTimer?.cancel();
-      answeredAt ??= DateTime.now();
-      durationTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
+      callStatus = 'answered';
+      _startLocalTimer();
       if (mounted) setState(() {});
     }
     if (status == 'ended' || status == 'cancelled' || status == 'rejected') {
       callStatus = status;
-      durationTimer?.cancel();
+      _stopLocalTimer();
       final finalCall = {
         ...call.cast<String, dynamic>(),
-        if (call['answeredAt'] == null && answeredAt != null)
-          'answeredAt': answeredAt!.toIso8601String(),
+        if (localTimerStartedAt != null)
+          'localDurationSeconds': localElapsedSeconds,
       };
       unawaited(_persistCallLocally(finalCall));
-      if (status != 'ended' || answeredAt == null) {
+      if (status != 'ended' || localTimerStartedAt == null) {
         unawaited(_finishRemoteHangup());
       }
     }
@@ -2925,8 +3007,8 @@ class _AudioCallPageState extends State<_AudioCallPage> {
           raw['calleeId'] ?? raw['callee_id'] ?? widget.call['calleeId'],
       '_timelineKind': 'call',
       'kind': 'call',
-      'endedAt': raw['endedAt'] ?? raw['ended_at'],
-      'answeredAt': raw['answeredAt'] ?? raw['answered_at'],
+      'localDurationSeconds':
+          raw['localDurationSeconds'] ?? raw['local_duration_seconds'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           widget.call['startedAt'] ??
@@ -2974,9 +3056,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   }
 
   String _elapsedText() {
-    if (answeredAt == null) return '00:00';
-    final seconds =
-        DateTime.now().difference(answeredAt!).inSeconds.clamp(0, 86400);
+    final seconds = localElapsedSeconds.clamp(0, 86400);
     return '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
   }
 
@@ -3047,22 +3127,18 @@ class _CallRecordBubble extends StatelessWidget {
 
   String _statusText() {
     final status = '${record['status'] ?? ''}';
-    final answered = DateTime.tryParse(
-      '${record['answeredAt'] ?? record['answered_at'] ?? ''}',
+    final durationSeconds = int.tryParse(
+      '${record['localDurationSeconds'] ?? record['local_duration_seconds'] ?? ''}',
     );
-    final ended = DateTime.tryParse(
-      '${record['endedAt'] ?? record['ended_at'] ?? ''}',
-    );
+    if (durationSeconds != null) {
+      final duration =
+          '${(durationSeconds ~/ 60).toString().padLeft(2, '0')}:${(durationSeconds % 60).toString().padLeft(2, '0')}';
+      return '已接听 · 通话时间 $duration';
+    }
     if (status == 'cancelled') return '已取消';
     if (status == 'rejected') return '已拒绝';
-    if (answered == null) return '未接听';
-    final seconds = (ended ?? DateTime.now())
-        .difference(answered)
-        .inSeconds
-        .clamp(0, 86400);
-    final duration =
-        '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
-    return '已接听 · 通话时间 $duration';
+    if (status == 'answered' || status == 'ended') return '已接听';
+    return '未接听';
   }
 
   @override

@@ -245,138 +245,190 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  ClipOval(
-                                    child: SizedBox(
-                                      width: 84,
-                                      height: 84,
-                                      child: _avatarUrl == null ||
-                                              _avatarUrl!.isEmpty
-                                          ? const ColoredBox(
-                                              color: Colors.black12,
-                                              child:
-                                                  Icon(Icons.person, size: 42),
-                                            )
-                                          : _PermanentCachedImage(
-                                              url: _avatarUrl!,
-                                              width: 84,
-                                              height: 84,
-                                              fit: BoxFit.cover,
-                                              placeholder: const ColoredBox(
-                                                color: Colors.black12,
-                                                child: Icon(Icons.person,
-                                                    size: 42),
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      ClipOval(
+                                        child: SizedBox(
+                                          width: 78,
+                                          height: 78,
+                                          child: _avatarUrl == null ||
+                                                  _avatarUrl!.isEmpty
+                                              ? const ColoredBox(
+                                                  color: Colors.black12,
+                                                  child: Icon(Icons.person,
+                                                      size: 40),
+                                                )
+                                              : _PermanentCachedImage(
+                                                  url: _avatarUrl!,
+                                                  width: 78,
+                                                  height: 78,
+                                                  fit: BoxFit.cover,
+                                                  placeholder: const ColoredBox(
+                                                    color: Colors.black12,
+                                                    child: Icon(Icons.person,
+                                                        size: 40),
+                                                  ),
+                                                ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom: -9,
+                                        child: Center(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .surface,
+                                              border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .dividerColor),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                    color: Color(0x19000000),
+                                                    blurRadius: 8,
+                                                    offset: Offset(0, 2)),
+                                              ],
+                                            ),
+                                            child: Text('${p?['city'] ?? '未知'}',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelSmall),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                '${p?['nickname'] ?? 'DD 用户'}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    fontSize: 20,
+                                                    height: 1.2,
+                                                    fontWeight:
+                                                        FontWeight.w700),
                                               ),
                                             ),
+                                            IconButton(
+                                              tooltip: '编辑资料',
+                                              onPressed: () async {
+                                                await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            const EditProfilePage()));
+                                                if (mounted) load();
+                                              },
+                                              icon: const Icon(
+                                                  Icons.edit_outlined,
+                                                  size: 22),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        _SonicProfileButton(
+                                          playing: _sonicPlaying,
+                                          enabled:
+                                              _sonicUrl?.isNotEmpty == true,
+                                          onTap: _toggleSonic,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          _ProfileTag(
-                                              text: '${p?['city'] ?? '未知'}'),
-                                          const SizedBox(width: 8),
-                                          _SonicProfileButton(
-                                            playing: _sonicPlaying,
-                                            enabled:
-                                                _sonicUrl?.isNotEmpty == true,
-                                            onTap: _toggleSonic,
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            '${p?['nickname'] ?? 'DD 用户'}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 25,
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          IconButton(
-                                            tooltip: '编辑资料',
-                                            padding: EdgeInsets.zero,
-                                            constraints:
-                                                const BoxConstraints.tightFor(
-                                                    width: 30, height: 30),
-                                            onPressed: () async {
-                                              await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const EditProfilePage()),
-                                              );
-                                              if (mounted) load();
-                                            },
-                                            icon: const Icon(
-                                                Icons.edit_outlined,
-                                                size: 18),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          _InlineProfileStat(
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xfff0fdf4),
+                                      border: Border.all(
+                                          color: const Color(0xffbbf7d0)),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: const BoxDecoration(
+                                                color: Color(0xff22c55e),
+                                                shape: BoxShape.circle)),
+                                        const SizedBox(width: 5),
+                                        const Text('在线',
+                                            style: TextStyle(
+                                                color: Color(0xff16a34a),
+                                                fontSize: 11)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 30),
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                decoration: BoxDecoration(
+                                  border: Border.symmetric(
+                                      horizontal: BorderSide(
+                                          color:
+                                              Theme.of(context).dividerColor)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                        child: _InlineProfileStat(
                                             label: '粉丝',
                                             value: '${p?['followers'] ?? 0}',
                                             onTap: () => Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const _UserRelationListPage(
-                                                  relation: 'followers',
-                                                  title: '粉丝',
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          _InlineProfileStat(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const _UserRelationListPage(
+                                                            relation:
+                                                                'followers',
+                                                            title: '粉丝'))))),
+                                    Expanded(
+                                        child: _InlineProfileStat(
                                             label: '关注',
                                             value: '${p?['following'] ?? 0}',
                                             onTap: () => Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const _UserRelationListPage(
-                                                  relation: 'following',
-                                                  title: '关注',
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          _InlineProfileStat(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const _UserRelationListPage(
+                                                            relation:
+                                                                'following',
+                                                            title: '关注'))))),
+                                    Expanded(
+                                        child: _InlineProfileStat(
                                             label: '获赞',
                                             value:
                                                 '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
                                             onTap: () => Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const _UserRelationListPage(
-                                                  relation: 'likers',
-                                                  title: '获赞',
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const _UserRelationListPage(
+                                                            relation: 'likers',
+                                                            title: '获赞'))))),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 12),
                               SizedBox(

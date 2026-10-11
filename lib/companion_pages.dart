@@ -382,99 +382,201 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: tab == 2 ? const Color(0xff0f0f11) : null,
+      appBar: AppBar(title: const Text('三角洲端游')),
+      body: Column(
+        children: [
+          _deltaBanner(),
+          _topTabs(),
+          Expanded(child: tab == 2 ? _playbookBody() : _topTabBody()),
+        ],
+      ),
+    );
+  }
+
+  Widget _deltaBanner() => Container(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        height: 156,
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              colors: [Color(0xff263b59), Color(0xff9b4c48)]),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('百强大神推荐榜',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w900)),
+            SizedBox(height: 6),
+            Text('服务贴心 · 好评优选',
+                style: TextStyle(color: Colors.white70, fontSize: 14)),
+          ],
+        ),
+      );
+
+  Widget _topTabs() => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Row(
+          children: List.generate(4, (index) {
+            final selected = tab == index;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => setState(() => tab = index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? const Color(0xffff6a1f)
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(['明星陪玩', '魔王技术', '玩法合集', '一键找人'][index],
+                      style: TextStyle(
+                          color: selected
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurface,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w500)),
+                ),
+              ),
+            );
+          }),
+        ),
+      );
+
+  Widget _topTabBody() {
+    if (tab == 0) {
+      return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+          children: const [
+            _DeltaCompanionCard(
+                name: '若尘',
+                price: '80',
+                tags: ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰', '秒接单']),
+            _DeltaCompanionCard(
+                name: '圆子ovo冲冲冲', price: '64', tags: ['金牌娱乐', '三角洲巅峰', '秒接单']),
+            _DeltaCompanionCard(
+                name: '董可爱呀', price: '88', tags: ['魔王技术', '金牌娱乐', '三角洲巅峰']),
+          ]);
+    }
+    if (tab == 1) {
+      return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+          children: const [
+            _DeltaCompanionCard(
+                name: '魔王S大神', price: '108', tags: ['魔王S', '三角洲巅峰', '技术指导']),
+            _DeltaCompanionCard(
+                name: '金牌大神', price: '96', tags: ['金牌大神', '航天基地', '秒接单']),
+          ]);
+    }
+    return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+        children: const [
+          Text('我的要求',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          Card(
+              child: ListTile(title: Text('性别'), subtitle: Text('不限 · 男 · 女'))),
+          Card(child: ListTile(title: Text('服务模式'), subtitle: Text('机密价'))),
+          Card(child: ListTile(title: Text('游戏模式'), subtitle: Text('不限'))),
+          Card(
+              child: ListTile(
+                  title: Text('游戏地图'),
+                  subtitle: Text('不限 · 巴克什 · 潮汐监狱 · 航天基地 · 长弓溪谷 · 零号大坝'))),
+          Card(
+              child: ListTile(
+                  title: Text('考核等级'), subtitle: Text('不限 · 魔王S · 金牌大神'))),
+          Card(child: ListTile(title: Text('是否单陪'), subtitle: Text('不限'))),
+          Card(
+              child: ListTile(
+                  title: Text('更多要求'), subtitle: Text('达到等级 ≥ 白银2 后解锁'))),
+        ]);
+  }
+
+  Widget _playbookBody() {
     final item = data[tab];
     final items = (item['items'] as List).cast<List<dynamic>>();
-    return Scaffold(
-      backgroundColor: const Color(0xff0f0f11),
-      appBar: AppBar(
-        title: const Text('三角洲端游 · 玩法合集'),
-        backgroundColor: const Color(0xff141416),
-        foregroundColor: const Color(0xffe5e7eb),
-      ),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 148,
-            child: ColoredBox(
-              color: const Color(0xff141416),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 18, 12, 24),
-                children: [
-                  const Padding(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: 148,
+          child: ColoredBox(
+            color: const Color(0xff141416),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 18, 12, 24),
+              children: [
+                const Padding(
                     padding: EdgeInsets.fromLTRB(10, 0, 10, 18),
                     child: Text('玩法合集',
                         style: TextStyle(
                             color: Color(0xfff3f4f6),
                             fontSize: 16,
-                            fontWeight: FontWeight.w700)),
-                  ),
-                  for (var i = 0; i < categories.length; i++)
-                    Padding(
+                            fontWeight: FontWeight.w700))),
+                for (var i = 0; i < categories.length; i++)
+                  Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: _sidebarItem(i, categories[i]),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 48),
-              children: [
-                Row(
-                  children: [
-                    Text('${item['title']}',
-                        style: const TextStyle(
-                            color: Color(0xfff3f4f6),
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0x23ff6a1f),
-                        border: Border.all(color: const Color(0x40ff6a1f)),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text('${item['badge']}',
-                          style: const TextStyle(
-                              color: Color(0xffff6a1f),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text('${item['desc']}',
-                    style: const TextStyle(
-                        color: Color(0xff9ca3af), fontSize: 13, height: 1.6)),
-                const SizedBox(height: 24),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final columns = constraints.maxWidth >= 700
-                        ? 3
-                        : constraints.maxWidth >= 430
-                            ? 2
-                            : 1;
-                    final width =
-                        (constraints.maxWidth - (columns - 1) * 14) / columns;
-                    return Wrap(
-                      spacing: 14,
-                      runSpacing: 14,
-                      children: [
-                        for (final project in items)
-                          SizedBox(width: width, child: _projectCard(project)),
-                      ],
-                    );
-                  },
-                ),
+                      child: _sidebarItem(i, categories[i])),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 48),
+            children: [
+              Row(children: [
+                Text('${item['title']}',
+                    style: const TextStyle(
+                        color: Color(0xfff3f4f6),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700)),
+                const SizedBox(width: 10),
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: const Color(0x23ff6a1f),
+                        border: Border.all(color: const Color(0x40ff6a1f)),
+                        borderRadius: BorderRadius.circular(6)),
+                    child: Text('${item['badge']}',
+                        style: const TextStyle(
+                            color: Color(0xffff6a1f),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)))
+              ]),
+              const SizedBox(height: 6),
+              Text('${item['desc']}',
+                  style: const TextStyle(
+                      color: Color(0xff9ca3af), fontSize: 13, height: 1.6)),
+              const SizedBox(height: 24),
+              LayoutBuilder(builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 700
+                    ? 3
+                    : constraints.maxWidth >= 430
+                        ? 2
+                        : 1;
+                final width =
+                    (constraints.maxWidth - (columns - 1) * 14) / columns;
+                return Wrap(spacing: 14, runSpacing: 14, children: [
+                  for (final project in items)
+                    SizedBox(width: width, child: _projectCard(project))
+                ]);
+              }),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -662,6 +764,62 @@ class _DeltaGameEntryButton extends StatelessWidget {
                 const Icon(Icons.chevron_right, color: Colors.white),
               ],
             ),
+          ),
+        ),
+      );
+}
+
+class _DeltaCompanionCard extends StatelessWidget {
+  const _DeltaCompanionCard({
+    required this.name,
+    required this.price,
+    required this.tags,
+  });
+  final String name;
+  final String price;
+  final List<String> tags;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              const CircleAvatar(
+                radius: 30,
+                child: Icon(Icons.person_outline, size: 30),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      children: tags
+                          .map((tag) => Chip(
+                                label: Text(tag),
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                              ))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('$price 币 / 小时',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+              FilledButton(onPressed: () {}, child: const Text('查看')),
+            ],
           ),
         ),
       );
