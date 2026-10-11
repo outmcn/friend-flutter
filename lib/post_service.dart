@@ -299,12 +299,19 @@ class DDPostService {
       String token, String conversationId) async {
     final response = await _client.get(
       _api('/im/conversations/$conversationId/timeline'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
     );
     final body = response.body.trim();
-    final data = body.isEmpty ? null : jsonDecode(body);
-    if (response.statusCode != 200 || data is! Map || data['items'] is! List) {
-      throw Exception('聊天时间线加载失败（HTTP ${response.statusCode}）');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('聊天详情请求失败：HTTP ${response.statusCode}');
+    }
+    if (body.isEmpty) throw Exception('聊天详情返回为空');
+    final data = jsonDecode(body);
+    if (data is! Map || data['items'] is! List) {
+      throw Exception('聊天详情数据格式错误');
     }
     return (data['items'] as List)
         .whereType<Map>()

@@ -810,7 +810,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           SnackBar(content: Text('$error')),
         );
       }
-      // 保留本地缓存，不因服务端时间线错误显示无提示空白页。
     } finally {
       service.dispose();
     }
