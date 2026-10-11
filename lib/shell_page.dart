@@ -632,6 +632,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Offset? holdStartPosition;
   bool moreExpanded = false;
   bool emojiExpanded = false;
+  bool _didInitialScroll = false;
   ImageProvider? myAvatarProvider;
   ImageProvider? peerAvatarProvider;
 
@@ -651,28 +652,27 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     try {
       final me = await service.fetchMe(token);
       final myUrl = '${me['avatarUrl'] ?? ''}';
-      if (myUrl.isNotEmpty) {
-        myAvatarProvider = NetworkImage(myUrl);
-      }
       final peerUrl = widget.chat.avatarUrl ?? '';
-      if (peerUrl.isNotEmpty) {
-        peerAvatarProvider = NetworkImage(peerUrl);
-      }
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      setState(() {
+        if (myUrl.isNotEmpty) myAvatarProvider = NetworkImage(myUrl);
+        if (peerUrl.isNotEmpty) peerAvatarProvider = NetworkImage(peerUrl);
+      });
     } catch (_) {
-      // 头像读取失败时保留默认头像，不影响聊天内容。
+      // 头像读取失败时保留稳定占位，不触发列表重新滚动。
     } finally {
       service.dispose();
     }
   }
 
-  void _scrollToLatest() {
-    if (!mounted) return;
+  void _scrollToLatest({bool force = false}) {
+    if (!mounted || (_didInitialScroll && !force)) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !messageScrollController.hasClients) return;
       final position = messageScrollController.position;
       if (position.hasContentDimensions) {
         position.jumpTo(position.maxScrollExtent);
+        _didInitialScroll = true;
       }
     });
   }
@@ -1845,9 +1845,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 return _CallRecordBubble(
                                   record: callRecords[index - messages.length],
                                   currentUserId: currentUserId,
-                                  myAvatar: const AssetImage(
-                                      'assets/figma/profile-portrait-2.jpg'),
-                                  peerAvatar: _chatAvatarFor(widget.chat),
+                                  myAvatar: myAvatarProvider ??
+                                      const AssetImage(
+                                          'assets/figma/profile-portrait-2.jpg'),
+                                  peerAvatar: peerAvatarProvider ??
+                                      const AssetImage(
+                                          'assets/figma/profile-portrait-2.jpg'),
                                   onTap: () => _redialCall(
                                       callRecords[index - messages.length]),
                                 );
@@ -1891,7 +1894,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                     const AssetImage(
                                         'assets/figma/profile-portrait-2.jpg'))
                                 : (peerAvatarProvider ??
-                                    _chatAvatarFor(widget.chat));
+                                    const AssetImage(
+                                        'assets/figma/profile-portrait-2.jpg'));
                             return Column(
                               children: [
                                 if (showTime)
