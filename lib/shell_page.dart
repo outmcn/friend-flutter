@@ -807,9 +807,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (!mounted) return;
       final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
       final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
-      await Navigator.of(context).push(MaterialPageRoute(
+      if (call.isNotEmpty) {
+        await _saveCallEvent(call);
+      }
+      if (!mounted) return;
+      final page = MaterialPageRoute(
         builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
-      ));
+      );
+      await Navigator.of(context).push(page);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1241,11 +1246,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (!mounted) return;
       final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
       final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
-        ),
+      if (call.isNotEmpty) {
+        await _saveCallEvent(call);
+      }
+      if (!mounted) return;
+      final page = MaterialPageRoute(
+        builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
       );
+      await Navigator.of(context).push(page);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -1731,7 +1739,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             onTap: _openPeerProfile,
             child: Row(children: [
               CircleAvatar(
-                radius: 20,
+                radius: 15,
                 backgroundImage: _chatAvatarFor(widget.chat),
               ),
               const SizedBox(width: 8),
@@ -1824,7 +1832,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 : peerTopBarAvatar;
                             if (isCall) {
                               return Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.only(bottom: 12),
                                 child: _CallRecordBubble(
                                   record: message,
                                   currentUserId: currentUserId,
@@ -1851,134 +1859,142 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                       ),
                                     ),
                                   ),
-                                Align(
-                                  alignment: isMine
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      if (!isMine) ...[
-                                        CircleAvatar(
-                                            radius: 15,
-                                            backgroundImage: bubbleAvatar),
-                                        const SizedBox(width: 6),
-                                      ],
-                                      Container(
-                                        constraints: BoxConstraints(
-                                          maxWidth:
-                                              MediaQuery.sizeOf(context).width *
-                                                  0.72,
-                                        ),
-                                        margin:
-                                            const EdgeInsets.only(bottom: 0),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: isMine
-                                              ? Theme.of(context)
-                                                  .colorScheme
-                                                  .primaryContainer
-                                              : Theme.of(context)
-                                                  .colorScheme
-                                                  .surfaceContainerHighest,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: const Radius.circular(16),
-                                            topRight: const Radius.circular(16),
-                                            bottomLeft: Radius.circular(
-                                                isMine ? 16 : 4),
-                                            bottomRight: Radius.circular(
-                                                isMine ? 4 : 16),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Align(
+                                    alignment: isMine
+                                        ? Alignment.centerRight
+                                        : Alignment.centerLeft,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        if (!isMine) ...[
+                                          CircleAvatar(
+                                              radius: 15,
+                                              backgroundImage: bubbleAvatar),
+                                          const SizedBox(width: 6),
+                                        ],
+                                        Container(
+                                          constraints: BoxConstraints(
+                                            maxWidth: MediaQuery.sizeOf(context)
+                                                    .width *
+                                                0.72,
                                           ),
-                                        ),
-                                        child: GestureDetector(
-                                          onLongPress: () =>
-                                              _showMessageMenu(message),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Flexible(
-                                                child: isRecalled || isDeleted
-                                                    ? Text(
-                                                        isRecalled
-                                                            ? '消息已撤回'
-                                                            : '消息已删除',
-                                                        style: const TextStyle(
-                                                            color: Colors.grey),
-                                                      )
-                                                    : message['kind'] == 'image'
-                                                        ? _imageMessageBody(
-                                                            message)
-                                                        : message['kind'] ==
-                                                                'audio'
-                                                            ? InkWell(
-                                                                onTap: () =>
-                                                                    _playAudioMessage(
-                                                                        '${message['text'] ?? ''}'),
-                                                                child: Text(
-                                                                  playingAudioKey ==
-                                                                          '${message['text'] ?? ''}'
-                                                                      ? '⏸ 播放中'
-                                                                      : '🔊 播放语音',
+                                          margin:
+                                              const EdgeInsets.only(bottom: 0),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: isMine
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .primaryContainer
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest,
+                                            borderRadius: BorderRadius.only(
+                                              topLeft:
+                                                  const Radius.circular(16),
+                                              topRight:
+                                                  const Radius.circular(16),
+                                              bottomLeft: Radius.circular(
+                                                  isMine ? 16 : 4),
+                                              bottomRight: Radius.circular(
+                                                  isMine ? 4 : 16),
+                                            ),
+                                          ),
+                                          child: GestureDetector(
+                                            onLongPress: () =>
+                                                _showMessageMenu(message),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Flexible(
+                                                  child: isRecalled || isDeleted
+                                                      ? Text(
+                                                          isRecalled
+                                                              ? '消息已撤回'
+                                                              : '消息已删除',
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: Colors
+                                                                      .grey),
+                                                        )
+                                                      : message['kind'] ==
+                                                              'image'
+                                                          ? _imageMessageBody(
+                                                              message)
+                                                          : message['kind'] ==
+                                                                  'audio'
+                                                              ? InkWell(
+                                                                  onTap: () =>
+                                                                      _playAudioMessage(
+                                                                          '${message['text'] ?? ''}'),
+                                                                  child: Text(
+                                                                    playingAudioKey ==
+                                                                            '${message['text'] ?? ''}'
+                                                                        ? '⏸ 播放中'
+                                                                        : '🔊 播放语音',
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyLarge,
+                                                                  ),
+                                                                )
+                                                              : Text(
+                                                                  '${message['text'] ?? ''}',
                                                                   style: Theme.of(
                                                                           context)
                                                                       .textTheme
                                                                       .bodyLarge,
                                                                 ),
-                                                              )
-                                                            : Text(
-                                                                '${message['text'] ?? ''}',
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyLarge,
-                                                              ),
-                                              ),
-                                              if (status == 'pending') ...[
-                                                const SizedBox(width: 6),
-                                                const SizedBox(
-                                                  width: 12,
-                                                  height: 12,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                          strokeWidth: 1.5),
                                                 ),
-                                              ],
-                                              if (status == 'failed')
-                                                GestureDetector(
-                                                  onTap: () =>
-                                                      _retryMessage(message),
-                                                  child: const Icon(
-                                                    Icons.error_outline,
-                                                    size: 16,
-                                                    color: Colors.orange,
+                                                if (status == 'pending') ...[
+                                                  const SizedBox(width: 6),
+                                                  const SizedBox(
+                                                    width: 12,
+                                                    height: 12,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                            strokeWidth: 1.5),
                                                   ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      if (isMine) ...[
-                                        const SizedBox(width: 6),
-                                        CircleAvatar(
-                                            radius: 15,
-                                            backgroundImage: bubbleAvatar),
-                                      ],
-                                      if (isReadByPeer)
-                                        const Padding(
-                                          padding: EdgeInsets.only(left: 3),
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              color: Colors.green,
-                                              shape: BoxShape.circle,
+                                                ],
+                                                if (status == 'failed')
+                                                  GestureDetector(
+                                                    onTap: () =>
+                                                        _retryMessage(message),
+                                                    child: const Icon(
+                                                      Icons.error_outline,
+                                                      size: 16,
+                                                      color: Colors.orange,
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
-                                            child: SizedBox(
-                                                width: 3.5, height: 3.5),
                                           ),
                                         ),
-                                    ],
+                                        if (isMine) ...[
+                                          const SizedBox(width: 6),
+                                          CircleAvatar(
+                                              radius: 15,
+                                              backgroundImage: bubbleAvatar),
+                                        ],
+                                        if (isReadByPeer)
+                                          const Padding(
+                                            padding: EdgeInsets.only(left: 3),
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                color: Colors.green,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: SizedBox(
+                                                  width: 3.5, height: 3.5),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
