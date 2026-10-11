@@ -81,7 +81,6 @@ import UserNotifications
       authInfo.token = token
       authInfo.gslbServer = "https://gslb.dingrtc.com"
       _ = engine.setAudioSessionOperationRestriction(.none)
-      _ = engine.setAudioProfile(DingRtcEngineHighQualityMode, audio_scene: DingRtcSceneDefaultMode)
       _ = engine.subscribeAllRemoteAudioStreams(true)
       _ = engine.enableSpeakerphone(true)
       _ = engine.startAudioPlayer()
@@ -172,7 +171,7 @@ import UserNotifications
       self?.rtcChannel?.invokeMethod("bye", arguments: ["code": code.rawValue])
     }
   }
-  func onRemoteUserOnLineNotify(_ uid: String, elapsed: Int32) {
+  func onRemoteUser(onLineNotify uid: String, elapsed: Int32) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("remoteJoined", arguments: ["userId": uid, "elapsed": elapsed])
     }
