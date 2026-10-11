@@ -633,6 +633,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool moreExpanded = false;
   bool emojiExpanded = false;
   bool _didInitialScroll = false;
+  bool _scrollRetryScheduled = false;
   bool avatarsReady = false;
   ImageProvider? myAvatarProvider;
   ImageProvider? peerAvatarProvider;
@@ -718,14 +719,25 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   void _scrollToLatest({bool force = false}) {
     if (!mounted || (_didInitialScroll && !force)) return;
+    if (_scrollRetryScheduled) return;
+    _scrollRetryScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollRetryScheduled = false;
       if (!mounted || !messageScrollController.hasClients) return;
       final position = messageScrollController.position;
-      if (position.hasContentDimensions) {
-        position.jumpTo(position.maxScrollExtent);
-        _didInitialScroll = true;
+      if (!position.hasContentDimensions) {
+        _scrollToLatest(force: force);
+        return;
       }
+      position.jumpTo(position.maxScrollExtent);
+      _didInitialScroll = true;
     });
+  }
+
+  bool _isNearBottom({double threshold = 96}) {
+    if (!messageScrollController.hasClients) return true;
+    final position = messageScrollController.position;
+    return position.maxScrollExtent - position.pixels <= threshold;
   }
 
   void _handleMessageScroll() {
@@ -1113,8 +1125,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       index++;
     }
     if (mounted) {
+      final follow = _isNearBottom();
       setState(() {});
-      _scrollToLatest(force: true);
+      if (follow) _scrollToLatest(force: true);
     }
   }
 
