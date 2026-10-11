@@ -2292,8 +2292,9 @@ class _AudioCallPage extends StatefulWidget {
 class _AudioCallPageState extends State<_AudioCallPage> {
   bool muted = false;
   bool joined = false;
-  bool remoteLeft = false;
   StreamSubscription<Map<String, dynamic>>? imEvents;
+  bool _ending = false;
+  bool _endedNoticeShown = false;
 
   @override
   void initState() {
@@ -2303,15 +2304,28 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     unawaited(_joinRtc());
   }
 
+  void _showEndedNotice() {
+    if (!mounted || _endedNoticeShown) return;
+    _endedNoticeShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('对方已挂断')),
+    );
+  }
+
+  Future<void> _finishRemoteHangup() async {
+    if (_ending) return;
+    _ending = true;
+    _showEndedNotice();
+    try {
+      await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
+    } catch (_) {}
+    if (mounted) Navigator.of(context).pop();
+  }
+
   void _handleRtcEvent(String method, dynamic args) {
-    if (!mounted) return;
     if (method == 'remoteLeft') {
-      setState(() => remoteLeft = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('对方已挂断')),
-      );
       unawaited(_finishRemoteHangup());
-    } else if (method == 'error') {
+    } else if (method == 'error' && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('RTC 连接失败：${args is Map ? args['code'] : ''}')),
       );
@@ -2326,23 +2340,8 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     }
     final status = '${call['status'] ?? ''}';
     if (status == 'ended' || status == 'cancelled' || status == 'rejected') {
-      if (mounted) {
-        setState(() => remoteLeft = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('对方已挂断')),
-        );
-      }
       unawaited(_finishRemoteHangup());
     }
-  }
-
-  Future<void> _finishRemoteHangup() async {
-    if (!mounted) return;
-    final navigator = Navigator.of(context);
-    try {
-      await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
-    } catch (_) {}
-    if (mounted) navigator.pop();
   }
 
   Future<void> _joinRtc() async {
