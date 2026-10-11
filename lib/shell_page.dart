@@ -55,7 +55,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         final callerId = '${item['callerId'] ?? item['caller_id'] ?? ''}';
         final calleeId = '${item['calleeId'] ?? item['callee_id'] ?? ''}';
         final selfId = ImSession.instance.userId ?? '';
-        if (callerId.isNotEmpty && calleeId == selfId && callerId != selfId) {
+        if (callerId.isNotEmpty &&
+            (calleeId.isEmpty || calleeId == selfId) &&
+            callerId != selfId) {
           unawaited(_showIncomingCall(item));
         }
       }
@@ -75,7 +77,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final incoming = calls.where((call) {
         final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
         final calleeId = '${call['calleeId'] ?? call['callee_id'] ?? ''}';
-        return callerId.isNotEmpty && calleeId == selfId && callerId != selfId;
+        return callerId.isNotEmpty &&
+            (calleeId.isEmpty || calleeId == selfId) &&
+            callerId != selfId;
       }).toList();
       if (incoming.isNotEmpty) await _showIncomingCall(incoming.first);
     } catch (_) {
@@ -90,7 +94,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final selfId = ImSession.instance.userId ?? '';
     final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
     final calleeId = '${call['calleeId'] ?? call['callee_id'] ?? ''}';
-    if (callerId.isEmpty || calleeId != selfId || callerId == selfId) return;
+    if (callerId.isEmpty ||
+        (calleeId.isNotEmpty && calleeId != selfId) ||
+        callerId == selfId) {
+      return;
+    }
     if (!mounted || callId.isEmpty || callDialogShowing) return;
     callDialogShowing = true;
     try {
