@@ -636,6 +636,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool avatarsReady = false;
   ImageProvider? myAvatarProvider;
   ImageProvider? peerAvatarProvider;
+  String? myAvatarPath;
+  String? peerAvatarPath;
 
   @override
   void initState() {
@@ -653,17 +655,54 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     try {
       final me = await service.fetchMe(token);
       final myKey = '${me['avatarKey'] ?? me['avatar_key'] ?? ''}'.trim();
+      final peerKey = (widget.chat.avatarKey ?? '').trim();
+      final cachedMy =
+          myKey.isEmpty ? null : await ImLocalStore.avatarPath(myKey);
+      final cachedPeer =
+          peerKey.isEmpty ? null : await ImLocalStore.avatarPath(peerKey);
+      if (cachedMy != null || cachedPeer != null) {
+        if (mounted) {
+          setState(() {
+            myAvatarPath = cachedMy;
+            peerAvatarPath = cachedPeer;
+            if (cachedMy != null) myAvatarProvider = FileImage(File(cachedMy));
+            if (cachedPeer != null) {
+              peerAvatarProvider = FileImage(File(cachedPeer));
+            }
+            avatarsReady = true;
+          });
+        }
+      }
       final myUrl = myKey.isEmpty
           ? '${me['avatarUrl'] ?? me['avatar_url'] ?? ''}'
           : await service.avatarUrl(token, myKey);
-      final peerKey = (widget.chat.avatarKey ?? '').trim();
       final peerUrl = peerKey.isEmpty
           ? (widget.chat.avatarUrl ?? '')
           : await service.avatarUrl(token, peerKey);
+      if (myKey.isNotEmpty && myUrl.isNotEmpty) {
+        final response = await http.get(Uri.parse(myUrl));
+        if (response.statusCode == 200) {
+          final saved =
+              await ImLocalStore.saveAvatar(myKey, response.bodyBytes);
+          myAvatarPath = saved;
+        }
+      }
+      if (peerKey.isNotEmpty && peerUrl.isNotEmpty) {
+        final response = await http.get(Uri.parse(peerUrl));
+        if (response.statusCode == 200) {
+          final saved =
+              await ImLocalStore.saveAvatar(peerKey, response.bodyBytes);
+          peerAvatarPath = saved;
+        }
+      }
       if (!mounted) return;
       setState(() {
-        if (myUrl.isNotEmpty) myAvatarProvider = NetworkImage(myUrl);
-        if (peerUrl.isNotEmpty) peerAvatarProvider = NetworkImage(peerUrl);
+        if (myAvatarPath != null) {
+          myAvatarProvider = FileImage(File(myAvatarPath!));
+        }
+        if (peerAvatarPath != null) {
+          peerAvatarProvider = FileImage(File(peerAvatarPath!));
+        }
         avatarsReady = true;
       });
     } catch (_) {
