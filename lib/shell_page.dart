@@ -28,6 +28,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    unawaited(_loadConversations(showLoading: false));
     listEvents = ImSession.instance.events.listen(_handleListEvent);
   }
 
@@ -879,11 +880,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         token,
         widget.chat.conversationId,
       );
+      final normalized = records
+          .map((record) => {
+                ...record,
+                'createdAt': record['startedAt'] ?? record['createdAt'] ?? '',
+              })
+          .toList()
+        ..sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
       if (!mounted) return;
       setState(() {
         callRecords
           ..clear()
-          ..addAll(records);
+          ..addAll(normalized);
       });
     } catch (_) {
       // 通话记录刷新失败不覆盖已有聊天内容。
@@ -1769,7 +1777,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             child: Column(
               children: [
                 Expanded(
-                  child: messages.isEmpty
+                  child: messages.isEmpty && callRecords.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -2498,15 +2506,15 @@ class _CallRecordBubble extends StatelessWidget {
   final VoidCallback onTap;
 
   String _statusText() {
+    final started = DateTime.tryParse('${record['answeredAt'] ?? ''}');
+    final ended = DateTime.tryParse('${record['endedAt'] ?? ''}');
+    final duration = started != null && ended != null
+        ? ended.difference(started).inSeconds
+        : 0;
+    final durationText = duration > 0 ? ' · $duration秒' : '';
     switch ('${record['status'] ?? ''}') {
       case 'answered':
-        final started = DateTime.tryParse('${record['answeredAt'] ?? ''}');
-        final ended = DateTime.tryParse('${record['endedAt'] ?? ''}');
-        if (started != null && ended != null) {
-          final seconds = ended.difference(started).inSeconds;
-          return seconds > 0 ? '通话 $seconds 秒' : '已接通';
-        }
-        return '已接通';
+        return '已接通$durationText';
       case 'rejected':
         return '已拒绝';
       case 'cancelled':
@@ -2521,7 +2529,9 @@ class _CallRecordBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = '${record['callerId'] ?? ''}' == currentUserId;
-    final time = DateTime.tryParse('${record['startedAt'] ?? ''}')?.toLocal();
+    final time = DateTime.tryParse(
+      '${record['startedAt'] ?? record['createdAt'] ?? ''}',
+    )?.toLocal();
     final timeText = time == null
         ? ''
         : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
