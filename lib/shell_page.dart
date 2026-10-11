@@ -51,7 +51,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (event['type'] == 'call:incoming') {
       final call = event['call'];
       if (call is Map) {
-        unawaited(_showIncomingCall(call.cast<String, dynamic>()));
+        final item = call.cast<String, dynamic>();
+        final callerId = '${item['callerId'] ?? item['caller_id'] ?? ''}';
+        final calleeId = '${item['calleeId'] ?? item['callee_id'] ?? ''}';
+        final selfId = ImSession.instance.userId ?? '';
+        if (callerId.isNotEmpty && calleeId == selfId && callerId != selfId) {
+          unawaited(_showIncomingCall(item));
+        }
       }
     }
   }
@@ -63,7 +69,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final service = DDPostService();
     try {
       final calls = await service.fetchPendingImCalls(token);
-      if (calls.isNotEmpty) await _showIncomingCall(calls.first);
+      final selfId = ImSession.instance.userId ??
+          prefs.getString('friend.auth.userId') ??
+          '';
+      final incoming = calls.where((call) {
+        final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
+        final calleeId = '${call['calleeId'] ?? call['callee_id'] ?? ''}';
+        return callerId.isNotEmpty && calleeId == selfId && callerId != selfId;
+      }).toList();
+      if (incoming.isNotEmpty) await _showIncomingCall(incoming.first);
     } catch (_) {
       // 当前响铃来电读取失败不影响聊天页面。
     } finally {
@@ -73,6 +87,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _showIncomingCall(Map<String, dynamic> call) async {
     final callId = '${call['id'] ?? ''}';
+    final selfId = ImSession.instance.userId ?? '';
+    final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
+    final calleeId = '${call['calleeId'] ?? call['callee_id'] ?? ''}';
+    if (callerId.isEmpty || calleeId != selfId || callerId == selfId) return;
     if (!mounted || callId.isEmpty || callDialogShowing) return;
     callDialogShowing = true;
     try {
