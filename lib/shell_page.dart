@@ -93,7 +93,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final index = existing
         .indexWhere((item) => '${item['id'] ?? ''}' == '${call['id'] ?? ''}');
     if (index >= 0) {
-      existing[index] = {...existing[index], ...call};
+      final previous = existing[index];
+      final merged = {...previous, ...call};
+      if (call['answeredAt'] == null && previous['answeredAt'] != null) {
+        merged['answeredAt'] = previous['answeredAt'];
+      }
+      if (call['endedAt'] == null && previous['endedAt'] != null) {
+        merged['endedAt'] = previous['endedAt'];
+      }
+      existing[index] = merged;
     } else {
       existing.add(call);
     }
@@ -555,23 +563,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
 String _callPreviewStatus(Map<String, dynamic> row) {
   final status = '${row['status'] ?? ''}';
-  final answered =
-      DateTime.tryParse('${row['answeredAt'] ?? row['answered_at'] ?? ''}');
-  final ended = DateTime.tryParse('${row['endedAt'] ?? row['ended_at'] ?? ''}');
-  if (status == 'rejected') return '已拒接';
+  final answered = DateTime.tryParse(
+    '${row['answeredAt'] ?? row['answered_at'] ?? ''}',
+  );
+  final ended = DateTime.tryParse(
+    '${row['endedAt'] ?? row['ended_at'] ?? ''}',
+  );
   if (status == 'cancelled') return '已取消';
-  if (status == 'answered' || (status == 'ended' && answered != null)) {
-    final seconds = answered == null
-        ? 0
-        : (ended ?? DateTime.now())
-            .difference(answered)
-            .inSeconds
-            .clamp(0, 86400);
-    final duration =
-        '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
-    return '通话时长 $duration';
-  }
-  return '未接通';
+  if (status == 'rejected') return '已拒绝';
+  if (answered == null) return '未接听';
+  final seconds =
+      (ended ?? DateTime.now()).difference(answered).inSeconds.clamp(0, 86400);
+  final duration =
+      '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
+  return '已接听 · 通话时间 $duration';
 }
 
 String? _localMessagePreview(Map<String, dynamic>? row) {
@@ -985,7 +990,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (id.isEmpty) return;
     final index = messages.indexWhere((item) =>
         item['_timelineKind'] == 'call' && '${item['id'] ?? ''}' == id);
-    final mergedCall = index >= 0 ? {...messages[index], ...call} : call;
+    final mergedCall = index >= 0
+        ? {
+            ...messages[index],
+            ...call,
+            if (call['answeredAt'] == null)
+              'answeredAt': messages[index]['answeredAt'],
+            if (call['endedAt'] == null) 'endedAt': messages[index]['endedAt'],
+          }
+        : call;
     final callerId = '${mergedCall['callerId'] ?? ''}';
     final calleeId = '${mergedCall['calleeId'] ?? ''}';
     if (callerId.isEmpty || calleeId.isEmpty) return;
@@ -2363,11 +2376,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                     keyboardType: TextInputType.multiline,
                                     scrollPhysics:
                                         const ClampingScrollPhysics(),
-                                    contextMenuBuilder: (context, state) =>
-                                        AdaptiveTextSelectionToolbar
-                                            .buttonItems(
-                                      anchors: state.contextMenuAnchors,
-                                      buttonItems: state.contextMenuButtonItems
+                                    contextMenuBuilder: (context, state) {
+                                      final allowed = <ContextMenuButtonType>{
+                                        ContextMenuButtonType.copy,
+                                        ContextMenuButtonType.cut,
+                                        ContextMenuButtonType.paste,
+                                        ContextMenuButtonType.selectAll,
+                                      };
+                                      final items = state.contextMenuButtonItems
+                                          .where((item) =>
+                                              allowed.contains(item.type))
                                           .map(
                                             (item) => ContextMenuButtonItem(
                                               onPressed: item.onPressed,
@@ -2378,8 +2396,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                               ),
                                             ),
                                           )
-                                          .toList(),
-                                    ),
+                                          .toList();
+                                      return AdaptiveTextSelectionToolbar
+                                          .buttonItems(
+                                        anchors: state.contextMenuAnchors,
+                                        buttonItems: items,
+                                      );
+                                    },
                                     decoration: InputDecoration(
                                       hintText: '输入消息',
                                       suffixIcon: IconButton(
@@ -2419,7 +2442,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             if (moreExpanded)
               Positioned(
                 right: 8,
-                bottom: 76,
+                bottom: 132,
                 child: Material(
                   color: Theme.of(context).colorScheme.surface,
                   elevation: 8,
@@ -2472,7 +2495,7 @@ String _chineseContextMenuLabel(ContextMenuButtonType type, String? fallback) {
     case ContextMenuButtonType.selectAll:
       return '全选';
     default:
-      return fallback ?? '操作';
+      return '';
   }
 }
 
@@ -2851,8 +2874,15 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     if (status == 'ended' || status == 'cancelled' || status == 'rejected') {
       callStatus = status;
       durationTimer?.cancel();
-      unawaited(_persistCallLocally(call.cast<String, dynamic>()));
-      unawaited(_finishRemoteHangup());
+      final finalCall = {
+        ...call.cast<String, dynamic>(),
+        if (call['answeredAt'] == null && answeredAt != null)
+          'answeredAt': answeredAt!.toIso8601String(),
+      };
+      unawaited(_persistCallLocally(finalCall));
+      if (status != 'ended' || answeredAt == null) {
+        unawaited(_finishRemoteHangup());
+      }
     }
   }
 
@@ -3016,27 +3046,23 @@ class _CallRecordBubble extends StatelessWidget {
   final VoidCallback onTap;
 
   String _statusText() {
-    final ended = DateTime.tryParse('${record['endedAt'] ?? ''}');
-    final answered = DateTime.tryParse('${record['answeredAt'] ?? ''}');
-    final seconds = answered != null
-        ? (ended != null
-            ? ended.difference(answered).inSeconds.clamp(0, 86400)
-            : DateTime.now().difference(answered).inSeconds.clamp(0, 86400))
-        : 0;
-    final durationText =
+    final status = '${record['status'] ?? ''}';
+    final answered = DateTime.tryParse(
+      '${record['answeredAt'] ?? record['answered_at'] ?? ''}',
+    );
+    final ended = DateTime.tryParse(
+      '${record['endedAt'] ?? record['ended_at'] ?? ''}',
+    );
+    if (status == 'cancelled') return '已取消';
+    if (status == 'rejected') return '已拒绝';
+    if (answered == null) return '未接听';
+    final seconds = (ended ?? DateTime.now())
+        .difference(answered)
+        .inSeconds
+        .clamp(0, 86400);
+    final duration =
         '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
-    switch ('${record['status'] ?? ''}') {
-      case 'answered':
-        return '通话时长 $durationText';
-      case 'rejected':
-        return '已拒接';
-      case 'cancelled':
-        return '已取消';
-      case 'ended':
-        return answered != null ? '通话时长 $durationText' : '未接通';
-      default:
-        return '未接通';
-    }
+    return '已接听 · 通话时间 $duration';
   }
 
   @override
