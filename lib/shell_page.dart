@@ -632,12 +632,38 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Offset? holdStartPosition;
   bool moreExpanded = false;
   bool emojiExpanded = false;
+  ImageProvider? myAvatarProvider;
+  ImageProvider? peerAvatarProvider;
 
   @override
   void initState() {
     super.initState();
     messageScrollController.addListener(_handleMessageScroll);
+    unawaited(_loadChatAvatars());
     unawaited(_connectIm());
+  }
+
+  Future<void> _loadChatAvatars() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty || !mounted) return;
+    final service = DDPostService();
+    try {
+      final me = await service.fetchMe(token);
+      final myUrl = '${me['avatarUrl'] ?? ''}';
+      if (myUrl.isNotEmpty) {
+        myAvatarProvider = NetworkImage(myUrl);
+      }
+      final peerUrl = widget.chat.avatarUrl ?? '';
+      if (peerUrl.isNotEmpty) {
+        peerAvatarProvider = NetworkImage(peerUrl);
+      }
+      if (mounted) setState(() {});
+    } catch (_) {
+      // 头像读取失败时保留默认头像，不影响聊天内容。
+    } finally {
+      service.dispose();
+    }
   }
 
   void _scrollToLatest() {
@@ -1860,6 +1886,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                             .difference(previousCreatedAt)
                                             .inMinutes >=
                                         5);
+                            final bubbleAvatar = isMine
+                                ? (myAvatarProvider ??
+                                    const AssetImage(
+                                        'assets/figma/profile-portrait-2.jpg'))
+                                : (peerAvatarProvider ??
+                                    _chatAvatarFor(widget.chat));
                             return Column(
                               children: [
                                 if (showTime)
@@ -1881,15 +1913,24 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                   alignment: isMine
                                       ? Alignment.centerRight
                                       : Alignment.centerLeft,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
+                                      if (!isMine) ...[
+                                        CircleAvatar(
+                                            radius: 15,
+                                            backgroundImage: bubbleAvatar),
+                                        const SizedBox(width: 6),
+                                      ],
                                       Container(
-                                        margin: EdgeInsets.only(
-                                          bottom: 8,
-                                          left: isMine ? 64 : 0,
-                                          right: isMine ? 0 : 64,
+                                        constraints: BoxConstraints(
+                                          maxWidth:
+                                              MediaQuery.sizeOf(context).width *
+                                                  0.72,
                                         ),
+                                        margin:
+                                            const EdgeInsets.only(bottom: 8),
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12, vertical: 8),
                                         decoration: BoxDecoration(
@@ -1909,87 +1950,83 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                 isMine ? 4 : 16),
                                           ),
                                         ),
-                                        child: Column(
-                                          crossAxisAlignment: isMine
-                                              ? CrossAxisAlignment.end
-                                              : CrossAxisAlignment.start,
-                                          children: [
-                                            GestureDetector(
-                                              onLongPress: () =>
-                                                  _showMessageMenu(message),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  isRecalled || isDeleted
-                                                      ? Text(
-                                                          isRecalled
-                                                              ? '消息已撤回'
-                                                              : '消息已删除',
-                                                          style:
-                                                              const TextStyle(
-                                                                  color: Colors
-                                                                      .grey))
-                                                      : message['kind'] ==
-                                                              'image'
-                                                          ? _imageMessageBody(
-                                                              message)
-                                                          : message['kind'] ==
-                                                                  'audio'
-                                                              ? InkWell(
-                                                                  onTap: () =>
-                                                                      _playAudioMessage(
-                                                                          '${message['text'] ?? ''}'),
-                                                                  child: Text(
-                                                                    playingAudioKey ==
-                                                                            '${message['text'] ?? ''}'
-                                                                        ? '⏸ 播放中'
-                                                                        : '🔊 播放语音',
-                                                                    style: Theme.of(
-                                                                            context)
-                                                                        .textTheme
-                                                                        .bodyLarge,
-                                                                  ),
-                                                                )
-                                                              : Text(
-                                                                  '${message['text'] ?? ''}',
+                                        child: GestureDetector(
+                                          onLongPress: () =>
+                                              _showMessageMenu(message),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: isRecalled || isDeleted
+                                                    ? Text(
+                                                        isRecalled
+                                                            ? '消息已撤回'
+                                                            : '消息已删除',
+                                                        style: const TextStyle(
+                                                            color: Colors.grey),
+                                                      )
+                                                    : message['kind'] == 'image'
+                                                        ? _imageMessageBody(
+                                                            message)
+                                                        : message['kind'] ==
+                                                                'audio'
+                                                            ? InkWell(
+                                                                onTap: () =>
+                                                                    _playAudioMessage(
+                                                                        '${message['text'] ?? ''}'),
+                                                                child: Text(
+                                                                  playingAudioKey ==
+                                                                          '${message['text'] ?? ''}'
+                                                                      ? '⏸ 播放中'
+                                                                      : '🔊 播放语音',
                                                                   style: Theme.of(
                                                                           context)
                                                                       .textTheme
                                                                       .bodyLarge,
                                                                 ),
-                                                  if (status == 'pending') ...[
-                                                    const SizedBox(width: 6),
-                                                    const SizedBox(
-                                                      width: 12,
-                                                      height: 12,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                              strokeWidth: 1.5),
-                                                    ),
-                                                  ],
-                                                  if (status == 'failed')
-                                                    GestureDetector(
-                                                      onTap: () =>
-                                                          _retryMessage(
-                                                              message),
-                                                      child: const Icon(
-                                                        Icons.error_outline,
-                                                        size: 16,
-                                                        color: Colors.orange,
-                                                      ),
-                                                    ),
-                                                ],
+                                                              )
+                                                            : Text(
+                                                                '${message['text'] ?? ''}',
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .bodyLarge,
+                                                              ),
                                               ),
-                                            ),
-                                            if (timeText.isNotEmpty)
-                                              const SizedBox.shrink(),
-                                          ],
+                                              if (status == 'pending') ...[
+                                                const SizedBox(width: 6),
+                                                const SizedBox(
+                                                  width: 12,
+                                                  height: 12,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 1.5),
+                                                ),
+                                              ],
+                                              if (status == 'failed')
+                                                GestureDetector(
+                                                  onTap: () =>
+                                                      _retryMessage(message),
+                                                  child: const Icon(
+                                                    Icons.error_outline,
+                                                    size: 16,
+                                                    color: Colors.orange,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
                                         ),
                                       ),
+                                      if (isMine) ...[
+                                        const SizedBox(width: 6),
+                                        CircleAvatar(
+                                            radius: 15,
+                                            backgroundImage: bubbleAvatar),
+                                      ],
                                       if (isReadByPeer)
-                                        Positioned(
-                                          left: isMine ? 60 : -1,
-                                          bottom: 7,
+                                        const Padding(
+                                          padding: EdgeInsets.only(
+                                              left: 3, bottom: 7),
                                           child: DecoratedBox(
                                             decoration: BoxDecoration(
                                               color: Colors.green,
