@@ -36,10 +36,11 @@ import AliVCSDK_ARTC
       rtcEngine = engine
       engine.setChannelProfile(.interactivelive)
       engine.setClientRole(.roleInteractive)
+      engine.setLogLevel(.info)
       engine.setDefaultSubscribeAllRemoteAudioStreams(true)
       engine.subscribeAllRemoteAudioStreams(true)
       engine.publishLocalAudioStream(true)
-      let code = engine.joinChannel(token, channelId: nil, userId: nil, name: "Friend") { [weak self] errorCode, joinedChannel, joinedUserId, _ in
+      let code = engine.joinChannel(token, channelId: nil, userId: nil, name: nil) { [weak self] errorCode, joinedChannel, joinedUserId, _ in
         DispatchQueue.main.async {
           if errorCode == 0 {
             self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": joinedChannel, "userId": joinedUserId])

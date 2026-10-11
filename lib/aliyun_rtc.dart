@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 
 /// Flutter bridge for the native Alibaba Cloud DingRTC audio engine.
@@ -5,18 +7,21 @@ class AliyunRtcBridge {
   static const _channel = MethodChannel('com.outmcn.dd/aliyun_rtc');
 
   static Future<void> join(Map<String, dynamic> rtc) async {
-    await _channel.invokeMethod('join', {
-      'appId': '${rtc['appId'] ?? ''}',
-      'channelId': '${rtc['channelId'] ?? ''}',
-      'userId': '${rtc['userId'] ?? ''}',
-      'userName': '${rtc['userName'] ?? rtc['userId'] ?? ''}',
+    final rawToken = '${rtc['token'] ?? ''}';
+    final payload = <String, dynamic>{
+      'appid': '${rtc['appId'] ?? ''}',
+      'channelid': '${rtc['channelId'] ?? ''}',
+      'userid': '${rtc['userId'] ?? ''}',
       'nonce': '${rtc['nonce'] ?? ''}',
-      'timestamp': '${rtc['timestamp'] ?? ''}',
-      'token': '${rtc['token'] ?? ''}',
-      'gslb': (rtc['gslb'] is List && (rtc['gslb'] as List).isNotEmpty)
-          ? '${(rtc['gslb'] as List).first}'
-          : '',
-    });
+      'timestamp': rtc['timestamp'] is int
+          ? rtc['timestamp']
+          : int.tryParse('${rtc['timestamp'] ?? ''}') ?? 0,
+      'token': rawToken,
+    };
+    final singleParameterToken = '${rtc['token'] ?? ''}'.startsWith('000')
+        ? rawToken
+        : '000${base64Encode(utf8.encode(jsonEncode(payload)))}';
+    await _channel.invokeMethod('join', {'token': singleParameterToken});
   }
 
   static Future<void> setMuted(bool muted) async {
