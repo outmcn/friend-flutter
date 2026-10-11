@@ -2440,6 +2440,12 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     final initialAnswered =
         DateTime.tryParse('${widget.call['answeredAt'] ?? ''}');
     if (initialAnswered != null) answeredAt = initialAnswered;
+    if (callStatus == 'answered') {
+      answeredAt ??= DateTime.now();
+      durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
     if (callStatus == 'ringing') {
       callTimer = Timer(const Duration(seconds: 30), _cancelAfterTimeout);
     }
@@ -2516,6 +2522,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     if (nextAnswered != null) answeredAt = nextAnswered;
     if (status == 'answered') {
       callTimer?.cancel();
+      answeredAt ??= DateTime.now();
       durationTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
       });
@@ -2611,6 +2618,13 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     super.dispose();
   }
 
+  String _elapsedText() {
+    if (answeredAt == null) return '00:00';
+    final seconds =
+        DateTime.now().difference(answeredAt!).inSeconds.clamp(0, 86400);
+    return '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('语音通话')),
@@ -2622,8 +2636,8 @@ class _AudioCallPageState extends State<_AudioCallPage> {
                   radius: 42, child: Icon(Icons.person, size: 42)),
               const SizedBox(height: 16),
               Text(
-                callStatus == 'answered' && answeredAt != null
-                    ? '通话中 ${DateTime.now().difference(answeredAt!).inSeconds}s'
+                callStatus == 'answered'
+                    ? '通话中 ${_elapsedText()}'
                     : joined
                         ? '通话中'
                         : '正在连接',
