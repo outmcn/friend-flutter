@@ -644,9 +644,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !messageScrollController.hasClients) return;
-      messageScrollController.jumpTo(
-        messageScrollController.position.maxScrollExtent,
-      );
+      final position = messageScrollController.position;
+      if (position.hasContentDimensions) {
+        position.jumpTo(position.maxScrollExtent);
+      }
     });
   }
 
@@ -893,6 +894,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..clear()
           ..addAll(normalized);
       });
+      _scrollToLatest();
     } catch (_) {
       // 通话记录刷新失败不覆盖已有聊天内容。
     } finally {
