@@ -856,6 +856,33 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     ));
   }
 
+  Future<void> _saveCallEvent(Map<String, dynamic> raw) async {
+    final call = {
+      ...raw,
+      '_timelineKind': 'call',
+      'createdAt': raw['startedAt'] ??
+          raw['createdAt'] ??
+          DateTime.now().toIso8601String(),
+    };
+    final id = '${call['id'] ?? ''}';
+    if (id.isEmpty) return;
+    final index = messages.indexWhere((item) =>
+        item['_timelineKind'] == 'call' && '${item['id'] ?? ''}' == id);
+    setState(() {
+      if (index >= 0) {
+        messages[index] = {...messages[index], ...call};
+      } else {
+        messages.add(call);
+      }
+      messages.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
+    });
+    await ImLocalStore.saveMessages(
+      accountId: currentUserId,
+      conversationId: widget.chat.conversationId,
+      messages: messages,
+    );
+  }
+
   Future<void> _handleImEvent(Map<String, dynamic> event) async {
     if (!mounted) return;
     final type = event['type'];
@@ -869,8 +896,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (type == 'call:update') {
       final call = event['call'];
-      if (call is Map && '${call['status'] ?? ''}' == 'ended') {
-        if (mounted && Navigator.of(context).canPop()) {
+      if (call is Map) {
+        await _saveCallEvent(call.cast<String, dynamic>());
+        if ('${call['status'] ?? ''}' == 'ended' &&
+            mounted &&
+            Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
         }
       }
