@@ -22,24 +22,21 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   bool conversationCacheLoaded = false;
   String? loadError;
   final Map<String, String> _avatarPaths = {};
-  Timer? pendingCallTimer;
+  bool callDialogShowing = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_pollPendingCalls());
-    pendingCallTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      unawaited(_pollPendingCalls());
-    });
     listEvents = ImSession.instance.events.listen(_handleListEvent);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_pollPendingCalls());
       unawaited(_loadConversations(showLoading: false));
+      // 仅在恢复前台时读取当前响铃来电，不读取历史通话记录。
+      unawaited(_loadCurrentRingingCall());
     }
   }
 
@@ -58,18 +55,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _pollPendingCalls() async {
+  Future<void> _loadCurrentRingingCall() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty || !mounted) return;
     final service = DDPostService();
     try {
       final calls = await service.fetchPendingImCalls(token);
-      for (final call in calls) {
-        await _showIncomingCall(call);
-      }
+      if (calls.isNotEmpty) await _showIncomingCall(calls.first);
     } catch (_) {
-      // 后台轮询失败不阻塞消息页。
+      // 当前响铃来电读取失败不影响聊天页面。
     } finally {
       service.dispose();
     }
@@ -77,53 +72,51 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _showIncomingCall(Map<String, dynamic> call) async {
     final callId = '${call['id'] ?? ''}';
-    final accepted = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('来电'),
-        content: const Text('对方发起了一次语音通话'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, 'reject'),
-            child: const Text('拒绝'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, 'answer'),
-            child: const Text('接听'),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || accepted == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty) return;
-    final service = DDPostService();
+    if (!mounted || callId.isEmpty || callDialogShowing) return;
+    callDialogShowing = true;
     try {
-      final result = await service.updateImCall(token, callId, accepted);
-      if (accepted == 'answer' && mounted) {
-        final answeredCall =
-            (result['call'] as Map?)?.cast<String, dynamic>() ?? call;
-        final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
-        await Navigator.of(context).push(
-          MaterialPageRoute(
+      final accepted = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('来电'),
+          content: Text('用户 ${call['callerId'] ?? '对方'} 发起了语音通话'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'reject'),
+              child: const Text('拒绝'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, 'answer'),
+              child: const Text('接听'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || accepted == null) return;
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) return;
+      final service = DDPostService();
+      try {
+        final result = await service.updateImCall(token, callId, accepted);
+        if (accepted == 'answer' && mounted) {
+          final answeredCall =
+              (result['call'] as Map?)?.cast<String, dynamic>() ?? call;
+          final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
+          await Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => _AudioCallPage(
               call: answeredCall,
               rtc: rtc,
               token: token,
             ),
-          ),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$error')),
-        );
+          ));
+        }
+      } finally {
+        service.dispose();
       }
     } finally {
-      service.dispose();
+      callDialogShowing = false;
     }
   }
 
@@ -247,7 +240,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    pendingCallTimer?.cancel();
     messageController.dispose();
     userSearchController.dispose();
     listEvents?.cancel();
@@ -606,6 +598,7 @@ class _ChatDetailPage extends StatefulWidget {
   const _ChatDetailPage({required this.chat, this.currentUserId = ''});
   final _ChatPreview chat;
   final String currentUserId;
+  ImageProvider get avatar => _chatAvatarFor(chat);
   @override
   State<_ChatDetailPage> createState() => _ChatDetailPageState();
 }
@@ -828,6 +821,52 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       });
     } catch (_) {
       // 已显示 SQLite；后台刷新失败不覆盖当前聊天内容。
+    } finally {
+      service.dispose();
+    }
+  }
+
+  Future<void> _redialCall(Map<String, dynamic> record) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('语音通话'),
+        content: const Text('是否拨打语音通话？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('拨打'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final result = await service.startImCall(
+        token,
+        widget.chat.conversationId,
+      );
+      if (!mounted) return;
+      final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
+      final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
+      await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
+      ));
+      unawaited(_refreshCallRecords(token));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$error')),
+        );
+      }
     } finally {
       service.dispose();
     }
@@ -1770,6 +1809,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 return _CallRecordBubble(
                                   record: callRecords[index - messages.length],
                                   currentUserId: currentUserId,
+                                  myAvatar: const AssetImage(
+                                      'assets/figma/profile-portrait-2.jpg'),
+                                  peerAvatar: _chatAvatarFor(widget.chat),
+                                  onTap: () => _redialCall(
+                                      callRecords[index - messages.length]),
                                 );
                               }
                               return _TypingBubble();
@@ -2439,10 +2483,19 @@ class _AudioCallPageState extends State<_AudioCallPage> {
 }
 
 class _CallRecordBubble extends StatelessWidget {
-  const _CallRecordBubble({required this.record, required this.currentUserId});
+  const _CallRecordBubble({
+    required this.record,
+    required this.currentUserId,
+    required this.myAvatar,
+    required this.peerAvatar,
+    required this.onTap,
+  });
 
   final Map<String, dynamic> record;
   final String currentUserId;
+  final ImageProvider myAvatar;
+  final ImageProvider peerAvatar;
+  final VoidCallback onTap;
 
   String _statusText() {
     switch ('${record['status'] ?? ''}') {
@@ -2468,22 +2521,42 @@ class _CallRecordBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = '${record['callerId'] ?? ''}' == currentUserId;
+    final time = DateTime.tryParse('${record['startedAt'] ?? ''}')?.toLocal();
+    final timeText = time == null
+        ? ''
+        : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(14),
-          ),
+      child: Align(
+        alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.call,
-                  size: 16, color: mine ? Colors.green : Colors.blue),
-              const SizedBox(width: 6),
-              Text('语音通话 · ${_statusText()}'),
+              if (!mine) CircleAvatar(radius: 15, backgroundImage: peerAvatar),
+              if (!mine) const SizedBox(width: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.call,
+                        size: 16, color: mine ? Colors.green : Colors.blue),
+                    const SizedBox(width: 6),
+                    Text(
+                        '语音通话 · ${_statusText()}${timeText.isEmpty ? '' : '  $timeText'}'),
+                  ],
+                ),
+              ),
+              if (mine) const SizedBox(width: 6),
+              if (mine) CircleAvatar(radius: 15, backgroundImage: myAvatar),
             ],
           ),
         ),
