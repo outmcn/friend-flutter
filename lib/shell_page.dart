@@ -780,12 +780,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         widget.chat.conversationId,
       );
       if (!mounted) return;
-      // 空时间线不代表聊天为空：服务端异常或短暂延迟时必须保留本地缓存。
+      // 服务端返回空数组时保留本地缓存，但若本地确实为空则保持空状态。
       if (items.isEmpty && _timeline.isNotEmpty) return;
-      if (items.isEmpty && _timeline.isEmpty) {
-        setState(() => initialSyncCompleted = true);
-        return;
-      }
       final nextMessages = <Map<String, dynamic>>[];
       final nextCalls = <Map<String, dynamic>>[];
       for (final item in items) {
