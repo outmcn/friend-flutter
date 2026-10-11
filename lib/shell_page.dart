@@ -632,8 +632,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Offset? holdStartPosition;
   bool moreExpanded = false;
   bool emojiExpanded = false;
-  bool _didInitialScroll = false;
-  bool _initialScrollPending = false;
   bool avatarsReady = false;
   ImageProvider? myAvatarProvider;
   ImageProvider? peerAvatarProvider;
@@ -718,23 +716,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       provider ?? const AssetImage('assets/figma/profile-portrait-2.jpg');
 
   void _scrollToLatest({bool force = false}) {
-    if (!mounted || (_didInitialScroll && !force)) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !messageScrollController.hasClients) return;
-      final position = messageScrollController.position;
-      if (!position.hasContentDimensions || position.maxScrollExtent <= 0) {
-        if (!_initialScrollPending) {
-          _initialScrollPending = true;
-          Future<void>.delayed(const Duration(milliseconds: 80), () {
-            _initialScrollPending = false;
-            if (mounted) _scrollToLatest(force: force);
-          });
-        }
-        return;
-      }
-      position.jumpTo(position.maxScrollExtent);
-      _didInitialScroll = true;
-    });
+    // 详情列表使用 reverse=true，最新消息天然位于底部，不需要手动跳转。
   }
 
   bool _isNearBottom({double threshold = 96}) {
@@ -1130,7 +1112,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       index++;
     }
     if (mounted) {
-      final follow = !_didInitialScroll || _isNearBottom();
+      final follow = _isNearBottom();
       setState(() {});
       if (follow) _scrollToLatest(force: true);
     }
@@ -1828,7 +1810,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                           : ListView.builder(
                               controller: messageScrollController,
                               physics: const AlwaysScrollableScrollPhysics(),
-                              reverse: false,
+                              reverse: true,
                               keyboardDismissBehavior:
                                   ScrollViewKeyboardDismissBehavior.onDrag,
                               padding: const EdgeInsets.all(16),
