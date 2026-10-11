@@ -117,6 +117,18 @@ class _DDProfilePageState extends State<DDProfilePage> {
         final avatar = avatarKey.isEmpty
             ? null
             : await service.resolveAvatarUrl(t, avatarKey);
+        if (avatarKey.isNotEmpty && avatar != null && avatar.isNotEmpty) {
+          try {
+            final response = await http.get(Uri.parse(avatar));
+            if (response.statusCode >= 200 &&
+                response.statusCode < 300 &&
+                response.bodyBytes.isNotEmpty) {
+              await ImLocalStore.saveAvatar(avatarKey, response.bodyBytes);
+            }
+          } catch (_) {
+            // 头像写入失败不影响我的页继续显示已获取的签名头像。
+          }
+        }
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('friend.profile.avatarKey', avatarKey);
         await prefs.setString('friend.profile.avatarUrl', avatar ?? '');
