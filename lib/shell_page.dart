@@ -175,6 +175,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           preview,
           row.peer?.avatarUrl,
           row.peer?.avatarKey,
+          row.peer?.id,
           row.id,
           row.unreadCount,
           row.peerReadMessageId,
@@ -299,8 +300,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       if (!mounted) return;
       final chat = conversations.firstWhere(
         (item) => item.conversationId == id,
-        orElse: () => _ChatPreview(
-            '${selected['nickname'] ?? '用户'}', '开始一段新的聊天', null, null, id, 0),
+        orElse: () => _ChatPreview('${selected['nickname'] ?? '用户'}',
+            '开始一段新的聊天', null, null, '${selected['id'] ?? ''}', id, 0),
       );
       await _stopListSocket();
       if (!mounted) return;
@@ -484,12 +485,13 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
 
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
-      this.conversationId, this.unreadCount,
+      this.peerUserId, this.conversationId, this.unreadCount,
       [this.peerReadMessageId, this.updatedAt]);
   final String name;
   final String preview;
   final String? avatarUrl;
   final String? avatarKey;
+  final String? peerUserId;
   final String conversationId;
   final int unreadCount;
   final String? peerReadMessageId;
@@ -500,6 +502,7 @@ class _ChatPreview {
         '${row['preview'] ?? ''}',
         row['avatarUrl'] as String?,
         row['avatarKey'] as String?,
+        row['peerUserId']?.toString() ?? row['userId']?.toString(),
         '${row['conversationId'] ?? ''}',
         (row['unreadCount'] as num?)?.toInt() ?? 0,
         row['peerReadMessageId']?.toString(),
@@ -511,6 +514,7 @@ class _ChatPreview {
         'preview': preview,
         'avatarUrl': avatarUrl,
         'avatarKey': avatarKey,
+        'peerUserId': peerUserId,
         'conversationId': conversationId,
         'unreadCount': unreadCount,
         'peerReadMessageId': peerReadMessageId,
@@ -1708,19 +1712,33 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  Future<void> _openPeerProfile() async {
+    final peerId = int.tryParse(widget.chat.peerUserId ?? '');
+    if (peerId == null) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => OtherProfilePage(
+        userId: peerId,
+        name: widget.chat.name,
+      ),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
-          title: Row(children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: _chatAvatarFor(widget.chat),
-            ),
-            const SizedBox(width: 8),
-            Text(widget.chat.name,
-                style: Theme.of(context).textTheme.bodyLarge),
-          ]),
+          title: GestureDetector(
+            onTap: _openPeerProfile,
+            child: Row(children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: _chatAvatarFor(widget.chat),
+              ),
+              const SizedBox(width: 8),
+              Text(widget.chat.name,
+                  style: Theme.of(context).textTheme.bodyLarge),
+            ]),
+          ),
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
           ],
@@ -1805,12 +1823,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 ? _stableAvatar(myAvatarProvider)
                                 : peerTopBarAvatar;
                             if (isCall) {
-                              return _CallRecordBubble(
-                                record: message,
-                                currentUserId: currentUserId,
-                                myAvatar: _stableAvatar(myAvatarProvider),
-                                peerAvatar: peerTopBarAvatar,
-                                onTap: () => _redialCall(message),
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: _CallRecordBubble(
+                                  record: message,
+                                  currentUserId: currentUserId,
+                                  myAvatar: _stableAvatar(myAvatarProvider),
+                                  peerAvatar: peerTopBarAvatar,
+                                  onTap: () => _redialCall(message),
+                                ),
                               );
                             }
                             return Column(
@@ -1947,8 +1968,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                       ],
                                       if (isReadByPeer)
                                         const Padding(
-                                          padding: EdgeInsets.only(
-                                              left: 3, bottom: 7),
+                                          padding: EdgeInsets.only(left: 3),
                                           child: DecoratedBox(
                                             decoration: BoxDecoration(
                                               color: Colors.green,

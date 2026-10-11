@@ -64,6 +64,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         '开始一段新的聊天',
         _avatarUrl,
         null,
+        '$peerId',
         conversationId,
         0,
       );
