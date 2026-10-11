@@ -301,11 +301,10 @@ class DDPostService {
       _api('/im/conversations/$conversationId/timeline'),
       headers: {'Authorization': 'Bearer $token'},
     );
-    final data =
-        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    final body = response.body.trim();
+    final data = body.isEmpty ? null : jsonDecode(body);
     if (response.statusCode != 200 || data is! Map || data['items'] is! List) {
-      throw Exception(
-          data is Map ? '${data['error'] ?? '获取聊天时间线失败'}' : '获取聊天时间线失败');
+      throw Exception('聊天时间线加载失败（HTTP ${response.statusCode}）');
     }
     return (data['items'] as List)
         .whereType<Map>()

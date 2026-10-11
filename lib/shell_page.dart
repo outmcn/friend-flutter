@@ -769,7 +769,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       unawaited(_markLatestRead());
       _scrollToLatest(force: true);
       unawaited(_refreshUnifiedTimeline(token));
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) setState(() => initialSyncCompleted = true);
+    }
   }
 
   Future<void> _refreshUnifiedTimeline(String token) async {
@@ -801,8 +803,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         initialSyncCompleted = true;
       });
       _scrollToLatest(force: true);
-    } catch (_) {
-      // 保留本地缓存，不因网络刷新失败清空聊天。
+    } catch (error) {
+      if (mounted) {
+        setState(() => initialSyncCompleted = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$error')),
+        );
+      }
+      // 保留本地缓存，不因服务端时间线错误显示无提示空白页。
     } finally {
       service.dispose();
     }
