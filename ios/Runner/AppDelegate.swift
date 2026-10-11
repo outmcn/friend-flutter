@@ -1,10 +1,10 @@
 import UIKit
 import Flutter
-import AliVCSDK_ARTC
+import DingRTC
 
 @UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate, AliRtcEngineDelegate {
-  private var rtcEngine: AliRtcEngine?
+@objc class AppDelegate: FlutterAppDelegate, DingRtcEngineDelegate {
+  private var rtcEngine: DingRtcEngine?
   private var rtcChannel: FlutterMethodChannel?
 
   override func application(
@@ -29,21 +29,20 @@ import AliVCSDK_ARTC
       guard let args = call.arguments as? [String: Any],
             let token = args["token"] as? String,
             !token.isEmpty else {
-        result(FlutterError(code: "invalid_args", message: "RTC 参数无效", details: nil))
+        result(FlutterError(code: "invalid_args", message: "RTC Token 参数无效", details: nil))
         return
       }
-      let engine = AliRtcEngine.sharedInstance(self, extras: nil)
+      let engine = DingRtcEngine.createInstance(self, extras: nil)
       rtcEngine = engine
-      engine.setChannelProfile(.interactivelive)
-      engine.setClientRole(.roleInteractive)
-      engine.setLogLevel(.info)
-      engine.setDefaultSubscribeAllRemoteAudioStreams(true)
-      engine.subscribeAllRemoteAudioStreams(true)
-      engine.publishLocalAudioStream(true)
-      let code = engine.joinChannel(token, channelId: nil, userId: nil, name: nil) { [weak self] errorCode, joinedChannel, joinedUserId, _ in
+      _ = engine.subscribeAllRemoteAudioStreams(true)
+      _ = engine.enableSpeakerphone(true)
+      _ = engine.startAudioPlayer()
+      _ = engine.startAudioCapture()
+      _ = engine.publishLocalAudioStream(true)
+      let code = engine.joinChannel(token, name: nil) { [weak self] errorCode, channelName, joinedUserId, _ in
         DispatchQueue.main.async {
           if errorCode == 0 {
-            self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": joinedChannel, "userId": joinedUserId])
+            self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": channelName, "userId": joinedUserId])
           } else {
             self?.rtcChannel?.invokeMethod("error", arguments: ["code": errorCode])
           }
@@ -55,30 +54,29 @@ import AliVCSDK_ARTC
       result(rtcEngine?.subscribeAllRemoteAudioStreams(enabled) == 0)
     case "mute":
       let muted = (call.arguments as? Bool) ?? false
-      result(rtcEngine?.muteLocalMic(muted, mode: AliRtcMuteLocalAudioMode(rawValue: 0)!) == 0)
+      result(rtcEngine?.publishLocalAudioStream(!muted) == 0)
     case "leave":
       let code = rtcEngine?.leaveChannel() ?? 0
       result(code == 0)
-      AliRtcEngine.destroy()
       rtcEngine = nil
     default:
       result(FlutterMethodNotImplemented)
     }
   }
 
-  func onRemoteUserOffLineNotify(_ uid: String, offlineReason reason: AliRtcUserOfflineReason) {
+  func onRemoteUserOffLineNotify(_ uid: String, offlineReason reason: DingRtcUserOfflineReason) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("remoteLeft", arguments: ["userId": uid, "reason": reason.rawValue])
     }
   }
 
-  func onRemoteTrackAvailableNotify(_ uid: String, audioTrack: AliRtcAudioTrack, videoTrack: AliRtcVideoTrack) {
+  func onRemoteTrackAvailableNotify(_ uid: String, audioTrack: DingRtcAudioTrack, videoTrack: DingRtcVideoTrack) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("remoteTrack", arguments: ["userId": uid, "audio": audioTrack.rawValue])
     }
   }
 
-  func onLeaveChannelResult(_ result: Int32, stats: AliRtcStats) {
+  func onLeaveChannelResult(_ result: Int32, stats: DingRtcStats) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("left", arguments: ["code": result])
     }
