@@ -295,6 +295,24 @@ class DDPostService {
         .toList();
   }
 
+  Future<List<Map<String, dynamic>>> fetchImTimeline(
+      String token, String conversationId) async {
+    final response = await _client.get(
+      _api('/im/conversations/$conversationId/timeline'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map || data['items'] is! List) {
+      throw Exception(
+          data is Map ? '${data['error'] ?? '获取聊天时间线失败'}' : '获取聊天时间线失败');
+    }
+    return (data['items'] as List)
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
+  }
+
   Future<Map<String, dynamic>> syncImMessages(
     String token,
     String conversationId,

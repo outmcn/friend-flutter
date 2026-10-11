@@ -768,88 +768,39 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       });
       unawaited(_markLatestRead());
       _scrollToLatest(force: true);
-      unawaited(_refreshDetailFromServer(token));
-      unawaited(_refreshCallRecords(token));
+      unawaited(_refreshUnifiedTimeline(token));
     } catch (_) {}
   }
 
-  Future<void> _refreshDetailFromServer(String token) async {
-    if (!mounted) return;
+  Future<void> _refreshUnifiedTimeline(String token) async {
     final service = DDPostService();
     try {
-      final afterMutationId = await ImLocalStore.mutationId(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-      );
-      final sync = await service.syncImMessages(
+      final items = await service.fetchImTimeline(
         token,
         widget.chat.conversationId,
-        afterMutationId,
-      );
-      final latest = (sync['messages'] as List).cast<DDImMessage>();
-      final nextMutationId = '${sync['nextMutationId'] ?? afterMutationId}';
-      final merged = <String, Map<String, dynamic>>{};
-      for (final current in messages) {
-        final key = '${current['clientId'] ?? current['id'] ?? ''}';
-        if (key.isNotEmpty) merged[key] = current;
-      }
-      for (final item in latest) {
-        final row = <String, dynamic>{
-          'id': item.id,
-          'conversationId': item.conversationId,
-          'senderId': item.senderId,
-          'text': item.text,
-          'kind': item.kind,
-          'durationMs': item.durationMs,
-          'clientId': item.clientId,
-          'createdAt': item.createdAt,
-          'recalledAt': item.recalledAt,
-          'deletedAt': item.deletedAt,
-          'updatedAt': item.updatedAt,
-          'mutationId': item.mutationId,
-          'status': item.recalledAt != null
-              ? 'recalled'
-              : item.deletedAt != null
-                  ? 'deleted'
-                  : 'sent',
-        };
-        final key =
-            item.clientId?.isNotEmpty == true ? item.clientId! : item.id;
-        final local = merged[key];
-        final isLocalPending = local != null &&
-            local['status'] == 'pending' &&
-            '${local['id'] ?? ''}'.startsWith('local:');
-        if (isLocalPending && item.id.isEmpty) continue;
-        merged[key] = {
-          ...?local,
-          ...row,
-          if (isLocalPending &&
-              item.recalledAt == null &&
-              item.deletedAt == null)
-            'status': 'pending',
-        };
-      }
-      final next = merged.values.toList()
-        ..sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: next,
-      );
-      await ImLocalStore.saveMutationId(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        mutationId: nextMutationId,
       );
       if (!mounted) return;
+      final nextMessages = <Map<String, dynamic>>[];
+      final nextCalls = <Map<String, dynamic>>[];
+      for (final item in items) {
+        if (item['_timelineKind'] == 'call') {
+          nextCalls.add(item);
+        } else {
+          nextMessages.add(item);
+        }
+      }
       setState(() {
         messages
           ..clear()
-          ..addAll(next);
+          ..addAll(nextMessages);
+        callRecords
+          ..clear()
+          ..addAll(nextCalls);
+        initialSyncCompleted = true;
       });
       _scrollToLatest(force: true);
     } catch (_) {
-      // 已显示 SQLite；后台刷新失败不覆盖当前聊天内容。
+      // 保留本地缓存，不因网络刷新失败清空聊天。
     } finally {
       service.dispose();
     }
