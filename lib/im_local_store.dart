@@ -120,6 +120,7 @@ class ImLocalStore {
         'senderId': '${item['sender_id'] ?? ''}',
         'text': '${item['text'] ?? ''}',
         'kind': '${item['kind'] ?? 'text'}',
+        if ('${item['kind'] ?? ''}' == 'call') '_timelineKind': 'call',
         'durationMs': (item['duration_ms'] as num?)?.toInt() ?? 0,
         'createdAt': item['created_at'],
         'recalledAt': item['recalled_at'],
@@ -176,7 +177,8 @@ class ImLocalStore {
           'client_id': message['clientId'],
           'sender_id': '${message['senderId'] ?? ''}',
           'text': '${message['text'] ?? ''}',
-          'kind': '${message['kind'] ?? 'text'}',
+          'kind':
+              '${message['_timelineKind'] == 'call' ? 'call' : message['kind'] ?? 'text'}',
           'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
           'created_at': '${message['createdAt'] ?? ''}',
           'status': '${message['status'] ?? 'sent'}',

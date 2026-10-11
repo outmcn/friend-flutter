@@ -733,6 +733,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
       );
+      for (final item in cached) {
+        if ('${item['kind'] ?? ''}' == 'call') {
+          item['_timelineKind'] = 'call';
+        }
+      }
       if (mounted) {
         setState(() {
           messages
@@ -858,6 +863,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final call = {
       ...raw,
       '_timelineKind': 'call',
+      'kind': 'call',
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           DateTime.now().toIso8601String(),
