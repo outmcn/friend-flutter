@@ -633,6 +633,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool moreExpanded = false;
   bool emojiExpanded = false;
   bool _didInitialScroll = false;
+  bool avatarsReady = false;
   ImageProvider? myAvatarProvider;
   ImageProvider? peerAvatarProvider;
 
@@ -663,8 +664,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       setState(() {
         if (myUrl.isNotEmpty) myAvatarProvider = NetworkImage(myUrl);
         if (peerUrl.isNotEmpty) peerAvatarProvider = NetworkImage(peerUrl);
+        avatarsReady = true;
       });
     } catch (_) {
+      if (mounted) setState(() => avatarsReady = true);
       // 头像读取失败时保留稳定占位，不触发列表重新滚动。
     } finally {
       service.dispose();
@@ -1740,237 +1743,253 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             child: Column(
               children: [
                 Expanded(
-                  child: _timeline.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                size: 42,
-                                color: Theme.of(context).hintColor,
+                  child: !avatarsReady
+                      ? const Center(child: CircularProgressIndicator())
+                      : _timeline.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.chat_bubble_outline,
+                                    size: 42,
+                                    color: Theme.of(context).hintColor,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    initialSyncCompleted
+                                        ? '选择一个聊天开始交流'
+                                        : '暂无本地聊天记录',
+                                    style: TextStyle(
+                                        color: Theme.of(context).hintColor),
+                                  ),
+                                  if (peerTyping && messages.isEmpty)
+                                    _TypingBubble(),
+                                ],
                               ),
-                              const SizedBox(height: 12),
-                              Text(
-                                initialSyncCompleted
-                                    ? '选择一个聊天开始交流'
-                                    : '暂无本地聊天记录',
-                                style: TextStyle(
-                                    color: Theme.of(context).hintColor),
-                              ),
-                              if (peerTyping && messages.isEmpty)
-                                _TypingBubble(),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: messageScrollController,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          reverse: false,
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _timeline.length + (peerTyping ? 1 : 0),
-                          itemBuilder: (_, index) {
-                            if (index >= _timeline.length) {
-                              return _TypingBubble();
-                            }
-                            final message = _timeline[index];
-                            final isCall = message['_timelineKind'] == 'call';
-                            final isMine = currentUserId.isNotEmpty &&
-                                '${message['senderId'] ?? ''}' == currentUserId;
-                            final status = '${message['status'] ?? 'sent'}';
-                            final isRecalled = status == 'recalled';
-                            final isDeleted = status == 'deleted';
-                            final isReadByPeer = isMine &&
-                                peerReadMessageId != null &&
-                                !'${message['id'] ?? ''}'
-                                    .startsWith('local:') &&
-                                int.tryParse('${message['id'] ?? ''}') !=
-                                    null &&
-                                int.tryParse(peerReadMessageId!) != null &&
-                                int.parse('${message['id']}') <=
-                                    int.parse(peerReadMessageId!);
-                            final createdAt = DateTime.tryParse(
-                                    '${message['createdAt'] ?? ''}')
-                                ?.toLocal();
-                            final timeText = createdAt == null
-                                ? ''
-                                : '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
-                            final previousCreatedAt = index > 0
-                                ? DateTime.tryParse(
-                                        '${_timeline[index - 1]['createdAt'] ?? ''}')
-                                    ?.toLocal()
-                                : null;
-                            final showTime = createdAt != null &&
-                                (previousCreatedAt == null ||
-                                    createdAt
-                                            .difference(previousCreatedAt)
-                                            .inMinutes >=
-                                        5);
-                            final bubbleAvatar = isMine
-                                ? _stableAvatar(myAvatarProvider)
-                                : _stableAvatar(peerAvatarProvider);
-                            if (isCall) {
-                              return _CallRecordBubble(
-                                record: message,
-                                currentUserId: currentUserId,
-                                myAvatar: _stableAvatar(myAvatarProvider),
-                                peerAvatar: _stableAvatar(peerAvatarProvider),
-                                onTap: () => _redialCall(message),
-                              );
-                            }
-                            return Column(
-                              children: [
-                                if (showTime)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Center(
-                                      child: Text(
-                                        timeText,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
+                            )
+                          : ListView.builder(
+                              controller: messageScrollController,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              reverse: false,
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              padding: const EdgeInsets.all(16),
+                              itemCount:
+                                  _timeline.length + (peerTyping ? 1 : 0),
+                              itemBuilder: (_, index) {
+                                if (index >= _timeline.length) {
+                                  return _TypingBubble();
+                                }
+                                final message = _timeline[index];
+                                final isCall =
+                                    message['_timelineKind'] == 'call';
+                                final isMine = currentUserId.isNotEmpty &&
+                                    '${message['senderId'] ?? ''}' ==
+                                        currentUserId;
+                                final status = '${message['status'] ?? 'sent'}';
+                                final isRecalled = status == 'recalled';
+                                final isDeleted = status == 'deleted';
+                                final isReadByPeer = isMine &&
+                                    peerReadMessageId != null &&
+                                    !'${message['id'] ?? ''}'
+                                        .startsWith('local:') &&
+                                    int.tryParse('${message['id'] ?? ''}') !=
+                                        null &&
+                                    int.tryParse(peerReadMessageId!) != null &&
+                                    int.parse('${message['id']}') <=
+                                        int.parse(peerReadMessageId!);
+                                final createdAt = DateTime.tryParse(
+                                        '${message['createdAt'] ?? ''}')
+                                    ?.toLocal();
+                                final timeText = createdAt == null
+                                    ? ''
+                                    : '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
+                                final previousCreatedAt = index > 0
+                                    ? DateTime.tryParse(
+                                            '${_timeline[index - 1]['createdAt'] ?? ''}')
+                                        ?.toLocal()
+                                    : null;
+                                final showTime = createdAt != null &&
+                                    (previousCreatedAt == null ||
+                                        createdAt
+                                                .difference(previousCreatedAt)
+                                                .inMinutes >=
+                                            5);
+                                final bubbleAvatar = isMine
+                                    ? _stableAvatar(myAvatarProvider)
+                                    : _stableAvatar(peerAvatarProvider);
+                                if (isCall) {
+                                  return _CallRecordBubble(
+                                    record: message,
+                                    currentUserId: currentUserId,
+                                    myAvatar: _stableAvatar(myAvatarProvider),
+                                    peerAvatar:
+                                        _stableAvatar(peerAvatarProvider),
+                                    onTap: () => _redialCall(message),
+                                  );
+                                }
+                                return Column(
+                                  children: [
+                                    if (showTime)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8),
+                                        child: Center(
+                                          child: Text(
+                                            timeText,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                          ),
                                         ),
+                                      ),
+                                    Align(
+                                      alignment: isMine
+                                          ? Alignment.centerRight
+                                          : Alignment.centerLeft,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          if (!isMine) ...[
+                                            CircleAvatar(
+                                                radius: 15,
+                                                backgroundImage: bubbleAvatar),
+                                            const SizedBox(width: 6),
+                                          ],
+                                          Container(
+                                            constraints: BoxConstraints(
+                                              maxWidth:
+                                                  MediaQuery.sizeOf(context)
+                                                          .width *
+                                                      0.72,
+                                            ),
+                                            margin: const EdgeInsets.only(
+                                                bottom: 8),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: isMine
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .primaryContainer
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .surfaceContainerHighest,
+                                              borderRadius: BorderRadius.only(
+                                                topLeft:
+                                                    const Radius.circular(16),
+                                                topRight:
+                                                    const Radius.circular(16),
+                                                bottomLeft: Radius.circular(
+                                                    isMine ? 16 : 4),
+                                                bottomRight: Radius.circular(
+                                                    isMine ? 4 : 16),
+                                              ),
+                                            ),
+                                            child: GestureDetector(
+                                              onLongPress: () =>
+                                                  _showMessageMenu(message),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Flexible(
+                                                    child: isRecalled ||
+                                                            isDeleted
+                                                        ? Text(
+                                                            isRecalled
+                                                                ? '消息已撤回'
+                                                                : '消息已删除',
+                                                            style:
+                                                                const TextStyle(
+                                                                    color: Colors
+                                                                        .grey),
+                                                          )
+                                                        : message['kind'] ==
+                                                                'image'
+                                                            ? _imageMessageBody(
+                                                                message)
+                                                            : message['kind'] ==
+                                                                    'audio'
+                                                                ? InkWell(
+                                                                    onTap: () =>
+                                                                        _playAudioMessage(
+                                                                            '${message['text'] ?? ''}'),
+                                                                    child: Text(
+                                                                      playingAudioKey ==
+                                                                              '${message['text'] ?? ''}'
+                                                                          ? '⏸ 播放中'
+                                                                          : '🔊 播放语音',
+                                                                      style: Theme.of(
+                                                                              context)
+                                                                          .textTheme
+                                                                          .bodyLarge,
+                                                                    ),
+                                                                  )
+                                                                : Text(
+                                                                    '${message['text'] ?? ''}',
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyLarge,
+                                                                  ),
+                                                  ),
+                                                  if (status == 'pending') ...[
+                                                    const SizedBox(width: 6),
+                                                    const SizedBox(
+                                                      width: 12,
+                                                      height: 12,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                              strokeWidth: 1.5),
+                                                    ),
+                                                  ],
+                                                  if (status == 'failed')
+                                                    GestureDetector(
+                                                      onTap: () =>
+                                                          _retryMessage(
+                                                              message),
+                                                      child: const Icon(
+                                                        Icons.error_outline,
+                                                        size: 16,
+                                                        color: Colors.orange,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          if (isMine) ...[
+                                            const SizedBox(width: 6),
+                                            CircleAvatar(
+                                                radius: 15,
+                                                backgroundImage: bubbleAvatar),
+                                          ],
+                                          if (isReadByPeer)
+                                            const Padding(
+                                              padding: EdgeInsets.only(
+                                                  left: 3, bottom: 7),
+                                              child: DecoratedBox(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: SizedBox(
+                                                    width: 3.5, height: 3.5),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                Align(
-                                  alignment: isMine
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      if (!isMine) ...[
-                                        CircleAvatar(
-                                            radius: 15,
-                                            backgroundImage: bubbleAvatar),
-                                        const SizedBox(width: 6),
-                                      ],
-                                      Container(
-                                        constraints: BoxConstraints(
-                                          maxWidth:
-                                              MediaQuery.sizeOf(context).width *
-                                                  0.72,
-                                        ),
-                                        margin:
-                                            const EdgeInsets.only(bottom: 8),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: isMine
-                                              ? Theme.of(context)
-                                                  .colorScheme
-                                                  .primaryContainer
-                                              : Theme.of(context)
-                                                  .colorScheme
-                                                  .surfaceContainerHighest,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: const Radius.circular(16),
-                                            topRight: const Radius.circular(16),
-                                            bottomLeft: Radius.circular(
-                                                isMine ? 16 : 4),
-                                            bottomRight: Radius.circular(
-                                                isMine ? 4 : 16),
-                                          ),
-                                        ),
-                                        child: GestureDetector(
-                                          onLongPress: () =>
-                                              _showMessageMenu(message),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Flexible(
-                                                child: isRecalled || isDeleted
-                                                    ? Text(
-                                                        isRecalled
-                                                            ? '消息已撤回'
-                                                            : '消息已删除',
-                                                        style: const TextStyle(
-                                                            color: Colors.grey),
-                                                      )
-                                                    : message['kind'] == 'image'
-                                                        ? _imageMessageBody(
-                                                            message)
-                                                        : message['kind'] ==
-                                                                'audio'
-                                                            ? InkWell(
-                                                                onTap: () =>
-                                                                    _playAudioMessage(
-                                                                        '${message['text'] ?? ''}'),
-                                                                child: Text(
-                                                                  playingAudioKey ==
-                                                                          '${message['text'] ?? ''}'
-                                                                      ? '⏸ 播放中'
-                                                                      : '🔊 播放语音',
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyLarge,
-                                                                ),
-                                                              )
-                                                            : Text(
-                                                                '${message['text'] ?? ''}',
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyLarge,
-                                                              ),
-                                              ),
-                                              if (status == 'pending') ...[
-                                                const SizedBox(width: 6),
-                                                const SizedBox(
-                                                  width: 12,
-                                                  height: 12,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                          strokeWidth: 1.5),
-                                                ),
-                                              ],
-                                              if (status == 'failed')
-                                                GestureDetector(
-                                                  onTap: () =>
-                                                      _retryMessage(message),
-                                                  child: const Icon(
-                                                    Icons.error_outline,
-                                                    size: 16,
-                                                    color: Colors.orange,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      if (isMine) ...[
-                                        const SizedBox(width: 6),
-                                        CircleAvatar(
-                                            radius: 15,
-                                            backgroundImage: bubbleAvatar),
-                                      ],
-                                      if (isReadByPeer)
-                                        const Padding(
-                                          padding: EdgeInsets.only(
-                                              left: 3, bottom: 7),
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              color: Colors.green,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: SizedBox(
-                                                width: 3.5, height: 3.5),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+                                  ],
+                                );
+                              },
+                            ),
                 ),
               ],
             ),
