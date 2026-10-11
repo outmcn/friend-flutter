@@ -42,6 +42,7 @@ import DingRTC
       authInfo.channelId = channelId
       authInfo.userId = userId
       authInfo.token = token
+      authInfo.gslbServer = "https://rgslb.rtc.aliyuncs.com"
       _ = engine.subscribeAllRemoteAudioStreams(true)
       _ = engine.enableSpeakerphone(true)
       _ = engine.startAudioPlayer()
