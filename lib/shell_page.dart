@@ -237,6 +237,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 ...local,
                 'kind': '${local['kind'] ?? 'text'}',
                 'status': '${local['status'] ?? 'sent'}',
+                'answeredAt': local['answered_at'] ?? local['answeredAt'],
+                'endedAt': local['ended_at'] ?? local['endedAt'],
               });
         final preview = localPreview ?? row.lastMessage?.text ?? '开始一段新的聊天';
         mapped.add(_ChatPreview(
@@ -541,6 +543,27 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       );
 }
 
+String _callPreviewStatus(Map<String, dynamic> row) {
+  final status = '${row['status'] ?? ''}';
+  final answered =
+      DateTime.tryParse('${row['answeredAt'] ?? row['answered_at'] ?? ''}');
+  final ended = DateTime.tryParse('${row['endedAt'] ?? row['ended_at'] ?? ''}');
+  if (status == 'rejected') return '已拒接';
+  if (status == 'cancelled') return '已取消';
+  if (status == 'answered' || (status == 'ended' && answered != null)) {
+    final seconds = answered == null
+        ? 0
+        : (ended ?? DateTime.now())
+            .difference(answered)
+            .inSeconds
+            .clamp(0, 86400);
+    final duration =
+        '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
+    return '通话时长 $duration';
+  }
+  return '未接通';
+}
+
 String? _localMessagePreview(Map<String, dynamic>? row) {
   if (row == null) return null;
   final status = '${row['status'] ?? 'sent'}';
@@ -548,17 +571,7 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
   if (status == 'deleted') return '消息已删除';
   final kind = '${row['kind'] ?? 'text'}';
   if (kind == 'call') {
-    switch (status) {
-      case 'rejected':
-        return '语音通话 · 已拒接';
-      case 'cancelled':
-        return '语音通话 · 已取消';
-      case 'answered':
-      case 'ended':
-        return '语音通话 · 通话记录';
-      default:
-        return '语音通话';
-    }
+    return '语音通话 · ${_callPreviewStatus(row)}';
   }
   if (kind == 'image') return '[图片]';
   if (kind == 'audio') return '[语音]';
@@ -2531,6 +2544,23 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   void _handleRtcEvent(String method, dynamic args) {
     if (method == 'remoteLeft') {
       unawaited(_finishRemoteHangup());
+    } else if (method == 'bye') {
+      callStatus = 'bye';
+      if (mounted) setState(() {});
+      unawaited(_finishRemoteHangup());
+    } else if (method == 'joined') {
+      callStatus = 'rtc_joined';
+      if (mounted) setState(() {});
+    } else if (method == 'remoteJoined' ||
+        method == 'audioPublishState' ||
+        method == 'audioSubscribeState' ||
+        method == 'connectionStatus' ||
+        method == 'warning' ||
+        method == 'networkQuality' ||
+        method == 'firstAudioSent' ||
+        method == 'firstAudioReceived' ||
+        method == 'remoteMuted') {
+      if (mounted) setState(() {});
     } else if (method == 'error' && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('RTC 连接失败：${args is Map ? args['code'] : ''}')),
@@ -2748,23 +2778,34 @@ class _CallRecordBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final mine = '${record['callerId'] ?? ''}' == currentUserId;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Align(
         alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!mine) CircleAvatar(radius: 15, backgroundImage: peerAvatar),
-              if (!mine) const SizedBox(width: 6),
-              Container(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (!mine) ...[
+              CircleAvatar(radius: 15, backgroundImage: peerAvatar),
+              const SizedBox(width: 6),
+            ],
+            GestureDetector(
+              onTap: onTap,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.72,
+                ),
+                margin: EdgeInsets.zero,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: Radius.circular(mine ? 16 : 4),
+                    bottomRight: Radius.circular(mine ? 4 : 16),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -2772,14 +2813,16 @@ class _CallRecordBubble extends StatelessWidget {
                     Icon(Icons.call,
                         size: 16, color: mine ? Colors.green : Colors.blue),
                     const SizedBox(width: 6),
-                    Text('语音通话 · ${_statusText()}'),
+                    Flexible(child: Text('语音通话 · ${_statusText()}')),
                   ],
                 ),
               ),
-              if (mine) const SizedBox(width: 6),
-              if (mine) CircleAvatar(radius: 15, backgroundImage: myAvatar),
+            ),
+            if (mine) ...[
+              const SizedBox(width: 6),
+              CircleAvatar(radius: 15, backgroundImage: myAvatar),
             ],
-          ),
+          ],
         ),
       ),
     );
