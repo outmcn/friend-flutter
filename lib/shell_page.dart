@@ -1799,15 +1799,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                             .difference(previousCreatedAt)
                                             .inMinutes >=
                                         5);
+                            final peerTopBarAvatar =
+                                _chatAvatarFor(widget.chat);
                             final bubbleAvatar = isMine
                                 ? _stableAvatar(myAvatarProvider)
-                                : _stableAvatar(peerAvatarProvider);
+                                : peerTopBarAvatar;
                             if (isCall) {
                               return _CallRecordBubble(
                                 record: message,
                                 currentUserId: currentUserId,
                                 myAvatar: _stableAvatar(myAvatarProvider),
-                                peerAvatar: _stableAvatar(peerAvatarProvider),
+                                peerAvatar: peerTopBarAvatar,
                                 onTap: () => _redialCall(message),
                               );
                             }
