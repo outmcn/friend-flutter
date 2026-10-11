@@ -1851,7 +1851,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 : '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
                             final previousCreatedAt = index > 0
                                 ? DateTime.tryParse(
-                                        '${messages[index - 1]['createdAt'] ?? ''}')
+                                        '${_timeline[index - 1]['createdAt'] ?? ''}')
                                     ?.toLocal()
                                 : null;
                             final showTime = createdAt != null &&
