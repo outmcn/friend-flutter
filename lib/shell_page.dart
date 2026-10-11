@@ -768,53 +768,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       });
       unawaited(_markLatestRead());
       _scrollToLatest(force: true);
-      unawaited(_refreshUnifiedTimeline(token));
     } catch (_) {
       if (mounted) setState(() => initialSyncCompleted = true);
     }
   }
 
-  Future<void> _refreshUnifiedTimeline(String token) async {
-    final service = DDPostService();
-    try {
-      final items = await service.fetchImTimeline(
-        token,
-        widget.chat.conversationId,
-      );
-      if (!mounted) return;
-      // 服务端返回空数组时保留本地缓存，但若本地确实为空则保持空状态。
-      if (items.isEmpty && _timeline.isNotEmpty) return;
-      final nextMessages = <Map<String, dynamic>>[];
-      final nextCalls = <Map<String, dynamic>>[];
-      for (final item in items) {
-        if (item['_timelineKind'] == 'call') {
-          nextCalls.add(item);
-        } else {
-          nextMessages.add(item);
-        }
-      }
-      setState(() {
-        messages
-          ..clear()
-          ..addAll(nextMessages);
-        callRecords
-          ..clear()
-          ..addAll(nextCalls);
-        initialSyncCompleted = true;
-      });
-      _scrollToLatest(force: true);
-    } catch (error) {
-      if (mounted) {
-        setState(() => initialSyncCompleted = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$error')),
-        );
-      }
-    } finally {
-      service.dispose();
-    }
-  }
-
+  // Unread-only sync is represented by the live IM session events.
   Future<void> _redialCall(Map<String, dynamic> record) async {
     final confirmed = await showDialog<bool>(
       context: context,
