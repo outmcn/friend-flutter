@@ -2319,7 +2319,23 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     try {
       await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
     } catch (_) {}
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('语音通话'),
+          content: const Text('对方已挂断'),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('确定'),
+            ),
+          ],
+        ),
+      );
+      if (mounted) Navigator.of(context).pop();
+    }
   }
 
   void _handleRtcEvent(String method, dynamic args) {
