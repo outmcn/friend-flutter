@@ -100,6 +100,16 @@ import UserNotifications
     case "mute":
       let muted = (call.arguments as? Bool) ?? false
       result(rtcEngine?.publishLocalAudioStream(!muted) == 0)
+    case "speaker":
+      let enabled = (call.arguments as? Bool) ?? false
+      let session = AVAudioSession.sharedInstance()
+      do {
+        try session.setCategory(.playAndRecord, mode: .voiceChat, options: enabled ? [.defaultToSpeaker, .allowBluetooth] : [.allowBluetooth])
+        try session.setActive(true)
+        result(true)
+      } catch {
+        result(FlutterError(code: "speaker_failed", message: error.localizedDescription, details: nil))
+      }
     case "leave":
       let engine = rtcEngine
       result(true)

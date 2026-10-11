@@ -80,6 +80,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       'calleeId': raw['calleeId'] ?? raw['callee_id'],
       '_timelineKind': 'call',
       'kind': 'call',
+      'endedAt': raw['endedAt'] ?? raw['ended_at'],
+      'answeredAt': raw['answeredAt'] ?? raw['answered_at'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           DateTime.now().toIso8601String(),
@@ -229,8 +231,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 accountId: accountId,
                 conversationId: row.id,
               );
-        final preview =
-            _localMessagePreview(local) ?? row.lastMessage?.text ?? '开始一段新的聊天';
+        final localPreview = local == null
+            ? null
+            : _localMessagePreview({
+                ...local,
+                'kind': '${local['kind'] ?? 'text'}',
+                'status': '${local['status'] ?? 'sent'}',
+              });
+        final preview = localPreview ?? row.lastMessage?.text ?? '开始一段新的聊天';
         mapped.add(_ChatPreview(
           row.peer?.nickname ?? '会话 ${row.id}',
           preview,
@@ -539,6 +547,19 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
   if (status == 'recalled') return '消息已撤回';
   if (status == 'deleted') return '消息已删除';
   final kind = '${row['kind'] ?? 'text'}';
+  if (kind == 'call') {
+    switch (status) {
+      case 'rejected':
+        return '语音通话 · 已拒接';
+      case 'cancelled':
+        return '语音通话 · 已取消';
+      case 'answered':
+      case 'ended':
+        return '语音通话 · 通话记录';
+      default:
+        return '语音通话';
+    }
+  }
   if (kind == 'image') return '[图片]';
   if (kind == 'audio') return '[语音]';
   return '${row['text'] ?? ''}';
@@ -927,6 +948,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       'calleeId': raw['calleeId'] ?? raw['callee_id'],
       '_timelineKind': 'call',
       'kind': 'call',
+      'endedAt': raw['endedAt'] ?? raw['ended_at'],
+      'answeredAt': raw['answeredAt'] ?? raw['answered_at'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           DateTime.now().toIso8601String(),
@@ -1872,6 +1895,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                             final isRecalled = status == 'recalled';
                             final isDeleted = status == 'deleted';
                             final isReadByPeer = isMine &&
+                                !isCall &&
                                 peerReadMessageId != null &&
                                 !'${message['id'] ?? ''}'
                                     .startsWith('local:') &&
@@ -2056,7 +2080,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                         ],
                                         if (isReadByPeer)
                                           const Padding(
-                                            padding: EdgeInsets.only(left: 3),
+                                            padding: EdgeInsets.only(
+                                              left: 3,
+                                              top: 2,
+                                            ),
                                             child: DecoratedBox(
                                               decoration: BoxDecoration(
                                                 color: Colors.green,
@@ -2424,6 +2451,7 @@ class _AudioCallPage extends StatefulWidget {
 
 class _AudioCallPageState extends State<_AudioCallPage> {
   bool muted = false;
+  bool speakerEnabled = false;
   bool joined = false;
   StreamSubscription<Map<String, dynamic>>? imEvents;
   bool _ending = false;
@@ -2572,6 +2600,8 @@ class _AudioCallPageState extends State<_AudioCallPage> {
           raw['calleeId'] ?? raw['callee_id'] ?? widget.call['calleeId'],
       '_timelineKind': 'call',
       'kind': 'call',
+      'endedAt': raw['endedAt'] ?? raw['ended_at'],
+      'answeredAt': raw['answeredAt'] ?? raw['answered_at'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           widget.call['startedAt'] ??
@@ -2636,11 +2666,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
                   radius: 42, child: Icon(Icons.person, size: 42)),
               const SizedBox(height: 16),
               Text(
-                callStatus == 'answered'
-                    ? '通话中 ${_elapsedText()}'
-                    : joined
-                        ? '通话中'
-                        : '正在连接',
+                callStatus == 'answered' ? '通话中 ${_elapsedText()}' : '等待接听',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 40),
@@ -2657,7 +2683,17 @@ class _AudioCallPageState extends State<_AudioCallPage> {
                   ),
                   const SizedBox(width: 28),
                   IconButton.filled(
-                    style: IconButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: () async {
+                      final next = !speakerEnabled;
+                      await AliyunRtcBridge.setSpeakerEnabled(next);
+                      if (mounted) setState(() => speakerEnabled = next);
+                    },
+                    icon: Icon(
+                      speakerEnabled ? Icons.volume_up : Icons.phone_in_talk,
+                    ),
+                  ),
+                  const SizedBox(width: 28),
+                  IconButton.filled(
                     onPressed: _leave,
                     icon: const Icon(Icons.call_end),
                   ),
@@ -2685,8 +2721,8 @@ class _CallRecordBubble extends StatelessWidget {
   final VoidCallback onTap;
 
   String _statusText() {
-    final answered = DateTime.tryParse('${record['answeredAt'] ?? ''}');
     final ended = DateTime.tryParse('${record['endedAt'] ?? ''}');
+    final answered = DateTime.tryParse('${record['answeredAt'] ?? ''}');
     final seconds = answered != null
         ? (ended != null
             ? ended.difference(answered).inSeconds.clamp(0, 86400)
@@ -2702,7 +2738,7 @@ class _CallRecordBubble extends StatelessWidget {
       case 'cancelled':
         return '已取消';
       case 'ended':
-        return answered != null ? '通话已结束' : '未接通';
+        return answered != null ? '通话时长 $durationText' : '未接通';
       default:
         return '未接通';
     }

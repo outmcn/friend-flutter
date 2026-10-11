@@ -18,6 +18,42 @@ class FriendAuthClient {
   final http.Client _client;
   final Uri _baseUri;
 
+  Future<Map<String, dynamic>> sendSmsCode(String phone) async {
+    final response = await _client.post(
+      _baseUri.resolve('/api/auth/sms/send'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': phone.trim()}),
+    );
+    final data = _decode(response);
+    if (response.statusCode != 200) {
+      throw FriendAuthException(data['error']?.toString() ?? '验证码发送失败');
+    }
+    return data;
+  }
+
+  Future<String> loginBySms(
+      {required String phone, required String code}) async {
+    final response = await _client.post(
+      _baseUri.resolve('/api/auth/sms/login'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': phone.trim(), 'code': code.trim()}),
+    );
+    final data = _decode(response);
+    if (response.statusCode != 200) {
+      throw FriendAuthException(data['error']?.toString() ?? '验证码登录失败');
+    }
+    final token = data['token'];
+    if (token is! String || token.isEmpty) {
+      throw const FriendAuthException('登录响应格式错误');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
+    if (data['user'] is Map && data['user']['id'] != null) {
+      await prefs.setString('friend.auth.userId', '${data['user']['id']}');
+    }
+    return token;
+  }
+
   Future<String> login({
     required String username,
     required String password,

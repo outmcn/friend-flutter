@@ -14,7 +14,7 @@ class ImLocalStore {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 7,
+      version: 8,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -32,6 +32,8 @@ class ImLocalStore {
             status TEXT NOT NULL DEFAULT 'sent',
             recalled_at TEXT,
             deleted_at TEXT,
+            ended_at TEXT,
+            answered_at TEXT,
             retry_started_at TEXT,
             retry_until TEXT,
             retry_count INTEGER NOT NULL DEFAULT 0,
@@ -92,6 +94,10 @@ class ImLocalStore {
           await db.execute('ALTER TABLE messages ADD COLUMN caller_id TEXT');
           await db.execute('ALTER TABLE messages ADD COLUMN callee_id TEXT');
         }
+        if (oldVersion < 8) {
+          await db.execute('ALTER TABLE messages ADD COLUMN ended_at TEXT');
+          await db.execute('ALTER TABLE messages ADD COLUMN answered_at TEXT');
+        }
       },
     );
     return _database!;
@@ -123,6 +129,8 @@ class ImLocalStore {
         'createdAt': item['created_at'],
         'recalledAt': item['recalled_at'],
         'deletedAt': item['deleted_at'],
+        'endedAt': item['ended_at'],
+        'answeredAt': item['answered_at'],
         'mutationId': item['mutation_id'],
         'status': item['recalled_at'] != null
             ? 'recalled'
@@ -184,6 +192,8 @@ class ImLocalStore {
           'status': '${message['status'] ?? 'sent'}',
           'recalled_at': message['recalledAt'],
           'deleted_at': message['deletedAt'],
+          'ended_at': message['endedAt'],
+          'answered_at': message['answeredAt'],
           'retry_started_at': message['retryStartedAt'],
           'retry_until': message['retryUntil'],
           'retry_count': (message['retryCount'] as num?)?.toInt() ?? 0,

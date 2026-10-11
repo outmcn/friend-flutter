@@ -17,6 +17,10 @@ class AliyunRtcBridge {
     await _channel.invokeMethod('mute', muted);
   }
 
+  static Future<void> setSpeakerEnabled(bool enabled) async {
+    await _channel.invokeMethod('speaker', enabled);
+  }
+
   static Future<void> leave() async {
     await _channel.invokeMethod('leave');
   }
