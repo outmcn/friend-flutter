@@ -34,6 +34,8 @@ import AliVCSDK_ARTC
       }
       let engine = AliRtcEngine.sharedInstance(self, extras: nil)
       rtcEngine = engine
+      engine.setChannelProfile(.interactivelive)
+      engine.setClientRole(.roleInteractive)
       engine.setDefaultSubscribeAllRemoteAudioStreams(true)
       engine.subscribeAllRemoteAudioStreams(true)
       engine.publishLocalAudioStream(true)
