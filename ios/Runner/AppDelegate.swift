@@ -27,6 +27,9 @@ import DingRTC
     switch call.method {
     case "join":
       guard let args = call.arguments as? [String: Any],
+            let appId = args["appId"] as? String,
+            let channelId = args["channelId"] as? String,
+            let userId = args["userId"] as? String,
             let token = args["token"] as? String,
             !token.isEmpty else {
         result(FlutterError(code: "invalid_args", message: "RTC Token 参数无效", details: nil))
