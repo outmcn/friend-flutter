@@ -81,7 +81,7 @@ import UserNotifications
       authInfo.token = token
       authInfo.gslbServer = "https://gslb.dingrtc.com"
       _ = engine.setAudioSessionOperationRestriction(.none)
-      _ = engine.setAudioProfile(.highQualityMode, audio_scene: .defaultMode)
+      _ = engine.setAudioProfile(DingRtcEngineHighQualityMode, audio_scene: DingRtcSceneDefaultMode)
       _ = engine.subscribeAllRemoteAudioStreams(true)
       _ = engine.enableSpeakerphone(true)
       _ = engine.startAudioPlayer()
@@ -123,7 +123,7 @@ import UserNotifications
     }
   }
 
-  func onNetworkQualityChanged(_ uid: String, upNetworkQuality upQuality: DingRtcNetworkQuality, downNetworkQuality downQuality: DingRtcNetworkQuality) {
+  func onNetworkQualityChanged(_ uid: String, up upQuality: DingRtcNetworkQuality, downNetworkQuality downQuality: DingRtcNetworkQuality) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("networkQuality", arguments: ["userId": uid, "up": upQuality.rawValue, "down": downQuality.rawValue])
     }
@@ -141,13 +141,13 @@ import UserNotifications
     }
   }
 
-  func onFirstAudioPacketSentWithTimecost(_ timeCost: Int32) {
+  func onFirstAudioPacketSent(withTimecost timeCost: Int32) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("firstAudioSent", arguments: ["timeCost": timeCost])
     }
   }
 
-  func onFirstAudioPacketReceivedWithUid(_ uid: String, timeCost: Int32) {
+  func onFirstAudioPacketReceived(withUid uid: String, timeCost: Int32) {
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("firstAudioReceived", arguments: ["userId": uid, "timeCost": timeCost])
     }
