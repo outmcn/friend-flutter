@@ -1836,7 +1836,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                       : Alignment.centerLeft,
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       if (!isMine) ...[
                                         CircleAvatar(
@@ -1851,7 +1852,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                   0.72,
                                         ),
                                         margin:
-                                            const EdgeInsets.only(bottom: 8),
+                                            const EdgeInsets.only(bottom: 0),
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12, vertical: 8),
                                         decoration: BoxDecoration(
