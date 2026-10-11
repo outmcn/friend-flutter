@@ -169,6 +169,24 @@ class DDPostService {
     return data.cast<String, dynamic>();
   }
 
+  Future<List<Map<String, dynamic>>> fetchImCallRecords(
+      String token, String conversationId) async {
+    final response = await _client.get(
+      _api('/im/conversations/$conversationId/calls'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map || data['calls'] is! List) {
+      throw Exception(
+          data is Map ? '${data['error'] ?? '获取通话记录失败'}' : '获取通话记录失败');
+    }
+    return (data['calls'] as List)
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
+  }
+
   Future<Map<String, dynamic>> sendImMessage(
     String token,
     String conversationId, {

@@ -34,6 +34,9 @@ class _ChatPageState extends State<ChatPage> {
     if (event['type'] == 'message:new' || event['type'] == 'message:recalled') {
       unawaited(_loadConversations(showLoading: false));
     }
+    if (event['type'] == 'call:update') {
+      unawaited(_loadConversations(showLoading: false));
+    }
     if (event['type'] == 'call:incoming') {
       final call = event['call'];
       if (call is Map) {
@@ -581,6 +584,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageFocusNode = FocusNode();
   StreamSubscription<Map<String, dynamic>>? eventSubscription;
   final messages = <Map<String, dynamic>>[];
+  final callRecords = <Map<String, dynamic>>[];
   final messageScrollController = ScrollController();
   bool loadingOlder = false;
   bool hasOlder = true;
@@ -713,6 +717,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       unawaited(_markLatestRead());
       _scrollToLatest();
       unawaited(_refreshDetailFromServer(token));
+      unawaited(_refreshCallRecords(token));
     } catch (_) {}
   }
 
@@ -792,6 +797,26 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       });
     } catch (_) {
       // 已显示 SQLite；后台刷新失败不覆盖当前聊天内容。
+    } finally {
+      service.dispose();
+    }
+  }
+
+  Future<void> _refreshCallRecords(String token) async {
+    final service = DDPostService();
+    try {
+      final records = await service.fetchImCallRecords(
+        token,
+        widget.chat.conversationId,
+      );
+      if (!mounted) return;
+      setState(() {
+        callRecords
+          ..clear()
+          ..addAll(records);
+      });
+    } catch (_) {
+      // 通话记录刷新失败不覆盖已有聊天内容。
     } finally {
       service.dispose();
     }
@@ -1185,6 +1210,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
         ),
       );
+      unawaited(_refreshCallRecords(token));
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -1703,9 +1729,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                           keyboardDismissBehavior:
                               ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: const EdgeInsets.all(16),
-                          itemCount: messages.length + (peerTyping ? 1 : 0),
+                          itemCount: messages.length +
+                              callRecords.length +
+                              (peerTyping ? 1 : 0),
                           itemBuilder: (_, index) {
-                            if (peerTyping && index == messages.length) {
+                            if (index >= messages.length) {
+                              if (index <
+                                  messages.length + callRecords.length) {
+                                return _CallRecordBubble(
+                                  record: callRecords[index - messages.length],
+                                  currentUserId: currentUserId,
+                                );
+                              }
                               return _TypingBubble();
                             }
                             final message = messages[index];
@@ -2357,6 +2392,60 @@ class _AudioCallPageState extends State<_AudioCallPage> {
           ),
         ),
       );
+}
+
+class _CallRecordBubble extends StatelessWidget {
+  const _CallRecordBubble({required this.record, required this.currentUserId});
+
+  final Map<String, dynamic> record;
+  final String currentUserId;
+
+  String _statusText() {
+    switch ('${record['status'] ?? ''}') {
+      case 'answered':
+        final started = DateTime.tryParse('${record['answeredAt'] ?? ''}');
+        final ended = DateTime.tryParse('${record['endedAt'] ?? ''}');
+        if (started != null && ended != null) {
+          final seconds = ended.difference(started).inSeconds;
+          return seconds > 0 ? '通话 $seconds 秒' : '已接通';
+        }
+        return '已接通';
+      case 'rejected':
+        return '已拒绝';
+      case 'cancelled':
+        return '已取消';
+      case 'ended':
+        return '已挂断';
+      default:
+        return '未接通';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mine = '${record['callerId'] ?? ''}' == currentUserId;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.call,
+                  size: 16, color: mine ? Colors.green : Colors.blue),
+              const SizedBox(width: 6),
+              Text('语音通话 · ${_statusText()}'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ComposerAction extends StatelessWidget {
