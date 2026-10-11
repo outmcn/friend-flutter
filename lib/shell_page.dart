@@ -651,8 +651,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final service = DDPostService();
     try {
       final me = await service.fetchMe(token);
-      final myUrl = '${me['avatarUrl'] ?? ''}';
-      final peerUrl = widget.chat.avatarUrl ?? '';
+      final myKey = '${me['avatarKey'] ?? me['avatar_key'] ?? ''}'.trim();
+      final myUrl = myKey.isEmpty
+          ? '${me['avatarUrl'] ?? me['avatar_url'] ?? ''}'
+          : await service.avatarUrl(token, myKey);
+      final peerKey = (widget.chat.avatarKey ?? '').trim();
+      final peerUrl = peerKey.isEmpty
+          ? (widget.chat.avatarUrl ?? '')
+          : await service.avatarUrl(token, peerKey);
       if (!mounted) return;
       setState(() {
         if (myUrl.isNotEmpty) myAvatarProvider = NetworkImage(myUrl);
@@ -664,6 +670,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       service.dispose();
     }
   }
+
+  ImageProvider _stableAvatar(ImageProvider? provider) =>
+      provider ?? const AssetImage('assets/figma/profile-portrait-2.jpg');
 
   void _scrollToLatest({bool force = false}) {
     if (!mounted || (_didInitialScroll && !force)) return;
@@ -808,7 +817,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       await Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
       ));
-      unawaited(_refreshCallRecords(token));
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -821,44 +829,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   List<Map<String, dynamic>> get _timeline {
-    final combined = <Map<String, dynamic>>[
-      ...messages,
-      ...callRecords.map((record) => {
-            ...record,
-            '_timelineKind': 'call',
-            'createdAt': record['startedAt'] ?? record['createdAt'] ?? '',
-          }),
-    ];
+    final combined = <Map<String, dynamic>>[...messages];
     combined.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
     return combined;
-  }
-
-  Future<void> _refreshCallRecords(String token) async {
-    final service = DDPostService();
-    try {
-      final records = await service.fetchImCallRecords(
-        token,
-        widget.chat.conversationId,
-      );
-      final normalized = records
-          .map((record) => {
-                ...record,
-                'createdAt': record['startedAt'] ?? record['createdAt'] ?? '',
-              })
-          .toList()
-        ..sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
-      if (!mounted) return;
-      setState(() {
-        callRecords
-          ..clear()
-          ..addAll(normalized);
-      });
-      _scrollToLatest(force: true);
-    } catch (_) {
-      // 通话记录刷新失败不覆盖已有聊天内容。
-    } finally {
-      service.dispose();
-    }
   }
 
   void _markPendingMessagesFailed(String reason) {
@@ -1249,7 +1222,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
         ),
       );
-      unawaited(_refreshCallRecords(token));
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -1773,21 +1745,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                             if (index >= _timeline.length) {
                               return _TypingBubble();
                             }
-                            final timelineItem = _timeline[index];
-                            if (timelineItem['_timelineKind'] == 'call') {
-                              return _CallRecordBubble(
-                                record: timelineItem,
-                                currentUserId: currentUserId,
-                                myAvatar: myAvatarProvider ??
-                                    const AssetImage(
-                                        'assets/figma/profile-portrait-2.jpg'),
-                                peerAvatar: peerAvatarProvider ??
-                                    const AssetImage(
-                                        'assets/figma/profile-portrait-2.jpg'),
-                                onTap: () => _redialCall(timelineItem),
-                              );
-                            }
-                            final message = timelineItem;
+                            final message = _timeline[index];
+                            final isCall = message['_timelineKind'] == 'call';
                             final isMine = currentUserId.isNotEmpty &&
                                 '${message['senderId'] ?? ''}' == currentUserId;
                             final status = '${message['status'] ?? 'sent'}';
@@ -1820,12 +1779,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                             .inMinutes >=
                                         5);
                             final bubbleAvatar = isMine
-                                ? (myAvatarProvider ??
-                                    const AssetImage(
-                                        'assets/figma/profile-portrait-2.jpg'))
-                                : (peerAvatarProvider ??
-                                    const AssetImage(
-                                        'assets/figma/profile-portrait-2.jpg'));
+                                ? _stableAvatar(myAvatarProvider)
+                                : _stableAvatar(peerAvatarProvider);
+                            if (isCall) {
+                              return _CallRecordBubble(
+                                record: message,
+                                currentUserId: currentUserId,
+                                myAvatar: _stableAvatar(myAvatarProvider),
+                                peerAvatar: _stableAvatar(peerAvatarProvider),
+                                onTap: () => _redialCall(message),
+                              );
+                            }
                             return Column(
                               children: [
                                 if (showTime)
