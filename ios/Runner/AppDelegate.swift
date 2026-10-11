@@ -39,15 +39,17 @@ import AliVCSDK_ARTC
       }
       let engine = AliRtcEngine.sharedInstance(self, extras: nil)
       rtcEngine = engine
+      let authInfo = AliRtcAuthInfo()
+      authInfo.appId = appId
+      authInfo.channelId = channelId
+      authInfo.userId = userId
+      authInfo.timestamp = Int64(timestampText) ?? 0
+      authInfo.nonce = nonce
+      authInfo.token = token
       engine.setDefaultSubscribeAllRemoteAudioStreams(true)
       engine.subscribeAllRemoteAudioStreams(true)
       engine.publishLocalAudioStream(true)
-      let code = engine.joinChannel(
-        token,
-        channelId: nil,
-        userId: nil,
-        name: userName
-      ) { [weak self] errorCode, joinedChannel, joinedUserId, _ in
+      let code = engine.joinChannel(authInfo, name: nil) { [weak self] errorCode, joinedChannel, joinedUserId, _ in
         DispatchQueue.main.async {
           if errorCode == 0 {
             self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": joinedChannel, "userId": joinedUserId])
