@@ -14,7 +14,7 @@ class ImLocalStore {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -23,6 +23,8 @@ class ImLocalStore {
             message_id TEXT NOT NULL,
             client_id TEXT,
             sender_id TEXT NOT NULL,
+            caller_id TEXT,
+            callee_id TEXT,
             text TEXT NOT NULL,
             kind TEXT NOT NULL DEFAULT 'text',
             duration_ms INTEGER NOT NULL DEFAULT 0,
@@ -86,15 +88,9 @@ class ImLocalStore {
           await db.execute('ALTER TABLE messages ADD COLUMN recalled_at TEXT');
           await db.execute('ALTER TABLE messages ADD COLUMN deleted_at TEXT');
         }
-        if (oldVersion < 6) {
-          await db.execute('''
-            CREATE TABLE im_sync_state (
-              account_id TEXT NOT NULL,
-              conversation_id TEXT NOT NULL,
-              mutation_id TEXT NOT NULL DEFAULT '0',
-              PRIMARY KEY (account_id, conversation_id)
-            )
-          ''');
+        if (oldVersion < 7) {
+          await db.execute('ALTER TABLE messages ADD COLUMN caller_id TEXT');
+          await db.execute('ALTER TABLE messages ADD COLUMN callee_id TEXT');
         }
       },
     );
@@ -118,6 +114,8 @@ class ImLocalStore {
         'conversationId': '${item['conversation_id'] ?? ''}',
         'clientId': item['client_id'],
         'senderId': '${item['sender_id'] ?? ''}',
+        'callerId': item['caller_id']?.toString(),
+        'calleeId': item['callee_id']?.toString(),
         'text': '${item['text'] ?? ''}',
         'kind': '${item['kind'] ?? 'text'}',
         if ('${item['kind'] ?? ''}' == 'call') '_timelineKind': 'call',
@@ -176,6 +174,8 @@ class ImLocalStore {
           'message_id': id,
           'client_id': message['clientId'],
           'sender_id': '${message['senderId'] ?? ''}',
+          'caller_id': message['callerId'],
+          'callee_id': message['calleeId'],
           'text': '${message['text'] ?? ''}',
           'kind':
               '${message['_timelineKind'] == 'call' ? 'call' : message['kind'] ?? 'text'}',

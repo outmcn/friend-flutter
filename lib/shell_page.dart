@@ -862,6 +862,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Future<void> _saveCallEvent(Map<String, dynamic> raw) async {
     final call = {
       ...raw,
+      'callerId': raw['callerId'] ?? raw['caller_id'],
+      'calleeId': raw['calleeId'] ?? raw['callee_id'],
       '_timelineKind': 'call',
       'kind': 'call',
       'createdAt': raw['startedAt'] ??
@@ -872,11 +874,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (id.isEmpty) return;
     final index = messages.indexWhere((item) =>
         item['_timelineKind'] == 'call' && '${item['id'] ?? ''}' == id);
+    final mergedCall = index >= 0 ? {...messages[index], ...call} : call;
+    final callerId = '${mergedCall['callerId'] ?? ''}';
+    final calleeId = '${mergedCall['calleeId'] ?? ''}';
+    if (callerId.isEmpty || calleeId.isEmpty) return;
     setState(() {
       if (index >= 0) {
-        messages[index] = {...messages[index], ...call};
+        messages[index] = mergedCall;
       } else {
-        messages.add(call);
+        messages.add(mergedCall);
       }
       messages.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
     });
