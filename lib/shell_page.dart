@@ -2348,16 +2348,12 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   }
 
   Future<void> _finishRemoteHangup() async {
-    await _leaveRtcOnly();
-    if (mounted) Navigator.of(context).pop();
-  }
-
-  Future<void> _leaveRtcOnly() async {
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
     try {
-      await AliyunRtcBridge.leave().timeout(const Duration(seconds: 4));
-    } catch (_) {
-      // 原生 SDK 异步离会异常时也必须释放 Flutter 页面，避免黑屏卡死。
-    }
+      await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
+    } catch (_) {}
+    if (mounted) navigator.pop();
   }
 
   Future<void> _joinRtc() async {
@@ -2374,19 +2370,26 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   }
 
   Future<void> _leave() async {
-    var rtcLeft = false;
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
     try {
-      await _leaveRtcOnly();
-      rtcLeft = true;
-      final service = DDPostService();
-      try {
-        await service.updateImCall(
-            widget.token, '${widget.call['id'] ?? ''}', 'hangup');
-      } finally {
-        service.dispose();
-      }
+      await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
+    } catch (_) {}
+    if (!mounted) return;
+    navigator.pop();
+    unawaited(_finishCallOnServer());
+  }
+
+  Future<void> _finishCallOnServer() async {
+    final service = DDPostService();
+    try {
+      await service
+          .updateImCall(widget.token, '${widget.call['id'] ?? ''}', 'hangup')
+          .timeout(const Duration(seconds: 4));
+    } catch (_) {
+      // 页面已返回，后台状态更新失败不阻塞 UI。
     } finally {
-      if (mounted && rtcLeft) Navigator.of(context).pop();
+      service.dispose();
     }
   }
 

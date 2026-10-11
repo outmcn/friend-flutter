@@ -102,18 +102,16 @@ import UserNotifications
       result(rtcEngine?.publishLocalAudioStream(!muted) == 0)
     case "leave":
       let engine = rtcEngine
-      _ = engine?.publishLocalAudioStream(false)
-      _ = engine?.stopAudioCapture()
-      _ = engine?.stopAudioPlayer()
-      let code = engine?.leaveChannel() ?? 0
-      result(code == 0)
-      DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2.0) {
-        if let engine {
-          DingRtcEngine.destroyInstance(engine)
-        }
-        DispatchQueue.main.async { [weak self] in
-          self?.rtcEngine = nil
-        }
+      result(true)
+      rtcEngine = nil
+      DispatchQueue.global(qos: .userInitiated).async {
+        guard let engine else { return }
+        _ = engine.publishLocalAudioStream(false)
+        _ = engine.stopAudioCapture()
+        _ = engine.stopAudioPlayer()
+        _ = engine.leaveChannel()
+        Thread.sleep(forTimeInterval: 1.0)
+        DingRtcEngine.destroyInstance(engine)
       }
     default:
       result(FlutterMethodNotImplemented)
