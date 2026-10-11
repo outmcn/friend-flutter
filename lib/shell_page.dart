@@ -2543,8 +2543,9 @@ class _CallRecordBubble extends StatelessWidget {
       case 'rejected':
         return '已拒接';
       case 'cancelled':
+        return '已取消';
       case 'ended':
-        return '未接通';
+        return answered != null ? '通话已结束' : '未接通';
       default:
         return '未接通';
     }
