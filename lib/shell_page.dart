@@ -767,7 +767,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         initialSyncCompleted = true;
       });
       unawaited(_markLatestRead());
-      _scrollToLatest();
+      _scrollToLatest(force: true);
       unawaited(_refreshDetailFromServer(token));
       unawaited(_refreshCallRecords(token));
     } catch (_) {}
@@ -847,6 +847,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..clear()
           ..addAll(next);
       });
+      _scrollToLatest(force: true);
     } catch (_) {
       // 已显示 SQLite；后台刷新失败不覆盖当前聊天内容。
     } finally {
@@ -900,6 +901,19 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  List<Map<String, dynamic>> get _timeline {
+    final combined = <Map<String, dynamic>>[
+      ...messages,
+      ...callRecords.map((record) => {
+            ...record,
+            '_timelineKind': 'call',
+            'createdAt': record['startedAt'] ?? record['createdAt'] ?? '',
+          }),
+    ];
+    combined.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
+    return combined;
+  }
+
   Future<void> _refreshCallRecords(String token) async {
     final service = DDPostService();
     try {
@@ -920,7 +934,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ..clear()
           ..addAll(normalized);
       });
-      _scrollToLatest();
+      _scrollToLatest(force: true);
     } catch (_) {
       // 通话记录刷新失败不覆盖已有聊天内容。
     } finally {
@@ -1136,7 +1150,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (mounted) {
       setState(() {});
-      _scrollToLatest();
+      _scrollToLatest(force: true);
     }
   }
 
@@ -1805,7 +1819,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             child: Column(
               children: [
                 Expanded(
-                  child: messages.isEmpty && callRecords.isEmpty
+                  child: _timeline.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -1835,29 +1849,26 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                           keyboardDismissBehavior:
                               ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: const EdgeInsets.all(16),
-                          itemCount: messages.length +
-                              callRecords.length +
-                              (peerTyping ? 1 : 0),
+                          itemCount: _timeline.length + (peerTyping ? 1 : 0),
                           itemBuilder: (_, index) {
-                            if (index >= messages.length) {
-                              if (index <
-                                  messages.length + callRecords.length) {
-                                return _CallRecordBubble(
-                                  record: callRecords[index - messages.length],
-                                  currentUserId: currentUserId,
-                                  myAvatar: myAvatarProvider ??
-                                      const AssetImage(
-                                          'assets/figma/profile-portrait-2.jpg'),
-                                  peerAvatar: peerAvatarProvider ??
-                                      const AssetImage(
-                                          'assets/figma/profile-portrait-2.jpg'),
-                                  onTap: () => _redialCall(
-                                      callRecords[index - messages.length]),
-                                );
-                              }
+                            if (index >= _timeline.length) {
                               return _TypingBubble();
                             }
-                            final message = messages[index];
+                            final timelineItem = _timeline[index];
+                            if (timelineItem['_timelineKind'] == 'call') {
+                              return _CallRecordBubble(
+                                record: timelineItem,
+                                currentUserId: currentUserId,
+                                myAvatar: myAvatarProvider ??
+                                    const AssetImage(
+                                        'assets/figma/profile-portrait-2.jpg'),
+                                peerAvatar: peerAvatarProvider ??
+                                    const AssetImage(
+                                        'assets/figma/profile-portrait-2.jpg'),
+                                onTap: () => _redialCall(timelineItem),
+                              );
+                            }
+                            final message = timelineItem;
                             final isMine = currentUserId.isNotEmpty &&
                                 '${message['senderId'] ?? ''}' == currentUserId;
                             final status = '${message['status'] ?? 'sent'}';
