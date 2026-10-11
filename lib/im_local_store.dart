@@ -362,6 +362,23 @@ class ImLocalStore {
     );
   }
 
+  static Future<void> clearConversation({
+    required String accountId,
+    required String conversationId,
+  }) async {
+    final db = await _db();
+    await db.delete(
+      'messages',
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+    );
+    await db.delete(
+      'local_deleted_messages',
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+    );
+  }
+
   static Future<void> deleteLocalMessage({
     required String accountId,
     required String conversationId,

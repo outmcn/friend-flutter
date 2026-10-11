@@ -23,6 +23,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String? loadError;
   final Map<String, String> _avatarPaths = {};
   bool callDialogShowing = false;
+  bool outgoingCallStarting = false;
+  String? activeCallId;
 
   @override
   void initState() {
@@ -128,15 +130,21 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _showIncomingCall(Map<String, dynamic> call) async {
     final callId = '${call['id'] ?? ''}';
+    if (callId.isNotEmpty && activeCallId != null) return;
+    activeCallId = callId;
     final selfId = ImSession.instance.userId ?? '';
     final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
     final calleeId = '${call['calleeId'] ?? call['callee_id'] ?? ''}';
     if (callerId.isEmpty ||
         (calleeId.isNotEmpty && calleeId != selfId) ||
         callerId == selfId) {
+      activeCallId = null;
       return;
     }
-    if (!mounted || callId.isEmpty || callDialogShowing) return;
+    if (!mounted || callId.isEmpty || callDialogShowing) {
+      activeCallId = null;
+      return;
+    }
     callDialogShowing = true;
     try {
       final accepted = await showDialog<String>(
@@ -144,7 +152,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         barrierDismissible: false,
         builder: (dialogContext) => AlertDialog(
           title: const Text('来电'),
-          content: Text('用户 ${call['callerId'] ?? '对方'} 发起了语音通话'),
+          content: Text(
+              '${call['callerName'] ?? call['nickname'] ?? '对方'} 邀请您进行语音通话'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, 'reject'),
@@ -181,6 +190,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       }
     } finally {
       callDialogShowing = false;
+      activeCallId = null;
     }
   }
 
@@ -705,6 +715,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool syncing = false;
   bool initialSyncCompleted = false;
   final AudioPlayer audioPlayer = AudioPlayer();
+  bool outgoingCallStarting = false;
+  String? activeCallId;
   final Map<String, String> imageFiles = {};
   String? playingAudioKey;
   Timer? typingTimer;
@@ -906,6 +918,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       );
       if (!mounted) return;
       final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
+      activeCallId = '${call['id'] ?? ''}';
       final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
       if (call.isNotEmpty) {
         await _saveCallEvent(call);
@@ -915,6 +928,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
       );
       await Navigator.of(context).push(page);
+      activeCallId = null;
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1003,6 +1017,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (type == 'call:update') {
       final call = event['call'];
+      if (call is Map && '${call['id'] ?? ''}' == activeCallId) {
+        final status = '${call['status'] ?? ''}';
+        if (status == 'ended' ||
+            status == 'cancelled' ||
+            status == 'rejected') {
+          activeCallId = null;
+        }
+      }
       if (call is Map) {
         await _saveCallEvent(call.cast<String, dynamic>());
         if ('${call['status'] ?? ''}' == 'ended' &&
@@ -1345,15 +1367,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _startAudioCall() async {
+    if (outgoingCallStarting || activeCallId != null) return;
+    outgoingCallStarting = true;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty) return;
+    if (token.isEmpty) {
+      outgoingCallStarting = false;
+      return;
+    }
     final service = DDPostService();
     try {
       final result =
           await service.startImCall(token, widget.chat.conversationId);
       if (!mounted) return;
       final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
+      activeCallId = '${call['id'] ?? ''}';
       final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
       if (call.isNotEmpty) {
         await _saveCallEvent(call);
@@ -1363,12 +1391,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
       );
       await Navigator.of(context).push(page);
+      activeCallId = null;
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$error')));
       }
     } finally {
+      outgoingCallStarting = false;
       service.dispose();
     }
   }
@@ -1535,6 +1565,55 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
     } finally {
       service.dispose();
+    }
+  }
+
+  Future<void> _openChatSettings() async {
+    final action = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => _ChatSettingsPage(chatName: widget.chat.name),
+      ),
+    );
+    if (!mounted || action == null) return;
+    if (action == 'clear') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('清空当前聊天记录'),
+          content: const Text('清空后仅删除本机当前聊天记录，无法恢复。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('清空'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true) {
+        await ImLocalStore.clearConversation(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+        );
+        if (mounted) setState(() => messages.clear());
+      }
+    } else if (action == 'search') {
+      await showSearch<String?>(
+        context: context,
+        delegate: _ChatSearchDelegate(messages),
+      );
+    } else if (action == 'report' && messages.isNotEmpty) {
+      await _reportImMessage(messages.last);
+    } else if (action == 'blacklist') {
+      if (mounted) {
+        setState(() => blockedConversation = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已加入黑名单，当前会话已禁止发送消息')),
+        );
+      }
     }
   }
 
@@ -1857,462 +1936,544 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             ]),
           ),
           actions: [
-            IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
+            IconButton(
+              tooltip: '聊天设置',
+              onPressed: _openChatSettings,
+              icon: const Icon(Icons.more_horiz),
+            ),
           ],
         ),
-        body: Column(children: [
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: _timeline.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                size: 42,
-                                color: Theme.of(context).hintColor,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                initialSyncCompleted
-                                    ? '选择一个聊天开始交流'
-                                    : '暂无本地聊天记录',
-                                style: TextStyle(
-                                    color: Theme.of(context).hintColor),
-                              ),
-                              if (peerTyping && messages.isEmpty)
-                                _TypingBubble(),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: messageScrollController,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          reverse: true,
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _timeline.length + (peerTyping ? 1 : 0),
-                          itemBuilder: (_, index) {
-                            if (index >= _timeline.length) {
-                              return _TypingBubble();
-                            }
-                            final message = _timeline[index];
-                            final isCall = message['_timelineKind'] == 'call';
-                            final isMine = currentUserId.isNotEmpty &&
-                                '${message['senderId'] ?? ''}' == currentUserId;
-                            final status = '${message['status'] ?? 'sent'}';
-                            final isRecalled = status == 'recalled';
-                            final isDeleted = status == 'deleted';
-                            final isReadByPeer = isMine &&
-                                !isCall &&
-                                peerReadMessageId != null &&
-                                !'${message['id'] ?? ''}'
-                                    .startsWith('local:') &&
-                                int.tryParse('${message['id'] ?? ''}') !=
-                                    null &&
-                                int.tryParse(peerReadMessageId!) != null &&
-                                int.parse('${message['id']}') <=
-                                    int.parse(peerReadMessageId!);
-                            final createdAt = DateTime.tryParse(
-                                    '${message['createdAt'] ?? ''}')
-                                ?.toLocal();
-                            final timeText = createdAt == null
-                                ? ''
-                                : '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
-                            final previousCreatedAt = index + 1 <
-                                    _timeline.length
-                                ? DateTime.tryParse(
-                                        '${_timeline[index + 1]['createdAt'] ?? ''}')
-                                    ?.toLocal()
-                                : null;
-                            final showTime = createdAt != null &&
-                                (previousCreatedAt == null ||
-                                    createdAt
-                                            .difference(previousCreatedAt)
-                                            .inMinutes >=
-                                        5);
-                            final peerTopBarAvatar =
-                                _chatAvatarFor(widget.chat);
-                            final bubbleAvatar = isMine
-                                ? _stableAvatar(myAvatarProvider)
-                                : peerTopBarAvatar;
-                            if (isCall) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _CallRecordBubble(
-                                  record: message,
-                                  currentUserId: currentUserId,
-                                  myAvatar: _stableAvatar(myAvatarProvider),
-                                  peerAvatar: peerTopBarAvatar,
-                                  onTap: () => _redialCall(message),
-                                ),
-                              );
-                            }
-                            return Column(
-                              children: [
-                                if (showTime)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Center(
-                                      child: Text(
-                                        timeText,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ),
+        body: Stack(
+          children: [
+            Column(children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _timeline.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.chat_bubble_outline,
+                                    size: 42,
+                                    color: Theme.of(context).hintColor,
                                   ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Align(
-                                    alignment: isMine
-                                        ? Alignment.centerRight
-                                        : Alignment.centerLeft,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        if (!isMine) ...[
-                                          CircleAvatar(
-                                              radius: 15,
-                                              backgroundImage: bubbleAvatar),
-                                          const SizedBox(width: 6),
-                                        ],
-                                        Container(
-                                          constraints: BoxConstraints(
-                                            maxWidth: MediaQuery.sizeOf(context)
-                                                    .width *
-                                                0.72,
-                                          ),
-                                          margin:
-                                              const EdgeInsets.only(bottom: 0),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color: isMine
-                                                ? Theme.of(context)
-                                                    .colorScheme
-                                                    .primaryContainer
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .surfaceContainerHighest,
-                                            borderRadius: BorderRadius.only(
-                                              topLeft:
-                                                  const Radius.circular(16),
-                                              topRight:
-                                                  const Radius.circular(16),
-                                              bottomLeft: Radius.circular(
-                                                  isMine ? 16 : 4),
-                                              bottomRight: Radius.circular(
-                                                  isMine ? 4 : 16),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    initialSyncCompleted
+                                        ? '选择一个聊天开始交流'
+                                        : '暂无本地聊天记录',
+                                    style: TextStyle(
+                                        color: Theme.of(context).hintColor),
+                                  ),
+                                  if (peerTyping && messages.isEmpty)
+                                    _TypingBubble(),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: messageScrollController,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              reverse: true,
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              padding: const EdgeInsets.all(16),
+                              itemCount:
+                                  _timeline.length + (peerTyping ? 1 : 0),
+                              itemBuilder: (_, index) {
+                                if (index >= _timeline.length) {
+                                  return _TypingBubble();
+                                }
+                                final message = _timeline[index];
+                                final isCall =
+                                    message['_timelineKind'] == 'call';
+                                final isMine = currentUserId.isNotEmpty &&
+                                    '${message['senderId'] ?? ''}' ==
+                                        currentUserId;
+                                final status = '${message['status'] ?? 'sent'}';
+                                final isRecalled = status == 'recalled';
+                                final isDeleted = status == 'deleted';
+                                final isReadByPeer = isMine &&
+                                    !isCall &&
+                                    peerReadMessageId != null &&
+                                    !'${message['id'] ?? ''}'
+                                        .startsWith('local:') &&
+                                    int.tryParse('${message['id'] ?? ''}') !=
+                                        null &&
+                                    int.tryParse(peerReadMessageId!) != null &&
+                                    int.parse('${message['id']}') <=
+                                        int.parse(peerReadMessageId!);
+                                final createdAt = DateTime.tryParse(
+                                        '${message['createdAt'] ?? ''}')
+                                    ?.toLocal();
+                                final timeText = createdAt == null
+                                    ? ''
+                                    : '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
+                                final previousCreatedAt = index + 1 <
+                                        _timeline.length
+                                    ? DateTime.tryParse(
+                                            '${_timeline[index + 1]['createdAt'] ?? ''}')
+                                        ?.toLocal()
+                                    : null;
+                                final showTime = createdAt != null &&
+                                    (previousCreatedAt == null ||
+                                        createdAt
+                                                .difference(previousCreatedAt)
+                                                .inMinutes >=
+                                            5);
+                                final peerTopBarAvatar =
+                                    _chatAvatarFor(widget.chat);
+                                final bubbleAvatar = isMine
+                                    ? _stableAvatar(myAvatarProvider)
+                                    : peerTopBarAvatar;
+                                if (isCall) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _CallRecordBubble(
+                                      record: message,
+                                      currentUserId: currentUserId,
+                                      myAvatar: _stableAvatar(myAvatarProvider),
+                                      peerAvatar: peerTopBarAvatar,
+                                      onTap: () => _redialCall(message),
+                                    ),
+                                  );
+                                }
+                                return Column(
+                                  children: [
+                                    if (showTime)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8),
+                                        child: Center(
+                                          child: Text(
+                                            timeText,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
                                             ),
                                           ),
-                                          child: GestureDetector(
-                                            onLongPress: () =>
-                                                _showMessageMenu(message),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
+                                        ),
+                                      ),
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 12),
+                                      child: Align(
+                                        alignment: isMine
+                                            ? Alignment.centerRight
+                                            : Alignment.centerLeft,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            if (!isMine) ...[
+                                              CircleAvatar(
+                                                  radius: 15,
+                                                  backgroundImage:
+                                                      bubbleAvatar),
+                                              const SizedBox(width: 6),
+                                            ],
+                                            Stack(
+                                              clipBehavior: Clip.none,
                                               children: [
-                                                Flexible(
-                                                  child: isRecalled || isDeleted
-                                                      ? Text(
-                                                          isRecalled
-                                                              ? '消息已撤回'
-                                                              : '消息已删除',
-                                                          style:
-                                                              const TextStyle(
-                                                                  color: Colors
-                                                                      .grey),
-                                                        )
-                                                      : message['kind'] ==
-                                                              'image'
-                                                          ? _imageMessageBody(
-                                                              message)
-                                                          : message['kind'] ==
-                                                                  'audio'
-                                                              ? InkWell(
-                                                                  onTap: () =>
-                                                                      _playAudioMessage(
-                                                                          '${message['text'] ?? ''}'),
-                                                                  child: Text(
-                                                                    playingAudioKey ==
-                                                                            '${message['text'] ?? ''}'
-                                                                        ? '⏸ 播放中'
-                                                                        : '🔊 播放语音',
-                                                                    style: Theme.of(
-                                                                            context)
-                                                                        .textTheme
-                                                                        .bodyLarge,
-                                                                  ),
-                                                                )
-                                                              : Text(
-                                                                  '${message['text'] ?? ''}',
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyLarge,
-                                                                ),
-                                                ),
-                                                if (status == 'pending') ...[
-                                                  const SizedBox(width: 6),
-                                                  const SizedBox(
-                                                    width: 12,
-                                                    height: 12,
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                            strokeWidth: 1.5),
+                                                Container(
+                                                  constraints: BoxConstraints(
+                                                    maxWidth: MediaQuery.sizeOf(
+                                                                context)
+                                                            .width *
+                                                        0.72,
                                                   ),
-                                                ],
-                                                if (status == 'failed')
-                                                  GestureDetector(
-                                                    onTap: () =>
-                                                        _retryMessage(message),
-                                                    child: const Icon(
-                                                      Icons.error_outline,
-                                                      size: 16,
-                                                      color: Colors.orange,
+                                                  margin: const EdgeInsets.only(
+                                                      bottom: 0),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 8),
+                                                  decoration: BoxDecoration(
+                                                    color: isMine
+                                                        ? Theme.of(context)
+                                                            .colorScheme
+                                                            .primaryContainer
+                                                        : Theme.of(context)
+                                                            .colorScheme
+                                                            .surfaceContainerHighest,
+                                                    borderRadius:
+                                                        BorderRadius.only(
+                                                      topLeft:
+                                                          const Radius.circular(
+                                                              16),
+                                                      topRight:
+                                                          const Radius.circular(
+                                                              16),
+                                                      bottomLeft:
+                                                          Radius.circular(
+                                                              isMine ? 16 : 4),
+                                                      bottomRight:
+                                                          Radius.circular(
+                                                              isMine ? 4 : 16),
+                                                    ),
+                                                  ),
+                                                  child: GestureDetector(
+                                                    onLongPress: () =>
+                                                        _showMessageMenu(
+                                                            message),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Flexible(
+                                                          child: isRecalled ||
+                                                                  isDeleted
+                                                              ? Text(
+                                                                  isRecalled
+                                                                      ? '消息已撤回'
+                                                                      : '消息已删除',
+                                                                  style: const TextStyle(
+                                                                      color: Colors
+                                                                          .grey),
+                                                                )
+                                                              : message['kind'] ==
+                                                                      'image'
+                                                                  ? _imageMessageBody(
+                                                                      message)
+                                                                  : message['kind'] ==
+                                                                          'audio'
+                                                                      ? InkWell(
+                                                                          onTap: () =>
+                                                                              _playAudioMessage('${message['text'] ?? ''}'),
+                                                                          child:
+                                                                              SizedBox(
+                                                                            height:
+                                                                                24,
+                                                                            child:
+                                                                                Align(
+                                                                              alignment: Alignment.centerLeft,
+                                                                              child: Text(
+                                                                                playingAudioKey == '${message['text'] ?? ''}' ? '⏸ 播放中' : '🔊 播放语音',
+                                                                                style: Theme.of(context).textTheme.bodyLarge,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        )
+                                                                      : Text(
+                                                                          '${message['text'] ?? ''}',
+                                                                          style: Theme.of(context)
+                                                                              .textTheme
+                                                                              .bodyLarge,
+                                                                        ),
+                                                        ),
+                                                        if (status ==
+                                                            'pending') ...[
+                                                          const SizedBox(
+                                                              width: 6),
+                                                          const SizedBox(
+                                                            width: 12,
+                                                            height: 12,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        1.5),
+                                                          ),
+                                                        ],
+                                                        if (status == 'failed')
+                                                          GestureDetector(
+                                                            onTap: () =>
+                                                                _retryMessage(
+                                                                    message),
+                                                            child: const Icon(
+                                                              Icons
+                                                                  .error_outline,
+                                                              size: 16,
+                                                              color:
+                                                                  Colors.orange,
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                if (isReadByPeer)
+                                                  const Positioned(
+                                                    left: 3,
+                                                    bottom: 3,
+                                                    child: DecoratedBox(
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: SizedBox(
+                                                          width: 4, height: 4),
                                                     ),
                                                   ),
                                               ],
                                             ),
-                                          ),
+                                            if (isMine) ...[
+                                              const SizedBox(width: 6),
+                                              CircleAvatar(
+                                                  radius: 15,
+                                                  backgroundImage:
+                                                      bubbleAvatar),
+                                            ],
+                                          ],
                                         ),
-                                        if (isMine) ...[
-                                          const SizedBox(width: 6),
-                                          CircleAvatar(
-                                              radius: 15,
-                                              backgroundImage: bubbleAvatar),
-                                        ],
-                                        if (isReadByPeer)
-                                          const Padding(
-                                            padding: EdgeInsets.only(
-                                              left: 3,
-                                              top: 2,
-                                            ),
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                color: Colors.green,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: SizedBox(
-                                                  width: 3.5, height: 3.5),
-                                            ),
-                                          ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (moreExpanded)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _ComposerAction(
-                          icon: Icons.camera_alt_outlined,
-                          label: '拍摄',
-                          onPressed: () => _pickAndSendImage(
-                            source: ImageSource.camera,
-                          ),
-                        ),
-                        _ComposerAction(
-                          icon: Icons.photo_outlined,
-                          label: '照片',
-                          onPressed: _pickAndSendImage,
-                        ),
-                        _ComposerAction(
-                          icon: Icons.phone_in_talk_outlined,
-                          label: '语音通话',
-                          onPressed: _startAudioCall,
-                        ),
-                        _ComposerAction(
-                          icon: Icons.location_on_outlined,
-                          label: '位置',
-                          onPressed: () =>
-                              ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('位置消息暂未接入')),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (emojiExpanded && !voiceMode)
-                  SizedBox(
-                    height: 180,
-                    child: GridView.count(
-                      crossAxisCount: 8,
-                      padding: const EdgeInsets.all(10),
-                      children: [
-                        for (final emoji in [
-                          '😀',
-                          '😂',
-                          '🤣',
-                          '😊',
-                          '😍',
-                          '😘',
-                          '😎',
-                          '🤔',
-                          '😭',
-                          '😡',
-                          '👍',
-                          '👏',
-                          '🙏',
-                          '❤️',
-                          '🎉',
-                          '🔥',
-                        ])
-                          InkWell(
-                            onTap: () {
-                              final value = messageController.value;
-                              final text = value.text;
-                              final start = value.selection.start < 0
-                                  ? text.length
-                                  : value.selection.start;
-                              final end = value.selection.end < 0
-                                  ? start
-                                  : value.selection.end;
-                              messageController.value = value.copyWith(
-                                text: text.replaceRange(start, end, emoji),
-                                selection: TextSelection.collapsed(
-                                  offset: start + emoji.length,
-                                ),
-                              );
-                            },
-                            child: Center(
-                              child: Text(emoji,
-                                  style: const TextStyle(fontSize: 24)),
+                                  ],
+                                );
+                              },
                             ),
-                          ),
-                      ],
                     ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => setState(() {
-                          voiceMode = !voiceMode;
-                          emojiExpanded = false;
-                        }),
-                        icon: Icon(voiceMode ? Icons.keyboard : Icons.mic_none),
-                      ),
-                      Expanded(
-                        child: voiceMode
-                            ? GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onLongPressStart: _startHoldRecording,
-                                onLongPressMoveUpdate: _updateHoldRecording,
-                                onLongPressEnd: _finishHoldRecording,
-                                child: Container(
-                                  height: 48,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color:
-                                          Theme.of(context).colorScheme.outline,
+                  ],
+                ),
+              ),
+              SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (emojiExpanded && !voiceMode)
+                      SizedBox(
+                        height: 180,
+                        child: GridView.count(
+                          crossAxisCount: 8,
+                          padding: const EdgeInsets.all(10),
+                          children: [
+                            for (final emoji in [
+                              '😀',
+                              '😂',
+                              '🤣',
+                              '😊',
+                              '😍',
+                              '😘',
+                              '😎',
+                              '🤔',
+                              '😭',
+                              '😡',
+                              '👍',
+                              '👏',
+                              '🙏',
+                              '❤️',
+                              '🎉',
+                              '🔥',
+                            ])
+                              InkWell(
+                                onTap: () {
+                                  final value = messageController.value;
+                                  final text = value.text;
+                                  final start = value.selection.start < 0
+                                      ? text.length
+                                      : value.selection.start;
+                                  final end = value.selection.end < 0
+                                      ? start
+                                      : value.selection.end;
+                                  messageController.value = value.copyWith(
+                                    text: text.replaceRange(start, end, emoji),
+                                    selection: TextSelection.collapsed(
+                                      offset: start + emoji.length,
                                     ),
-                                    borderRadius: BorderRadius.circular(22),
-                                    color: recordingVoice
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .primaryContainer
-                                        : null,
-                                  ),
-                                  child: recordingVoice
-                                      ? Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            _VoiceWave(
-                                              active: !cancelVoice,
-                                              color: cancelVoice
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .error
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              cancelVoice ? '松开取消' : '松开发送',
+                                  );
+                                },
+                                child: Center(
+                                  child: Text(emoji,
+                                      style: const TextStyle(fontSize: 24)),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 18, 12),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => setState(() {
+                              voiceMode = !voiceMode;
+                              emojiExpanded = false;
+                            }),
+                            icon: Icon(
+                                voiceMode ? Icons.keyboard : Icons.mic_none),
+                          ),
+                          Expanded(
+                            child: voiceMode
+                                ? GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onLongPressStart: _startHoldRecording,
+                                    onLongPressMoveUpdate: _updateHoldRecording,
+                                    onLongPressEnd: _finishHoldRecording,
+                                    child: Container(
+                                      height: 48,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .outline,
+                                        ),
+                                        borderRadius: BorderRadius.circular(22),
+                                        color: recordingVoice
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer
+                                            : null,
+                                      ),
+                                      child: recordingVoice
+                                          ? Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                _VoiceWave(
+                                                  active: !cancelVoice,
+                                                  color: cancelVoice
+                                                      ? Theme.of(context)
+                                                          .colorScheme
+                                                          .error
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .primary,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  cancelVoice ? '松开取消' : '松开发送',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyLarge,
+                                                ),
+                                              ],
+                                            )
+                                          : Text(
+                                              '按住说话',
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyLarge,
                                             ),
-                                          ],
-                                        )
-                                      : Text(
-                                          '按住说话',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge,
-                                        ),
-                                ),
-                              )
-                            : TextField(
-                                focusNode: messageFocusNode,
-                                controller: messageController,
-                                onChanged: _handleTypingChanged,
-                                textInputAction: TextInputAction.send,
-                                onSubmitted: (_) => _sendMessage(),
-                                decoration: InputDecoration(
-                                  hintText: '输入消息',
-                                  suffixIcon: IconButton(
-                                    tooltip: '表情',
-                                    onPressed: () => setState(() {
-                                      emojiExpanded = !emojiExpanded;
-                                      moreExpanded = false;
-                                    }),
-                                    icon: const Icon(
-                                        Icons.sentiment_satisfied_alt),
+                                    ),
+                                  )
+                                : TextField(
+                                    focusNode: messageFocusNode,
+                                    controller: messageController,
+                                    onChanged: _handleTypingChanged,
+                                    textInputAction: TextInputAction.send,
+                                    onSubmitted: (_) => _sendMessage(),
+                                    minLines: 1,
+                                    maxLines: 3,
+                                    keyboardType: TextInputType.multiline,
+                                    scrollPhysics:
+                                        const ClampingScrollPhysics(),
+                                    contextMenuBuilder: (context, state) =>
+                                        AdaptiveTextSelectionToolbar
+                                            .buttonItems(
+                                      anchors: state.contextMenuAnchors,
+                                      buttonItems: state.contextMenuButtonItems
+                                          .map(
+                                            (item) => ContextMenuButtonItem(
+                                              onPressed: item.onPressed,
+                                              type: item.type,
+                                              label: _chineseContextMenuLabel(
+                                                item.type,
+                                                item.label,
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: '输入消息',
+                                      suffixIcon: IconButton(
+                                        tooltip: '表情',
+                                        onPressed: () => setState(() {
+                                          emojiExpanded = !emojiExpanded;
+                                          moreExpanded = false;
+                                        }),
+                                        icon: const Icon(
+                                            Icons.sentiment_satisfied_alt),
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(22),
+                                      ),
+                                    ),
                                   ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(22),
-                                  ),
-                                ),
-                              ),
+                          ),
+                          IconButton(
+                            tooltip: '更多',
+                            onPressed: () => setState(() {
+                              moreExpanded = !moreExpanded;
+                              emojiExpanded = false;
+                            }),
+                            icon: Icon(
+                              moreExpanded
+                                  ? Icons.close
+                                  : Icons.add_circle_outline,
+                            ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        tooltip: '更多',
-                        onPressed: () => setState(() {
-                          moreExpanded = !moreExpanded;
-                          emojiExpanded = false;
-                        }),
-                        icon: Icon(
-                          moreExpanded ? Icons.close : Icons.add_circle_outline,
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+            if (moreExpanded)
+              Positioned(
+                right: 8,
+                bottom: 76,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(18),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ComposerAction(
+                        icon: Icons.camera_alt_outlined,
+                        label: '拍摄',
+                        onPressed: () => _pickAndSendImage(
+                          source: ImageSource.camera,
+                        ),
+                      ),
+                      _ComposerAction(
+                        icon: Icons.photo_outlined,
+                        label: '照片',
+                        onPressed: _pickAndSendImage,
+                      ),
+                      _ComposerAction(
+                        icon: Icons.phone_in_talk_outlined,
+                        label: '语音通话',
+                        onPressed: _startAudioCall,
+                      ),
+                      _ComposerAction(
+                        icon: Icons.location_on_outlined,
+                        label: '位置',
+                        onPressed: () =>
+                            ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('位置消息暂未接入')),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          )
-        ]),
+              ),
+          ],
+        ),
       );
+}
+
+String _chineseContextMenuLabel(ContextMenuButtonType type, String? fallback) {
+  switch (type) {
+    case ContextMenuButtonType.cut:
+      return '剪切';
+    case ContextMenuButtonType.copy:
+      return '复制';
+    case ContextMenuButtonType.paste:
+      return '粘贴';
+    case ContextMenuButtonType.selectAll:
+      return '全选';
+    default:
+      return fallback ?? '操作';
+  }
 }
 
 class _ChatReportPage extends StatefulWidget {
@@ -2392,6 +2553,106 @@ class _ChatReportPageState extends State<_ChatReportPage> {
           ),
         ),
       );
+}
+
+class _ChatSettingsPage extends StatefulWidget {
+  const _ChatSettingsPage({required this.chatName});
+  final String chatName;
+
+  @override
+  State<_ChatSettingsPage> createState() => _ChatSettingsPageState();
+}
+
+class _ChatSettingsPageState extends State<_ChatSettingsPage> {
+  bool pinned = false;
+  bool muted = false;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('聊天设置')),
+        body: ListView(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.search),
+              title: const Text('查找聊天记录'),
+              onTap: () => Navigator.pop(context, 'search'),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.push_pin_outlined),
+              title: const Text('置顶聊天'),
+              value: pinned,
+              onChanged: (value) => setState(() => pinned = value),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.notifications_off_outlined),
+              title: const Text('消息免打扰'),
+              value: muted,
+              onChanged: (value) => setState(() => muted = value),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.block_outlined),
+              title: const Text('加入黑名单'),
+              onTap: () => Navigator.pop(context, 'blacklist'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.report_outlined),
+              title: const Text('投诉/举报'),
+              onTap: () => Navigator.pop(context, 'report'),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(Icons.delete_outline,
+                  color: Theme.of(context).colorScheme.error),
+              title: Text(
+                '清空当前聊天记录',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              onTap: () => Navigator.pop(context, 'clear'),
+            ),
+          ],
+        ),
+      );
+}
+
+class _ChatSearchDelegate extends SearchDelegate<String?> {
+  _ChatSearchDelegate(this.items);
+  final List<Map<String, dynamic>> items;
+
+  @override
+  List<Widget>? buildActions(BuildContext context) => [
+        if (query.isNotEmpty)
+          IconButton(
+              onPressed: () => query = '', icon: const Icon(Icons.clear)),
+      ];
+
+  @override
+  Widget? buildLeading(BuildContext context) => IconButton(
+        onPressed: () => close(context, null),
+        icon: const Icon(Icons.arrow_back),
+      );
+
+  @override
+  Widget buildResults(BuildContext context) => _results(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _results(context);
+
+  Widget _results(BuildContext context) {
+    final keyword = query.trim().toLowerCase();
+    final results = items.where((item) {
+      final text = '${item['text'] ?? ''}'.toLowerCase();
+      return keyword.isEmpty || text.contains(keyword);
+    }).toList();
+    if (results.isEmpty) return const Center(child: Text('没有找到聊天记录'));
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (_, index) => ListTile(
+        title: Text('${results[index]['text'] ?? ''}'),
+        subtitle: Text('${results[index]['createdAt'] ?? ''}'),
+      ),
+    );
+  }
 }
 
 class _VoiceWave extends StatefulWidget {
@@ -2506,6 +2767,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   Future<void> _finishRemoteHangup() async {
     if (_ending) return;
     _ending = true;
+    durationTimer?.cancel();
     _showEndedNotice();
     try {
       await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
@@ -2587,6 +2849,9 @@ class _AudioCallPageState extends State<_AudioCallPage> {
       if (mounted) setState(() {});
     }
     if (status == 'ended' || status == 'cancelled' || status == 'rejected') {
+      callStatus = status;
+      durationTimer?.cancel();
+      unawaited(_persistCallLocally(call.cast<String, dynamic>()));
       unawaited(_finishRemoteHangup());
     }
   }
