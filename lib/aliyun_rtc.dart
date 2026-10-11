@@ -6,6 +6,9 @@ class AliyunRtcBridge {
 
   static Future<void> join(Map<String, dynamic> rtc) async {
     await _channel.invokeMethod('join', {
+      'appId': '${rtc['appId'] ?? ''}',
+      'channelId': '${rtc['channelId'] ?? ''}',
+      'userId': '${rtc['userId'] ?? ''}',
       'token': '${rtc['token'] ?? ''}',
     });
   }

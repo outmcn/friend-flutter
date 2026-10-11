@@ -34,12 +34,17 @@ import DingRTC
       }
       let engine = DingRtcEngine.createInstance(self, extras: nil)
       rtcEngine = engine
+      let authInfo = DingRtcAuthInfo()
+      authInfo.appId = appId
+      authInfo.channelId = channelId
+      authInfo.userId = userId
+      authInfo.token = token
       _ = engine.subscribeAllRemoteAudioStreams(true)
       _ = engine.enableSpeakerphone(true)
       _ = engine.startAudioPlayer()
       _ = engine.startAudioCapture()
       _ = engine.publishLocalAudioStream(true)
-      let code = engine.joinChannel(token, name: nil) { [weak self] errorCode, channelName, joinedUserId, _ in
+      let code = engine.joinChannel(authInfo, name: nil) { [weak self] errorCode, channelName, joinedUserId, _ in
         DispatchQueue.main.async {
           if errorCode == 0 {
             self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": channelName, "userId": joinedUserId])
