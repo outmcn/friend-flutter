@@ -2508,21 +2508,21 @@ class _CallRecordBubble extends StatelessWidget {
   final VoidCallback onTap;
 
   String _statusText() {
-    final started = DateTime.tryParse('${record['answeredAt'] ?? ''}');
+    final answered = DateTime.tryParse('${record['answeredAt'] ?? ''}');
     final ended = DateTime.tryParse('${record['endedAt'] ?? ''}');
-    final duration = started != null && ended != null
-        ? ended.difference(started).inSeconds
+    final seconds = answered != null && ended != null
+        ? ended.difference(answered).inSeconds.clamp(0, 86400)
         : 0;
-    final durationText = duration > 0 ? ' · $duration秒' : '';
+    final durationText =
+        '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
     switch ('${record['status'] ?? ''}') {
       case 'answered':
-        return '已接通$durationText';
+        return '通话时长 $durationText';
       case 'rejected':
-        return '已拒绝';
+        return '已拒接';
       case 'cancelled':
-        return '已取消';
       case 'ended':
-        return '已挂断';
+        return '未接通';
       default:
         return '未接通';
     }
@@ -2531,12 +2531,6 @@ class _CallRecordBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = '${record['callerId'] ?? ''}' == currentUserId;
-    final time = DateTime.tryParse(
-      '${record['startedAt'] ?? record['createdAt'] ?? ''}',
-    )?.toLocal();
-    final timeText = time == null
-        ? ''
-        : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Align(
@@ -2562,8 +2556,7 @@ class _CallRecordBubble extends StatelessWidget {
                     Icon(Icons.call,
                         size: 16, color: mine ? Colors.green : Colors.blue),
                     const SizedBox(width: 6),
-                    Text(
-                        '语音通话 · ${_statusText()}${timeText.isEmpty ? '' : '  $timeText'}'),
+                    Text('语音通话 · ${_statusText()}'),
                   ],
                 ),
               ),
