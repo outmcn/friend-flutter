@@ -136,6 +136,22 @@ class DDPostService {
     return (data['message'] as Map).cast<String, dynamic>();
   }
 
+  Future<List<Map<String, dynamic>>> fetchPendingImCalls(String token) async {
+    final response = await _client.get(
+      _api('/im/calls/pending'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map || data['calls'] is! List) {
+      throw Exception(data is Map ? '${data['error'] ?? '获取来电失败'}' : '获取来电失败');
+    }
+    return (data['calls'] as List)
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
+  }
+
   Future<Map<String, dynamic>> startImCall(
       String token, String conversationId) async {
     final response = await _client.post(

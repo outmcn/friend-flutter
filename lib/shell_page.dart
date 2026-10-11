@@ -12,7 +12,7 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   int? selectedChat;
   final messageController = TextEditingController();
   final userSearchController = TextEditingController();
@@ -22,12 +22,25 @@ class _ChatPageState extends State<ChatPage> {
   bool conversationCacheLoaded = false;
   String? loadError;
   final Map<String, String> _avatarPaths = {};
+  Timer? pendingCallTimer;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadConversations());
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_pollPendingCalls());
+    pendingCallTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      unawaited(_pollPendingCalls());
+    });
     listEvents = ImSession.instance.events.listen(_handleListEvent);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_pollPendingCalls());
+      unawaited(_loadConversations(showLoading: false));
+    }
   }
 
   void _handleListEvent(Map<String, dynamic> event) {
@@ -45,9 +58,25 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _pollPendingCalls() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty || !mounted) return;
+    final service = DDPostService();
+    try {
+      final calls = await service.fetchPendingImCalls(token);
+      for (final call in calls) {
+        await _showIncomingCall(call);
+      }
+    } catch (_) {
+      // 后台轮询失败不阻塞消息页。
+    } finally {
+      service.dispose();
+    }
+  }
+
   Future<void> _showIncomingCall(Map<String, dynamic> call) async {
     final callId = '${call['id'] ?? ''}';
-    if (!mounted || callId.isEmpty) return;
     final accepted = await showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -217,6 +246,8 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    pendingCallTimer?.cancel();
     messageController.dispose();
     userSearchController.dispose();
     listEvents?.cancel();
@@ -2317,8 +2348,16 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   }
 
   Future<void> _finishRemoteHangup() async {
-    await AliyunRtcBridge.leave();
-    if (mounted) Navigator.pop(context);
+    await _leaveRtcOnly();
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _leaveRtcOnly() async {
+    try {
+      await AliyunRtcBridge.leave().timeout(const Duration(seconds: 4));
+    } catch (_) {
+      // 原生 SDK 异步离会异常时也必须释放 Flutter 页面，避免黑屏卡死。
+    }
   }
 
   Future<void> _joinRtc() async {
@@ -2335,8 +2374,10 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   }
 
   Future<void> _leave() async {
+    var rtcLeft = false;
     try {
-      await AliyunRtcBridge.leave();
+      await _leaveRtcOnly();
+      rtcLeft = true;
       final service = DDPostService();
       try {
         await service.updateImCall(
@@ -2345,7 +2386,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
         service.dispose();
       }
     } finally {
-      if (mounted) Navigator.pop(context);
+      if (mounted && rtcLeft) Navigator.of(context).pop();
     }
   }
 

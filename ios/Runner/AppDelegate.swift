@@ -1,9 +1,10 @@
 import UIKit
 import Flutter
 import DingRTC
+import UserNotifications
 
 @UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate, DingRtcEngineDelegate {
+@objc class AppDelegate: FlutterAppDelegate, DingRtcEngineDelegate, UNUserNotificationCenterDelegate {
   private var rtcEngine: DingRtcEngine?
   private var rtcChannel: FlutterMethodChannel?
 
@@ -12,6 +13,9 @@ import DingRTC
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+    UNUserNotificationCenter.current().delegate = self
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+    application.registerForRemoteNotifications()
     guard let controller = window?.rootViewController as? FlutterViewController else {
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
@@ -21,6 +25,34 @@ import DingRTC
       self?.handleRtc(call: call, result: result)
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  func application(
+    _ application: UIApplication,
+    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+  ) {
+    if let type = userInfo["type"] as? String, type == "call:incoming" {
+      rtcChannel?.invokeMethod("remoteCallIncoming", arguments: userInfo)
+    }
+    completionHandler(.newData)
+  }
+
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    completionHandler([.banner, .sound, .badge])
+  }
+
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    rtcChannel?.invokeMethod("notificationTapped", arguments: response.notification.request.content.userInfo)
+    completionHandler()
   }
 
   private func handleRtc(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -65,9 +97,20 @@ import DingRTC
       let muted = (call.arguments as? Bool) ?? false
       result(rtcEngine?.publishLocalAudioStream(!muted) == 0)
     case "leave":
-      let code = rtcEngine?.leaveChannel() ?? 0
+      let engine = rtcEngine
+      _ = engine?.publishLocalAudioStream(false)
+      _ = engine?.stopAudioCapture()
+      _ = engine?.stopAudioPlayer()
+      let code = engine?.leaveChannel() ?? 0
       result(code == 0)
-      rtcEngine = nil
+      DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2.0) {
+        if let engine {
+          DingRtcEngine.destroyInstance(engine)
+        }
+        DispatchQueue.main.async { [weak self] in
+          self?.rtcEngine = nil
+        }
+      }
     default:
       result(FlutterMethodNotImplemented)
     }
