@@ -633,7 +633,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool moreExpanded = false;
   bool emojiExpanded = false;
   bool _didInitialScroll = false;
-  bool _scrollRetryScheduled = false;
+  bool _initialScrollPending = false;
   bool avatarsReady = false;
   ImageProvider? myAvatarProvider;
   ImageProvider? peerAvatarProvider;
@@ -719,14 +719,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   void _scrollToLatest({bool force = false}) {
     if (!mounted || (_didInitialScroll && !force)) return;
-    if (_scrollRetryScheduled) return;
-    _scrollRetryScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollRetryScheduled = false;
       if (!mounted || !messageScrollController.hasClients) return;
       final position = messageScrollController.position;
-      if (!position.hasContentDimensions) {
-        _scrollToLatest(force: force);
+      if (!position.hasContentDimensions || position.maxScrollExtent <= 0) {
+        if (!_initialScrollPending) {
+          _initialScrollPending = true;
+          Future<void>.delayed(const Duration(milliseconds: 80), () {
+            _initialScrollPending = false;
+            if (mounted) _scrollToLatest(force: force);
+          });
+        }
         return;
       }
       position.jumpTo(position.maxScrollExtent);
@@ -830,7 +833,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         initialSyncCompleted = true;
       });
       unawaited(_markLatestRead());
-      _scrollToLatest(force: true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToLatest(force: true);
+      });
     } catch (_) {
       if (mounted) setState(() => initialSyncCompleted = true);
     }
@@ -1125,7 +1130,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       index++;
     }
     if (mounted) {
-      final follow = _isNearBottom();
+      final follow = !_didInitialScroll || _isNearBottom();
       setState(() {});
       if (follow) _scrollToLatest(force: true);
     }
