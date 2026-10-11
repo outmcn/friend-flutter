@@ -2819,7 +2819,6 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   bool joined = false;
   StreamSubscription<Map<String, dynamic>>? imEvents;
   bool _ending = false;
-  bool _endedNoticeShown = false;
   Timer? callTimer;
   Timer? durationTimer;
   DateTime? localTimerStartedAt;
@@ -2865,38 +2864,15 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     durationTimer = null;
   }
 
-  void _showEndedNotice() {
-    if (!mounted || _endedNoticeShown) return;
-    _endedNoticeShown = true;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('对方已挂断')),
-    );
-  }
-
   Future<void> _finishRemoteHangup() async {
     if (_ending) return;
     _ending = true;
-    _showEndedNotice();
     _stopLocalTimer();
     try {
       await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
     } catch (_) {}
     if (mounted) {
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('语音通话'),
-          content: const Text('对方已挂断'),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('确定'),
-            ),
-          ],
-        ),
-      );
-      if (mounted) Navigator.of(context).pop();
+      Navigator.of(context).pop();
     }
   }
 
@@ -2914,6 +2890,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
 
   void _handleRtcEvent(String method, dynamic args) {
     if (method == 'remoteLeft') {
+      // 远端挂断只结束 RTC 页面，不显示提示。
       unawaited(_finishRemoteHangup());
     } else if (method == 'bye') {
       callStatus = 'bye';
@@ -3071,7 +3048,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
                   radius: 42, child: Icon(Icons.person, size: 42)),
               const SizedBox(height: 16),
               Text(
-                callStatus == 'answered' ? '通话中 ${_elapsedText()}' : '等待接听',
+                callStatus == 'answered' ? _elapsedText() : '等待接听',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 40),
@@ -3133,11 +3110,11 @@ class _CallRecordBubble extends StatelessWidget {
     if (durationSeconds != null) {
       final duration =
           '${(durationSeconds ~/ 60).toString().padLeft(2, '0')}:${(durationSeconds % 60).toString().padLeft(2, '0')}';
-      return '已接听 · 通话时间 $duration';
+      return duration;
     }
     if (status == 'cancelled') return '已取消';
     if (status == 'rejected') return '已拒绝';
-    if (status == 'answered' || status == 'ended') return '已接听';
+    if (status == 'answered' || status == 'ended') return '未接听';
     return '未接听';
   }
 
