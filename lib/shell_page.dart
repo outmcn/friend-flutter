@@ -46,6 +46,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       unawaited(_loadConversations(showLoading: false));
     }
     if (event['type'] == 'call:update') {
+      final call = event['call'];
+      if (call is Map) {
+        final item = call.cast<String, dynamic>();
+        unawaited(_persistCallLocally(item));
+      }
       unawaited(_loadConversations(showLoading: false));
     }
     if (event['type'] == 'call:incoming') {
@@ -62,6 +67,36 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         }
       }
     }
+  }
+
+  Future<void> _persistCallLocally(Map<String, dynamic> raw) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accountId = prefs.getString('friend.auth.userId') ?? '';
+    final conversationId = '${raw['conversationId'] ?? ''}';
+    if (accountId.isEmpty || conversationId.isEmpty) return;
+    final call = {
+      ...raw,
+      'callerId': raw['callerId'] ?? raw['caller_id'],
+      'calleeId': raw['calleeId'] ?? raw['callee_id'],
+      '_timelineKind': 'call',
+      'kind': 'call',
+      'createdAt': raw['startedAt'] ??
+          raw['createdAt'] ??
+          DateTime.now().toIso8601String(),
+    };
+    final existing = await ImLocalStore.messages(
+        accountId: accountId, conversationId: conversationId);
+    final index = existing
+        .indexWhere((item) => '${item['id'] ?? ''}' == '${call['id'] ?? ''}');
+    if (index >= 0) {
+      existing[index] = {...existing[index], ...call};
+    } else {
+      existing.add(call);
+    }
+    await ImLocalStore.saveMessages(
+        accountId: accountId,
+        conversationId: conversationId,
+        messages: existing);
   }
 
   Future<void> _loadCurrentRingingCall() async {
@@ -2515,12 +2550,51 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     unawaited(_finishCallOnServer());
   }
 
+  Future<void> _persistCallLocally(Map<String, dynamic> raw) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accountId = prefs.getString('friend.auth.userId') ?? '';
+    final conversationId =
+        '${raw['conversationId'] ?? widget.call['conversationId'] ?? ''}';
+    if (accountId.isEmpty || conversationId.isEmpty) return;
+    final call = {
+      ...raw,
+      'conversationId': conversationId,
+      'callerId':
+          raw['callerId'] ?? raw['caller_id'] ?? widget.call['callerId'],
+      'calleeId':
+          raw['calleeId'] ?? raw['callee_id'] ?? widget.call['calleeId'],
+      '_timelineKind': 'call',
+      'kind': 'call',
+      'createdAt': raw['startedAt'] ??
+          raw['createdAt'] ??
+          widget.call['startedAt'] ??
+          DateTime.now().toIso8601String(),
+    };
+    final existing = await ImLocalStore.messages(
+        accountId: accountId, conversationId: conversationId);
+    final index = existing.indexWhere((item) =>
+        '${item['id'] ?? ''}' == '${call['id'] ?? widget.call['id'] ?? ''}');
+    if (index >= 0) {
+      existing[index] = {...existing[index], ...call};
+    } else {
+      existing.add(call);
+    }
+    await ImLocalStore.saveMessages(
+        accountId: accountId,
+        conversationId: conversationId,
+        messages: existing);
+  }
+
   Future<void> _finishCallOnServer() async {
     final service = DDPostService();
     try {
-      await service
+      final result = await service
           .updateImCall(widget.token, '${widget.call['id'] ?? ''}', 'hangup')
           .timeout(const Duration(seconds: 4));
+      final updated = (result['call'] as Map?)?.cast<String, dynamic>();
+      if (updated != null) {
+        await _persistCallLocally(updated);
+      }
     } catch (_) {
       // 页面已返回，后台状态更新失败不阻塞 UI。
     } finally {
