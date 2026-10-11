@@ -2393,10 +2393,21 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   StreamSubscription<Map<String, dynamic>>? imEvents;
   bool _ending = false;
   bool _endedNoticeShown = false;
+  Timer? callTimer;
+  Timer? durationTimer;
+  DateTime? answeredAt;
+  late String callStatus;
 
   @override
   void initState() {
     super.initState();
+    callStatus = '${widget.call['status'] ?? 'ringing'}';
+    final initialAnswered =
+        DateTime.tryParse('${widget.call['answeredAt'] ?? ''}');
+    if (initialAnswered != null) answeredAt = initialAnswered;
+    if (callStatus == 'ringing') {
+      callTimer = Timer(const Duration(seconds: 30), _cancelAfterTimeout);
+    }
     AliyunRtcBridge.setEventHandler(_handleRtcEvent);
     imEvents = ImSession.instance.events.listen(_handleImEvent);
     unawaited(_joinRtc());
@@ -2436,6 +2447,18 @@ class _AudioCallPageState extends State<_AudioCallPage> {
     }
   }
 
+  Future<void> _cancelAfterTimeout() async {
+    if (!mounted || _ending || callStatus != 'ringing') return;
+    _ending = true;
+    callStatus = 'cancelled';
+    try {
+      await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
+      await DDPostService()
+          .updateImCall(widget.token, '${widget.call['id'] ?? ''}', 'cancel');
+    } catch (_) {}
+    if (mounted) Navigator.of(context).pop();
+  }
+
   void _handleRtcEvent(String method, dynamic args) {
     if (method == 'remoteLeft') {
       unawaited(_finishRemoteHangup());
@@ -2453,6 +2476,16 @@ class _AudioCallPageState extends State<_AudioCallPage> {
       return;
     }
     final status = '${call['status'] ?? ''}';
+    callStatus = status;
+    final nextAnswered = DateTime.tryParse('${call['answeredAt'] ?? ''}');
+    if (nextAnswered != null) answeredAt = nextAnswered;
+    if (status == 'answered') {
+      callTimer?.cancel();
+      durationTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+      if (mounted) setState(() {});
+    }
     if (status == 'ended' || status == 'cancelled' || status == 'rejected') {
       unawaited(_finishRemoteHangup());
     }
@@ -2497,6 +2530,8 @@ class _AudioCallPageState extends State<_AudioCallPage> {
 
   @override
   void dispose() {
+    callTimer?.cancel();
+    durationTimer?.cancel();
     imEvents?.cancel();
     AliyunRtcBridge.setEventHandler(null);
     super.dispose();
@@ -2512,8 +2547,14 @@ class _AudioCallPageState extends State<_AudioCallPage> {
               const CircleAvatar(
                   radius: 42, child: Icon(Icons.person, size: 42)),
               const SizedBox(height: 16),
-              Text(joined ? '通话中' : '正在连接',
-                  style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                callStatus == 'answered' && answeredAt != null
+                    ? '通话中 ${DateTime.now().difference(answeredAt!).inSeconds}s'
+                    : joined
+                        ? '通话中'
+                        : '正在连接',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 40),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -2558,8 +2599,10 @@ class _CallRecordBubble extends StatelessWidget {
   String _statusText() {
     final answered = DateTime.tryParse('${record['answeredAt'] ?? ''}');
     final ended = DateTime.tryParse('${record['endedAt'] ?? ''}');
-    final seconds = answered != null && ended != null
-        ? ended.difference(answered).inSeconds.clamp(0, 86400)
+    final seconds = answered != null
+        ? (ended != null
+            ? ended.difference(answered).inSeconds.clamp(0, 86400)
+            : DateTime.now().difference(answered).inSeconds.clamp(0, 86400))
         : 0;
     final durationText =
         '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
