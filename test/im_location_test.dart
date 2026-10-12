@@ -126,6 +126,8 @@ void main() {
         tester.widget<Icon>(find.byIcon(Icons.location_on)).color, Colors.red);
     await tester.tap(find.text('人民广场'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Apple 地图'));
+    await tester.pumpAndSettle();
     expect(Uri.parse(opened!).queryParameters['q'], '人民广场');
     await tester.pumpWidget(const MaterialApp(
         home: Scaffold(body: Center(child: ImLocationCard(metadata: null)))));

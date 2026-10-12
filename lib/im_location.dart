@@ -39,6 +39,19 @@ class ImLocation {
         'address': address,
       };
 
+  Uri get amapUrl => Uri.https('uri.amap.com', '/marker', {
+        'position': '$longitude,$latitude',
+        'name': title,
+        'src': 'friend',
+        'coordinate': 'gaode',
+      });
+
+  Uri get tencentUrl => Uri.https('apis.map.qq.com', '/uri/v1/marker', {
+        'marker': '@$latitude,$longitude',
+        'title': title,
+        'addr': address,
+      });
+
   Uri get mapsUrl => Uri.https('maps.apple.com', '/', {
         'll': '$latitude,$longitude',
         'q': title,
@@ -106,15 +119,59 @@ class ImLocationCard extends StatelessWidget {
   final dynamic metadata;
 
   Future<void> _open(BuildContext context, ImLocation location) async {
+    final provider = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 16),
+              title: Text('选择地图'),
+              subtitle: Text('请选择打开位置的地图应用'),
+            ),
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.map_outlined),
+              title: const Text('高德地图'),
+              onTap: () => Navigator.pop(sheetContext, 'amap'),
+            ),
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.map_outlined),
+              title: const Text('腾讯地图'),
+              onTap: () => Navigator.pop(sheetContext, 'tencent'),
+            ),
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.map),
+              title: const Text('Apple 地图'),
+              onTap: () => Navigator.pop(sheetContext, 'apple'),
+            ),
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.close),
+              title: const Text('取消'),
+              onTap: () => Navigator.pop(sheetContext),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!context.mounted || provider == null) return;
+    final url = provider == 'amap'
+        ? location.amapUrl
+        : provider == 'tencent'
+            ? location.tencentUrl
+            : location.mapsUrl;
     try {
-      if (await launchUrl(location.mapsUrl,
-          mode: LaunchMode.externalApplication)) {
-        return;
-      }
+      if (await launchUrl(url, mode: LaunchMode.externalApplication)) return;
     } catch (_) {}
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂时无法打开地图，请稍后重试')),
+        const SnackBar(content: Text('暂时无法打开地图，请确认已安装对应地图应用')),
       );
     }
   }
