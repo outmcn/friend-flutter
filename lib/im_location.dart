@@ -9,6 +9,22 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+void _showTopNotice(BuildContext context, Widget content) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.hideCurrentMaterialBanner();
+  messenger.showMaterialBanner(
+    MaterialBanner(
+      content: content,
+      actions: [
+        TextButton(
+          onPressed: messenger.hideCurrentMaterialBanner,
+          child: const Text('关闭'),
+        ),
+      ],
+    ),
+  );
+}
+
 class ImLocation {
   const ImLocation(this.latitude, this.longitude, this.title, this.address);
 
@@ -385,8 +401,9 @@ class ImLocationCard extends StatelessWidget {
       }
     } catch (_) {}
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂时无法打开地图，请确认已安装对应地图应用')),
+      _showTopNotice(
+        context,
+        const Text('暂时无法打开地图，请确认已安装对应地图应用'),
       );
     }
   }

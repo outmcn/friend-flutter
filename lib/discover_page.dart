@@ -73,8 +73,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        _showTopNotice(context, SnackBar(content: Text('$e')));
       }
     } finally {
       pendingLikes.remove(post.id);

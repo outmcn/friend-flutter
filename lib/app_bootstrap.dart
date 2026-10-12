@@ -1,5 +1,21 @@
 part of 'main.dart';
 
+void _showTopNotice(BuildContext context, Widget content) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.hideCurrentMaterialBanner();
+  messenger.showMaterialBanner(
+    MaterialBanner(
+      content: content,
+      actions: [
+        TextButton(
+          onPressed: messenger.hideCurrentMaterialBanner,
+          child: const Text('关闭'),
+        ),
+      ],
+    ),
+  );
+}
+
 class DDApp extends StatelessWidget {
   const DDApp({super.key});
 

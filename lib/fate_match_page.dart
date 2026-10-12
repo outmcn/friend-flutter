@@ -22,7 +22,8 @@ class _FateMatchPageState extends State<FateMatchPage> {
               tooltip: '分享',
               icon: const Icon(Icons.share_outlined),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
+                _showTopNotice(
+                  context,
                   const SnackBar(content: Text('分享功能暂未接入')),
                 );
               },

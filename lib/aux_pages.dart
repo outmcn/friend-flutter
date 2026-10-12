@@ -89,8 +89,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
       await DDPostService.clearProfileTabCaches();
       await load();
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('动态已删除')));
+        _showTopNotice(context, const SnackBar(content: Text('动态已删除')));
       }
     } catch (e) {
       if (mounted) {

@@ -1117,7 +1117,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (type == 'session:replaced') {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        _showTopNotice(
+          context,
           const SnackBar(content: Text('账号已在其他设备登录')),
         );
       }
@@ -1451,7 +1452,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     await recorder.dispose();
     if (cancelled || output == null) {
       if (mounted && cancelled) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        _showTopNotice(
+          context,
           const SnackBar(content: Text('已取消录音')),
         );
       }
@@ -1599,7 +1601,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       await service.reportImMessage(
           token, widget.chat.conversationId, id, reason);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        _showTopNotice(
+          context,
           const SnackBar(content: Text('举报已提交')),
         );
       }
@@ -1660,7 +1663,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     } else if (action == 'blacklist' || action == 'unblacklist') {
       if (mounted) {
         setState(() => blockedConversation = action == 'blacklist');
-        ScaffoldMessenger.of(context).showSnackBar(
+        _showTopNotice(
+          context,
           SnackBar(
             content: Text(action == 'blacklist' ? '已加入黑名单' : '已取消黑名单'),
           ),
@@ -1738,7 +1742,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (id.isEmpty || id.startsWith('local:')) {
       if (choice == 'recall') {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          _showTopNotice(
+            context,
             const SnackBar(content: Text('消息尚未发送成功，无法撤回')),
           );
         }
@@ -1776,8 +1781,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         }
       } catch (error) {
         if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('$error')));
+          _showTopNotice(context, SnackBar(content: Text('$error')));
         }
       } finally {
         service.dispose();

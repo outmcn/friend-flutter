@@ -327,7 +327,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     } else if (action == 'copy') {
       await Clipboard.setData(ClipboardData(text: comment.content));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        _showTopNotice(
+          context,
           const SnackBar(content: Text('已复制')),
         );
       }
@@ -365,7 +366,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           reason: reason,
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          _showTopNotice(
+            context,
             const SnackBar(content: Text('举报已提交')),
           );
         }
@@ -495,8 +497,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        _showTopNotice(context, SnackBar(content: Text('$e')));
       }
     } finally {
       pendingActions.remove(action);
@@ -563,7 +564,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       ),
     );
     if (submitted == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      _showTopNotice(
+        context,
         const SnackBar(content: Text('举报已提交')),
       );
     }
@@ -606,7 +608,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         ClipboardData(text: '动态 ${item.id}：${item.content}'),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        _showTopNotice(
+          context,
           const SnackBar(content: Text('动态内容已复制，可粘贴分享')),
         );
       }

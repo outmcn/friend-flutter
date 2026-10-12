@@ -74,7 +74,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      _showTopNotice(
+        context,
         SnackBar(content: Text('$error')),
       );
     }
@@ -537,8 +538,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       if (mounted) setState(() => blocked = next);
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        _showTopNotice(context, SnackBar(content: Text('$error')));
       }
     } finally {
       if (mounted) setState(() => actionLoading = false);
