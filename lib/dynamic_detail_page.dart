@@ -643,6 +643,29 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
+  void _openGiftMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            const ListTile(
+              leading: Icon(Icons.card_giftcard_outlined),
+              title: Text('送礼'),
+              subtitle: Text('礼物功能暂未接入支付和后台记录'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: const Text('关闭'),
+              onTap: () => Navigator.pop(sheetContext),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _composer(DDPost item) => SafeArea(
         child: Padding(
           padding: EdgeInsets.fromLTRB(
@@ -660,6 +683,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                 label: '${item.favorites}',
                 active: item.favorited,
                 onTap: _toggleFavorite,
+              ),
+              IconButton(
+                tooltip: '送礼',
+                onPressed: _openGiftMenu,
+                icon: const Icon(Icons.card_giftcard_outlined),
               ),
               const SizedBox(width: 4),
               Expanded(
