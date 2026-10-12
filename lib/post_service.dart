@@ -226,8 +226,12 @@ class DDPostService {
         if (metadata != null) 'metadata': metadata,
       }),
     );
-    final data =
-        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    dynamic data;
+    try {
+      data = response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    } catch (_) {
+      data = null;
+    }
     if (response.statusCode != 201 || data is! Map || data['message'] is! Map) {
       // A successful database insert can be followed by a lost HTTP response.
       // Reconcile by clientId before surfacing an error or retrying the POST.
