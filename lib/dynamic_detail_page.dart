@@ -710,28 +710,114 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     return Hero(tag: tag, child: child);
   }
 
+  List<String> _topics(DDPost item) {
+    final matches = RegExp(r'#([^#\s]+)').allMatches(item.content);
+    return matches.map((match) => match.group(1)!).toSet().toList();
+  }
+
+  String _contentWithoutTopics(DDPost item) {
+    return item.content
+        .replaceAll(RegExp(r'#[^#\s]+'), '')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
+  }
+
+  Widget _topicWrap(DDPost item) {
+    final topics = _topics(item);
+    if (topics.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 8,
+        children: topics
+            .map(
+              (topic) => Text(
+                '#$topic',
+                style: const TextStyle(
+                  color: Color(0xff3f6fa8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _detailHeader(DDPost item) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Row(
+        children: [
+          ClipOval(
+            child: SizedBox(
+              width: 38,
+              height: 38,
+              child: _PermanentCachedImage(
+                url: item.avatar,
+                fit: BoxFit.cover,
+                placeholder: const Icon(Icons.person_outline),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              item.nickname,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+          ),
+          Text(
+            formatDDTime(item.createdAt),
+            style: TextStyle(
+              fontSize: 12,
+              color:
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: .5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _heroBody(DDPost item) {
     final image = item.imageUrl?.trim();
     final video = item.videoUrl?.trim();
+    final text = _contentWithoutTopics(item);
     final media = image?.isNotEmpty == true
         ? _PostImageHolder(url: image!, unlimitedHeight: true)
         : video?.isNotEmpty == true
             ? _NetworkVideoPreview(
                 url: video!,
                 thumbnailUrl: item.thumbnailUrl,
-                unlimitedHeight: true)
+                unlimitedHeight: true,
+              )
             : Container(
                 width: double.infinity,
-                constraints: const BoxConstraints(minHeight: 120),
-                padding: const EdgeInsets.all(18),
+                constraints: const BoxConstraints(minHeight: 180),
+                padding: const EdgeInsets.all(24),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xff6556d9), Color(0xffdf76b8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-                child: Text(item.content,
-                    style: const TextStyle(
-                        color: Colors.white, fontSize: 18, height: 1.4)),
+                alignment: Alignment.center,
+                child: Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    height: 1.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               );
     return _heroMedia(
       child: Material(
@@ -747,12 +833,15 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               media,
-              if (item.content.isNotEmpty && image != null && image.isNotEmpty)
+              if (text.isNotEmpty && image != null && image.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(item.content,
-                      style: const TextStyle(fontSize: 18, height: 1.5)),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  child: Text(
+                    text,
+                    style: const TextStyle(fontSize: 18, height: 1.5),
+                  ),
                 ),
+              _topicWrap(item),
             ],
           ),
         ),
@@ -890,8 +979,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                           _PageErrorState(
                               title: '加载失败', subtitle: error!, onRetry: load),
                         if (item != null) ...[
+                          _detailHeader(item),
                           _heroBody(item),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           const Divider(height: 32),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
