@@ -2811,24 +2811,35 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                       _ComposerAction(
                         icon: Icons.camera_alt_outlined,
                         label: '拍摄',
-                        onPressed: () => _pickAndSendImage(
-                          source: ImageSource.camera,
-                        ),
+                        onPressed: () {
+                          setState(() => moreExpanded = false);
+                          unawaited(
+                              _pickAndSendImage(source: ImageSource.camera));
+                        },
                       ),
                       _ComposerAction(
                         icon: Icons.photo_outlined,
                         label: '照片',
-                        onPressed: _pickAndSendImage,
+                        onPressed: () {
+                          setState(() => moreExpanded = false);
+                          unawaited(_pickAndSendImage());
+                        },
                       ),
                       _ComposerAction(
                         icon: Icons.phone_in_talk_outlined,
                         label: '语音通话',
-                        onPressed: _startAudioCall,
+                        onPressed: () {
+                          setState(() => moreExpanded = false);
+                          unawaited(_startAudioCall());
+                        },
                       ),
                       _ComposerAction(
                         icon: Icons.location_on_outlined,
                         label: '位置',
-                        onPressed: _sendLocation,
+                        onPressed: () {
+                          setState(() => moreExpanded = false);
+                          unawaited(_sendLocation());
+                        },
                       ),
                     ],
                   ),
