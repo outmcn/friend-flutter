@@ -1935,13 +1935,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     await ImLocalStore.saveMessages(
       accountId: currentUserId,
       conversationId: widget.chat.conversationId,
-      messages: messages,
+      messages: [pending],
     );
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     final service = DDPostService();
+    Map<String, dynamic>? serverMessage;
     try {
-      final sent = await service.sendImMessage(
+      serverMessage = await service.sendImMessage(
         token,
         widget.chat.conversationId,
         text: normalizedText,
@@ -1949,12 +1950,19 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         kind: kind,
         metadata: metadata,
       );
-      _mergeMessage({...pending, ...sent}, status: 'sent');
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: messages,
-      );
+      _mergeMessage({...pending, ...serverMessage}, status: 'sent');
+      try {
+        await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: [
+            {...pending, ...serverMessage, 'status': 'sent'}
+          ],
+        );
+      } catch (_) {
+        // The server state is authoritative; a cache write must not downgrade
+        // an already accepted message back to pending.
+      }
     } catch (error) {
       // If the POST reached the server but the response/local SQLite write failed,
       // reconcile by clientId before leaving the message in the retry queue.
@@ -1968,13 +1976,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             clientId,
           );
           _mergeMessage({...pending, ...accepted}, status: 'sent');
-          await ImLocalStore.saveMessages(
-            accountId: currentUserId,
-            conversationId: widget.chat.conversationId,
-            messages: [
-              {...pending, ...accepted, 'status': 'sent'}
-            ],
-          );
+          try {
+            await ImLocalStore.saveMessages(
+              accountId: currentUserId,
+              conversationId: widget.chat.conversationId,
+              messages: [
+                {...pending, ...accepted, 'status': 'sent'}
+              ],
+            );
+          } catch (_) {
+            // Do not downgrade a server-accepted message when local caching fails.
+          }
           reconciled = true;
         } on StateError {
           // The server does not have this clientId yet; keep one pending row.
