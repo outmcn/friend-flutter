@@ -740,7 +740,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   Widget _heroMedia({required Widget child}) {
     final tag = widget.heroTag;
     if (tag == null || tag.isEmpty) return child;
-    return Hero(tag: tag, child: child);
+    return Hero(
+      tag: tag,
+      createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+      child: child,
+    );
   }
 
   List<String> _topics(DDPost item) {
