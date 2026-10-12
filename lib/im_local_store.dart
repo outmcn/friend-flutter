@@ -9,17 +9,12 @@ import 'package:sqflite/sqflite.dart';
 class ImLocalStore {
   static Database? _database;
 
-  static int? _intValue(dynamic value) {
-    if (value is num) return value.toInt();
-    return int.tryParse('$value');
-  }
-
   static Future<Database> _db() async {
     if (_database != null) return _database!;
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 10,
+      version: 8,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -39,7 +34,6 @@ class ImLocalStore {
             deleted_at TEXT,
             ended_at TEXT,
             answered_at TEXT,
-            local_duration_seconds INTEGER,
             retry_started_at TEXT,
             retry_until TEXT,
             retry_count INTEGER NOT NULL DEFAULT 0,
@@ -104,50 +98,6 @@ class ImLocalStore {
           await db.execute('ALTER TABLE messages ADD COLUMN ended_at TEXT');
           await db.execute('ALTER TABLE messages ADD COLUMN answered_at TEXT');
         }
-        if (oldVersion < 9) {
-          await db.execute(
-              'ALTER TABLE messages ADD COLUMN local_duration_seconds INTEGER');
-        }
-      },
-      onOpen: (db) async {
-        await db.transaction((txn) async {
-          final columnNames = await txn.rawQuery("PRAGMA table_info(messages)");
-          final columns = columnNames.map((row) => '${row['name']}').toSet();
-          if (!columns.contains('local_duration_seconds')) {
-            await txn.execute(
-                'ALTER TABLE messages ADD COLUMN local_duration_seconds INTEGER');
-          }
-          await txn.execute('''
-        CREATE TABLE IF NOT EXISTS call_messages (
-          account_id TEXT NOT NULL,
-          conversation_id TEXT NOT NULL,
-          message_id TEXT NOT NULL,
-          client_id TEXT,
-          sender_id TEXT NOT NULL,
-          caller_id TEXT,
-          callee_id TEXT,
-          text TEXT NOT NULL,
-          kind TEXT NOT NULL DEFAULT 'call',
-          duration_ms INTEGER NOT NULL DEFAULT 0,
-          created_at TEXT,
-          status TEXT NOT NULL DEFAULT 'ringing',
-          recalled_at TEXT,
-          deleted_at TEXT,
-          ended_at TEXT,
-          answered_at TEXT,
-          local_duration_seconds INTEGER,
-          retry_started_at TEXT,
-          retry_until TEXT,
-          retry_count INTEGER NOT NULL DEFAULT 0,
-          last_error TEXT,
-          mutation_id TEXT,
-          PRIMARY KEY (account_id, conversation_id, message_id)
-        )
-      ''');
-          await txn.execute(
-              "INSERT OR IGNORE INTO call_messages SELECT * FROM messages WHERE kind = 'call'");
-          await txn.delete('messages', where: "kind = 'call'");
-        });
       },
     );
     return _database!;
@@ -157,11 +107,11 @@ class ImLocalStore {
     required String accountId,
     required String conversationId,
   }) async {
-    final rows = await (await _db()).rawQuery(
-      'SELECT * FROM messages WHERE account_id = ? AND conversation_id = ? '
-      'UNION ALL SELECT * FROM call_messages WHERE account_id = ? AND conversation_id = ? '
-      'ORDER BY created_at ASC',
-      [accountId, conversationId, accountId, conversationId],
+    final rows = await (await _db()).query(
+      'messages',
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+      orderBy: 'created_at ASC, CAST(message_id AS INTEGER) ASC',
     );
     return rows.map((row) {
       final item = Map<String, dynamic>.from(row);
@@ -175,13 +125,12 @@ class ImLocalStore {
         'text': '${item['text'] ?? ''}',
         'kind': '${item['kind'] ?? 'text'}',
         if ('${item['kind'] ?? ''}' == 'call') '_timelineKind': 'call',
-        'durationMs': _intValue(item['duration_ms']) ?? 0,
+        'durationMs': (item['duration_ms'] as num?)?.toInt() ?? 0,
         'createdAt': item['created_at'],
         'recalledAt': item['recalled_at'],
         'deletedAt': item['deleted_at'],
         'endedAt': item['ended_at'],
         'answeredAt': item['answered_at'],
-        'localDurationSeconds': item['local_duration_seconds'],
         'mutationId': item['mutation_id'],
         'status': item['recalled_at'] != null
             ? 'recalled'
@@ -196,11 +145,12 @@ class ImLocalStore {
     required String accountId,
     required String conversationId,
   }) async {
-    final rows = await (await _db()).rawQuery(
-      'SELECT * FROM messages WHERE account_id = ? AND conversation_id = ? '
-      'UNION ALL SELECT * FROM call_messages WHERE account_id = ? AND conversation_id = ? '
-      'ORDER BY created_at DESC LIMIT 1',
-      [accountId, conversationId, accountId, conversationId],
+    final rows = await (await _db()).query(
+      'messages',
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+      orderBy: 'created_at DESC, CAST(message_id AS INTEGER) DESC',
+      limit: 1,
     );
     return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first);
   }
@@ -211,88 +161,49 @@ class ImLocalStore {
     required List<Map<String, dynamic>> messages,
   }) async {
     final db = await _db();
-    await db.transaction((txn) async {
-      final batch = txn.batch();
-      for (final original in messages) {
-        var message = original;
-        final isCall =
-            message['_timelineKind'] == 'call' || message['kind'] == 'call';
-        if (isCall) {
-          final old = await txn.query('call_messages',
-              where:
-                  'account_id = ? AND conversation_id = ? AND message_id = ?',
-              whereArgs: [accountId, conversationId, '${message['id']}']);
-          if (old.isNotEmpty) {
-            message = mergeCall({
-              'status': old.first['status'],
-              'answeredAt': old.first['answered_at'],
-              'endedAt': old.first['ended_at'],
-              'localDurationSeconds': old.first['local_duration_seconds'],
-            }, message);
-          }
-        }
-        final id = '${message['id'] ?? ''}';
-        final clientId = '${message['clientId'] ?? ''}';
-        if (id.isEmpty) continue;
-        if (!isCall && clientId.isNotEmpty) {
-          batch.delete(
-            'messages',
-            where:
-                'account_id = ? AND conversation_id = ? AND client_id = ? AND message_id <> ?',
-            whereArgs: [accountId, conversationId, clientId, id],
-          );
-        }
-        batch.insert(
-          isCall ? 'call_messages' : 'messages',
-          {
-            'account_id': accountId,
-            'conversation_id': conversationId,
-            'message_id': id,
-            'client_id': message['clientId'],
-            'sender_id': '${message['senderId'] ?? ''}',
-            'caller_id': message['callerId'],
-            'callee_id': message['calleeId'],
-            'text': '${message['text'] ?? ''}',
-            'kind':
-                '${message['_timelineKind'] == 'call' ? 'call' : message['kind'] ?? 'text'}',
-            'duration_ms': _intValue(message['durationMs']) ?? 0,
-            'created_at': '${message['createdAt'] ?? ''}',
-            'status': '${message['status'] ?? 'sent'}',
-            'recalled_at': message['recalledAt'],
-            'deleted_at': message['deletedAt'],
-            'ended_at': message['endedAt'],
-            'answered_at': message['answeredAt'],
-            'local_duration_seconds':
-                _intValue(message['localDurationSeconds']),
-            'retry_started_at': message['retryStartedAt'],
-            'retry_until': message['retryUntil'],
-            'retry_count': _intValue(message['retryCount']) ?? 0,
-            'last_error': message['lastError'],
-            'mutation_id': message['mutationId'],
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
+    final batch = db.batch();
+    for (final message in messages) {
+      final id = '${message['id'] ?? ''}';
+      final clientId = '${message['clientId'] ?? ''}';
+      if (id.isEmpty) continue;
+      if (clientId.isNotEmpty) {
+        batch.delete(
+          'messages',
+          where:
+              'account_id = ? AND conversation_id = ? AND client_id = ? AND message_id <> ?',
+          whereArgs: [accountId, conversationId, clientId, id],
         );
       }
-      await batch.commit(noResult: true);
-    });
-  }
-
-  /// Monotonic call reducer. Only locally measured durations enter this map.
-  static Map<String, dynamic> mergeCall(
-      Map<String, dynamic> previous, Map<String, dynamic> incoming) {
-    final merged = {...previous, ...incoming};
-    final old = '${previous['status'] ?? ''}';
-    final next = '${incoming['status'] ?? old}';
-    const terminal = {'ended', 'cancelled', 'rejected', 'missed', 'timeout'};
-    if (terminal.contains(old)) {
-      merged['status'] = old;
-    } else if (old == 'answered' && next != 'answered') {
-      merged['status'] = terminal.contains(next) ? 'ended' : 'answered';
+      batch.insert(
+        'messages',
+        {
+          'account_id': accountId,
+          'conversation_id': conversationId,
+          'message_id': id,
+          'client_id': message['clientId'],
+          'sender_id': '${message['senderId'] ?? ''}',
+          'caller_id': message['callerId'],
+          'callee_id': message['calleeId'],
+          'text': '${message['text'] ?? ''}',
+          'kind':
+              '${message['_timelineKind'] == 'call' ? 'call' : message['kind'] ?? 'text'}',
+          'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
+          'created_at': '${message['createdAt'] ?? ''}',
+          'status': '${message['status'] ?? 'sent'}',
+          'recalled_at': message['recalledAt'],
+          'deleted_at': message['deletedAt'],
+          'ended_at': message['endedAt'],
+          'answered_at': message['answeredAt'],
+          'retry_started_at': message['retryStartedAt'],
+          'retry_until': message['retryUntil'],
+          'retry_count': (message['retryCount'] as num?)?.toInt() ?? 0,
+          'last_error': message['lastError'],
+          'mutation_id': message['mutationId'],
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     }
-    for (final key in ['answeredAt', 'endedAt', 'localDurationSeconds']) {
-      if (previous[key] != null) merged[key] = previous[key];
-    }
-    return merged;
+    await batch.commit(noResult: true);
   }
 
   static Future<void> updateRetryState({
@@ -344,7 +255,7 @@ class ImLocalStore {
       'status': '${row['status'] ?? ''}',
       'retryStartedAt': row['retry_started_at'],
       'retryUntil': row['retry_until'],
-      'retryCount': _intValue(row['retry_count']) ?? 0,
+      'retryCount': (row['retry_count'] as num?)?.toInt() ?? 0,
       'lastError': row['last_error'],
     };
   }
@@ -456,9 +367,6 @@ class ImLocalStore {
     required String conversationId,
   }) async {
     final db = await _db();
-    await db.delete('call_messages',
-        where: 'account_id = ? AND conversation_id = ?',
-        whereArgs: [accountId, conversationId]);
     await db.delete(
       'messages',
       where: 'account_id = ? AND conversation_id = ?',
@@ -530,10 +438,10 @@ class ImLocalStore {
               'clientId': '${row['client_id'] ?? ''}',
               'text': '${row['text'] ?? ''}',
               'kind': '${row['kind'] ?? 'text'}',
-              'durationMs': _intValue(row['duration_ms']) ?? 0,
+              'durationMs': (row['duration_ms'] as num?)?.toInt() ?? 0,
               'retryStartedAt': row['retry_started_at'],
               'retryUntil': row['retry_until'],
-              'retryCount': _intValue(row['retry_count']) ?? 0,
+              'retryCount': (row['retry_count'] as num?)?.toInt() ?? 0,
               'lastError': row['last_error'],
             })
         .toList();
