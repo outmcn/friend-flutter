@@ -87,6 +87,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           builder: (_) => DynamicDetailPage(
             postId: post.id,
             initialPost: post,
+            heroTag: 'dynamic-media-${post.id}',
           ),
         ));
     if (!mounted || deleted != true) return;

@@ -6,12 +6,15 @@ class DynamicDetailPage extends StatefulWidget {
     required this.postId,
     this.focusComment = false,
     this.initialPost,
+    this.heroTag,
     this.onChanged,
   });
   final int postId;
   final DDPost? initialPost;
+  final String? heroTag;
   final ValueChanged<DDPost>? onChanged;
   final bool focusComment;
+
   @override
   State<DynamicDetailPage> createState() => _DynamicDetailPageState();
 }
@@ -666,6 +669,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     );
   }
 
+  Widget _heroMedia({required Widget child}) {
+    final tag = widget.heroTag;
+    if (tag == null || tag.isEmpty) return child;
+    return Hero(tag: tag, child: child);
+  }
+
   Widget _composer(DDPost item) => SafeArea(
         child: Padding(
           padding: EdgeInsets.fromLTRB(
@@ -783,9 +792,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                         title: '加载失败', subtitle: error!, onRetry: load),
                   if (item != null) ...[
                     if (item.imageUrl?.isNotEmpty == true) ...[
-                      _PostImageHolder(
-                        url: item.imageUrl!,
-                        unlimitedHeight: true,
+                      _heroMedia(
+                        child: _PostImageHolder(
+                          url: item.imageUrl!,
+                          unlimitedHeight: true,
+                        ),
                       ),
                     ],
                     if (item.videoUrl?.isNotEmpty == true) ...[
