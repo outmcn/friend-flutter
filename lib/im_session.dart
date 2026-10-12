@@ -21,6 +21,7 @@ class ImSession {
   final _readyCallbacks = <void Function()>[];
   Timer? _pendingRetryTimer;
   bool _pendingRetryRunning = false;
+  bool _pendingReconcileRunning = false;
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -214,7 +215,12 @@ class ImSession {
   }
 
   Future<void> _retryPendingMessages() async {
-    if (_pendingRetryRunning || _token == null || _userId == null) return;
+    if (_pendingRetryRunning ||
+        _pendingReconcileRunning ||
+        _token == null ||
+        _userId == null) {
+      return;
+    }
     _pendingRetryRunning = true;
     try {
       final pending = await ImLocalStore.pendingMessages(_userId!);
@@ -285,6 +291,16 @@ class ImSession {
   /// Reconciles pending rows after login/socket readiness without depending on
   /// the currently visible chat page. Sending itself remains HTTP-only.
   Future<void> _reconcilePendingMessages(String token) async {
+    if (_pendingReconcileRunning || _pendingRetryRunning) return;
+    _pendingReconcileRunning = true;
+    try {
+      await _reconcilePendingMessagesInternal(token);
+    } finally {
+      _pendingReconcileRunning = false;
+    }
+  }
+
+  Future<void> _reconcilePendingMessagesInternal(String token) async {
     final accountId = _userId;
     if (accountId == null) return;
     final pending = await ImLocalStore.pendingMessages(accountId);
