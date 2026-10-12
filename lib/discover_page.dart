@@ -11,12 +11,24 @@ class _DiscoverPageState extends State<DiscoverPage> {
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
   int selectedTab = 0;
+  String _discoverLocalTabLabel = '本地';
 
   Future<String> _token() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) throw Exception('请先登录');
     return token;
+  }
+
+  Future<void> _loadDiscoverCity() async {
+    try {
+      final token = await _token();
+      final city = await cachedCityLabel(service, token);
+      if (!mounted || city == '城市') return;
+      setState(() => _discoverLocalTabLabel = city);
+    } catch (_) {
+      // 城市获取失败时保留“本地”，不影响推荐和关注列表。
+    }
   }
 
   @override
@@ -45,6 +57,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       return feed;
     });
     feeds.first.load();
+    unawaited(_loadDiscoverCity());
   }
 
   Future<void> _like(DDPost post) async {
@@ -162,7 +175,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         appBar: AppBar(
           titleSpacing: 16,
           title: Row(
-            children: ['推荐', '本地', '关注']
+            children: ['推荐', _discoverLocalTabLabel, '关注']
                 .asMap()
                 .entries
                 .map((entry) => GestureDetector(
