@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'im_local_store.dart';
+import 'message_send_coordinator.dart';
 import 'im_socket.dart';
 import 'post_service.dart';
 
@@ -12,16 +13,17 @@ enum ImConnectionState { disconnected, connecting, ready, unauthorized, error }
 /// App-wide IM session. WebSocket is receive-only for realtime events;
 /// user-originated state changes are performed by HTTP APIs.
 class ImSession {
-  ImSession._();
+  ImSession._() {
+    MessageSendCoordinator.instance.events.listen((event) {
+      if (event['accountId'] == _userId) _events.add(event);
+    });
+  }
   static final ImSession instance = ImSession._();
 
   FriendImSocket? _socket;
   StreamSubscription<Map<String, dynamic>>? _socketEvents;
   final _events = StreamController<Map<String, dynamic>>.broadcast();
   final _readyCallbacks = <void Function()>[];
-  Timer? _pendingRetryTimer;
-  bool _pendingRetryRunning = false;
-  bool _pendingReconcileRunning = false;
   String? _token;
   String? _userId;
   ImConnectionState _state = ImConnectionState.disconnected;
@@ -42,7 +44,7 @@ class ImSession {
     _userId = null;
     _readySnapshot = false;
     _setState(ImConnectionState.connecting);
-    unawaited(_startApiRetry(token));
+    unawaited(_resumeMessages(token));
     final socket = FriendImSocket(token: token);
     _socket = socket;
     socket.setOnReady((userId) {
@@ -54,12 +56,12 @@ class ImSession {
       for (final callback in callbacks) {
         callback();
       }
-      unawaited(_reconcilePendingMessages(token));
-      _schedulePendingRetry();
+      unawaited(MessageSendCoordinator.instance.resume(userId));
     });
     _socketEvents = socket.events.listen((event) {
       final type = event['type'];
       if (type == 'auth:invalid') {
+        MessageSendCoordinator.instance.invalidateToken(token);
         _readySnapshot = false;
         _setState(ImConnectionState.unauthorized);
       } else if (type == 'closed' || type == 'connect_failed') {
@@ -79,7 +81,12 @@ class ImSession {
       if (type == 'message:new') {
         final message = event['message'];
         if (message is Map && message['id'] != null && _userId != null) {
-          unawaited(_persistIncoming(message.cast<String, dynamic>()));
+          if ('${message['senderId']}' == _userId) {
+            MessageSendCoordinator.instance
+                .observeAccepted(_userId!, message.cast<String, dynamic>());
+          }
+          unawaited(_persistIncoming(message.cast<String, dynamic>())
+              .catchError((Object _) {}));
         }
       } else if (type == 'message:recalled') {
         final message = event['message'];
@@ -198,150 +205,13 @@ class ImSession {
     }
   }
 
-  Future<void> _startApiRetry(String token) async {
+  Future<void> _resumeMessages(String token) async {
     final prefs = await SharedPreferences.getInstance();
+    if (_token != token) return;
     final accountId = prefs.getString('friend.auth.userId');
     if (accountId == null || accountId.isEmpty) return;
     _userId ??= accountId;
-    _schedulePendingRetry();
-    await _retryPendingMessages();
-  }
-
-  void _schedulePendingRetry() {
-    _pendingRetryTimer ??= Timer.periodic(
-      const Duration(seconds: 5),
-      (_) => unawaited(_retryPendingMessages()),
-    );
-  }
-
-  Future<void> _retryPendingMessages() async {
-    if (_pendingRetryRunning ||
-        _pendingReconcileRunning ||
-        _token == null ||
-        _userId == null) {
-      return;
-    }
-    _pendingRetryRunning = true;
-    try {
-      final pending = await ImLocalStore.pendingMessages(_userId!);
-      final now = DateTime.now();
-      for (final item in pending) {
-        final conversationId = '${item['conversationId'] ?? ''}';
-        final clientId = '${item['clientId'] ?? ''}';
-        final text = '${item['text'] ?? ''}';
-        final kind = '${item['kind'] ?? 'text'}';
-        if (conversationId.isEmpty || clientId.isEmpty || text.isEmpty) {
-          continue;
-        }
-        final retryUntil = DateTime.tryParse('${item['retryUntil'] ?? ''}');
-        if (retryUntil != null && !now.isBefore(retryUntil)) {
-          await ImLocalStore.updateRetryState(
-            accountId: _userId!,
-            conversationId: conversationId,
-            clientId: clientId,
-            status: 'failed',
-            lastError: 'retry_expired',
-          );
-          _events.add({
-            'type': 'message:failed',
-            'code': 'retry_expired',
-            'clientId': clientId,
-          });
-          continue;
-        }
-        final service = DDPostService();
-        try {
-          Map<String, dynamic> message;
-          try {
-            message = await service.reconcilePending(
-              _token!,
-              conversationId,
-              clientId,
-            );
-          } on StateError {
-            message = await service.sendImMessage(
-              _token!,
-              conversationId,
-              text: text,
-              clientId: clientId,
-              kind: kind,
-              metadata: item['metadata'] as Map<String, dynamic>?,
-            );
-          }
-          await ImLocalStore.reconcileAccepted(
-            accountId: _userId!,
-            message: message,
-          );
-          _events.add({
-            'type': 'message:accepted',
-            'clientId': clientId,
-            'message': message,
-          });
-        } catch (_) {
-          // 保持 pending，直到 retryUntil 到期或用户手动重试。
-        } finally {
-          service.dispose();
-        }
-      }
-    } finally {
-      _pendingRetryRunning = false;
-    }
-  }
-
-  /// Reconciles pending rows after login/socket readiness without depending on
-  /// the currently visible chat page. Sending itself remains HTTP-only.
-  Future<void> _reconcilePendingMessages(String token) async {
-    if (_pendingReconcileRunning || _pendingRetryRunning) return;
-    _pendingReconcileRunning = true;
-    try {
-      await _reconcilePendingMessagesInternal(token);
-    } finally {
-      _pendingReconcileRunning = false;
-    }
-  }
-
-  Future<void> _reconcilePendingMessagesInternal(String token) async {
-    final accountId = _userId;
-    if (accountId == null) return;
-    final pending = await ImLocalStore.pendingMessages(accountId);
-    for (final item in pending) {
-      final conversationId = '${item['conversationId'] ?? ''}';
-      final clientId = '${item['clientId'] ?? ''}';
-      final text = '${item['text'] ?? ''}';
-      final kind = '${item['kind'] ?? 'text'}';
-      if (conversationId.isEmpty || clientId.isEmpty || text.isEmpty) continue;
-      final service = DDPostService();
-      try {
-        final message = await service.reconcilePending(
-          token,
-          conversationId,
-          clientId,
-        );
-        await ImLocalStore.reconcileAccepted(
-          accountId: accountId,
-          message: message,
-        );
-      } on StateError {
-        try {
-          final message = await service.sendImMessage(
-            token,
-            conversationId,
-            text: text,
-            clientId: clientId,
-            kind: kind,
-            metadata: item['metadata'] as Map<String, dynamic>?,
-          );
-          await ImLocalStore.reconcileAccepted(
-            accountId: accountId,
-            message: message,
-          );
-        } catch (_) {
-          // 保留 pending；下一次启动或用户手动重试继续使用同一 clientId。
-        }
-      } finally {
-        service.dispose();
-      }
-    }
+    await MessageSendCoordinator.instance.resume(accountId);
   }
 
   void _setState(ImConnectionState value) {
@@ -363,9 +233,7 @@ class ImSession {
 
   Future<void> stop() async {
     _readyCallbacks.clear();
-    _pendingRetryTimer?.cancel();
-    _pendingRetryTimer = null;
-    _pendingRetryRunning = false;
+
     await _socketEvents?.cancel();
     await _callQueue;
     _socketEvents = null;

@@ -17,6 +17,7 @@ class FriendImSocket {
   bool _closedByOwner = false;
   bool _ready = false;
   bool _sessionReplaced = false;
+  bool _unauthorized = false;
   int _reconnectAttempt = 0;
   void Function(String userId)? _onReady;
 
@@ -31,7 +32,7 @@ class FriendImSocket {
     _emitState('connecting');
     try {
       final channel = IOWebSocketChannel.connect(
-        Uri.parse('wss://chat.outmcn.com/ws'),
+        Uri.parse('wss://chat.outmcn.net/ws'),
         pingInterval: const Duration(seconds: 25),
       );
       _channel = channel;
@@ -74,8 +75,11 @@ class FriendImSocket {
         _onReady?.call('${event['userId'] ?? ''}');
         _emitState('ready', userId: event['userId']);
       } else if (event['type'] == 'auth:invalid') {
+        _unauthorized = true;
         _ready = false;
         _emitState('unauthorized');
+      } else if (event['type'] == 'session:replaced') {
+        _sessionReplaced = true;
       }
     } catch (error) {
       _emitError('invalid_frame', '$error');
@@ -92,7 +96,9 @@ class FriendImSocket {
   }
 
   void _scheduleReconnect() {
-    if (_closedByOwner || _reconnectTimer?.isActive == true) return;
+    if (_closedByOwner || _unauthorized || _reconnectTimer?.isActive == true) {
+      return;
+    }
     final seconds = (1 << _reconnectAttempt.clamp(0, 4)).clamp(1, 16);
     _reconnectAttempt++;
     _reconnectTimer = Timer(Duration(seconds: seconds), () {
@@ -145,21 +151,6 @@ class FriendImSocket {
       'type': 'read:mark',
       'conversationId': conversationId,
       'messageId': messageId,
-    });
-  }
-
-  void sendText({
-    required String conversationId,
-    required String text,
-    String? clientId,
-    String kind = 'text',
-  }) {
-    send({
-      'type': 'message:send',
-      'conversationId': conversationId,
-      'kind': kind,
-      'text': text,
-      if (clientId != null) 'clientId': clientId,
     });
   }
 

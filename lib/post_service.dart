@@ -6,6 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 part 'post_models.dart';
 part 'im_models.dart';
 
+class ImSendException implements Exception {
+  const ImSendException(this.statusCode, this.message);
+  final int statusCode;
+  final String message;
+  bool get retryable =>
+      statusCode == 408 || statusCode == 429 || statusCode >= 500;
+  @override
+  String toString() => '$message（HTTP $statusCode）';
+}
+
 class DDPostService {
   DDPostService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -212,6 +222,7 @@ class DDPostService {
     int durationMs = 0,
     Map<String, dynamic>? metadata,
   }) async {
+    if (token.trim().isEmpty) throw const ImSendException(401, '请先登录');
     final response = await _client.post(
       _api('/im/conversations/$conversationId/messages'),
       headers: {
@@ -226,45 +237,25 @@ class DDPostService {
         if (metadata != null) 'metadata': metadata,
       }),
     );
-    dynamic data;
-    try {
-      data = response.body.trim().isEmpty ? null : jsonDecode(response.body);
-    } catch (_) {
-      data = null;
+    if (response.statusCode != 201) {
+      throw ImSendException(response.statusCode,
+          response.statusCode == 401 ? '登录状态已失效，请重新登录' : '消息发送失败');
     }
-    if (response.statusCode != 201 || data is! Map || data['message'] is! Map) {
-      // A successful database insert can be followed by a lost HTTP response.
-      // Reconcile by clientId before surfacing an error or retrying the POST.
-      final recovered = await _reconcileByClientId(
-        token,
-        conversationId,
-        clientId,
-      );
-      if (recovered != null) return recovered;
-      final detail = data is Map ? '${data['error'] ?? ''}' : '';
-      throw Exception(
-          '消息发送失败（HTTP ${response.statusCode}${detail.isEmpty ? '' : '：$detail'}）');
-    }
-    return (data['message'] as Map).cast<String, dynamic>();
-  }
-
-  Future<Map<String, dynamic>?> _reconcileByClientId(
-    String token,
-    String conversationId,
-    String clientId,
-  ) async {
+    // 201 itself is authoritative, even if a proxy damaged the response body.
+    final fallback = <String, dynamic>{
+      'conversationId': conversationId,
+      'clientId': clientId,
+      'text': text,
+      'kind': kind,
+      'metadata': metadata,
+    };
     try {
-      final response = await _client.get(
-        _api('/im/conversations/$conversationId/messages/by-client/$clientId'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      if (response.statusCode != 200) return null;
       final data = jsonDecode(response.body);
-      if (data is! Map || data['message'] is! Map) return null;
-      return (data['message'] as Map).cast<String, dynamic>();
-    } catch (_) {
-      return null;
-    }
+      if (data is Map && data['message'] is Map) {
+        return {...fallback, ...Map<String, dynamic>.from(data['message'])};
+      }
+    } catch (_) {}
+    return fallback;
   }
 
   Future<void> reportImMessage(String token, String conversationId,
@@ -391,17 +382,22 @@ class DDPostService {
     String conversationId,
     String clientId,
   ) async {
+    if (token.trim().isEmpty) throw const ImSendException(401, '请先登录');
     final response = await _client.get(
       _api('/im/conversations/$conversationId/messages/by-client/$clientId'),
       headers: {'Authorization': 'Bearer $token'},
     );
-    if (response.statusCode == 404) throw StateError('message_not_found');
-    if (response.statusCode != 200) throw Exception('消息状态查询失败');
-    final data = jsonDecode(response.body);
-    if (data is! Map || data['message'] is! Map) {
-      throw Exception('消息状态格式错误');
+    if (response.statusCode != 200) {
+      throw ImSendException(response.statusCode,
+          response.statusCode == 401 ? '登录状态已失效，请重新登录' : '消息状态查询失败');
     }
-    return (data['message'] as Map).cast<String, dynamic>();
+    try {
+      final data = jsonDecode(response.body);
+      if (data is Map && data['message'] is Map) {
+        return Map<String, dynamic>.from(data['message']);
+      }
+    } catch (_) {}
+    return {'conversationId': conversationId, 'clientId': clientId};
   }
 
   Future<void> confirmImMessagesSynced(

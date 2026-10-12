@@ -196,55 +196,72 @@ class ImLocalStore {
     required List<Map<String, dynamic>> messages,
   }) async {
     final db = await _db();
-    final batch = db.batch();
-    for (final message in messages) {
-      if (ImCall.isCall(message)) {
-        continue; // Calls are saved only by ImSession.
-      }
-      final id = '${message['id'] ?? ''}';
-      final clientId = '${message['clientId'] ?? ''}';
-      if (id.isEmpty) continue;
-      if (clientId.isNotEmpty) {
-        batch.delete(
+    await db.transaction((txn) async {
+      for (final message in messages) {
+        if (ImCall.isCall(message)) {
+          continue; // Calls are saved only by ImSession.
+        }
+        final id = '${message['id'] ?? ''}';
+        final clientId = '${message['clientId'] ?? ''}';
+        if (id.isEmpty) continue;
+        final existing = await txn.query('messages',
+            where:
+                'account_id = ? AND conversation_id = ? AND (message_id = ? OR (client_id = ? AND client_id IS NOT NULL))',
+            whereArgs: [accountId, conversationId, id, message['clientId']]);
+        final localState =
+            message['status'] == 'pending' || message['status'] == 'failed';
+        if (localState &&
+            existing
+                .any((row) => !['pending', 'failed'].contains(row['status']))) {
+          continue;
+        }
+        if (id.startsWith('local:') &&
+            existing
+                .any((row) => !'${row['message_id']}'.startsWith('local:'))) {
+          continue;
+        }
+
+        if (clientId.isNotEmpty) {
+          await txn.delete(
+            'messages',
+            where:
+                'account_id = ? AND conversation_id = ? AND client_id = ? AND message_id <> ?',
+            whereArgs: [accountId, conversationId, clientId, id],
+          );
+        }
+        await txn.insert(
           'messages',
-          where:
-              'account_id = ? AND conversation_id = ? AND client_id = ? AND message_id <> ?',
-          whereArgs: [accountId, conversationId, clientId, id],
+          {
+            'account_id': accountId,
+            'conversation_id': conversationId,
+            'message_id': id,
+            'client_id': message['clientId'],
+            'sender_id': '${message['senderId'] ?? ''}',
+            'caller_id': message['callerId'],
+            'callee_id': message['calleeId'],
+            'text': '${message['text'] ?? ''}',
+            'kind':
+                '${message['_timelineKind'] == 'call' ? 'call' : message['kind'] ?? 'text'}',
+            'metadata': message['metadata'] == null
+                ? (existing.isEmpty ? null : existing.first['metadata'])
+                : jsonEncode(message['metadata']),
+            'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
+            'created_at': '${message['createdAt'] ?? ''}',
+            'status': '${message['status'] ?? 'sent'}',
+            'recalled_at': message['recalledAt'],
+            'deleted_at': message['deletedAt'],
+            'ended_at': message['endedAt'],
+            'answered_at': message['answeredAt'],
+            'retry_started_at': message['retryStartedAt'],
+            'retry_until': message['retryUntil'],
+            'retry_count': (message['retryCount'] as num?)?.toInt() ?? 0,
+            'last_error': message['lastError'],
+            'mutation_id': message['mutationId'],
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
-      batch.insert(
-        'messages',
-        {
-          'account_id': accountId,
-          'conversation_id': conversationId,
-          'message_id': id,
-          'client_id': message['clientId'],
-          'sender_id': '${message['senderId'] ?? ''}',
-          'caller_id': message['callerId'],
-          'callee_id': message['calleeId'],
-          'text': '${message['text'] ?? ''}',
-          'kind':
-              '${message['_timelineKind'] == 'call' ? 'call' : message['kind'] ?? 'text'}',
-          'metadata': message['metadata'] == null
-              ? null
-              : jsonEncode(message['metadata']),
-          'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
-          'created_at': '${message['createdAt'] ?? ''}',
-          'status': '${message['status'] ?? 'sent'}',
-          'recalled_at': message['recalledAt'],
-          'deleted_at': message['deletedAt'],
-          'ended_at': message['endedAt'],
-          'answered_at': message['answeredAt'],
-          'retry_started_at': message['retryStartedAt'],
-          'retry_until': message['retryUntil'],
-          'retry_count': (message['retryCount'] as num?)?.toInt() ?? 0,
-          'last_error': message['lastError'],
-          'mutation_id': message['mutationId'],
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
+    });
   }
 
   static Future<Map<String, dynamic>> saveCall({
@@ -331,7 +348,8 @@ class ImLocalStore {
     await (await _db()).update(
       'messages',
       values,
-      where: 'account_id = ? AND conversation_id = ? AND client_id = ?',
+      where:
+          "account_id = ? AND conversation_id = ? AND client_id = ? AND status IN ('pending', 'failed')",
       whereArgs: [accountId, conversationId, clientId],
     );
   }
@@ -393,23 +411,6 @@ class ImLocalStore {
     final conversationId = '${message['conversationId'] ?? ''}';
     final clientId = '${message['clientId'] ?? ''}';
     if (conversationId.isEmpty || clientId.isEmpty) return;
-    final db = await _db();
-    final rows = await db.query(
-      'messages',
-      columns: ['message_id'],
-      where: 'account_id = ? AND conversation_id = ? AND client_id = ?',
-      whereArgs: [accountId, conversationId, clientId],
-      limit: 1,
-    );
-    if (rows.isEmpty) return;
-    final oldId = '${rows.first['message_id'] ?? ''}';
-    if (oldId != '${message['id'] ?? ''}') {
-      await db.delete(
-        'messages',
-        where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
-        whereArgs: [accountId, conversationId, oldId],
-      );
-    }
     await saveMessages(
       accountId: accountId,
       conversationId: conversationId,

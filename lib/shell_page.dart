@@ -867,6 +867,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
       );
+      for (final state in MessageSendCoordinator.instance
+          .snapshot(currentUserId, widget.chat.conversationId)) {
+        final index = cached.indexWhere((row) =>
+            row['clientId'] == state['clientId'] &&
+            ['pending', 'failed'].contains(row['status']));
+        if (index >= 0) cached[index] = state;
+      }
       for (final item in cached) {
         if ('${item['kind'] ?? ''}' == 'call') {
           item['_timelineKind'] = 'call';
@@ -981,28 +988,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final combined = <Map<String, dynamic>>[...messages];
     combined.sort((a, b) => _messageTime(b).compareTo(_messageTime(a)));
     return combined;
-  }
-
-  void _markPendingMessagesFailed(String reason) {
-    final changed = <Map<String, dynamic>>[];
-    for (final message in messages) {
-      if (message['status'] == 'pending') {
-        changed.add({...message, 'status': 'failed', 'error': reason});
-      }
-    }
-    if (changed.isEmpty) return;
-    setState(() {
-      for (final message in changed) {
-        final index = messages
-            .indexWhere((item) => item['clientId'] == message['clientId']);
-        if (index >= 0) messages[index] = message;
-      }
-    });
-    unawaited(ImLocalStore.saveMessages(
-      accountId: currentUserId,
-      conversationId: widget.chat.conversationId,
-      messages: messages,
-    ));
   }
 
   Future<void> _saveCallEvent(Map<String, dynamic> call) async {
@@ -1214,31 +1199,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       return;
     }
     if (type == 'auth:invalid') {
-      _markPendingMessagesFailed('登录状态已失效');
       return;
     }
-    if (type == 'error' || type == 'message:failed') {
-      if (event['retrying'] == true) return;
-      final pendingId =
-          '${event['clientId'] ?? event['message']?['clientId'] ?? ''}';
-      if (pendingId.isNotEmpty) {
-        final index = messages
-            .indexWhere((item) => '${item['clientId'] ?? ''}' == pendingId);
-        if (index >= 0) {
-          setState(() => messages[index] = {
-                ...messages[index],
-                'status': 'failed',
-                'lastError': 'retry_expired',
-              });
-          await ImLocalStore.saveMessages(
-            accountId: currentUserId,
-            conversationId: widget.chat.conversationId,
-            messages: messages,
-          );
-        }
-      }
-      if (event['code'] == 'conversation_blocked') {
-        if (mounted) setState(() => blockedConversation = true);
+    if (type == 'message:failed' || type == 'message:pending') {
+      if (event['conversationId'] != widget.chat.conversationId) return;
+      final item = event['message'];
+      if (item is Map) {
+        _mergeMessage(Map<String, dynamic>.from(item),
+            status: '${item['status']}');
       }
       return;
     }
@@ -1268,19 +1236,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
-  Future<void> _markPendingAccepted(Map<String, dynamic> item) async {
-    final clientId = '${item['clientId'] ?? ''}';
-    if (clientId.isEmpty) return;
+  void _markPendingAccepted(Map<String, dynamic> item) {
+    if ('${item['clientId'] ?? ''}'.isEmpty) return;
     _mergeMessage(item, status: 'sent');
-
-    await ImLocalStore.saveMessages(
-      accountId: currentUserId,
-      conversationId: widget.chat.conversationId,
-      messages: messages,
-    );
   }
 
   bool _mergeMessage(Map<String, dynamic> item, {String? status}) {
+    if (!mounted ||
+        (item['conversationId'] != null &&
+            item['conversationId'] != widget.chat.conversationId)) {
+      return false;
+    }
     final id = '${item['id'] ?? ''}';
     final clientId = '${item['clientId'] ?? ''}';
     final index = messages.indexWhere((existing) {
@@ -1289,6 +1255,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
               '${existing['clientId'] ?? ''}' == clientId) ||
           (id.isNotEmpty && '${existing['id'] ?? ''}' == id);
     });
+    if (index >= 0 &&
+        !['pending', 'failed'].contains(messages[index]['status']) &&
+        ['pending', 'failed'].contains(status ?? item['status'])) {
+      return false;
+    }
     final merged = <String, dynamic>{
       ...(index >= 0 ? messages[index] : const <String, dynamic>{}),
       ...item,
@@ -1548,21 +1519,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('语音上传失败');
       }
-      final clientId = DateTime.now().microsecondsSinceEpoch.toString();
-      final sent = await service.sendImMessage(
-        token,
-        widget.chat.conversationId,
-        text: key,
-        clientId: clientId,
-        kind: 'audio',
-        durationMs: 1000,
-      );
-      _mergeMessage(sent, status: 'sent');
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: messages,
-      );
+      await _sendMessagePayload(text: key, kind: 'audio', durationMs: 1000);
     } catch (error) {
       if (mounted) {
         _showTopErrorBanner(context, '$error');
@@ -1610,36 +1567,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('图片上传失败');
       }
-      final clientId = DateTime.now().microsecondsSinceEpoch.toString();
-      final createdAt = DateTime.now().toIso8601String();
-      final pending = <String, dynamic>{
-        'id': 'local:$clientId',
-        'clientId': clientId,
-        'senderId': currentUserId,
-        'text': objectKey,
-        'kind': 'image',
-        'createdAt': createdAt,
-        'status': 'pending',
-      };
-      _mergeMessage(pending);
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: messages,
-      );
-      final sent = await service.sendImMessage(
-        token,
-        widget.chat.conversationId,
-        text: objectKey,
-        clientId: clientId,
-        kind: 'image',
-      );
-      _mergeMessage(sent, status: 'sent');
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: messages,
-      );
+      await _sendMessagePayload(text: objectKey, kind: 'image');
     } catch (error) {
       if (mounted) {
         _showTopErrorBanner(context, '$error');
@@ -1888,7 +1816,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         text: location.title,
         kind: 'location',
         metadata: location.toMetadata(),
-        failureMessage: '位置发送失败，正在重试',
       );
     } catch (error) {
       if (mounted) {
@@ -1906,116 +1833,33 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     required String text,
     String kind = 'text',
     Map<String, dynamic>? metadata,
-    String? failureMessage,
+    int durationMs = 0,
   }) async {
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty || !mounted) return;
     if (blockedConversation) {
-      if (mounted) _showTopErrorBanner(context, '当前会话不可发送');
+      _showTopErrorBanner(context, '当前会话不可发送');
       return;
     }
-    final normalizedText = text.trim();
     final clientId = DateTime.now().microsecondsSinceEpoch.toString();
-    final now = DateTime.now();
     final pending = <String, dynamic>{
       'id': 'local:$clientId',
       'clientId': clientId,
       'senderId': currentUserId,
       'conversationId': widget.chat.conversationId,
-      'text': normalizedText,
+      'text': text.trim(),
       'kind': kind,
-      if (metadata != null) 'metadata': metadata,
-      'createdAt': now.toIso8601String(),
+      'metadata': metadata,
+      'durationMs': durationMs,
+      'createdAt': DateTime.now().toIso8601String(),
       'status': 'pending',
-      'retryStartedAt': now.toIso8601String(),
-      'retryUntil': now.add(const Duration(minutes: 1)).toIso8601String(),
     };
     _mergeMessage(pending);
-    try {
-      await ImLocalStore.saveMessages(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-        messages: [pending],
-      );
-    } catch (_) {
-      // Sending must continue even when the local cache is unavailable.
-    }
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    final service = DDPostService();
-    try {
-      final serverMessage = await service.sendImMessage(
-        token,
-        widget.chat.conversationId,
-        text: normalizedText,
-        clientId: clientId,
-        kind: kind,
-        metadata: metadata,
-      );
-      _mergeMessage({...pending, ...serverMessage}, status: 'sent');
-      try {
-        await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: [
-            {...pending, ...serverMessage, 'status': 'sent'}
-          ],
-        );
-      } catch (_) {
-        // Server acceptance is authoritative; cache failure cannot downgrade it.
-      }
-      return;
-    } catch (_) {
-      // Reconcile before showing an error or leaving the message pending.
-      if (token.isNotEmpty) {
-        final reconcileService = DDPostService();
-        try {
-          final accepted = await reconcileService.reconcilePending(
-            token,
-            widget.chat.conversationId,
-            clientId,
-          );
-          _mergeMessage({...pending, ...accepted}, status: 'sent');
-          try {
-            await ImLocalStore.saveMessages(
-              accountId: currentUserId,
-              conversationId: widget.chat.conversationId,
-              messages: [
-                {...pending, ...accepted, 'status': 'sent'}
-              ],
-            );
-          } catch (_) {
-            // Cache failure cannot downgrade the accepted server message.
-          }
-          return;
-        } on StateError {
-          // Server has not accepted this clientId; keep the single pending row.
-        } catch (_) {
-          // Reconciliation unavailable; keep the single pending row.
-        } finally {
-          reconcileService.dispose();
-        }
-      }
-      final index = messages
-          .indexWhere((item) => '${item['clientId'] ?? ''}' == clientId);
-      if (index >= 0) {
-        setState(() => messages[index] = {
-              ...messages[index],
-              'status': 'pending',
-              'lastError': 'send_failed',
-            });
-        try {
-          await ImLocalStore.saveMessages(
-            accountId: currentUserId,
-            conversationId: widget.chat.conversationId,
-            messages: [messages[index]],
-          );
-        } catch (_) {}
-      }
-      if (failureMessage != null && mounted) {
-        _showTopErrorBanner(context, failureMessage);
-      }
-    } finally {
-      service.dispose();
+    final result = await MessageSendCoordinator.instance
+        .send(accountId: currentUserId, message: pending);
+    if (!mounted) return;
+    _mergeMessage(result, status: '${result['status']}');
+    if (result['status'] == 'failed') {
+      _showTopErrorBanner(context, '${result['lastError'] ?? '消息发送失败'}');
     }
   }
 
@@ -2033,71 +1877,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _retryMessage(Map<String, dynamic> message) async {
-    final clientId = '${message['clientId'] ?? ''}';
-    final conversationId = widget.chat.conversationId;
-    final text = '${message['text'] ?? ''}';
-    if (clientId.isEmpty || text.isEmpty) return;
-    setState(() {
-      message['status'] = 'pending';
-      message['lastError'] = null;
-    });
-    unawaited(ImLocalStore.saveMessages(
-      accountId: currentUserId,
-      conversationId: conversationId,
-      messages: messages,
-    ));
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    unawaited(_retryTextViaApi(
-      token: token,
-      conversationId: conversationId,
-      text: text,
-      clientId: clientId,
-      kind: '${message['kind'] ?? 'text'}',
-      metadata: message['metadata'] as Map<String, dynamic>?,
-    ));
-  }
-
-  Future<void> _retryTextViaApi({
-    required String token,
-    required String conversationId,
-    required String text,
-    required String clientId,
-    String kind = 'text',
-    Map<String, dynamic>? metadata,
-  }) async {
-    if (token.isEmpty) return;
-    final service = DDPostService();
-    try {
-      Map<String, dynamic> sent;
-      try {
-        sent = await service.reconcilePending(
-          token,
-          conversationId,
-          clientId,
-        );
-      } on StateError {
-        sent = await service.sendImMessage(
-          token,
-          conversationId,
-          text: text,
-          clientId: clientId,
-          kind: kind,
-          metadata: metadata,
-        );
-      }
-      if (!mounted) return;
-      _mergeMessage(sent, status: 'sent');
-      await ImLocalStore.saveMessages(
+    if ('${message['clientId'] ?? ''}'.isEmpty) return;
+    final result = await MessageSendCoordinator.instance.send(
         accountId: currentUserId,
-        conversationId: conversationId,
-        messages: messages,
-      );
-    } catch (_) {
-      // 全局 ImSession 负责继续重试并在窗口到期后发出失败事件。
-    } finally {
-      service.dispose();
-    }
+        message: {...message, 'conversationId': widget.chat.conversationId},
+        retry: true,
+        recover: false);
+    if (mounted) _mergeMessage(result, status: '${result['status']}');
   }
 
   Future<void> _confirmDurableMessages(List<String> messageIds) async {
