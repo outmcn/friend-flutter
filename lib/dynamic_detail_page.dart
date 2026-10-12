@@ -834,11 +834,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
         type: MaterialType.transparency,
         color: Colors.transparent,
         child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          clipBehavior: Clip.antiAlias,
+          color: Theme.of(context).cardColor,
+          clipBehavior: Clip.none,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
