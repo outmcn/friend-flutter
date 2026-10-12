@@ -19,7 +19,8 @@ class DynamicDetailPage extends StatefulWidget {
   State<DynamicDetailPage> createState() => _DynamicDetailPageState();
 }
 
-class _DynamicDetailPageState extends State<DynamicDetailPage> {
+class _DynamicDetailPageState extends State<DynamicDetailPage>
+    with SingleTickerProviderStateMixin {
   final DDPostService service = DDPostService();
   final commentController = TextEditingController();
   final commentFocusNode = FocusNode();
@@ -34,6 +35,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   final scroll = ScrollController();
   double _swipeOffset = 0;
   double _swipeVerticalOffset = 0;
+  double _swipeScale = 1;
   bool _swipeTracking = false;
   bool _swipeClosing = false;
 
@@ -51,6 +53,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       final height = MediaQuery.sizeOf(context).height;
       _swipeOffset = _swipeOffset.clamp(-width, width);
       _swipeVerticalOffset = _swipeVerticalOffset.clamp(-height, height);
+      _swipeScale = 1 -
+          ((_swipeOffset > 0 ? _swipeOffset : 0).abs() / width)
+                  .clamp(0.0, 1.0) *
+              .28;
     });
   }
 
@@ -62,17 +68,60 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     final shouldClose = _swipeOffset > width * .28 || velocity > 900;
     if (shouldClose) {
       setState(() => _swipeClosing = true);
-      setState(() {
-        _swipeOffset = width;
-        _swipeVerticalOffset = 0;
-      });
-      await Future<void>.delayed(const Duration(milliseconds: 220));
+      await _animateSwipeToCard();
       if (mounted) Navigator.pop(context);
     } else {
-      setState(() {
-        _swipeOffset = 0;
-        _swipeVerticalOffset = 0;
+      await _animateSwipeBack();
+    }
+  }
+
+  Future<void> _animateSwipeToCard() async {
+    final controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    final beginX = _swipeOffset;
+    final beginY = _swipeVerticalOffset;
+    final beginScale = _swipeScale;
+    try {
+      final animation =
+          CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
+      animation.addListener(() {
+        if (!mounted) return;
+        setState(() {
+          _swipeOffset = beginX + (0 - beginX) * animation.value;
+          _swipeVerticalOffset = beginY + (0 - beginY) * animation.value;
+          _swipeScale = beginScale + (0.02 - beginScale) * animation.value;
+        });
       });
+      await controller.forward();
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  Future<void> _animateSwipeBack() async {
+    final controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+    final beginX = _swipeOffset;
+    final beginY = _swipeVerticalOffset;
+    final beginScale = _swipeScale;
+    try {
+      final animation =
+          CurvedAnimation(parent: controller, curve: Curves.easeOutBack);
+      animation.addListener(() {
+        if (!mounted) return;
+        setState(() {
+          _swipeOffset = beginX * (1 - animation.value);
+          _swipeVerticalOffset = beginY * (1 - animation.value);
+          _swipeScale = beginScale + (1 - beginScale) * animation.value;
+        });
+      });
+      await controller.forward();
+    } finally {
+      controller.dispose();
     }
   }
 
@@ -912,9 +961,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   @override
   Widget build(BuildContext context) {
     final item = post;
-    final width = MediaQuery.sizeOf(context).width;
-    final progress = (_swipeOffset / width).clamp(0.0, 1.0);
-    final scale = 1 - progress * .18;
+    final scale = _swipeScale;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragStart: _onSwipeStart,
