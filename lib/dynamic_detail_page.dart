@@ -931,12 +931,51 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           child: Scaffold(
             backgroundColor: Colors.transparent,
             appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              automaticallyImplyLeading: false,
-              toolbarHeight: 0,
-              title: null,
-              actions: const [],
+              title: item == null
+                  ? const Text('动态详情')
+                  : InkWell(
+                      onTap: item.userId == null
+                          ? null
+                          : () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => OtherProfilePage(
+                                    userId: item.userId,
+                                    name: item.nickname,
+                                  ),
+                                ),
+                              ),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Row(
+                        children: [
+                          ClipOval(
+                            child: SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: _PermanentCachedImage(
+                                url: item.avatar,
+                                fit: BoxFit.cover,
+                                placeholder: const Icon(Icons.person_outline),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(item.nickname,
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                      ),
+                    ),
+              actions: [
+                IconButton(
+                  tooltip: '分享',
+                  onPressed: item == null || deleting
+                      ? null
+                      : () => _openShareMenu(item),
+                  icon: Icon(TIcons.share_1),
+                ),
+              ],
             ),
             body: item == null && loading
                 ? const Center(child: CircularProgressIndicator())
