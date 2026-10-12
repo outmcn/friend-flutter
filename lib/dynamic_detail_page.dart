@@ -675,6 +675,50 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     return Hero(tag: tag, child: child);
   }
 
+  Widget _heroBody(DDPost item) {
+    final image = item.imageUrl?.trim();
+    final video = item.videoUrl?.trim();
+    final media = image?.isNotEmpty == true
+        ? _PostImageHolder(url: image!, unlimitedHeight: true)
+        : video?.isNotEmpty == true
+            ? _NetworkVideoPreview(
+                url: video!,
+                thumbnailUrl: item.thumbnailUrl,
+                unlimitedHeight: true)
+            : Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(minHeight: 120),
+                padding: const EdgeInsets.all(18),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff6556d9), Color(0xffdf76b8)],
+                  ),
+                ),
+                child: Text(item.content,
+                    style: const TextStyle(
+                        color: Colors.white, fontSize: 18, height: 1.4)),
+              );
+    return _heroMedia(
+      child: Material(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            media,
+            if (item.content.isNotEmpty && image != null && image.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(item.content,
+                    style: const TextStyle(fontSize: 18, height: 1.5)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _composer(DDPost item) => SafeArea(
         child: Padding(
           padding: EdgeInsets.fromLTRB(
@@ -791,27 +835,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
                     _PageErrorState(
                         title: '加载失败', subtitle: error!, onRetry: load),
                   if (item != null) ...[
-                    if (item.imageUrl?.isNotEmpty == true) ...[
-                      _heroMedia(
-                        child: _PostImageHolder(
-                          url: item.imageUrl!,
-                          unlimitedHeight: true,
-                        ),
-                      ),
-                    ],
-                    if (item.videoUrl?.isNotEmpty == true) ...[
-                      _NetworkVideoPreview(
-                        url: item.videoUrl!,
-                        thumbnailUrl: item.thumbnailUrl,
-                        unlimitedHeight: true,
-                      ),
-                    ],
-                    if (item.content.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Text(item.content,
-                            style: const TextStyle(fontSize: 18, height: 1.5)),
-                      ),
+                    _heroBody(item),
                     const SizedBox(height: 16),
                     const Divider(height: 32),
                     Padding(

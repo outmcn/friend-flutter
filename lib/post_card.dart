@@ -345,10 +345,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   }
 
   Widget _heroMedia({required Widget child}) {
-    return Hero(
-      tag: 'dynamic-media-${post.id}',
-      child: child,
-    );
+    return Hero(tag: 'dynamic-media-${post.id}', child: child);
   }
 
   Widget _stableMedia({required String url, required bool thumbnail}) =>
