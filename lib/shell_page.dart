@@ -2710,7 +2710,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                         onPressed: _pickAndSendImage,
                       ),
                       _ComposerAction(
-                        icon: Icons.phone_outlined,
+                        icon: Icons.phone_in_talk_outlined,
                         label: '语音通话',
                         onPressed: _startAudioCall,
                       ),
