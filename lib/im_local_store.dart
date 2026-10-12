@@ -9,6 +9,11 @@ import 'package:sqflite/sqflite.dart';
 class ImLocalStore {
   static Database? _database;
 
+  static int? _intValue(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse('$value');
+  }
+
   static Future<Database> _db() async {
     if (_database != null) return _database!;
     final root = await getDatabasesPath();
@@ -170,7 +175,7 @@ class ImLocalStore {
         'text': '${item['text'] ?? ''}',
         'kind': '${item['kind'] ?? 'text'}',
         if ('${item['kind'] ?? ''}' == 'call') '_timelineKind': 'call',
-        'durationMs': (item['duration_ms'] as num?)?.toInt() ?? 0,
+        'durationMs': _intValue(item['duration_ms']) ?? 0,
         'createdAt': item['created_at'],
         'recalledAt': item['recalled_at'],
         'deletedAt': item['deleted_at'],
@@ -250,7 +255,7 @@ class ImLocalStore {
             'text': '${message['text'] ?? ''}',
             'kind':
                 '${message['_timelineKind'] == 'call' ? 'call' : message['kind'] ?? 'text'}',
-            'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
+            'duration_ms': _intValue(message['durationMs']) ?? 0,
             'created_at': '${message['createdAt'] ?? ''}',
             'status': '${message['status'] ?? 'sent'}',
             'recalled_at': message['recalledAt'],
@@ -258,10 +263,10 @@ class ImLocalStore {
             'ended_at': message['endedAt'],
             'answered_at': message['answeredAt'],
             'local_duration_seconds':
-                (message['localDurationSeconds'] as num?)?.toInt(),
+                _intValue(message['localDurationSeconds']),
             'retry_started_at': message['retryStartedAt'],
             'retry_until': message['retryUntil'],
-            'retry_count': (message['retryCount'] as num?)?.toInt() ?? 0,
+            'retry_count': _intValue(message['retryCount']) ?? 0,
             'last_error': message['lastError'],
             'mutation_id': message['mutationId'],
           },
@@ -339,7 +344,7 @@ class ImLocalStore {
       'status': '${row['status'] ?? ''}',
       'retryStartedAt': row['retry_started_at'],
       'retryUntil': row['retry_until'],
-      'retryCount': (row['retry_count'] as num?)?.toInt() ?? 0,
+      'retryCount': _intValue(row['retry_count']) ?? 0,
       'lastError': row['last_error'],
     };
   }
@@ -525,10 +530,10 @@ class ImLocalStore {
               'clientId': '${row['client_id'] ?? ''}',
               'text': '${row['text'] ?? ''}',
               'kind': '${row['kind'] ?? 'text'}',
-              'durationMs': (row['duration_ms'] as num?)?.toInt() ?? 0,
+              'durationMs': _intValue(row['duration_ms']) ?? 0,
               'retryStartedAt': row['retry_started_at'],
               'retryUntil': row['retry_until'],
-              'retryCount': (row['retry_count'] as num?)?.toInt() ?? 0,
+              'retryCount': _intValue(row['retry_count']) ?? 0,
               'lastError': row['last_error'],
             })
         .toList();

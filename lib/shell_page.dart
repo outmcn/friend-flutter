@@ -542,8 +542,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
 String _callPreviewStatus(Map<String, dynamic> row) {
   final status = '${row['status'] ?? ''}';
-  final durationSeconds = int.tryParse(
-    '${row['localDurationSeconds'] ?? row['local_duration_seconds'] ?? ''}',
+  final durationSeconds = _parseInt(
+    row['localDurationSeconds'] ?? row['local_duration_seconds'],
   );
   if (durationSeconds != null) {
     final duration =
@@ -554,6 +554,11 @@ String _callPreviewStatus(Map<String, dynamic> row) {
   if (status == 'rejected') return '已拒绝';
   if (status == 'answered' || status == 'ended') return '已接听';
   return '未接听';
+}
+
+int? _parseInt(dynamic value) {
+  if (value is num) return value.toInt();
+  return int.tryParse('$value');
 }
 
 String? _localMessagePreview(Map<String, dynamic>? row) {
@@ -2696,8 +2701,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   String get callId => '${widget.call['id']}';
   int get localElapsedSeconds =>
       ImSession.instance.callClock(callId)?.elapsed.inSeconds ??
-      (currentCall['localDurationSeconds'] as num?)?.toInt() ??
-      0;
+      (_parseInt(currentCall['localDurationSeconds']) ?? 0);
 
   @override
   void initState() {
@@ -2912,8 +2916,8 @@ class _CallRecordBubble extends StatelessWidget {
 
   String _statusText() {
     final status = '${record['status'] ?? ''}';
-    final durationSeconds = int.tryParse(
-      '${record['localDurationSeconds'] ?? record['local_duration_seconds'] ?? ''}',
+    final durationSeconds = _parseInt(
+      record['localDurationSeconds'] ?? record['local_duration_seconds'],
     );
     if (durationSeconds != null) {
       final duration =
