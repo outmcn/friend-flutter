@@ -33,6 +33,69 @@ class ImSession {
   bool get isConnected => _state == ImConnectionState.ready;
   bool get hasReadySnapshot => _readySnapshot;
 
+  final Map<String, Stopwatch> _callClocks = {};
+  String? activeCallId;
+
+  Stopwatch? callClock(String id) => _callClocks[id];
+
+  Future<void> _callWrites = Future<void>.value();
+
+  Future<Map<String, dynamic>> saveCall(Map<String, dynamic> raw,
+      {bool local = false}) {
+    final result = _callWrites.then((_) => _saveCall(raw, local: local));
+    _callWrites =
+        result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return result;
+  }
+
+  Future<Map<String, dynamic>> _saveCall(Map<String, dynamic> raw,
+      {bool local = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final account = _userId ?? prefs.getString('friend.auth.userId') ?? '';
+    final conversation = '${raw['conversationId'] ?? ''}';
+    final id = '${raw['id'] ?? ''}';
+    if (account.isEmpty || conversation.isEmpty || id.isEmpty) return raw;
+    final rows = await ImLocalStore.messages(
+        accountId: account, conversationId: conversation);
+    final previous =
+        rows.where((r) => r['kind'] == 'call' && '${r['id']}' == id);
+    final incoming = {...raw}
+      ..remove('localDurationSeconds')
+      ..remove('local_duration_seconds');
+    if (local && raw['localDurationSeconds'] != null) {
+      incoming['localDurationSeconds'] = raw['localDurationSeconds'];
+    }
+    final call =
+        ImLocalStore.mergeCall(previous.isEmpty ? {} : previous.first, {
+      ...incoming,
+      'kind': 'call',
+      '_timelineKind': 'call',
+      'callerId': raw['callerId'] ?? raw['caller_id'],
+      'calleeId': raw['calleeId'] ?? raw['callee_id'],
+      'createdAt': raw['startedAt'] ??
+          raw['createdAt'] ??
+          (previous.isEmpty ? null : previous.first['createdAt']) ??
+          DateTime.now().toIso8601String(),
+    });
+    if (call['status'] == 'answered') {
+      _callClocks.putIfAbsent(id, () => Stopwatch()..start());
+    } else if (call['status'] != 'ringing') {
+      final clock = _callClocks[id];
+      clock?.stop();
+      if (clock != null) {
+        call['localDurationSeconds'] ??= clock.elapsed.inSeconds;
+      }
+    }
+    await ImLocalStore.saveMessages(
+        accountId: account, conversationId: conversation, messages: [call]);
+    final saved = await ImLocalStore.messages(
+        accountId: account, conversationId: conversation);
+    final result =
+        saved.firstWhere((r) => r['kind'] == 'call' && '${r['id']}' == id);
+    _events.add({'type': 'call:local', 'call': result});
+    return result;
+  }
+
   Future<void> start(String token) async {
     if (token.isEmpty) return;
     if (_socket != null && _token == token) return;
@@ -66,6 +129,10 @@ class ImSession {
         _setState(ImConnectionState.disconnected);
       } else if (type == 'error') {
         _setState(ImConnectionState.error);
+      }
+      if ((type == 'call:update' || type == 'call:incoming') &&
+          event['call'] is Map) {
+        unawaited(saveCall(Map<String, dynamic>.from(event['call'] as Map)));
       }
       if (type == 'message:new') {
         final message = event['message'];

@@ -4,9 +4,12 @@ import DingRTC
 import UserNotifications
 
 @UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate, DingRtcEngineDelegate {
+@objc class AppDelegate: FlutterAppDelegate {
   private var rtcEngine: DingRtcEngine?
+  private var rtcDelegate: CallRtcDelegate?
   private var leavingEngine: DingRtcEngine?
+  private var leavingDelegate: CallRtcDelegate?
+  private var rtcGeneration = 0
   private var rtcChannel: FlutterMethodChannel?
 
   override func application(
@@ -72,7 +75,26 @@ import UserNotifications
         result(FlutterError(code: "invalid_args", message: "RTC Token 参数无效", details: nil))
         return
       }
-      let engine = DingRtcEngine.createInstance(self, extras: nil)
+      let argsSession = args["sessionId"] as? String ?? ""
+      rtcGeneration += 1
+      let generation = rtcGeneration
+      let oldEngine = rtcEngine
+      let oldDelegate = rtcDelegate
+      rtcEngine = nil
+      rtcDelegate = nil
+      oldDelegate?.destroy()
+      leavingEngine = nil
+      leavingDelegate = nil
+      let delegate = CallRtcDelegate()
+      delegate.emit = { [weak self] method, args in
+        guard let self, self.rtcGeneration == generation else { return }
+        var payload = args
+        payload["sessionId"] = argsSession
+        self.rtcChannel?.invokeMethod(method, arguments: payload)
+      }
+      let engine = DingRtcEngine.createInstance(delegate, extras: nil)
+      delegate.engine = engine
+      rtcDelegate = delegate
       rtcEngine = engine
       let authInfo = DingRtcAuthInfo()
       authInfo.appId = appId
@@ -82,16 +104,17 @@ import UserNotifications
       authInfo.gslbServer = "https://gslb.dingrtc.com"
       _ = engine.setAudioSessionOperationRestriction(.none)
       _ = engine.subscribeAllRemoteAudioStreams(true)
-      _ = engine.enableSpeakerphone(true)
+      _ = engine.enableSpeakerphone(false)
       _ = engine.startAudioPlayer()
       _ = engine.startAudioCapture()
       _ = engine.publishLocalAudioStream(true)
       let code = engine.joinChannel(authInfo, name: nil) { [weak self] errorCode, channelName, joinedUserId, _ in
         DispatchQueue.main.async {
+          guard let self, self.rtcGeneration == generation else { return }
           if errorCode == 0 {
-            self?.rtcChannel?.invokeMethod("joined", arguments: ["channelId": channelName, "userId": joinedUserId])
+            delegate.emit?("joined", ["channelId": channelName, "userId": joinedUserId])
           } else {
-            self?.rtcChannel?.invokeMethod("error", arguments: ["code": errorCode])
+            delegate.emit?("error", ["code": errorCode])
           }
         }
       }
@@ -110,8 +133,12 @@ import UserNotifications
         result(true)
         return
       }
-      leavingEngine = engine
+      rtcGeneration += 1
+      let oldDelegate = rtcDelegate
       rtcEngine = nil
+      rtcDelegate = nil
+      leavingEngine = engine
+      leavingDelegate = oldDelegate
       _ = engine.publishLocalAudioStream(false)
       _ = engine.stopAudioCapture()
       _ = engine.stopAudioPlayer()
@@ -122,99 +149,101 @@ import UserNotifications
     }
   }
 
+}
+
+private final class CallRtcDelegate: NSObject, DingRtcEngineDelegate {
+  var engine: DingRtcEngine?
+  var emit: ((String, [String: Any]) -> Void)?
+
+  func destroy() {
+    guard let current = engine else { return }
+    engine = nil
+    _ = current.publishLocalAudioStream(false)
+    _ = current.stopAudioCapture()
+    _ = current.stopAudioPlayer()
+    DingRtcEngine.destroyInstance(current)
+  }
+
   func onNetworkQualityChanged(_ uid: String, up upQuality: DingRtcNetworkQuality, downNetworkQuality downQuality: DingRtcNetworkQuality) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("networkQuality", arguments: ["userId": uid, "up": upQuality.rawValue, "down": downQuality.rawValue])
+      self?.emit?("networkQuality", ["userId": uid, "up": upQuality.rawValue, "down": downQuality.rawValue])
     }
   }
 
   func onOccurWarning(_ warn: Int32, message: String) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("warning", arguments: ["code": warn, "message": message])
+      self?.emit?("warning", ["code": warn, "message": message])
     }
   }
 
   func onOccurError(_ error: Int32, message: String) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("rtcError", arguments: ["code": error, "message": message])
+      self?.emit?("rtcError", ["code": error, "message": message])
     }
   }
 
   func onFirstAudioPacketSent(withTimecost timeCost: Int32) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("firstAudioSent", arguments: ["timeCost": timeCost])
+      self?.emit?("firstAudioSent", ["timeCost": timeCost])
     }
   }
 
   func onFirstAudioPacketReceived(withUid uid: String, timeCost: Int32) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("firstAudioReceived", arguments: ["userId": uid, "timeCost": timeCost])
+      self?.emit?("firstAudioReceived", ["userId": uid, "timeCost": timeCost])
     }
   }
 
   func onUserAudioMuted(_ uid: String, audioMuted isMute: Bool) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("remoteMuted", arguments: ["userId": uid, "muted": isMute])
+      self?.emit?("remoteMuted", ["userId": uid, "muted": isMute])
     }
   }
   func onBye(_ code: DingRtcOnByeType) {
-    let engine = rtcEngine ?? leavingEngine
-    rtcEngine = nil
-    leavingEngine = nil
-    if let engine {
-      _ = engine.publishLocalAudioStream(false)
-      _ = engine.stopAudioCapture()
-      _ = engine.stopAudioPlayer()
-      DingRtcEngine.destroyInstance(engine)
-    }
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("bye", arguments: ["code": code.rawValue])
+      self?.emit?("bye", ["code": code.rawValue])
     }
   }
   func onRemoteUser(onLineNotify uid: String, elapsed: Int32) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("remoteJoined", arguments: ["userId": uid, "elapsed": elapsed])
+      self?.emit?("remoteJoined", ["userId": uid, "elapsed": elapsed])
     }
   }
 
   func onAudioPublishStateChanged(_ oldState: DingRtcPublishState, newState: DingRtcPublishState, elapseSinceLastState: Int, channel: String) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("audioPublishState", arguments: ["oldState": oldState.rawValue, "newState": newState.rawValue, "channelId": channel])
+      self?.emit?("audioPublishState", ["oldState": oldState.rawValue, "newState": newState.rawValue, "channelId": channel])
     }
   }
 
   func onAudioSubscribeStateChanged(_ uid: String, oldState: DingRtcSubscribeState, newState: DingRtcSubscribeState, elapseSinceLastState: Int, channel: String) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("audioSubscribeState", arguments: ["userId": uid, "oldState": oldState.rawValue, "newState": newState.rawValue, "channelId": channel])
+      self?.emit?("audioSubscribeState", ["userId": uid, "oldState": oldState.rawValue, "newState": newState.rawValue, "channelId": channel])
     }
   }
 
   func onConnectionStatusChanged(_ status: DingRtcConnectionStatus, reason: DingRtcConnectionStatusChangeReason) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("connectionStatus", arguments: ["status": status.rawValue, "reason": reason.rawValue])
+      self?.emit?("connectionStatus", ["status": status.rawValue, "reason": reason.rawValue])
     }
   }
   func onRemoteUserOffLineNotify(_ uid: String, offlineReason reason: DingRtcUserOfflineReason) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("remoteLeft", arguments: ["userId": uid, "reason": reason.rawValue])
+      self?.emit?("remoteLeft", ["userId": uid, "reason": reason.rawValue])
     }
   }
 
   func onRemoteTrackAvailableNotify(_ uid: String, audioTrack: DingRtcAudioTrack, videoTrack: DingRtcVideoTrack) {
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("remoteTrack", arguments: ["userId": uid, "audio": audioTrack.rawValue])
+      self?.emit?("remoteTrack", ["userId": uid, "audio": audioTrack.rawValue])
     }
   }
 
   func onLeaveChannelResult(_ result: Int32, stats: DingRtcStats) {
-    let engine = leavingEngine ?? rtcEngine
-    rtcEngine = nil
-    leavingEngine = nil
-    if let engine {
-      DingRtcEngine.destroyInstance(engine)
-    }
     DispatchQueue.main.async { [weak self] in
-      self?.rtcChannel?.invokeMethod("left", arguments: ["code": result])
+      guard let self else { return }
+      self.leavingEngine = nil
+      self.leavingDelegate = nil
     }
   }
 }
