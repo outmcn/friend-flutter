@@ -92,6 +92,7 @@ class DDImMessage {
     required this.createdAt,
     required this.kind,
     this.durationMs = 0,
+    this.metadata,
     this.clientId,
     this.recalledAt,
     this.deletedAt,
@@ -105,6 +106,7 @@ class DDImMessage {
   final String createdAt;
   final String kind;
   final int durationMs;
+  final Map<String, dynamic>? metadata;
   final String? clientId;
   final String? recalledAt;
   final String? deletedAt;
@@ -117,6 +119,9 @@ class DDImMessage {
         text: '${json['text'] ?? ''}',
         createdAt: '${json['createdAt'] ?? ''}',
         kind: '${json['kind'] ?? 'text'}',
+        metadata: json['metadata'] is Map
+            ? Map<String, dynamic>.from(json['metadata'] as Map)
+            : null,
         durationMs: (json['durationMs'] as num?)?.toInt() ?? 0,
         clientId: json['clientId'] as String?,
         recalledAt: json['recalledAt'] as String?,

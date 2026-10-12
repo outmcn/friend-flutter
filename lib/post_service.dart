@@ -9,7 +9,7 @@ part 'im_models.dart';
 class DDPostService {
   DDPostService({http.Client? client}) : _client = client ?? http.Client();
 
-  static final Uri _base = Uri.parse('https://api.outmcn.com');
+  static final Uri _base = Uri.parse('https://friend.outmcn.net');
   final http.Client _client;
   static const profileTabCachePrefix = 'dd.profile.tab.cache.';
 
