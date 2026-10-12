@@ -805,44 +805,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     );
   }
 
-  Widget _detailHeader(DDPost item) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        children: [
-          ClipOval(
-            child: SizedBox(
-              width: 38,
-              height: 38,
-              child: _PermanentCachedImage(
-                url: item.avatar,
-                fit: BoxFit.cover,
-                placeholder: const Icon(Icons.person_outline),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              item.nickname,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-            ),
-          ),
-          Text(
-            formatDDTime(item.createdAt),
-            style: TextStyle(
-              fontSize: 12,
-              color:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: .5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _heroBody(DDPost item) {
     final image = item.imageUrl?.trim();
     final video = item.videoUrl?.trim();
@@ -1034,7 +996,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                           _PageErrorState(
                               title: '加载失败', subtitle: error!, onRetry: load),
                         if (item != null) ...[
-                          _detailHeader(item),
                           _heroBody(item),
                           const SizedBox(height: 12),
                           const Divider(height: 32),
