@@ -2168,36 +2168,111 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                           alignment: isMine
                                               ? Alignment.centerRight
                                               : Alignment.centerLeft,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            children: [
-                                              if (!isMine) ...[
-                                                CircleAvatar(
-                                                    radius: 15,
-                                                    backgroundImage:
-                                                        bubbleAvatar),
-                                                const SizedBox(width: 6),
+                                          child: GestureDetector(
+                                            onTap: () => _redialCall(message),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                if (!isMine) ...[
+                                                  CircleAvatar(
+                                                      radius: 15,
+                                                      backgroundImage:
+                                                          bubbleAvatar),
+                                                  const SizedBox(width: 6),
+                                                ],
+                                                Stack(
+                                                  clipBehavior: Clip.none,
+                                                  children: [
+                                                    Container(
+                                                      constraints: BoxConstraints(
+                                                          maxWidth:
+                                                              MediaQuery.sizeOf(
+                                                                          context)
+                                                                      .width *
+                                                                  0.72),
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 8),
+                                                      decoration: BoxDecoration(
+                                                        color: isMine
+                                                            ? Theme.of(context)
+                                                                .colorScheme
+                                                                .primaryContainer
+                                                            : Theme.of(context)
+                                                                .colorScheme
+                                                                .surfaceContainerHighest,
+                                                        borderRadius:
+                                                            BorderRadius.only(
+                                                          topLeft: const Radius
+                                                              .circular(16),
+                                                          topRight: const Radius
+                                                              .circular(16),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  isMine
+                                                                      ? 16
+                                                                      : 4),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  isMine
+                                                                      ? 4
+                                                                      : 16),
+                                                        ),
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Flexible(
+                                                            child: Text(
+                                                              '语音通话 · ${ImCall.statusText(message)}',
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyLarge,
+                                                            ),
+                                                          ),
+                                                          if (status ==
+                                                              'pending') ...[
+                                                            const SizedBox(
+                                                                width: 6),
+                                                            const SizedBox(
+                                                                width: 12,
+                                                                height: 12,
+                                                                child: CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        1.5)),
+                                                          ],
+                                                          if (status ==
+                                                              'failed')
+                                                            GestureDetector(
+                                                              onTap: () =>
+                                                                  _retryMessage(
+                                                                      message),
+                                                              child: const Icon(
+                                                                  Icons
+                                                                      .error_outline,
+                                                                  size: 16,
+                                                                  color: Colors
+                                                                      .orange),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                if (isMine) ...[
+                                                  const SizedBox(width: 6),
+                                                  CircleAvatar(
+                                                      radius: 15,
+                                                      backgroundImage:
+                                                          bubbleAvatar),
+                                                ],
                                               ],
-                                              _CallRecordBubble(
-                                                record: message,
-                                                currentUserId: currentUserId,
-                                                myAvatar: _stableAvatar(
-                                                    myAvatarProvider),
-                                                peerAvatar: peerTopBarAvatar,
-                                                onTap: () =>
-                                                    _redialCall(message),
-                                              ),
-                                              if (isMine) ...[
-                                                const SizedBox(width: 6),
-                                                CircleAvatar(
-                                                    radius: 15,
-                                                    backgroundImage:
-                                                        _stableAvatar(
-                                                            myAvatarProvider)),
-                                              ],
-                                            ],
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -3182,59 +3257,6 @@ class _AudioCallPageState extends State<_AudioCallPage> {
           ),
         ),
       );
-}
-
-class _CallRecordBubble extends StatelessWidget {
-  const _CallRecordBubble({
-    required this.record,
-    required this.currentUserId,
-    required this.myAvatar,
-    required this.peerAvatar,
-    required this.onTap,
-  });
-
-  final Map<String, dynamic> record;
-  final String currentUserId;
-  final ImageProvider myAvatar;
-  final ImageProvider peerAvatar;
-  final VoidCallback onTap;
-
-  String _statusText() => ImCall.statusText(record);
-
-  @override
-  Widget build(BuildContext context) {
-    final mine = '${record['callerId'] ?? ''}' == currentUserId;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.72,
-        ),
-        margin: EdgeInsets.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: mine
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(mine ? 16 : 4),
-            bottomRight: Radius.circular(mine ? 4 : 16),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.call,
-                size: 16, color: mine ? Colors.green : Colors.blue),
-            const SizedBox(width: 6),
-            Flexible(child: Text('语音通话 · ${_statusText()}')),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _ComposerAction extends StatelessWidget {
