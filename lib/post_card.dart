@@ -344,6 +344,13 @@ class _DiscoverProfileCard extends StatelessWidget {
     return 4 / 3;
   }
 
+  Widget _heroMedia({required Widget child}) {
+    return Hero(
+      tag: 'dynamic-media-${post.id}',
+      child: child,
+    );
+  }
+
   Widget _stableMedia({required String url, required bool thumbnail}) =>
       ConstrainedBox(
         constraints: BoxConstraints(maxHeight: thumbnail ? 400 : 300),
@@ -371,33 +378,32 @@ class _DiscoverProfileCard extends StatelessWidget {
               if (image != null && image.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: _stableMedia(url: image, thumbnail: false),
+                  child: _heroMedia(
+                    child: _stableMedia(url: image, thumbnail: false),
+                  ),
                 )
               else if (video != null && video.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Stack(
-                    alignment: Alignment.topCenter,
-                    children: [
-                      post.thumbnailUrl?.isNotEmpty == true
-                          ? _stableMedia(
-                              url: post.thumbnailUrl!,
-                              thumbnail: true,
-                            )
-                          : const SizedBox(
-                              height: 96,
-                              child: ColoredBox(color: Colors.transparent),
-                            ),
-                      const Positioned.fill(
-                        child: Center(
-                          child: Icon(
-                            Icons.play_circle_outline,
-                            size: 42,
-                            color: Colors.white,
+                  child: _heroMedia(
+                    child: Stack(
+                      alignment: Alignment.topCenter,
+                      children: [
+                        post.thumbnailUrl?.isNotEmpty == true
+                            ? _stableMedia(
+                                url: post.thumbnailUrl!, thumbnail: true)
+                            : const SizedBox(
+                                height: 96,
+                                child: ColoredBox(color: Colors.transparent),
+                              ),
+                        const Positioned.fill(
+                          child: Center(
+                            child: Icon(Icons.play_circle_outline,
+                                size: 42, color: Colors.white),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 )
               else
