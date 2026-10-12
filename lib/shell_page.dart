@@ -1927,25 +1927,55 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         conversationId: widget.chat.conversationId,
         messages: messages,
       );
-    } catch (_) {
-      final index = messages
-          .indexWhere((item) => '${item['clientId'] ?? ''}' == clientId);
-      if (index >= 0) {
-        setState(() => messages[index] = {
-              ...messages[index],
-              'status': 'pending',
-              'lastError': 'send_failed',
-            });
-        await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: messages,
-        );
+    } catch (error) {
+      // If the POST reached the server but the response/local SQLite write failed,
+      // reconcile by clientId before leaving the message in the retry queue.
+      var reconciled = false;
+      if (token.isNotEmpty) {
+        final reconcileService = DDPostService();
+        try {
+          final accepted = await reconcileService.reconcilePending(
+            token,
+            widget.chat.conversationId,
+            clientId,
+          );
+          _mergeMessage({...pending, ...accepted}, status: 'sent');
+          await ImLocalStore.saveMessages(
+            accountId: currentUserId,
+            conversationId: widget.chat.conversationId,
+            messages: [
+              {...pending, ...accepted, 'status': 'sent'}
+            ],
+          );
+          reconciled = true;
+        } on StateError {
+          // The server does not have this clientId yet; keep one pending row.
+        } catch (_) {
+          // Preserve the pending row when reconciliation itself is unavailable.
+        } finally {
+          reconcileService.dispose();
+        }
       }
-      // Keep the row pending; ImSession owns the single retry queue.
-      if (failureMessage != null && mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(failureMessage)));
+      if (!reconciled) {
+        final index = messages
+            .indexWhere((item) => '${item['clientId'] ?? ''}' == clientId);
+        if (index >= 0) {
+          setState(() => messages[index] = {
+                ...messages[index],
+                'status': 'pending',
+                'lastError': 'send_failed',
+              });
+          await ImLocalStore.saveMessages(
+            accountId: currentUserId,
+            conversationId: widget.chat.conversationId,
+            messages: messages,
+          );
+        }
+      }
+      if (failureMessage != null && mounted && !reconciled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(failureMessage)),
+        );
       }
     } finally {
       service.dispose();
