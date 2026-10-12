@@ -39,14 +39,22 @@ class ImLocation {
         'address': address,
       };
 
-  Uri get amapUrl => Uri.https('uri.amap.com', '/marker', {
+  Uri get amapUrl => Uri.parse(
+        'iosamap://viewMap?sourceApplication=Friend&lat=$latitude&lon=$longitude&poiname=${Uri.encodeComponent(title)}',
+      );
+
+  Uri get amapWebUrl => Uri.https('uri.amap.com', '/marker', {
         'position': '$longitude,$latitude',
         'name': title,
         'src': 'friend',
         'coordinate': 'gaode',
       });
 
-  Uri get tencentUrl => Uri.https('apis.map.qq.com', '/uri/v1/marker', {
+  Uri get tencentUrl => Uri.parse(
+        'qqmap://map/marker?marker=${Uri.encodeComponent('$latitude,$longitude')}&title=${Uri.encodeComponent(title)}&addr=${Uri.encodeComponent(address)}',
+      );
+
+  Uri get tencentWebUrl => Uri.https('apis.map.qq.com', '/uri/v1/marker', {
         'marker': '@$latitude,$longitude',
         'title': title,
         'addr': address,
@@ -161,13 +169,22 @@ class ImLocationCard extends StatelessWidget {
       ),
     );
     if (!context.mounted || provider == null) return;
-    final url = provider == 'amap'
+    final appUrl = provider == 'amap'
         ? location.amapUrl
         : provider == 'tencent'
             ? location.tencentUrl
             : location.mapsUrl;
+    final fallbackUrl = provider == 'amap'
+        ? location.amapWebUrl
+        : provider == 'tencent'
+            ? location.tencentWebUrl
+            : location.mapsUrl;
     try {
-      if (await launchUrl(url, mode: LaunchMode.externalApplication)) return;
+      if (await launchUrl(appUrl, mode: LaunchMode.externalApplication)) return;
+      if (provider != 'apple' &&
+          await launchUrl(fallbackUrl, mode: LaunchMode.externalApplication)) {
+        return;
+      }
     } catch (_) {}
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
