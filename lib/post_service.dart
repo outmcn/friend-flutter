@@ -260,20 +260,23 @@ class DDPostService {
 
   Future<void> reportImMessage(String token, String conversationId,
       String messageId, String reason) async {
-    final response = await _client.post(
-      _api('/im/conversations/$conversationId/messages/$messageId/report'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'reason': reason}),
-    );
-    final body =
-        response.body.trim().isEmpty ? null : jsonDecode(response.body);
-    if (response.statusCode != 201 ||
-        body is! Map ||
-        body['reported'] != true) {
-      throw Exception(body is Map ? '${body['error'] ?? '举报消息失败'}' : '举报消息失败');
+    final response = await _client
+        .post(
+          _api('/im/conversations/$conversationId/messages/$messageId/report'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'reason': reason}),
+        )
+        .timeout(const Duration(seconds: 15));
+    Map<String, dynamic>? body;
+    if (response.body.trim().isNotEmpty) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map) body = Map<String, dynamic>.from(decoded);
+    }
+    if (response.statusCode != 201 || body?['reported'] != true) {
+      throw Exception(body?['error'] ?? '举报消息失败');
     }
   }
 

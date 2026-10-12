@@ -1600,11 +1600,41 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     try {
       await service.reportImMessage(
           token, widget.chat.conversationId, id, reason);
-      if (mounted) {
-        _showTopNotice(
-          context,
-          const SnackBar(content: Text('举报已提交')),
-        );
+      if (!mounted) return;
+      _showTopNotice(
+        context,
+        const Text('举报已提交'),
+      );
+      final shouldBlock = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('举报成功'),
+          content: const Text('是否同时拉黑对方？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('暂不拉黑'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('拉黑对方'),
+            ),
+          ],
+        ),
+      );
+      if (shouldBlock == true && mounted) {
+        final peerId = int.tryParse(widget.chat.peerUserId ?? '');
+        if (peerId != null) {
+          final blockService = DDPostService();
+          try {
+            await blockService.toggleUserBlock(token, peerId);
+            if (mounted) {
+              _showTopNotice(context, const Text('已举报并拉黑对方'));
+            }
+          } finally {
+            blockService.dispose();
+          }
+        }
       }
     } catch (error) {
       if (mounted) {
