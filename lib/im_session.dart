@@ -67,6 +67,14 @@ class ImSession {
       } else if (type == 'error') {
         _setState(ImConnectionState.error);
       }
+      if (type == 'call:incoming' || type == 'call:update') {
+        final call = event['call'];
+        if (call is Map) {
+          unawaited(saveCall(call.cast<String, dynamic>(), eventType: '$type')
+              .catchError((Object _) => <String, dynamic>{}));
+        }
+        return;
+      }
       if (type == 'message:new') {
         final message = event['message'];
         if (message is Map && message['id'] != null && _userId != null) {
@@ -84,6 +92,63 @@ class ImSession {
       _events.add(event);
     });
     unawaited(socket.connect());
+  }
+
+  Future<Map<String, dynamic>> startCall(
+      String token, String conversationId) async {
+    final service = DDPostService();
+    try {
+      final result = await service.startImCall(token, conversationId);
+      result['call'] =
+          await saveCall(Map<String, dynamic>.from(result['call'] as Map));
+      return result;
+    } finally {
+      service.dispose();
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCall(
+      String token, String callId, String action) async {
+    final service = DDPostService();
+    try {
+      final result = await service.updateImCall(token, callId, action);
+      result['call'] =
+          await saveCall(Map<String, dynamic>.from(result['call'] as Map));
+      return result;
+    } finally {
+      service.dispose();
+    }
+  }
+
+  Future<void> _callQueue = Future<void>.value();
+
+  Future<Map<String, dynamic>> saveCall(Map<String, dynamic> call,
+      {String eventType = 'call:update', bool notify = true}) {
+    final sessionAccountId = _userId;
+    final operation = _callQueue.then((_) async {
+      final accountId = sessionAccountId ??
+          (await SharedPreferences.getInstance())
+              .getString('friend.auth.userId');
+      if (accountId == null ||
+          accountId.isEmpty ||
+          '${call['id'] ?? ''}'.isEmpty ||
+          '${call['conversationId'] ?? call['conversation_id'] ?? ''}'
+              .isEmpty) {
+        throw StateError('Missing call identity');
+      }
+      final merged =
+          await ImLocalStore.saveCall(accountId: accountId, call: call);
+      if (notify && (_userId == null || _userId == accountId)) {
+        _events.add({'type': eventType, 'call': merged});
+      }
+      return merged;
+    });
+    _callQueue =
+        operation.then<void>((_) {}, onError: (Object error, StackTrace stack) {
+      _events
+          .add({'type': 'call:persistence-error', 'error': error.toString()});
+    });
+    return operation;
   }
 
   Future<void> _persistIncoming(Map<String, dynamic> message) async {
@@ -275,6 +340,7 @@ class ImSession {
     _pendingRetryTimer = null;
     _pendingRetryRunning = false;
     await _socketEvents?.cancel();
+    await _callQueue;
     _socketEvents = null;
     await _socket?.dispose();
     _socket = null;

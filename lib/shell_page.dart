@@ -5,6 +5,12 @@ final Map<String, ImageProvider> _avatarProviderCache = {};
 ImageProvider _cachedAvatarProvider(String url) =>
     _avatarProviderCache.putIfAbsent(url, () => NetworkImage(url));
 
+void _dismissIncomingDialog(BuildContext? dialogContext) {
+  if (dialogContext == null || !dialogContext.mounted) return;
+  final route = ModalRoute.of(dialogContext);
+  if (route?.isCurrent == true) Navigator.of(dialogContext).pop();
+}
+
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
@@ -23,6 +29,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String? loadError;
   final Map<String, String> _avatarPaths = {};
   bool callDialogShowing = false;
+  BuildContext? incomingDialogContext;
   bool outgoingCallStarting = false;
   String? activeCallId;
 
@@ -47,13 +54,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (event['type'] == 'message:new' || event['type'] == 'message:recalled') {
       unawaited(_loadConversations(showLoading: false));
     }
-    if (event['type'] == 'call:update') {
+    if (event['type'] == 'call:update' || event['type'] == 'call:incoming') {
       final call = event['call'];
       if (call is Map) {
-        final item = call.cast<String, dynamic>();
-        unawaited(_persistCallLocally(item));
+        if ('${call['id']}' == activeCallId && call['status'] != 'ringing') {
+          _dismissIncomingDialog(incomingDialogContext);
+        }
+        unawaited(_refreshCallPreview(call.cast<String, dynamic>()));
       }
-      unawaited(_loadConversations(showLoading: false));
     }
     if (event['type'] == 'call:incoming') {
       final call = event['call'];
@@ -71,44 +79,34 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _persistCallLocally(Map<String, dynamic> raw) async {
-    final prefs = await SharedPreferences.getInstance();
-    final accountId = prefs.getString('friend.auth.userId') ?? '';
-    final conversationId = '${raw['conversationId'] ?? ''}';
-    if (accountId.isEmpty || conversationId.isEmpty) return;
-    final call = {
-      ...raw,
-      'callerId': raw['callerId'] ?? raw['caller_id'],
-      'calleeId': raw['calleeId'] ?? raw['callee_id'],
-      '_timelineKind': 'call',
-      'kind': 'call',
-      'localDurationSeconds': raw['localDurationSeconds'] ??
-          raw['local_duration_seconds'] ??
-          raw['durationSeconds'] ??
-          raw['duration_seconds'],
-      'createdAt': raw['startedAt'] ??
-          raw['createdAt'] ??
-          DateTime.now().toIso8601String(),
-    };
-    final existing = await ImLocalStore.messages(
+  Future<void> _refreshCallPreview(Map<String, dynamic> call) async {
+    final accountId = ImSession.instance.userId;
+    final conversationId = '${call['conversationId'] ?? ''}';
+    if (accountId == null) return;
+    final latest = await ImLocalStore.latestMessage(
         accountId: accountId, conversationId: conversationId);
-    final index = existing
-        .indexWhere((item) => '${item['id'] ?? ''}' == '${call['id'] ?? ''}');
-    if (index >= 0) {
-      final previous = existing[index];
-      final merged = {...previous, ...call};
-      if (call['localDurationSeconds'] == null &&
-          previous['localDurationSeconds'] != null) {
-        merged['localDurationSeconds'] = previous['localDurationSeconds'];
-      }
-      existing[index] = merged;
-    } else {
-      existing.add(call);
-    }
-    await ImLocalStore.saveMessages(
+    if (!mounted || latest == null) return;
+    final index = conversations
+        .indexWhere((chat) => chat.conversationId == conversationId);
+    if (index < 0) return;
+    final chat = conversations[index];
+    final preview = _localMessagePreview(latest) ?? chat.preview;
+    if (preview == chat.preview) return;
+    setState(() {
+      conversations[index] = _ChatPreview(
+          chat.name,
+          preview,
+          chat.avatarUrl,
+          chat.avatarKey,
+          chat.peerUserId,
+          chat.conversationId,
+          chat.unreadCount,
+          chat.peerReadMessageId,
+          chat.updatedAt);
+    });
+    await ImLocalStore.saveConversations(
         accountId: accountId,
-        conversationId: conversationId,
-        messages: existing);
+        conversations: conversations.map((chat) => chat.toCache()).toList());
   }
 
   Future<void> _loadCurrentRingingCall() async {
@@ -128,7 +126,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             (calleeId.isEmpty || calleeId == selfId) &&
             callerId != selfId;
       }).toList();
-      if (incoming.isNotEmpty) await _showIncomingCall(incoming.first);
+      for (final call in incoming) {
+        await ImSession.instance.saveCall(call, eventType: 'call:incoming');
+      }
     } catch (_) {
       // 当前响铃来电读取失败不影响聊天页面。
     } finally {
@@ -137,6 +137,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _showIncomingCall(Map<String, dynamic> call) async {
+    if (!mounted ||
+        ModalRoute.of(context)?.isCurrent != true ||
+        call['status'] != 'ringing') {
+      return;
+    }
     final callId = '${call['id'] ?? ''}';
     if (callId.isNotEmpty && activeCallId != null) return;
     activeCallId = callId;
@@ -158,21 +163,24 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final accepted = await showDialog<String>(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('来电'),
-          content: Text(
-              '${call['callerName'] ?? call['nickname'] ?? '对方'} 邀请您进行语音通话'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, 'reject'),
-              child: const Text('拒绝'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, 'answer'),
-              child: const Text('接听'),
-            ),
-          ],
-        ),
+        builder: (dialogContext) {
+          incomingDialogContext = dialogContext;
+          return AlertDialog(
+            title: const Text('来电'),
+            content: Text(
+                '${call['callerName'] ?? call['nickname'] ?? '对方'} 邀请您进行语音通话'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, 'reject'),
+                child: const Text('拒绝'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, 'answer'),
+                child: const Text('接听'),
+              ),
+            ],
+          );
+        },
       );
       if (!mounted || accepted == null) return;
       final prefs = await SharedPreferences.getInstance();
@@ -180,7 +188,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       if (token.isEmpty) return;
       final service = DDPostService();
       try {
-        final result = await service.updateImCall(token, callId, accepted);
+        final result =
+            await ImSession.instance.updateCall(token, callId, accepted);
         if (accepted == 'answer' && mounted) {
           final answeredCall =
               (result['call'] as Map?)?.cast<String, dynamic>() ?? call;
@@ -197,6 +206,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         service.dispose();
       }
     } finally {
+      incomingDialogContext = null;
       callDialogShowing = false;
       activeCallId = null;
     }
@@ -242,13 +252,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final rows = await service.fetchImConversations(token);
       if (!mounted) return;
       final mapped = <_ChatPreview>[];
+      final latest = accountId.isEmpty
+          ? <String, Map<String, dynamic>>{}
+          : await ImLocalStore.latestMessages(accountId);
       for (final row in rows) {
-        final local = accountId.isEmpty
-            ? null
-            : await ImLocalStore.latestMessage(
-                accountId: accountId,
-                conversationId: row.id,
-              );
+        final local = latest[row.id];
         final localPreview = local == null
             ? null
             : _localMessagePreview({
@@ -561,22 +569,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       );
 }
 
-String _callPreviewStatus(Map<String, dynamic> row) {
-  final status = '${row['status'] ?? ''}';
-  final rawDuration = row['localDurationSeconds'] ??
-      row['local_duration_seconds'] ??
-      row['durationSeconds'] ??
-      row['duration_seconds'];
-  final durationSeconds =
-      rawDuration is num ? rawDuration.toInt() : int.tryParse('$rawDuration');
-  if (durationSeconds != null) {
-    return '${(durationSeconds ~/ 60).toString().padLeft(2, '0')}:${(durationSeconds % 60).toString().padLeft(2, '0')}';
-  }
-  if (status == 'cancelled') return '已取消';
-  if (status == 'rejected') return '已拒绝';
-  if (status == 'answered' || status == 'ended') return '已接听';
-  return '未接听';
-}
+String _callPreviewStatus(Map<String, dynamic> row) => ImCall.statusText(row);
 
 String? _localMessagePreview(Map<String, dynamic>? row) {
   if (row == null) return null;
@@ -721,6 +714,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   final AudioPlayer audioPlayer = AudioPlayer();
   bool outgoingCallStarting = false;
   bool callDialogShowing = false;
+  BuildContext? incomingDialogContext;
   String? activeCallId;
   final Map<String, String> imageFiles = {};
   String? playingAudioKey;
@@ -862,10 +856,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
       );
-      cached.removeWhere((item) => deletedIds.contains('${item['id']}'));
+      cached.removeWhere((item) =>
+          !ImCall.isCall(item) && deletedIds.contains('${item['id']}'));
       final normalized = <String, Map<String, dynamic>>{};
       for (final item in cached) {
-        final key = '${item['clientId'] ?? item['id'] ?? ''}';
+        final key =
+            '${ImCall.isCall(item) ? 'call' : 'message'}:${item['clientId'] ?? item['id'] ?? ''}';
         final old = normalized[key];
         if (old == null ||
             '${old['id'] ?? ''}'.startsWith('local:') &&
@@ -890,6 +886,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     } catch (_) {
       if (mounted) setState(() => initialSyncCompleted = true);
     }
+    final ringing = messages.where((call) {
+      final started = DateTime.tryParse('${call['createdAt'] ?? ''}');
+      return ImCall.isCall(call) &&
+          call['status'] == 'ringing' &&
+          '${call['calleeId']}' == currentUserId &&
+          started != null &&
+          DateTime.now().difference(started).inSeconds < 30;
+    }).toList();
+    if (ringing.isNotEmpty) unawaited(_showIncomingCall(ringing.last));
+    unawaited(_restoreRingingCalls(token));
   }
 
   // Unread-only sync is represented by the live IM session events.
@@ -917,7 +923,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (token.isEmpty) return;
     final service = DDPostService();
     try {
-      final result = await service.startImCall(
+      final result = await ImSession.instance.startCall(
         token,
         widget.chat.conversationId,
       );
@@ -973,52 +979,46 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     ));
   }
 
-  Future<void> _saveCallEvent(Map<String, dynamic> raw) async {
-    final call = {
-      ...raw,
-      'callerId': raw['callerId'] ?? raw['caller_id'],
-      'calleeId': raw['calleeId'] ?? raw['callee_id'],
-      '_timelineKind': 'call',
-      'kind': 'call',
-      'localDurationSeconds': raw['localDurationSeconds'] ??
-          raw['local_duration_seconds'] ??
-          raw['durationSeconds'] ??
-          raw['duration_seconds'],
-      'createdAt': raw['startedAt'] ??
-          raw['createdAt'] ??
-          DateTime.now().toIso8601String(),
-    };
-    final id = '${call['id'] ?? ''}';
-    if (id.isEmpty) return;
-    final index = messages.indexWhere((item) =>
-        item['_timelineKind'] == 'call' && '${item['id'] ?? ''}' == id);
-    final mergedCall = index >= 0
-        ? {
-            ...messages[index],
-            ...call,
-            if (call['localDurationSeconds'] == null)
-              'localDurationSeconds': messages[index]['localDurationSeconds'],
-          }
-        : call;
-    final callerId = '${mergedCall['callerId'] ?? ''}';
-    final calleeId = '${mergedCall['calleeId'] ?? ''}';
-    if (callerId.isEmpty || calleeId.isEmpty) return;
+  Future<void> _saveCallEvent(Map<String, dynamic> call) async {
+    if (!mounted ||
+        '${call['conversationId'] ?? ''}' != widget.chat.conversationId) {
+      return;
+    }
+    final index = messages.indexWhere(
+        (item) => ImCall.isCall(item) && '${item['id']}' == '${call['id']}');
     setState(() {
       if (index >= 0) {
-        messages[index] = mergedCall;
+        messages[index] = ImCall.merge(messages[index], call);
       } else {
-        messages.add(mergedCall);
+        messages.add(ImCall.merge({}, call));
       }
       messages.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
     });
-    await ImLocalStore.saveMessages(
-      accountId: currentUserId,
-      conversationId: widget.chat.conversationId,
-      messages: messages,
-    );
+  }
+
+  Future<void> _restoreRingingCalls(String token) async {
+    final service = DDPostService();
+    try {
+      final pending = await service.fetchPendingImCalls(token);
+      for (final call in pending) {
+        if ('${call['conversationId']}' == widget.chat.conversationId &&
+            call['status'] == 'ringing') {
+          await ImSession.instance.saveCall(call, eventType: 'call:incoming');
+        }
+      }
+    } catch (_) {
+      // Keep the local timeline available while offline.
+    } finally {
+      service.dispose();
+    }
   }
 
   Future<void> _showIncomingCall(Map<String, dynamic> call) async {
+    if (!mounted ||
+        ModalRoute.of(context)?.isCurrent != true ||
+        call['status'] != 'ringing') {
+      return;
+    }
     final callId = '${call['id'] ?? ''}';
     if (callId.isEmpty || activeCallId != null || callDialogShowing) return;
     final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
@@ -1034,22 +1034,25 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       final accepted = await showDialog<String>(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('来电'),
-          content: Text(
-            '${call['callerName'] ?? call['nickname'] ?? '对方'} 邀请您进行语音通话',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, 'reject'),
-              child: const Text('拒绝'),
+        builder: (dialogContext) {
+          incomingDialogContext = dialogContext;
+          return AlertDialog(
+            title: const Text('来电'),
+            content: Text(
+              '${call['callerName'] ?? call['nickname'] ?? '对方'} 邀请您进行语音通话',
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, 'answer'),
-              child: const Text('接听'),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, 'reject'),
+                child: const Text('拒绝'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, 'answer'),
+                child: const Text('接听'),
+              ),
+            ],
+          );
+        },
       );
       if (!mounted || accepted == null) return;
       final prefs = await SharedPreferences.getInstance();
@@ -1057,7 +1060,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (token.isEmpty) return;
       final service = DDPostService();
       try {
-        final result = await service.updateImCall(token, callId, accepted);
+        final result =
+            await ImSession.instance.updateCall(token, callId, accepted);
         if (accepted == 'answer' && mounted) {
           final answeredCall =
               (result['call'] as Map?)?.cast<String, dynamic>() ?? call;
@@ -1074,6 +1078,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         service.dispose();
       }
     } finally {
+      incomingDialogContext = null;
       callDialogShowing = false;
       activeCallId = null;
     }
@@ -1086,6 +1091,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       final raw = event['call'];
       if (raw is Map) {
         final call = raw.cast<String, dynamic>();
+        if ('${call['conversationId']}' != widget.chat.conversationId) return;
+        await _saveCallEvent(call);
         final callerId = '${call['callerId'] ?? call['caller_id'] ?? ''}';
         final calleeId = '${call['calleeId'] ?? call['callee_id'] ?? ''}';
         final selfId = currentUserId;
@@ -1107,7 +1114,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (type == 'call:update') {
       final call = event['call'];
-      if (call is Map && '${call['id'] ?? ''}' == activeCallId) {
+      if (call is Map &&
+          '${call['conversationId']}' == widget.chat.conversationId &&
+          '${call['id'] ?? ''}' == activeCallId) {
+        if (call['status'] != 'ringing') {
+          _dismissIncomingDialog(incomingDialogContext);
+        }
         final status = '${call['status'] ?? ''}';
         if (status == 'ended' ||
             status == 'cancelled' ||
@@ -1149,6 +1161,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         final messageId = '${item['id'] ?? ''}';
         final clientId = '${item['clientId'] ?? ''}';
         final index = messages.indexWhere((existing) {
+          if (ImCall.isCall(existing)) return false;
           return (messageId.isNotEmpty &&
                   '${existing['id'] ?? ''}' == messageId) ||
               (clientId.isNotEmpty &&
@@ -1245,6 +1258,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final id = '${item['id'] ?? ''}';
     final clientId = '${item['clientId'] ?? ''}';
     final index = messages.indexWhere((existing) {
+      if (ImCall.isCall(existing)) return false;
       return (clientId.isNotEmpty &&
               '${existing['clientId'] ?? ''}' == clientId) ||
           (id.isNotEmpty && '${existing['id'] ?? ''}' == id);
@@ -1463,7 +1477,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final service = DDPostService();
     try {
       final result =
-          await service.startImCall(token, widget.chat.conversationId);
+          await ImSession.instance.startCall(token, widget.chat.conversationId);
       if (!mounted) return;
       final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
       activeCallId = '${call['id'] ?? ''}';
@@ -1691,7 +1705,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         delegate: _ChatSearchDelegate(messages),
       );
     } else if (action == 'report' && messages.isNotEmpty) {
-      await _reportImMessage(messages.last);
+      final chatMessages =
+          messages.where((item) => !ImCall.isCall(item)).toList();
+      if (chatMessages.isNotEmpty) await _reportImMessage(chatMessages.last);
     } else if (action == 'blacklist') {
       if (mounted) {
         setState(() => blockedConversation = true);
@@ -1755,7 +1771,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     final id = '${message['id'] ?? ''}';
     if (choice == 'delete') {
-      final index = messages.indexWhere((item) => '${item['id'] ?? ''}' == id);
+      final index = messages.indexWhere(
+          (item) => !ImCall.isCall(item) && '${item['id'] ?? ''}' == id);
       if (index >= 0) {
         final messageId = '${messages[index]['id'] ?? ''}';
         setState(() => messages.removeAt(index));
@@ -1788,8 +1805,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           id,
         );
         final index = messages.indexWhere((item) =>
-            '${item['id'] ?? ''}' == id ||
-            '${item['clientId'] ?? ''}' == '${message['clientId'] ?? ''}');
+            !ImCall.isCall(item) &&
+            ('${item['id'] ?? ''}' == id ||
+                '${item['clientId'] ?? ''}' == '${message['clientId'] ?? ''}'));
         if (index >= 0) {
           setState(() => messages[index] = {
                 ...messages[index],
@@ -1975,7 +1993,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   Future<void> _markLatestRead() async {
     if (messages.isEmpty || currentUserId.isEmpty) return;
-    final messageId = '${messages.last['id'] ?? ''}';
+    final chatMessages =
+        messages.where((item) => !ImCall.isCall(item)).toList();
+    if (chatMessages.isEmpty) return;
+    final messageId = '${chatMessages.last['id'] ?? ''}';
     if (messageId.isEmpty || messageId.startsWith('local:')) return;
 
     final prefs = await SharedPreferences.getInstance();
@@ -2828,8 +2849,27 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   Timer? durationTimer;
   DateTime? localTimerStartedAt;
   int localElapsedSeconds = 0;
+  int localElapsedBase = 0;
   bool rtcJoined = false;
   late String callStatus;
+  Route<dynamic>? callRoute;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    callRoute = ModalRoute.of(context);
+  }
+
+  void _closeCallRoute() {
+    if (!mounted) return;
+    final route = callRoute;
+    if (route == null || !route.isActive) return;
+    if (route.isCurrent) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).removeRoute(route);
+    }
+  }
 
   @override
   void initState() {
@@ -2849,48 +2889,68 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   void _startLocalTimer() {
     if (localTimerStartedAt != null) return;
     localTimerStartedAt = DateTime.now();
-    localElapsedSeconds = 0;
+    localElapsedBase =
+        ImCall.duration(widget.call['localDurationSeconds']) ?? 0;
+    localElapsedSeconds = localElapsedBase;
+    unawaited(_checkpointDuration());
     durationTimer?.cancel();
     durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || localTimerStartedAt == null) return;
       setState(() {
-        localElapsedSeconds =
+        localElapsedSeconds = localElapsedBase +
             DateTime.now().difference(localTimerStartedAt!).inSeconds;
       });
+      if (localElapsedSeconds % 5 == 0) unawaited(_checkpointDuration());
     });
+  }
+
+  Future<void> _checkpointDuration() async {
+    try {
+      await ImSession.instance.saveCall({
+        ...widget.call,
+        'status': 'answered',
+        'answered': true,
+        'localDurationSeconds': localElapsedSeconds
+      }, notify: false);
+    } catch (_) {
+      // Finalization retries persistence before closing the call route.
+    }
   }
 
   void _stopLocalTimer() {
     if (localTimerStartedAt != null) {
-      localElapsedSeconds =
+      localElapsedSeconds = localElapsedBase +
           DateTime.now().difference(localTimerStartedAt!).inSeconds;
     }
     durationTimer?.cancel();
     durationTimer = null;
   }
 
-  Future<void> _finishRemoteHangup() async {
+  Future<void> _finishRemoteHangup([Map<String, dynamic>? finalCall]) async {
     if (_ending) return;
-    _ending = true;
+    setState(() => _ending = true);
     _stopLocalTimer();
+    await _persistCallLocally(
+        finalCall ?? {if (localTimerStartedAt != null) 'status': 'ended'});
     try {
       await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
     } catch (_) {}
     if (mounted) {
-      Navigator.of(context).pop();
+      _closeCallRoute();
     }
   }
 
   Future<void> _cancelAfterTimeout() async {
     if (!mounted || _ending || callStatus != 'ringing') return;
-    _ending = true;
+    setState(() => _ending = true);
     callStatus = 'cancelled';
+    await _persistCallLocally({'status': 'cancelled'});
     try {
       await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
-      await DDPostService()
-          .updateImCall(widget.token, '${widget.call['id'] ?? ''}', 'cancel');
+      await ImSession.instance
+          .updateCall(widget.token, '${widget.call['id'] ?? ''}', 'cancel');
     } catch (_) {}
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) _closeCallRoute();
   }
 
   void _handleRtcEvent(String method, dynamic args) {
@@ -2943,10 +3003,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
         if (localTimerStartedAt != null)
           'localDurationSeconds': localElapsedSeconds,
       };
-      unawaited(_persistCallLocally(finalCall));
-      if (status != 'ended' || localTimerStartedAt == null) {
-        unawaited(_finishRemoteHangup());
-      }
+      unawaited(_finishRemoteHangup(finalCall));
     }
   }
 
@@ -2964,69 +3021,38 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   }
 
   Future<void> _leave() async {
+    if (!mounted || _ending) return;
+    setState(() => _ending = true);
+    _stopLocalTimer();
+    await _persistCallLocally(
+        {'status': localTimerStartedAt == null ? 'cancelled' : 'ended'});
     if (!mounted) return;
-    final navigator = Navigator.of(context);
     try {
       await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
     } catch (_) {}
     if (!mounted) return;
-    navigator.pop();
+    _closeCallRoute();
     unawaited(_finishCallOnServer());
   }
 
   Future<void> _persistCallLocally(Map<String, dynamic> raw) async {
-    final prefs = await SharedPreferences.getInstance();
-    final accountId = prefs.getString('friend.auth.userId') ?? '';
-    final conversationId =
-        '${raw['conversationId'] ?? widget.call['conversationId'] ?? ''}';
-    if (accountId.isEmpty || conversationId.isEmpty) return;
-    final call = {
+    await ImSession.instance.saveCall({
+      ...widget.call,
       ...raw,
-      'conversationId': conversationId,
-      'callerId':
-          raw['callerId'] ?? raw['caller_id'] ?? widget.call['callerId'],
-      'calleeId':
-          raw['calleeId'] ?? raw['callee_id'] ?? widget.call['calleeId'],
-      '_timelineKind': 'call',
-      'kind': 'call',
-      'localDurationSeconds': raw['localDurationSeconds'] ??
-          raw['local_duration_seconds'] ??
-          raw['durationSeconds'] ??
-          raw['duration_seconds'],
-      'createdAt': raw['startedAt'] ??
-          raw['createdAt'] ??
-          widget.call['startedAt'] ??
-          DateTime.now().toIso8601String(),
-    };
-    final existing = await ImLocalStore.messages(
-        accountId: accountId, conversationId: conversationId);
-    final index = existing.indexWhere((item) =>
-        '${item['id'] ?? ''}' == '${call['id'] ?? widget.call['id'] ?? ''}');
-    if (index >= 0) {
-      existing[index] = {...existing[index], ...call};
-    } else {
-      existing.add(call);
-    }
-    await ImLocalStore.saveMessages(
-        accountId: accountId,
-        conversationId: conversationId,
-        messages: existing);
+      if (localTimerStartedAt != null)
+        'localDurationSeconds': localElapsedSeconds,
+      if (localTimerStartedAt != null) 'answered': true,
+    });
   }
 
   Future<void> _finishCallOnServer() async {
-    final service = DDPostService();
     try {
-      final result = await service
-          .updateImCall(widget.token, '${widget.call['id'] ?? ''}', 'hangup')
+      await ImSession.instance
+          .updateCall(widget.token, '${widget.call['id'] ?? ''}',
+              localTimerStartedAt == null ? 'cancel' : 'hangup')
           .timeout(const Duration(seconds: 4));
-      final updated = (result['call'] as Map?)?.cast<String, dynamic>();
-      if (updated != null) {
-        await _persistCallLocally(updated);
-      }
     } catch (_) {
-      // 页面已返回，后台状态更新失败不阻塞 UI。
-    } finally {
-      service.dispose();
+      // The locally saved final state remains available while offline.
     }
   }
 
@@ -3045,50 +3071,56 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('语音通话')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircleAvatar(
-                  radius: 42, child: Icon(Icons.person, size: 42)),
-              const SizedBox(height: 16),
-              Text(
-                callStatus == 'answered' ? _elapsedText() : '等待接听',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton.filled(
-                    onPressed: () async {
-                      final next = !muted;
-                      await AliyunRtcBridge.setMuted(next);
-                      if (mounted) setState(() => muted = next);
-                    },
-                    icon: Icon(muted ? Icons.mic_off : Icons.mic),
-                  ),
-                  const SizedBox(width: 28),
-                  IconButton.filled(
-                    onPressed: () async {
-                      final next = !speakerEnabled;
-                      await AliyunRtcBridge.setSpeakerEnabled(next);
-                      if (mounted) setState(() => speakerEnabled = next);
-                    },
-                    icon: Icon(
-                      speakerEnabled ? Icons.volume_up : Icons.phone_in_talk,
+  Widget build(BuildContext context) => PopScope(
+        canPop: _ending,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) unawaited(_leave());
+        },
+        child: Scaffold(
+          appBar: AppBar(title: const Text('语音通话')),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircleAvatar(
+                    radius: 42, child: Icon(Icons.person, size: 42)),
+                const SizedBox(height: 16),
+                Text(
+                  callStatus == 'answered' ? _elapsedText() : '等待接听',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton.filled(
+                      onPressed: () async {
+                        final next = !muted;
+                        await AliyunRtcBridge.setMuted(next);
+                        if (mounted) setState(() => muted = next);
+                      },
+                      icon: Icon(muted ? Icons.mic_off : Icons.mic),
                     ),
-                  ),
-                  const SizedBox(width: 28),
-                  IconButton.filled(
-                    onPressed: _leave,
-                    icon: const Icon(Icons.call_end),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 28),
+                    IconButton.filled(
+                      onPressed: () async {
+                        final next = !speakerEnabled;
+                        await AliyunRtcBridge.setSpeakerEnabled(next);
+                        if (mounted) setState(() => speakerEnabled = next);
+                      },
+                      icon: Icon(
+                        speakerEnabled ? Icons.volume_up : Icons.phone_in_talk,
+                      ),
+                    ),
+                    const SizedBox(width: 28),
+                    IconButton.filled(
+                      onPressed: _leave,
+                      icon: const Icon(Icons.call_end),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -3109,21 +3141,7 @@ class _CallRecordBubble extends StatelessWidget {
   final ImageProvider peerAvatar;
   final VoidCallback onTap;
 
-  String _statusText() {
-    final status = '${record['status'] ?? ''}';
-    final durationSeconds = int.tryParse(
-      '${record['localDurationSeconds'] ?? record['local_duration_seconds'] ?? ''}',
-    );
-    if (durationSeconds != null) {
-      final duration =
-          '${(durationSeconds ~/ 60).toString().padLeft(2, '0')}:${(durationSeconds % 60).toString().padLeft(2, '0')}';
-      return duration;
-    }
-    if (status == 'cancelled') return '已取消';
-    if (status == 'rejected') return '已拒绝';
-    if (status == 'answered' || status == 'ended') return '未接听';
-    return '未接听';
-  }
+  String _statusText() => ImCall.statusText(record);
 
   @override
   Widget build(BuildContext context) {

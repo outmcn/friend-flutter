@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'im_call.dart';
+
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -19,7 +21,7 @@ class ImLocalStore {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 8,
+      version: 9,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -39,6 +41,8 @@ class ImLocalStore {
             deleted_at TEXT,
             ended_at TEXT,
             answered_at TEXT,
+            local_duration_seconds INTEGER,
+            local_answered INTEGER NOT NULL DEFAULT 0,
             retry_started_at TEXT,
             retry_until TEXT,
             retry_count INTEGER NOT NULL DEFAULT 0,
@@ -103,6 +107,14 @@ class ImLocalStore {
           await db.execute('ALTER TABLE messages ADD COLUMN ended_at TEXT');
           await db.execute('ALTER TABLE messages ADD COLUMN answered_at TEXT');
         }
+        if (oldVersion < 9) {
+          await db.execute(
+              'ALTER TABLE messages ADD COLUMN local_duration_seconds INTEGER');
+          await db.execute(
+              'ALTER TABLE messages ADD COLUMN local_answered INTEGER NOT NULL DEFAULT 0');
+          await db.execute(
+              "UPDATE messages SET message_id = 'call:' || message_id WHERE kind = 'call'");
+        }
       },
     );
     return _database!;
@@ -121,7 +133,8 @@ class ImLocalStore {
     return rows.map((row) {
       final item = Map<String, dynamic>.from(row);
       return <String, dynamic>{
-        'id': '${item['message_id'] ?? ''}',
+        'id':
+            '${item['kind'] == 'call' ? '${item['message_id']}'.replaceFirst('call:', '') : item['message_id'] ?? ''}',
         'conversationId': '${item['conversation_id'] ?? ''}',
         'clientId': item['client_id'],
         'senderId': '${item['sender_id'] ?? ''}',
@@ -136,6 +149,8 @@ class ImLocalStore {
         'deletedAt': item['deleted_at'],
         'endedAt': item['ended_at'],
         'answeredAt': item['answered_at'],
+        'localDurationSeconds': ImCall.duration(item['local_duration_seconds']),
+        'answered': _parseInt(item['local_answered']) == 1,
         'mutationId': item['mutation_id'],
         'status': item['recalled_at'] != null
             ? 'recalled'
@@ -168,6 +183,9 @@ class ImLocalStore {
     final db = await _db();
     final batch = db.batch();
     for (final message in messages) {
+      if (ImCall.isCall(message)) {
+        continue; // Calls are saved only by ImSession.
+      }
       final id = '${message['id'] ?? ''}';
       final clientId = '${message['clientId'] ?? ''}';
       if (id.isEmpty) continue;
@@ -209,6 +227,70 @@ class ImLocalStore {
       );
     }
     await batch.commit(noResult: true);
+  }
+
+  static Future<Map<String, dynamic>> saveCall({
+    required String accountId,
+    required Map<String, dynamic> call,
+  }) async {
+    final conversationId =
+        '${call['conversationId'] ?? call['conversation_id'] ?? ''}';
+    final id = 'call:${call['id']}';
+    return (await _db()).transaction((txn) async {
+      final rows = await txn.query('messages',
+          where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
+          whereArgs: [accountId, conversationId, id]);
+      final row = rows.isEmpty ? <String, dynamic>{} : rows.first;
+      final merged = ImCall.merge({
+        if (row.isNotEmpty) ...{
+          'id': call['id'],
+          'conversationId': conversationId,
+          'callerId': row['caller_id'],
+          'calleeId': row['callee_id'],
+          'status': row['status'],
+          'createdAt': row['created_at'],
+          'answeredAt': row['answered_at'],
+          'endedAt': row['ended_at'],
+          'answered': _parseInt(row['local_answered']) == 1,
+          'localDurationSeconds': row['local_duration_seconds'],
+        },
+      }, call);
+      final values = <String, dynamic>{
+        'account_id': accountId,
+        'conversation_id': conversationId,
+        'message_id': id,
+        'sender_id': '${merged['callerId'] ?? ''}',
+        'caller_id': merged['callerId']?.toString(),
+        'callee_id': merged['calleeId']?.toString(),
+        'text': '',
+        'kind': 'call',
+        'status': merged['status'] ?? 'ringing',
+        'created_at': merged['createdAt'],
+        'answered_at': merged['answeredAt'],
+        'ended_at': merged['endedAt'],
+        'local_answered': merged['answered'] == true ? 1 : 0,
+        'local_duration_seconds': merged['localDurationSeconds'],
+      };
+      if (rows.isEmpty) {
+        await txn.insert('messages', values);
+      } else if (values.entries.any((entry) => row[entry.key] != entry.value)) {
+        await txn.update('messages', values,
+            where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
+            whereArgs: [accountId, conversationId, id]);
+      }
+      return merged;
+    });
+  }
+
+  static Future<Map<String, Map<String, dynamic>>> latestMessages(
+      String accountId) async {
+    final rows = await (await _db()).rawQuery(
+        "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY created_at DESC, CAST(message_id AS INTEGER) DESC) AS position FROM messages WHERE account_id = ?) WHERE position = 1",
+        [accountId]);
+    return {
+      for (final row in rows)
+        '${row['conversation_id']}': Map<String, dynamic>.from(row)
+    };
   }
 
   static Future<void> updateRetryState({
