@@ -242,8 +242,7 @@ private final class CallRtcDelegate: NSObject, DingRtcEngineDelegate {
   func onLeaveChannelResult(_ result: Int32, stats: DingRtcStats) {
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
-      self.leavingEngine = nil
-      self.leavingDelegate = nil
+      self.emit?("left", ["code": result])
     }
   }
 }
