@@ -1910,9 +1910,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }) async {
     if (text.trim().isEmpty) return;
     if (blockedConversation) {
-      if (mounted) {
-        _showTopErrorBanner(context, '当前会话不可发送');
-      }
+      if (mounted) _showTopErrorBanner(context, '当前会话不可发送');
       return;
     }
     final normalizedText = text.trim();
@@ -1932,17 +1930,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       'retryUntil': now.add(const Duration(minutes: 1)).toIso8601String(),
     };
     _mergeMessage(pending);
-    await ImLocalStore.saveMessages(
-      accountId: currentUserId,
-      conversationId: widget.chat.conversationId,
-      messages: [pending],
-    );
+    try {
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: [pending],
+      );
+    } catch (_) {
+      // Sending must continue even when the local cache is unavailable.
+    }
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     final service = DDPostService();
-    Map<String, dynamic>? serverMessage;
     try {
-      serverMessage = await service.sendImMessage(
+      final serverMessage = await service.sendImMessage(
         token,
         widget.chat.conversationId,
         text: normalizedText,
@@ -1960,13 +1961,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ],
         );
       } catch (_) {
-        // The server state is authoritative; a cache write must not downgrade
-        // an already accepted message back to pending.
+        // Server acceptance is authoritative; cache failure cannot downgrade it.
       }
-    } catch (error) {
-      // If the POST reached the server but the response/local SQLite write failed,
-      // reconcile by clientId before leaving the message in the retry queue.
-      var reconciled = false;
+      return;
+    } catch (_) {
+      // Reconcile before showing an error or leaving the message pending.
       if (token.isNotEmpty) {
         final reconcileService = DDPostService();
         try {
@@ -1985,34 +1984,34 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
               ],
             );
           } catch (_) {
-            // Do not downgrade a server-accepted message when local caching fails.
+            // Cache failure cannot downgrade the accepted server message.
           }
-          reconciled = true;
+          return;
         } on StateError {
-          // The server does not have this clientId yet; keep one pending row.
+          // Server has not accepted this clientId; keep the single pending row.
         } catch (_) {
-          // Preserve the pending row when reconciliation itself is unavailable.
+          // Reconciliation unavailable; keep the single pending row.
         } finally {
           reconcileService.dispose();
         }
       }
-      if (!reconciled) {
-        final index = messages
-            .indexWhere((item) => '${item['clientId'] ?? ''}' == clientId);
-        if (index >= 0) {
-          setState(() => messages[index] = {
-                ...messages[index],
-                'status': 'pending',
-                'lastError': 'send_failed',
-              });
+      final index = messages
+          .indexWhere((item) => '${item['clientId'] ?? ''}' == clientId);
+      if (index >= 0) {
+        setState(() => messages[index] = {
+              ...messages[index],
+              'status': 'pending',
+              'lastError': 'send_failed',
+            });
+        try {
           await ImLocalStore.saveMessages(
             accountId: currentUserId,
             conversationId: widget.chat.conversationId,
-            messages: messages,
+            messages: [messages[index]],
           );
-        }
+        } catch (_) {}
       }
-      if (failureMessage != null && mounted && !reconciled) {
+      if (failureMessage != null && mounted) {
         _showTopErrorBanner(context, failureMessage);
       }
     } finally {
