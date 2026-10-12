@@ -929,7 +929,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           scale: scale,
           alignment: Alignment.center,
           child: Scaffold(
-            backgroundColor: Colors.transparent,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
               title: item == null
                   ? const Text('动态详情')
