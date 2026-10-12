@@ -229,9 +229,38 @@ class DDPostService {
     final data =
         response.body.trim().isEmpty ? null : jsonDecode(response.body);
     if (response.statusCode != 201 || data is! Map || data['message'] is! Map) {
-      throw Exception(data is Map ? '${data['error'] ?? '消息发送失败'}' : '消息发送失败');
+      // A successful database insert can be followed by a lost HTTP response.
+      // Reconcile by clientId before surfacing an error or retrying the POST.
+      final recovered = await _reconcileByClientId(
+        token,
+        conversationId,
+        clientId,
+      );
+      if (recovered != null) return recovered;
+      final detail = data is Map ? '${data['error'] ?? ''}' : '';
+      throw Exception(
+          '消息发送失败（HTTP ${response.statusCode}${detail.isEmpty ? '' : '：$detail'}）');
     }
     return (data['message'] as Map).cast<String, dynamic>();
+  }
+
+  Future<Map<String, dynamic>?> _reconcileByClientId(
+    String token,
+    String conversationId,
+    String clientId,
+  ) async {
+    try {
+      final response = await _client.get(
+        _api('/im/conversations/$conversationId/messages/by-client/$clientId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      if (data is! Map || data['message'] is! Map) return null;
+      return (data['message'] as Map).cast<String, dynamic>();
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> reportImMessage(String token, String conversationId,
