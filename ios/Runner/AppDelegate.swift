@@ -244,6 +244,7 @@ private final class NativeLocationPickerViewController: UIViewController, MKMapV
   private let mapView = MKMapView()
   private let locationManager = CLLocationManager()
   private let pin = UIImageView(image: UIImage(systemName: "mappin.and.ellipse"))
+  private let currentLocationButton = UIButton(type: .system)
   private var bestLocation: CLLocation?
   private var locationDeadline: DispatchWorkItem?
 
@@ -255,7 +256,24 @@ private final class NativeLocationPickerViewController: UIViewController, MKMapV
     mapView.delegate = self
     mapView.showsUserLocation = true
     view.addSubview(mapView)
-    pin.tintColor = .systemRed
+    currentLocationButton.setImage(UIImage(systemName: "location.fill"), for: .normal)
+    currentLocationButton.tintColor = .systemBlue
+    currentLocationButton.backgroundColor = .systemBackground
+    currentLocationButton.layer.cornerRadius = 22
+    currentLocationButton.layer.shadowColor = UIColor.black.cgColor
+    currentLocationButton.layer.shadowOpacity = 0.15
+    currentLocationButton.layer.shadowRadius = 4
+    currentLocationButton.layer.shadowOffset = CGSize(width: 0, height: 2)
+    currentLocationButton.translatesAutoresizingMaskIntoConstraints = false
+    currentLocationButton.addTarget(self, action: #selector(returnToCurrentLocation), for: .touchUpInside)
+    view.addSubview(currentLocationButton)
+    NSLayoutConstraint.activate([
+      currentLocationButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+      currentLocationButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -150),
+      currentLocationButton.widthAnchor.constraint(equalToConstant: 44),
+      currentLocationButton.heightAnchor.constraint(equalToConstant: 44)
+    ])
+        pin.tintColor = .systemRed
     pin.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(pin)
     NSLayoutConstraint.activate([
@@ -314,6 +332,21 @@ private final class NativeLocationPickerViewController: UIViewController, MKMapV
     super.viewDidDisappear(animated)
     locationDeadline?.cancel()
     locationManager.stopUpdatingLocation()
+  }
+
+  @objc private func returnToCurrentLocation() {
+    guard let location = bestLocation else {
+      locationManager.startUpdatingLocation()
+      return
+    }
+    mapView.setRegion(
+      MKCoordinateRegion(
+        center: location.coordinate,
+        latitudinalMeters: 250,
+        longitudinalMeters: 250
+      ),
+      animated: true
+    )
   }
 
   @objc private func cancelPressed() {
