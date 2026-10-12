@@ -706,15 +706,19 @@ class DDPostService {
     required int commentId,
     required String reason,
   }) async {
-    final response = await _client.post(
-      _api('/comments/$commentId/report'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'reason': reason}),
-    );
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final response = await _client
+        .post(
+          _api('/comments/$commentId/report'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'reason': reason}),
+        )
+        .timeout(const Duration(seconds: 15));
+    final decoded = response.body.trim().isEmpty
+        ? <String, dynamic>{}
+        : jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('${decoded['error'] ?? '举报评论失败'}');
     }
@@ -1044,14 +1048,16 @@ class DDPostService {
       {required String token,
       required int postId,
       required String reason}) async {
-    final response = await _client.post(
-      _api('/posts/$postId/report'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'reason': reason}),
-    );
+    final response = await _client
+        .post(
+          _api('/posts/$postId/report'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'reason': reason}),
+        )
+        .timeout(const Duration(seconds: 15));
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('${decoded['error'] ?? '举报动态失败'}');

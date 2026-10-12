@@ -366,10 +366,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
           reason: reason,
         );
         if (mounted) {
-          _showTopNotice(
-            context,
-            const SnackBar(content: Text('举报已提交')),
-          );
+          _showTopNotice(context, const Text('评论举报已提交'));
+          await _askBlockAfterReport(comment.userId);
         }
       } catch (e) {
         if (mounted) {
@@ -551,6 +549,37 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
+  Future<void> _askBlockAfterReport(int? userId) async {
+    if (!mounted || userId == null || userId == currentUserId) return;
+    final shouldBlock = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('举报成功'),
+        content: const Text('是否同时拉黑对方？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('暂不拉黑'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('拉黑对方'),
+          ),
+        ],
+      ),
+    );
+    if (shouldBlock != true || !mounted) return;
+    final blockService = DDPostService();
+    try {
+      await blockService.toggleUserBlock(await token(), userId);
+      if (mounted) {
+        _showTopNotice(context, const Text('已举报并拉黑对方'));
+      }
+    } finally {
+      blockService.dispose();
+    }
+  }
+
   Future<void> _openReportPage() async {
     if (isOwner) return;
     final submitted = await Navigator.push<bool>(
@@ -564,10 +593,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
       ),
     );
     if (submitted == true && mounted) {
-      _showTopNotice(
-        context,
-        const SnackBar(content: Text('举报已提交')),
-      );
+      _showTopNotice(context, const Text('举报已提交'));
+      await _askBlockAfterReport(post?.userId);
     }
   }
 
