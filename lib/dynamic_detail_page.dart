@@ -68,35 +68,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final shouldClose = _swipeOffset > width * .28 || velocity > 900;
     if (shouldClose) {
       setState(() => _swipeClosing = true);
-      await _animateSwipeToCard();
       if (mounted) Navigator.pop(context);
     } else {
       await _animateSwipeBack();
-    }
-  }
-
-  Future<void> _animateSwipeToCard() async {
-    final controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    final beginX = _swipeOffset;
-    final beginY = _swipeVerticalOffset;
-    final beginScale = _swipeScale;
-    try {
-      final animation =
-          CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
-      animation.addListener(() {
-        if (!mounted) return;
-        setState(() {
-          _swipeOffset = beginX + (0 - beginX) * animation.value;
-          _swipeVerticalOffset = beginY + (0 - beginY) * animation.value;
-          _swipeScale = beginScale + (0.02 - beginScale) * animation.value;
-        });
-      });
-      await controller.forward();
-    } finally {
-      controller.dispose();
     }
   }
 
