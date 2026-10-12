@@ -22,23 +22,6 @@ import CoreLocation
     guard let controller = window?.rootViewController as? FlutterViewController else {
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
-    let channel = FlutterMethodChannel(name: "com.outmcn.friend/location_picker", binaryMessenger: controller.binaryMessenger)
-    channel.setMethodCallHandler { call, result in
-      guard call.method == "pickLocation" else {
-        result(FlutterMethodNotImplemented)
-        return
-      }
-      DispatchQueue.main.async {
-        let picker = NativeLocationPickerViewController()
-        picker.onComplete = { payload in
-          result(payload)
-        }
-        picker.onCancel = { result(nil) }
-        let navigation = UINavigationController(rootViewController: picker)
-        controller.present(navigation, animated: true)
-      }
-    }
-
     let locationFactory = NativeMapViewFactory(messenger: controller.binaryMessenger)
     self.registrar(forPlugin: "NativeMapView")?.register(locationFactory, withId: "com.outmcn.friend/native_map_view")
 
