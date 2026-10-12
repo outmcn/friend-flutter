@@ -244,7 +244,8 @@ private final class NativeLocationPickerViewController: UIViewController, MKMapV
   private let mapView = MKMapView()
   private let locationManager = CLLocationManager()
   private let pin = UIImageView(image: UIImage(systemName: "mappin.and.ellipse"))
-  private var currentAddress: String?
+  private var bestLocation: CLLocation?
+  private var locationDeadline: DispatchWorkItem?
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -270,25 +271,51 @@ private final class NativeLocationPickerViewController: UIViewController, MKMapV
     title = "选择位置"
     navigationController?.navigationBar.topItem?.title = "选择位置"
     locationManager.delegate = self
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest
+    locationManager.distanceFilter = kCLDistanceFilterNone
     locationManager.requestWhenInUseAuthorization()
     locationManager.startUpdatingLocation()
+    let deadline = DispatchWorkItem { [weak self] in
+      self?.finishInitialLocation()
+    }
+    locationDeadline = deadline
+    DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: deadline)
   }
 
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-    guard let location = locations.last else { return }
+    for location in locations where location.horizontalAccuracy >= 0 {
+      if bestLocation == nil || location.horizontalAccuracy < bestLocation!.horizontalAccuracy {
+        bestLocation = location
+      }
+      if location.horizontalAccuracy <= 30 {
+        finishInitialLocation()
+        break
+      }
+    }
+  }
+
+  private func finishInitialLocation() {
+    locationDeadline?.cancel()
+    locationManager.stopUpdatingLocation()
+    guard let location = bestLocation else { return }
     let region = MKCoordinateRegion(
       center: location.coordinate,
-      latitudinalMeters: 800,
-      longitudinalMeters: 800
+      latitudinalMeters: 250,
+      longitudinalMeters: 250
     )
     mapView.setRegion(region, animated: true)
-    manager.stopUpdatingLocation()
   }
 
   func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
     CLGeocoder().reverseGeocodeLocation(CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude)) { [weak self] placemarks, _ in
       self?.currentAddress = placemarks?.first?.name
     }
+  }
+
+  override func viewDidDisappear(_ animated: Bool) {
+    super.viewDidDisappear(animated)
+    locationDeadline?.cancel()
+    locationManager.stopUpdatingLocation()
   }
 
   @objc private func cancelPressed() {
