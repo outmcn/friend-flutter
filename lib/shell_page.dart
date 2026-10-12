@@ -2227,12 +2227,33 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                             MainAxisSize.min,
                                                         children: [
                                                           Flexible(
-                                                            child: Text(
-                                                              '语音通话 · ${ImCall.statusText(message)}',
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodyLarge,
+                                                            child: Row(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: [
+                                                                Icon(
+                                                                  Icons.phone,
+                                                                  size: 16,
+                                                                  color: isMine
+                                                                      ? Colors
+                                                                          .green
+                                                                      : Colors
+                                                                          .blue,
+                                                                ),
+                                                                const SizedBox(
+                                                                    width: 6),
+                                                                Flexible(
+                                                                  child: Text(
+                                                                    ImCall.statusText(
+                                                                        message),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyLarge,
+                                                                  ),
+                                                                ),
+                                                              ],
                                                             ),
                                                           ),
                                                           if (status ==
@@ -2689,7 +2710,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                         onPressed: _pickAndSendImage,
                       ),
                       _ComposerAction(
-                        icon: Icons.phone_in_talk_outlined,
+                        icon: Icons.phone_outlined,
                         label: '语音通话',
                         onPressed: _startAudioCall,
                       ),
