@@ -121,7 +121,7 @@ void main() {
             Scaffold(body: Center(child: ImLocationCard(metadata: metadata)))));
     expect(find.text('人民广场'), findsOneWidget);
     expect(find.text('上海市黄浦区'), findsOneWidget);
-    expect(tester.getSize(find.byType(ImLocationCard)), const Size(220, 174));
+    expect(tester.getSize(find.byType(ImLocationCard)).height, lessThan(174));
     expect(
         tester.widget<Icon>(find.byIcon(Icons.location_on)).color, Colors.red);
     await tester.tap(find.text('人民广场'));
@@ -132,7 +132,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(
         home: Scaffold(body: Center(child: ImLocationCard(metadata: null)))));
     expect(find.text('位置不可用'), findsOneWidget);
-    expect(tester.getSize(find.byType(ImLocationCard)), const Size(220, 174));
+    expect(tester.getSize(find.byType(ImLocationCard)).height, lessThan(174));
     expect(tester.takeException(), isNull);
   });
 

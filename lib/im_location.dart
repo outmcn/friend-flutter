@@ -201,38 +201,45 @@ class ImLocationCard extends StatelessWidget {
       label: '位置',
       child: InkWell(
         onTap: location == null ? null : () => _open(context, location),
-        child: SizedBox(
-          width: 220,
-          height: 174,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: const SizedBox(
-                  width: double.infinity,
-                  height: 100,
-                  child: CustomPaint(
-                    painter: _MapThumbnailPainter(),
-                    child: Center(
-                        child: Icon(Icons.location_on,
-                            color: Colors.red, size: 36)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: const SizedBox(
+                width: 220,
+                height: 100,
+                child: CustomPaint(
+                  painter: _MapThumbnailPainter(),
+                  child: Center(
+                    child: Icon(Icons.location_on, color: Colors.red, size: 36),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(location?.title ?? '位置不可用',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 15, height: 1.3, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(location?.address ?? '位置信息不完整',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, height: 1.3)),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: 220,
+              child: Text(
+                location?.title ?? '位置不可用',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 15, height: 1.3, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: 220,
+              child: Text(
+                location?.address ?? '位置信息不完整',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, height: 1.3),
+              ),
+            ),
+          ],
         ),
       ),
     );
