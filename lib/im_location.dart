@@ -135,9 +135,9 @@ class ImLocationPickerPage extends StatefulWidget {
 }
 
 class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
-  static const _nativeChannel =
-      MethodChannel('com.outmcn.friend/location_picker');
+  static const _nativeChannelPrefix = 'com.outmcn.friend/location_picker_';
   final MapController _mapController = MapController();
+  int? _nativeViewId;
   ImLocation? _selected;
   Timer? _reverseTimer;
   bool _loading = true;
@@ -147,26 +147,35 @@ class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
   void initState() {
     super.initState();
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      unawaited(_loadNativeAppleMap());
+      _loading = false;
     } else {
       unawaited(_loadInitialLocation());
     }
   }
 
-  Future<void> _loadNativeAppleMap() async {
-    try {
-      final result = await _nativeChannel.invokeMethod<dynamic>('pickLocation');
-      if (!mounted) return;
-      if (result == null) {
-        Navigator.pop(context);
-        return;
+  void _onNativeViewCreated(int id) {
+    _nativeViewId = id;
+    MethodChannel('$_nativeChannelPrefix$id')
+        .setMethodCallHandler((call) async {
+      if (call.method != 'locationChanged' || call.arguments is! Map) return;
+      final location = ImLocation.fromMetadata(call.arguments);
+      if (location != null && mounted) {
+        setState(() => _selected = location);
       }
-      if (result is! Map) return;
-      final location = ImLocation.fromMetadata(result);
-      if (location != null) Navigator.pop(context, location);
-    } on PlatformException catch (error) {
-      if (mounted) setState(() => _error = error.message ?? '无法打开 Apple 地图');
+    });
+  }
+
+  Future<void> _sendSelectedLocation() async {
+    if (defaultTargetPlatform == TargetPlatform.iOS && _nativeViewId != null) {
+      final result = await MethodChannel('$_nativeChannelPrefix$_nativeViewId')
+          .invokeMethod<dynamic>('sendSelectedLocation');
+      if (mounted && result is Map) {
+        final location = ImLocation.fromMetadata(result);
+        if (location != null) Navigator.pop(context, location);
+      }
+      return;
     }
+    if (mounted && _selected != null) Navigator.pop(context, _selected);
   }
 
   Future<void> _loadInitialLocation() async {
@@ -195,9 +204,7 @@ class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
     _reverseTimer = Timer(const Duration(milliseconds: 500), () async {
       final location =
           await ImLocation.reverseGeocode(center.latitude, center.longitude);
-      if (mounted) {
-        setState(() => _selected = location);
-      }
+      if (mounted) setState(() => _selected = location);
     });
   }
 
@@ -213,30 +220,40 @@ class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
     final center = selected == null
         ? const LatLng(31.2304, 121.4737)
         : LatLng(selected.latitude, selected.longitude);
+    final ios = defaultTargetPlatform == TargetPlatform.iOS;
     return Scaffold(
       appBar: AppBar(title: const Text('选择位置')),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: center,
-              initialZoom: 16,
-              onPositionChanged: _onMapMove,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.outmcn.friend',
+          if (ios)
+            UiKitView(
+              viewType: 'com.outmcn.friend/native_map_view',
+              onPlatformViewCreated: _onNativeViewCreated,
+              creationParams: const <String, dynamic>{},
+              creationParamsCodec: const StandardMessageCodec(),
+            )
+          else
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: 16,
+                onPositionChanged: _onMapMove,
               ),
-            ],
-          ),
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: 36),
-              child: Icon(Icons.location_pin, color: Colors.red, size: 48),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.outmcn.friend',
+                ),
+              ],
             ),
-          ),
+          if (!ios)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 36),
+                child: Icon(Icons.location_pin, color: Colors.red, size: 48),
+              ),
+            ),
           if (_loading) const Center(child: CircularProgressIndicator()),
           if (_error != null)
             Align(
@@ -246,6 +263,23 @@ class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Text(_error!),
+                ),
+              ),
+            ),
+          if (ios)
+            Align(
+              alignment: Alignment.topRight,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8, right: 8),
+                  child: IconButton(
+                    icon: const Icon(Icons.my_location),
+                    onPressed: _nativeViewId == null
+                        ? null
+                        : () =>
+                            MethodChannel('$_nativeChannelPrefix$_nativeViewId')
+                                .invokeMethod('returnToCurrentLocation'),
+                  ),
                 ),
               ),
             ),
@@ -269,9 +303,8 @@ class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: selected == null
-                              ? null
-                              : () => Navigator.pop(context, selected),
+                          onPressed:
+                              selected == null ? null : _sendSelectedLocation,
                           child: const Text('发送此位置'),
                         ),
                       ),

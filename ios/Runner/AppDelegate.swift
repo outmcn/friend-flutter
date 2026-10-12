@@ -39,6 +39,9 @@ import CoreLocation
       }
     }
 
+    let locationFactory = NativeMapViewFactory(messenger: controller.binaryMessenger)
+    self.registrar(forPlugin: "NativeMapView")?.register(locationFactory, withId: "com.outmcn.friend/native_map_view")
+
     let rtcChannel = FlutterMethodChannel(name: "com.outmcn.dd/aliyun_rtc", binaryMessenger: controller.binaryMessenger)
     self.rtcChannel = rtcChannel
     rtcChannel.setMethodCallHandler { [weak self] call, result in
@@ -238,139 +241,83 @@ import CoreLocation
   }
 }
 
-private final class NativeLocationPickerViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate {
-  var onComplete: (([String: Any]) -> Void)?
-  var onCancel: (() -> Void)?
-  private let mapView = MKMapView()
-  private let locationManager = CLLocationManager()
-  private let pin = UIImageView(image: UIImage(systemName: "mappin.and.ellipse"))
-  private let currentLocationButton = UIButton(type: .system)
-  private var bestLocation: CLLocation?
-  private var locationDeadline: DispatchWorkItem?
 
-  override func viewDidLoad() {
-    super.viewDidLoad()
-    view.backgroundColor = .systemBackground
-    mapView.frame = view.bounds
-    mapView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+private final class NativeMapViewFactory: NSObject, FlutterPlatformViewFactory {
+  private let messenger: FlutterBinaryMessenger
+  init(messenger: FlutterBinaryMessenger) { self.messenger = messenger; super.init() }
+  func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol { FlutterStandardMessageCodec.sharedInstance() }
+  func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
+    NativeMapView(frame: frame, viewId: viewId, messenger: messenger)
+  }
+}
+
+private final class NativeMapView: NSObject, FlutterPlatformView, MKMapViewDelegate, CLLocationManagerDelegate {
+  private let mapView: MKMapView
+  private let locationManager = CLLocationManager()
+  private let channel: FlutterMethodChannel
+  private var bestLocation: CLLocation?
+  private var deadline: DispatchWorkItem?
+
+  init(frame: CGRect, viewId: Int64, messenger: FlutterBinaryMessenger) {
+    mapView = MKMapView(frame: frame)
+    channel = FlutterMethodChannel(name: "com.outmcn.friend/location_picker_\(viewId)", binaryMessenger: messenger)
+    super.init()
     mapView.delegate = self
     mapView.showsUserLocation = true
-    view.addSubview(mapView)
-    currentLocationButton.setImage(UIImage(systemName: "location.fill"), for: .normal)
-    currentLocationButton.tintColor = .systemBlue
-    currentLocationButton.backgroundColor = .systemBackground
-    currentLocationButton.layer.cornerRadius = 22
-    currentLocationButton.layer.shadowColor = UIColor.black.cgColor
-    currentLocationButton.layer.shadowOpacity = 0.15
-    currentLocationButton.layer.shadowRadius = 4
-    currentLocationButton.layer.shadowOffset = CGSize(width: 0, height: 2)
-    currentLocationButton.translatesAutoresizingMaskIntoConstraints = false
-    currentLocationButton.addTarget(self, action: #selector(returnToCurrentLocation), for: .touchUpInside)
-    view.addSubview(currentLocationButton)
-    NSLayoutConstraint.activate([
-      currentLocationButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-      currentLocationButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -150),
-      currentLocationButton.widthAnchor.constraint(equalToConstant: 44),
-      currentLocationButton.heightAnchor.constraint(equalToConstant: 44)
-    ])
-        pin.tintColor = .systemRed
-    pin.translatesAutoresizingMaskIntoConstraints = false
-    view.addSubview(pin)
-    NSLayoutConstraint.activate([
-      pin.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-      pin.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -20),
-      pin.widthAnchor.constraint(equalToConstant: 38),
-      pin.heightAnchor.constraint(equalToConstant: 44)
-    ])
-    let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelPressed))
-    let done = UIBarButtonItem(title: "发送此位置", style: .done, target: self, action: #selector(donePressed))
-    navigationItem.leftBarButtonItem = cancel
-    navigationItem.rightBarButtonItem = done
-    title = "选择位置"
-    navigationController?.navigationBar.topItem?.title = "选择位置"
+    mapView.mapType = .standard
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self else { return }
+      switch call.method {
+      case "returnToCurrentLocation": self.returnToCurrentLocation(); result(nil)
+      case "sendSelectedLocation": self.sendSelectedLocation(result)
+      default: result(FlutterMethodNotImplemented)
+      }
+    }
     locationManager.delegate = self
     locationManager.desiredAccuracy = kCLLocationAccuracyBest
     locationManager.distanceFilter = kCLDistanceFilterNone
     locationManager.requestWhenInUseAuthorization()
     locationManager.startUpdatingLocation()
-    let deadline = DispatchWorkItem { [weak self] in
-      self?.finishInitialLocation()
-    }
-    locationDeadline = deadline
-    DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: deadline)
+    let item = DispatchWorkItem { [weak self] in self?.finishLocation() }
+    deadline = item
+    DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: item)
   }
 
+  func view() -> UIView { mapView }
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
     for location in locations where location.horizontalAccuracy >= 0 {
-      if bestLocation == nil || location.horizontalAccuracy < bestLocation!.horizontalAccuracy {
-        bestLocation = location
-      }
-      if location.horizontalAccuracy <= 30 {
-        finishInitialLocation()
-        break
-      }
+      if bestLocation == nil || location.horizontalAccuracy < bestLocation!.horizontalAccuracy { bestLocation = location }
+      if location.horizontalAccuracy <= 30 { finishLocation(); break }
     }
   }
-
-  private func finishInitialLocation() {
-    locationDeadline?.cancel()
-    locationManager.stopUpdatingLocation()
+  private func finishLocation() {
+    deadline?.cancel(); locationManager.stopUpdatingLocation()
     guard let location = bestLocation else { return }
-    let region = MKCoordinateRegion(
-      center: location.coordinate,
-      latitudinalMeters: 250,
-      longitudinalMeters: 250
-    )
-    mapView.setRegion(region, animated: true)
+    mapView.setRegion(MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 250, longitudinalMeters: 250), animated: true)
+    notifyLocation(location)
   }
-
-  func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-    // 地址在点击发送时统一反向解析，避免拖动过程中保存过期地址。
+  private func returnToCurrentLocation() {
+    guard let location = bestLocation else { locationManager.startUpdatingLocation(); return }
+    mapView.setRegion(MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 250, longitudinalMeters: 250), animated: true)
+    notifyLocation(location)
   }
-
-  override func viewDidDisappear(_ animated: Bool) {
-    super.viewDidDisappear(animated)
-    locationDeadline?.cancel()
-    locationManager.stopUpdatingLocation()
-  }
-
-  @objc private func returnToCurrentLocation() {
-    guard let location = bestLocation else {
-      locationManager.startUpdatingLocation()
-      return
-    }
-    mapView.setRegion(
-      MKCoordinateRegion(
-        center: location.coordinate,
-        latitudinalMeters: 250,
-        longitudinalMeters: 250
-      ),
-      animated: true
-    )
-  }
-
-  @objc private func cancelPressed() {
-    onCancel?()
-    dismiss(animated: true)
-  }
-
-  @objc private func donePressed() {
-    let location = CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude)
-    let geocoder = CLGeocoder()
-    geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
+  private func notifyLocation(_ location: CLLocation) {
+    CLGeocoder().reverseGeocodeLocation(location) { [weak self] places, _ in
       guard let self else { return }
-      let place = placemarks?.first
-      let address = [place?.administrativeArea, place?.locality, place?.subLocality, place?.thoroughfare, place?.subThoroughfare]
-        .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-        .filter { !$0.isEmpty }
-        .joined(separator: " ")
-      self.onComplete?([
-        "latitude": location.coordinate.latitude,
-        "longitude": location.coordinate.longitude,
-        "title": place?.name ?? "选择的位置",
-        "address": address.isEmpty ? "地址暂不可用" : address
-      ])
-      self.dismiss(animated: true)
+      let place = places?.first
+      let address = [place?.administrativeArea, place?.locality, place?.subLocality, place?.thoroughfare, place?.subThoroughfare].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.joined(separator: " ")
+      self.channel.invokeMethod("locationChanged", arguments: ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude, "title": place?.name ?? "当前位置", "address": address.isEmpty ? "地址暂不可用" : address])
     }
+  }
+  private func sendSelectedLocation(_ result: @escaping FlutterResult) {
+    let location = CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude)
+    CLGeocoder().reverseGeocodeLocation(location) { places, _ in
+      let place = places?.first
+      let address = [place?.administrativeArea, place?.locality, place?.subLocality, place?.thoroughfare, place?.subThoroughfare].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.joined(separator: " ")
+      result(["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude, "title": place?.name ?? "选择的位置", "address": address.isEmpty ? "地址暂不可用" : address])
+    }
+  }
+  func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+    notifyLocation(CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude))
   }
 }
