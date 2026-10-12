@@ -99,8 +99,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
             curve: Curves.easeOutCubic,
             reverseCurve: Curves.easeInCubic,
           );
-          return FadeTransition(
-            opacity: curved,
+          return ScaleTransition(
+            scale: Tween<double>(begin: .92, end: 1).animate(curved),
+            alignment: Alignment.center,
             child: child,
           );
         },

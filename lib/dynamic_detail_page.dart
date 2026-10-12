@@ -800,11 +800,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 constraints: const BoxConstraints(minHeight: 180),
                 padding: const EdgeInsets.all(24),
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xff6556d9), Color(0xffdf76b8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Color(0xfff3f3f3),
                 ),
                 alignment: Alignment.center,
                 child: Text(
