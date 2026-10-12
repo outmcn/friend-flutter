@@ -824,7 +824,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) throw Exception('请先登录');
     currentUserId = widget.currentUserId;
-    peerReadMessageId = widget.chat.peerReadMessageId;
     if (currentUserId.isEmpty) {
       currentUserId = ImSession.instance.userId ??
           prefs.getString('friend.auth.userId') ??
@@ -840,6 +839,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         service.dispose();
       }
     }
+    peerReadMessageId = widget.chat.peerReadMessageId;
     eventSubscription = ImSession.instance.events.listen(_handleImEvent);
     try {
       await ImLocalStore.migrateLegacyAudioKeys();
