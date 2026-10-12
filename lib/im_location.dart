@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -127,11 +129,14 @@ class ImLocationException implements Exception {
 
 class ImLocationPickerPage extends StatefulWidget {
   const ImLocationPickerPage({super.key});
+
   @override
   State<ImLocationPickerPage> createState() => _ImLocationPickerPageState();
 }
 
 class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
+  static const _nativeChannel =
+      MethodChannel('com.outmcn.friend/location_picker');
   final MapController _mapController = MapController();
   ImLocation? _selected;
   Timer? _reverseTimer;
@@ -141,7 +146,27 @@ class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadInitialLocation());
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      unawaited(_loadNativeAppleMap());
+    } else {
+      unawaited(_loadInitialLocation());
+    }
+  }
+
+  Future<void> _loadNativeAppleMap() async {
+    try {
+      final result = await _nativeChannel.invokeMethod<dynamic>('pickLocation');
+      if (!mounted) return;
+      if (result == null) {
+        Navigator.pop(context);
+        return;
+      }
+      if (result is! Map) return;
+      final location = ImLocation.fromMetadata(result);
+      if (location != null) Navigator.pop(context, location);
+    } on PlatformException catch (error) {
+      if (mounted) setState(() => _error = error.message ?? '无法打开 Apple 地图');
+    }
   }
 
   Future<void> _loadInitialLocation() async {

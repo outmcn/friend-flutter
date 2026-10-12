@@ -2,6 +2,8 @@ import UIKit
 import Flutter
 import DingRTC
 import UserNotifications
+import MapKit
+import CoreLocation
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate, DingRtcEngineDelegate {
@@ -20,9 +22,26 @@ import UserNotifications
     guard let controller = window?.rootViewController as? FlutterViewController else {
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
-    let channel = FlutterMethodChannel(name: "com.outmcn.dd/aliyun_rtc", binaryMessenger: controller.binaryMessenger)
-    rtcChannel = channel
-    channel.setMethodCallHandler { [weak self] call, result in
+    let channel = FlutterMethodChannel(name: "com.outmcn.friend/location_picker", binaryMessenger: controller.binaryMessenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "pickLocation" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      DispatchQueue.main.async {
+        let picker = NativeLocationPickerViewController()
+        picker.onComplete = { payload in
+          result(payload)
+        }
+        picker.onCancel = { result(nil) }
+        let navigation = UINavigationController(rootViewController: picker)
+        controller.present(navigation, animated: true)
+      }
+    }
+
+    let rtcChannel = FlutterMethodChannel(name: "com.outmcn.dd/aliyun_rtc", binaryMessenger: controller.binaryMessenger)
+    self.rtcChannel = rtcChannel
+    rtcChannel.setMethodCallHandler { [weak self] call, result in
       self?.handleRtc(call: call, result: result)
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -215,6 +234,85 @@ import UserNotifications
     }
     DispatchQueue.main.async { [weak self] in
       self?.rtcChannel?.invokeMethod("left", arguments: ["code": result])
+    }
+  }
+}
+
+private final class NativeLocationPickerViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate {
+  var onComplete: (([String: Any]) -> Void)?
+  var onCancel: (() -> Void)?
+  private let mapView = MKMapView()
+  private let locationManager = CLLocationManager()
+  private let pin = UIImageView(image: UIImage(systemName: "mappin.and.ellipse"))
+  private var currentAddress: String?
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    view.backgroundColor = .systemBackground
+    mapView.frame = view.bounds
+    mapView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    mapView.delegate = self
+    mapView.showsUserLocation = true
+    view.addSubview(mapView)
+    pin.tintColor = .systemRed
+    pin.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(pin)
+    NSLayoutConstraint.activate([
+      pin.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      pin.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -20),
+      pin.widthAnchor.constraint(equalToConstant: 38),
+      pin.heightAnchor.constraint(equalToConstant: 44)
+    ])
+    let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelPressed))
+    let done = UIBarButtonItem(title: "发送此位置", style: .done, target: self, action: #selector(donePressed))
+    navigationItem.leftBarButtonItem = cancel
+    navigationItem.rightBarButtonItem = done
+    title = "选择位置"
+    navigationController?.navigationBar.topItem?.title = "选择位置"
+    locationManager.delegate = self
+    locationManager.requestWhenInUseAuthorization()
+    locationManager.startUpdatingLocation()
+  }
+
+  func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    guard let location = locations.last else { return }
+    let region = MKCoordinateRegion(
+      center: location.coordinate,
+      latitudinalMeters: 800,
+      longitudinalMeters: 800
+    )
+    mapView.setRegion(region, animated: true)
+    manager.stopUpdatingLocation()
+  }
+
+  func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+    CLGeocoder().reverseGeocodeLocation(CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude)) { [weak self] placemarks, _ in
+      self?.currentAddress = placemarks?.first?.name
+    }
+  }
+
+  @objc private func cancelPressed() {
+    onCancel?()
+    dismiss(animated: true)
+  }
+
+  @objc private func donePressed() {
+    let location = CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude)
+    let geocoder = CLGeocoder()
+    geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
+      guard let self else { return }
+      let place = placemarks?.first
+      let address = [place?.administrativeArea, place?.locality, place?.subLocality, place?.thoroughfare, place?.subThoroughfare]
+        .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty }
+        .joined(separator: " ")
+      self.onComplete?([
+        "latitude": location.coordinate.latitude,
+        "longitude": location.coordinate.longitude,
+        "title": place?.name ?? "选择的位置",
+        "address": address.isEmpty ? "地址暂不可用" : address
+      ])
+      self.dismiss(animated: true)
     }
   }
 }
