@@ -1,7 +1,45 @@
 part of 'main.dart';
 
-class WalletPage extends StatelessWidget {
+class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
+
+  @override
+  State<WalletPage> createState() => _WalletPageState();
+}
+
+class _WalletPageState extends State<WalletPage> {
+  final DDPostService service = DDPostService();
+  int balance = 0;
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      final user = await service.fetchMe(token);
+      if (mounted) {
+        setState(
+            () => balance = int.tryParse('${user['coinBalance'] ?? 0}') ?? 0);
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -13,17 +51,16 @@ class WalletPage extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xff6d5dfc), Color(0xffa66cff)],
-                ),
+                    colors: [Color(0xff6d5dfc), Color(0xffa66cff)]),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('我的资产', style: TextStyle(color: Colors.white70)),
-                  SizedBox(height: 10),
-                  Text('0 金币',
-                      style: TextStyle(
+                  const Text('我的资产', style: TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 10),
+                  Text(loading ? '加载中…' : '$balance 金币',
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.w800)),
@@ -32,18 +69,20 @@ class WalletPage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text('充值'),
-            ),
+                onPressed: () {},
+                icon: const Icon(Icons.add_circle_outline),
+                label: const Text('充值')),
+            if (error != null)
+              Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child:
+                      Text(error!, style: const TextStyle(color: Colors.red))),
             const SizedBox(height: 12),
             const Card(
-              child: ListTile(
-                leading: Icon(Icons.info_outline),
-                title: Text('金币充值功能暂未接入支付'),
-                subtitle: Text('当前仅展示钱包页面，暂不产生真实订单。'),
-              ),
-            ),
+                child: ListTile(
+                    leading: Icon(Icons.info_outline),
+                    title: Text('金币充值功能暂未接入支付'),
+                    subtitle: Text('当前仅展示钱包页面，暂不产生真实订单。'))),
           ],
         ),
       );
@@ -58,6 +97,8 @@ class DDProfilePage extends StatefulWidget {
 class _DDProfilePageState extends State<DDProfilePage> {
   final DDPostService service = DDPostService();
   Map<String, dynamic>? profile;
+  int coinBalance = 0;
+  bool walletLoading = false;
   List<DDPost> posts = [];
   int selectedTab = 0;
   bool loading = true;
@@ -191,6 +232,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
         if (mounted) {
           setState(() {
             profile = loadedProfile;
+            coinBalance =
+                int.tryParse('${loadedProfile['coinBalance'] ?? 0}') ?? 0;
             _avatarUrl = avatar;
             _tags = tags;
           });
