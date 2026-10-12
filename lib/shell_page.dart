@@ -2143,12 +2143,37 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                     ? _stableAvatar(myAvatarProvider)
                                     : peerTopBarAvatar;
                                 if (isCall) {
-                                  return _CallRecordBubble(
-                                    record: message,
-                                    currentUserId: currentUserId,
-                                    myAvatar: _stableAvatar(myAvatarProvider),
-                                    peerAvatar: peerTopBarAvatar,
-                                    onTap: () => _redialCall(message),
+                                  return Column(
+                                    children: [
+                                      if (showTime)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 8),
+                                          child: Center(
+                                            child: Text(
+                                              timeText,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 12),
+                                        child: _CallRecordBubble(
+                                          record: message,
+                                          currentUserId: currentUserId,
+                                          myAvatar:
+                                              _stableAvatar(myAvatarProvider),
+                                          peerAvatar: peerTopBarAvatar,
+                                          onTap: () => _redialCall(message),
+                                        ),
+                                      ),
+                                    ],
                                   );
                                 }
                                 return Column(
@@ -3151,49 +3176,53 @@ class _CallRecordBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = '${record['callerId'] ?? ''}' == currentUserId;
-    return Align(
-      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (!mine) ...[
-            CircleAvatar(radius: 15, backgroundImage: peerAvatar),
-            const SizedBox(width: 6),
-          ],
-          GestureDetector(
-            onTap: onTap,
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.sizeOf(context).width * 0.72,
-              ),
-              margin: EdgeInsets.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(mine ? 16 : 4),
-                  bottomRight: Radius.circular(mine ? 4 : 16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Align(
+        alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (!mine) ...[
+              CircleAvatar(radius: 15, backgroundImage: peerAvatar),
+              const SizedBox(width: 6),
+            ],
+            GestureDetector(
+              onTap: onTap,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.72,
+                ),
+                margin: EdgeInsets.zero,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: Radius.circular(mine ? 16 : 4),
+                    bottomRight: Radius.circular(mine ? 4 : 16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.call,
+                        size: 16, color: mine ? Colors.green : Colors.blue),
+                    const SizedBox(width: 6),
+                    Flexible(child: Text('语音通话 · ${_statusText()}')),
+                  ],
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.call,
-                      size: 16, color: mine ? Colors.green : Colors.blue),
-                  const SizedBox(width: 6),
-                  Flexible(child: Text('语音通话 · ${_statusText()}')),
-                ],
-              ),
             ),
-          ),
-          if (mine) ...[
-            const SizedBox(width: 6),
-            CircleAvatar(radius: 15, backgroundImage: myAvatar),
+            if (mine) ...[
+              const SizedBox(width: 6),
+              CircleAvatar(radius: 15, backgroundImage: myAvatar),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
