@@ -11,6 +11,16 @@ import 'package:sqflite/sqflite.dart';
 class ImLocalStore {
   static Database? _database;
 
+  static Map<String, dynamic>? _decodeMetadata(dynamic value) {
+    if (value is! String) return null;
+    try {
+      final decoded = jsonDecode(value);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static int? _parseInt(dynamic value) {
     if (value is num) return value.toInt();
     return int.tryParse('$value');
@@ -21,7 +31,7 @@ class ImLocalStore {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       path.join(root, 'friend_im.sqlite'),
-      version: 9,
+      version: 10,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE messages (
@@ -34,6 +44,7 @@ class ImLocalStore {
             callee_id TEXT,
             text TEXT NOT NULL,
             kind TEXT NOT NULL DEFAULT 'text',
+            metadata TEXT,
             duration_ms INTEGER NOT NULL DEFAULT 0,
             created_at TEXT,
             status TEXT NOT NULL DEFAULT 'sent',
@@ -70,6 +81,9 @@ class ImLocalStore {
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 10) {
+          await db.execute('ALTER TABLE messages ADD COLUMN metadata TEXT');
+        }
         if (oldVersion < 2) {
           await db.execute(
               "ALTER TABLE messages ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'");
@@ -142,6 +156,7 @@ class ImLocalStore {
         'calleeId': item['callee_id']?.toString(),
         'text': '${item['text'] ?? ''}',
         'kind': '${item['kind'] ?? 'text'}',
+        'metadata': _decodeMetadata(item['metadata']),
         if ('${item['kind'] ?? ''}' == 'call') '_timelineKind': 'call',
         'durationMs': _parseInt(item['duration_ms']) ?? 0,
         'createdAt': item['created_at'],
@@ -210,6 +225,9 @@ class ImLocalStore {
           'text': '${message['text'] ?? ''}',
           'kind':
               '${message['_timelineKind'] == 'call' ? 'call' : message['kind'] ?? 'text'}',
+          'metadata': message['metadata'] == null
+              ? null
+              : jsonEncode(message['metadata']),
           'duration_ms': (message['durationMs'] as num?)?.toInt() ?? 0,
           'created_at': '${message['createdAt'] ?? ''}',
           'status': '${message['status'] ?? 'sent'}',
@@ -510,6 +528,8 @@ class ImLocalStore {
         'client_id',
         'text',
         'kind',
+        'metadata',
+        'duration_ms',
         'retry_started_at',
         'retry_until',
         'retry_count',
@@ -525,6 +545,7 @@ class ImLocalStore {
               'clientId': '${row['client_id'] ?? ''}',
               'text': '${row['text'] ?? ''}',
               'kind': '${row['kind'] ?? 'text'}',
+              'metadata': _decodeMetadata(row['metadata']),
               'durationMs': (row['duration_ms'] as num?)?.toInt() ?? 0,
               'retryStartedAt': row['retry_started_at'],
               'retryUntil': row['retry_until'],

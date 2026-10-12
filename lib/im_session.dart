@@ -251,6 +251,7 @@ class ImSession {
             text: text,
             clientId: clientId,
             kind: kind,
+            metadata: item['metadata'] as Map<String, dynamic>?,
           );
           await ImLocalStore.reconcileAccepted(
             accountId: _userId!,
@@ -303,6 +304,7 @@ class ImSession {
             text: text,
             clientId: clientId,
             kind: kind,
+            metadata: item['metadata'] as Map<String, dynamic>?,
           );
           await ImLocalStore.reconcileAccepted(
             accountId: accountId,

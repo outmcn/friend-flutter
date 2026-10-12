@@ -733,6 +733,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool recordingVoice = false;
   bool cancelVoice = false;
   Offset? holdStartPosition;
+  bool sendingLocation = false;
   bool moreExpanded = false;
   bool emojiExpanded = false;
   bool avatarsReady = false;
@@ -1848,6 +1849,68 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  Future<void> _sendLocation() async {
+    if (sendingLocation) return;
+    if (blockedConversation) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('当前会话不可发送')));
+      return;
+    }
+    sendingLocation = true;
+    final service = DDPostService();
+    Map<String, dynamic>? pending;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) throw const ImLocationException('请先登录');
+      final location = await ImLocation.current();
+      if (!mounted) return;
+      final clientId = DateTime.now().microsecondsSinceEpoch.toString();
+      pending = {
+        'id': 'local:$clientId',
+        'clientId': clientId,
+        'conversationId': widget.chat.conversationId,
+        'senderId': currentUserId,
+        'kind': 'location',
+        'text': location.title,
+        'metadata': location.toMetadata(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'status': 'pending',
+        'retryUntil':
+            DateTime.now().add(const Duration(minutes: 1)).toIso8601String(),
+      };
+      _mergeMessage(pending);
+      await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: [pending]);
+      final sent = await service.sendImMessage(
+          token, widget.chat.conversationId,
+          text: location.title,
+          clientId: clientId,
+          kind: 'location',
+          metadata: location.toMetadata());
+      final accepted = {...pending, ...sent, 'status': 'sent'};
+      await ImLocalStore.saveMessages(
+          accountId: currentUserId,
+          conversationId: widget.chat.conversationId,
+          messages: [accepted]);
+      if (mounted) _mergeMessage(accepted, status: 'sent');
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(error is ImLocationException
+                ? error.message
+                : pending == null
+                    ? '获取位置失败，请稍后重试'
+                    : '位置发送失败，正在重试')));
+      }
+    } finally {
+      sendingLocation = false;
+      service.dispose();
+    }
+  }
+
   Future<void> _sendMessage() async {
     final text = messageController.text.trim();
     if (text.isEmpty) return;
@@ -1949,6 +2012,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       conversationId: conversationId,
       text: text,
       clientId: clientId,
+      kind: '${message['kind'] ?? 'text'}',
+      metadata: message['metadata'] as Map<String, dynamic>?,
     ));
   }
 
@@ -1957,6 +2022,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     required String conversationId,
     required String text,
     required String clientId,
+    String kind = 'text',
+    Map<String, dynamic>? metadata,
   }) async {
     if (token.isEmpty) return;
     final service = DDPostService();
@@ -1966,6 +2033,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         conversationId,
         text: text,
         clientId: clientId,
+        kind: kind,
+        metadata: metadata,
       );
       if (!mounted) return;
       _mergeMessage(sent, status: 'sent');
@@ -2403,34 +2472,34 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                                           .grey),
                                                                 )
                                                               : message['kind'] ==
-                                                                      'image'
-                                                                  ? _imageMessageBody(
-                                                                      message)
+                                                                      'location'
+                                                                  ? ImLocationCard(
+                                                                      metadata:
+                                                                          message[
+                                                                              'metadata'])
                                                                   : message['kind'] ==
-                                                                          'audio'
-                                                                      ? InkWell(
-                                                                          onTap: () =>
-                                                                              _playAudioMessage('${message['text'] ?? ''}'),
-                                                                          child:
-                                                                              SizedBox(
-                                                                            height:
-                                                                                24,
-                                                                            child:
-                                                                                Align(
-                                                                              alignment: Alignment.centerLeft,
-                                                                              child: Text(
-                                                                                playingAudioKey == '${message['text'] ?? ''}' ? '⏸ 播放中' : '🔊 播放语音',
-                                                                                style: Theme.of(context).textTheme.bodyLarge,
+                                                                          'image'
+                                                                      ? _imageMessageBody(
+                                                                          message)
+                                                                      : message['kind'] ==
+                                                                              'audio'
+                                                                          ? InkWell(
+                                                                              onTap: () => _playAudioMessage('${message['text'] ?? ''}'),
+                                                                              child: SizedBox(
+                                                                                height: 24,
+                                                                                child: Align(
+                                                                                  alignment: Alignment.centerLeft,
+                                                                                  child: Text(
+                                                                                    playingAudioKey == '${message['text'] ?? ''}' ? '⏸ 播放中' : '🔊 播放语音',
+                                                                                    style: Theme.of(context).textTheme.bodyLarge,
+                                                                                  ),
+                                                                                ),
                                                                               ),
+                                                                            )
+                                                                          : Text(
+                                                                              '${message['text'] ?? ''}',
+                                                                              style: Theme.of(context).textTheme.bodyLarge,
                                                                             ),
-                                                                          ),
-                                                                        )
-                                                                      : Text(
-                                                                          '${message['text'] ?? ''}',
-                                                                          style: Theme.of(context)
-                                                                              .textTheme
-                                                                              .bodyLarge,
-                                                                        ),
                                                         ),
                                                         if (status ==
                                                             'pending') ...[
@@ -2723,10 +2792,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                       _ComposerAction(
                         icon: Icons.location_on_outlined,
                         label: '位置',
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('位置消息暂未接入')),
-                        ),
+                        onPressed: _sendLocation,
                       ),
                     ],
                   ),

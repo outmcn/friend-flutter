@@ -210,6 +210,7 @@ class DDPostService {
     required String clientId,
     String kind = 'text',
     int durationMs = 0,
+    Map<String, dynamic>? metadata,
   }) async {
     final response = await _client.post(
       _api('/im/conversations/$conversationId/messages'),
@@ -222,6 +223,7 @@ class DDPostService {
         'clientId': clientId,
         'kind': kind,
         if (durationMs > 0) 'durationMs': durationMs,
+        if (metadata != null) 'metadata': metadata,
       }),
     );
     final data =
