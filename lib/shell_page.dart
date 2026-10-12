@@ -24,6 +24,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   final userSearchController = TextEditingController();
   List<_ChatPreview> conversations = [];
   StreamSubscription<Map<String, dynamic>>? listEvents;
+  Timer? incomingPoll;
+  bool incomingRequestRunning = false;
   bool loading = true;
   bool conversationCacheLoaded = false;
   String? loadError;
@@ -39,6 +41,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     unawaited(_loadConversations(showLoading: false));
     listEvents = ImSession.instance.events.listen(_handleListEvent);
+    incomingPoll = Timer.periodic(const Duration(seconds: 3),
+        (_) => unawaited(_loadCurrentRingingCall()));
   }
 
   @override
@@ -110,6 +114,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _loadCurrentRingingCall() async {
+    if (incomingRequestRunning || !mounted || callDialogShowing) return;
+    incomingRequestRunning = true;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty || !mounted) return;
@@ -132,6 +138,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     } catch (_) {
       // 当前响铃来电读取失败不影响聊天页面。
     } finally {
+      incomingRequestRunning = false;
       service.dispose();
     }
   }
@@ -329,6 +336,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    incomingPoll?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     messageController.dispose();
     userSearchController.dispose();
