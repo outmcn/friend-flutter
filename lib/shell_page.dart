@@ -1791,27 +1791,34 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       _showTopErrorBanner(context, '当前会话不可发送');
       return;
     }
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('发送位置'),
-        content: const Text('是否发送你的当前位置？'),
+        content: const Text('请选择要发送的位置'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
+            onPressed: () => Navigator.pop(dialogContext, 'current'),
+            child: const Text('当前位置'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('发送'),
+            onPressed: () => Navigator.pop(dialogContext, 'pick'),
+            child: const Text('选择其他位置'),
           ),
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed == null || !mounted) return;
+    final navigator = Navigator.of(context);
     sendingLocation = true;
     try {
-      final location = await ImLocation.current();
+      final location = confirmed == 'pick'
+          ? await navigator.push<ImLocation>(
+              MaterialPageRoute(builder: (_) => const ImLocationPickerPage()),
+            )
+          : await ImLocation.current();
+      if (!mounted) return;
+      if (location == null) return;
       await _sendMessagePayload(
         text: location.title,
         kind: 'location',

@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ImLocation {
@@ -42,24 +46,20 @@ class ImLocation {
   Uri get amapUrl => Uri.parse(
         'iosamap://viewMap?sourceApplication=Friend&lat=$latitude&lon=$longitude&poiname=${Uri.encodeComponent(title)}',
       );
-
   Uri get amapWebUrl => Uri.https('uri.amap.com', '/marker', {
         'position': '$longitude,$latitude',
         'name': title,
         'src': 'friend',
         'coordinate': 'gaode',
       });
-
   Uri get tencentUrl => Uri.parse(
         'qqmap://map/marker?marker=${Uri.encodeComponent('$latitude,$longitude')}&title=${Uri.encodeComponent(title)}&addr=${Uri.encodeComponent(address)}',
       );
-
   Uri get tencentWebUrl => Uri.https('apis.map.qq.com', '/uri/v1/marker', {
         'marker': '@$latitude,$longitude',
         'title': title,
         'addr': address,
       });
-
   Uri get mapsUrl => Uri.https('maps.apple.com', '/', {
         'll': '$latitude,$longitude',
         'q': title,
@@ -84,13 +84,18 @@ class ImLocation {
       desiredAccuracy: LocationAccuracy.high,
       timeLimit: const Duration(seconds: 20),
     );
-    var title = '当前位置';
+    return reverseGeocode(position.latitude, position.longitude);
+  }
+
+  static Future<ImLocation> reverseGeocode(double latitude, double longitude,
+      {String fallbackTitle = '选择的位置'}) async {
+    var title = fallbackTitle;
     var address = '地址暂不可用';
     try {
       final places = await Geocoding()
           .placemarkFromCoordinates(
-            position.latitude,
-            position.longitude,
+            latitude,
+            longitude,
             locale: const Locale('zh', 'CN'),
           )
           .timeout(const Duration(seconds: 8));
@@ -110,16 +115,151 @@ class ImLocation {
             .toSet();
         address = _label(parts.join(' '), address);
       }
-    } catch (_) {
-      // Coordinates remain usable when reverse geocoding is unavailable.
-    }
-    return ImLocation(position.latitude, position.longitude, title, address);
+    } catch (_) {}
+    return ImLocation(latitude, longitude, title, address);
   }
 }
 
 class ImLocationException implements Exception {
   const ImLocationException(this.message);
   final String message;
+}
+
+class ImLocationPickerPage extends StatefulWidget {
+  const ImLocationPickerPage({super.key});
+  @override
+  State<ImLocationPickerPage> createState() => _ImLocationPickerPageState();
+}
+
+class _ImLocationPickerPageState extends State<ImLocationPickerPage> {
+  final MapController _mapController = MapController();
+  ImLocation? _selected;
+  Timer? _reverseTimer;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadInitialLocation());
+  }
+
+  Future<void> _loadInitialLocation() async {
+    try {
+      final location = await ImLocation.current();
+      if (!mounted) return;
+      setState(() {
+        _selected = location;
+        _loading = false;
+      });
+      _mapController.move(LatLng(location.latitude, location.longitude), 16);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = '$error';
+        });
+      }
+    }
+  }
+
+  void _onMapMove(MapPosition position, bool _) {
+    final center = position.center;
+    if (center == null) return;
+    _reverseTimer?.cancel();
+    _reverseTimer = Timer(const Duration(milliseconds: 500), () async {
+      final location =
+          await ImLocation.reverseGeocode(center.latitude, center.longitude);
+      if (mounted) {
+        setState(() => _selected = location);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _reverseTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = _selected;
+    final center = selected == null
+        ? const LatLng(31.2304, 121.4737)
+        : LatLng(selected.latitude, selected.longitude);
+    return Scaffold(
+      appBar: AppBar(title: const Text('选择位置')),
+      body: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 16,
+              onPositionChanged: _onMapMove,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.outmcn.friend',
+              ),
+            ],
+          ),
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 36),
+              child: Icon(Icons.location_pin, color: Colors.red, size: 48),
+            ),
+          ),
+          if (_loading) const Center(child: CircularProgressIndicator()),
+          if (_error != null)
+            Align(
+              alignment: Alignment.topCenter,
+              child: Card(
+                margin: const EdgeInsets.all(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(_error!),
+                ),
+              ),
+            ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              child: Card(
+                margin: const EdgeInsets.all(12),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(selected?.title ?? '拖动地图选择位置',
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(selected?.address ?? '正在获取位置…',
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: selected == null
+                              ? null
+                              : () => Navigator.pop(context, selected),
+                          child: const Text('发送此位置'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class ImLocationCard extends StatelessWidget {
@@ -248,7 +388,6 @@ class ImLocationCard extends StatelessWidget {
 
 class _MapThumbnailPainter extends CustomPainter {
   const _MapThumbnailPainter();
-
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(
