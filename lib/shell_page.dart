@@ -1851,69 +1851,34 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   Future<void> _sendLocation() async {
     if (sendingLocation) return;
-    if (blockedConversation) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('当前会话不可发送')));
-      return;
-    }
     sendingLocation = true;
-    final service = DDPostService();
-    Map<String, dynamic>? pending;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('friend.auth.token') ?? '';
-      if (token.isEmpty) throw const ImLocationException('请先登录');
       final location = await ImLocation.current();
-      if (!mounted) return;
-      final clientId = DateTime.now().microsecondsSinceEpoch.toString();
-      pending = {
-        'id': 'local:$clientId',
-        'clientId': clientId,
-        'conversationId': widget.chat.conversationId,
-        'senderId': currentUserId,
-        'kind': 'location',
-        'text': location.title,
-        'metadata': location.toMetadata(),
-        'createdAt': DateTime.now().toIso8601String(),
-        'status': 'pending',
-        'retryUntil':
-            DateTime.now().add(const Duration(minutes: 1)).toIso8601String(),
-      };
-      _mergeMessage(pending);
-      await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: [pending]);
-      final sent = await service.sendImMessage(
-          token, widget.chat.conversationId,
-          text: location.title,
-          clientId: clientId,
-          kind: 'location',
-          metadata: location.toMetadata());
-      final accepted = {...pending, ...sent, 'status': 'sent'};
-      await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: [accepted]);
-      if (mounted) _mergeMessage(accepted, status: 'sent');
+      await _sendMessagePayload(
+        text: location.title,
+        kind: 'location',
+        metadata: location.toMetadata(),
+        failureMessage: '位置发送失败，正在重试',
+      );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(error is ImLocationException
-                ? error.message
-                : pending == null
-                    ? '获取位置失败，请稍后重试'
-                    : '位置发送失败，正在重试')));
+          content: Text(
+              error is ImLocationException ? error.message : '获取位置失败，请稍后重试'),
+        ));
       }
     } finally {
       sendingLocation = false;
-      service.dispose();
     }
   }
 
-  Future<void> _sendMessage() async {
-    final text = messageController.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _sendMessagePayload({
+    required String text,
+    String kind = 'text',
+    Map<String, dynamic>? metadata,
+    String? failureMessage,
+  }) async {
+    if (text.trim().isEmpty) return;
     if (blockedConversation) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1922,25 +1887,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
       return;
     }
+    final normalizedText = text.trim();
     final clientId = DateTime.now().microsecondsSinceEpoch.toString();
-    messageController.clear();
-    if (typing) {
-      typing = false;
-      typingTimer?.cancel();
-      ImSession.instance.socket?.sendTyping(
-          conversationId: widget.chat.conversationId, typing: false);
-    }
+    final now = DateTime.now();
     final pending = <String, dynamic>{
       'id': 'local:$clientId',
       'clientId': clientId,
       'senderId': currentUserId,
       'conversationId': widget.chat.conversationId,
-      'text': text,
-      'createdAt': DateTime.now().toIso8601String(),
+      'text': normalizedText,
+      'kind': kind,
+      if (metadata != null) 'metadata': metadata,
+      'createdAt': now.toIso8601String(),
       'status': 'pending',
-      'retryStartedAt': DateTime.now().toIso8601String(),
-      'retryUntil':
-          DateTime.now().add(const Duration(minutes: 1)).toIso8601String(),
+      'retryStartedAt': now.toIso8601String(),
+      'retryUntil': now.add(const Duration(minutes: 1)).toIso8601String(),
     };
     _mergeMessage(pending);
     await ImLocalStore.saveMessages(
@@ -1955,17 +1916,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       final sent = await service.sendImMessage(
         token,
         widget.chat.conversationId,
-        text: text,
+        text: normalizedText,
         clientId: clientId,
+        kind: kind,
+        metadata: metadata,
       );
-      _mergeMessage(sent, status: 'sent');
+      _mergeMessage({...pending, ...sent}, status: 'sent');
       await ImLocalStore.saveMessages(
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
         messages: messages,
       );
     } catch (_) {
-      if (!mounted) return;
       final index = messages
           .indexWhere((item) => '${item['clientId'] ?? ''}' == clientId);
       if (index >= 0) {
@@ -1980,15 +1942,27 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           messages: messages,
         );
       }
-      unawaited(_retryTextViaApi(
-        token: token,
-        conversationId: widget.chat.conversationId,
-        text: text,
-        clientId: clientId,
-      ));
+      // Keep the row pending; ImSession owns the single retry queue.
+      if (failureMessage != null && mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(failureMessage)));
+      }
     } finally {
       service.dispose();
     }
+  }
+
+  Future<void> _sendMessage() async {
+    final text = messageController.text.trim();
+    if (text.isEmpty) return;
+    messageController.clear();
+    if (typing) {
+      typing = false;
+      typingTimer?.cancel();
+      ImSession.instance.socket?.sendTyping(
+          conversationId: widget.chat.conversationId, typing: false);
+    }
+    await _sendMessagePayload(text: text);
   }
 
   Future<void> _retryMessage(Map<String, dynamic> message) async {
@@ -2028,14 +2002,23 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (token.isEmpty) return;
     final service = DDPostService();
     try {
-      final sent = await service.sendImMessage(
-        token,
-        conversationId,
-        text: text,
-        clientId: clientId,
-        kind: kind,
-        metadata: metadata,
-      );
+      Map<String, dynamic> sent;
+      try {
+        sent = await service.reconcilePending(
+          token,
+          conversationId,
+          clientId,
+        );
+      } on StateError {
+        sent = await service.sendImMessage(
+          token,
+          conversationId,
+          text: text,
+          clientId: clientId,
+          kind: kind,
+          metadata: metadata,
+        );
+      }
       if (!mounted) return;
       _mergeMessage(sent, status: 'sent');
       await ImLocalStore.saveMessages(

@@ -245,14 +245,23 @@ class ImSession {
         }
         final service = DDPostService();
         try {
-          final message = await service.sendImMessage(
-            _token!,
-            conversationId,
-            text: text,
-            clientId: clientId,
-            kind: kind,
-            metadata: item['metadata'] as Map<String, dynamic>?,
-          );
+          Map<String, dynamic> message;
+          try {
+            message = await service.reconcilePending(
+              _token!,
+              conversationId,
+              clientId,
+            );
+          } on StateError {
+            message = await service.sendImMessage(
+              _token!,
+              conversationId,
+              text: text,
+              clientId: clientId,
+              kind: kind,
+              metadata: item['metadata'] as Map<String, dynamic>?,
+            );
+          }
           await ImLocalStore.reconcileAccepted(
             accountId: _userId!,
             message: message,
