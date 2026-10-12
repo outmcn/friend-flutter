@@ -84,8 +84,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
     final deleted = await Navigator.push<bool>(
       context,
       PageRouteBuilder<bool>(
-        opaque: true,
-        barrierColor: Colors.transparent,
+        opaque: false,
+        barrierColor: null,
         transitionDuration: const Duration(milliseconds: 420),
         reverseTransitionDuration: const Duration(milliseconds: 360),
         pageBuilder: (_, __, ___) => DynamicDetailPage(

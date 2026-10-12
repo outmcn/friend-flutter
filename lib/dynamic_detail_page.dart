@@ -33,6 +33,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   final pendingActions = <String>{};
   final scroll = ScrollController();
   double _swipeOffset = 0;
+  double _swipeVerticalOffset = 0;
   bool _swipeTracking = false;
   bool _swipeClosing = false;
 
@@ -44,9 +45,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   void _onSwipeUpdate(DragUpdateDetails details) {
     if (!_swipeTracking || _swipeClosing) return;
     setState(() {
-      _swipeOffset += details.primaryDelta ?? details.delta.dx;
-      _swipeOffset = _swipeOffset.clamp(
-          -MediaQuery.sizeOf(context).width, MediaQuery.sizeOf(context).width);
+      _swipeOffset += details.delta.dx;
+      _swipeVerticalOffset += details.delta.dy;
+      final width = MediaQuery.sizeOf(context).width;
+      final height = MediaQuery.sizeOf(context).height;
+      _swipeOffset = _swipeOffset.clamp(-width, width);
+      _swipeVerticalOffset = _swipeVerticalOffset.clamp(-height, height);
     });
   }
 
@@ -55,15 +59,20 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     _swipeTracking = false;
     final width = MediaQuery.sizeOf(context).width;
     final velocity = details.primaryVelocity ?? 0;
-    final shouldClose =
-        _swipeOffset.abs() > width * .28 || velocity.abs() > 900;
+    final shouldClose = _swipeOffset > width * .28 || velocity > 900;
     if (shouldClose) {
       setState(() => _swipeClosing = true);
-      setState(() => _swipeOffset = _swipeOffset >= 0 ? width : -width);
+      setState(() {
+        _swipeOffset = width;
+        _swipeVerticalOffset = 0;
+      });
       await Future<void>.delayed(const Duration(milliseconds: 220));
       if (mounted) Navigator.pop(context);
     } else {
-      setState(() => _swipeOffset = 0);
+      setState(() {
+        _swipeOffset = 0;
+        _swipeVerticalOffset = 0;
+      });
     }
   }
 
@@ -636,6 +645,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _openShareMenu(DDPost item) async {
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -906,65 +916,27 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
   Widget build(BuildContext context) {
     final item = post;
     final width = MediaQuery.sizeOf(context).width;
-    final progress = (_swipeOffset.abs() / width).clamp(0.0, 1.0);
-    final scale = 1 - progress * .22;
+    final progress = (_swipeOffset / width).clamp(0.0, 1.0);
+    final scale = 1 - progress * .18;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragStart: _onSwipeStart,
       onHorizontalDragUpdate: _onSwipeUpdate,
       onHorizontalDragEnd: _onSwipeEnd,
       child: Transform.translate(
-        offset: Offset(_swipeOffset, 0),
+        offset: Offset(_swipeOffset, _swipeVerticalOffset),
         child: Transform.scale(
           scale: scale,
           alignment: Alignment.center,
           child: Scaffold(
+            backgroundColor: Colors.transparent,
             appBar: AppBar(
-              title: item == null
-                  ? const Text('动态详情')
-                  : InkWell(
-                      onTap: item.userId == null
-                          ? null
-                          : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => OtherProfilePage(
-                                    userId: item.userId,
-                                    name: item.nickname,
-                                  ),
-                                ),
-                              ),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Row(
-                        children: [
-                          ClipOval(
-                            child: SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: _PermanentCachedImage(
-                                url: item.avatar,
-                                fit: BoxFit.cover,
-                                placeholder: const Icon(Icons.person_outline),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(item.nickname,
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ),
-                        ],
-                      ),
-                    ),
-              actions: [
-                IconButton(
-                  tooltip: '分享',
-                  onPressed: item == null || deleting
-                      ? null
-                      : () => _openShareMenu(item),
-                  icon: Icon(TIcons.share_1),
-                ),
-              ],
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              automaticallyImplyLeading: false,
+              toolbarHeight: 0,
+              title: null,
+              actions: const [],
             ),
             body: item == null && loading
                 ? const Center(child: CircularProgressIndicator())
