@@ -479,34 +479,24 @@ class _DDProfilePageState extends State<DDProfilePage> {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        Container(
-                          height: 40,
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? Theme.of(context)
-                                        .colorScheme
-                                        .surfaceContainerHighest
-                                    : Colors.white.withValues(alpha: .72),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.groups_rounded,
-                                  size: 20, color: Color(0xffe6a51a)),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '俱乐部：${p?['clubName'] ?? p?['club'] ?? 'Free-Out地下说唱成员'}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w700),
-                                ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _ProfileActionButton(
+                                icon: Icons.account_balance_wallet_outlined,
+                                label: '钱包',
+                                onTap: () {},
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _ProfileActionButton(
+                                icon: Icons.backpack_outlined,
+                                label: '背包',
+                                onTap: () {},
+                              ),
+                            ),
+                          ],
                         ),
                       ]),
                     ),
@@ -536,6 +526,43 @@ class _DDProfilePageState extends State<DDProfilePage> {
             ),
     );
   }
+}
+
+class _ProfileActionButton extends StatelessWidget {
+  const _ProfileActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
+            : Colors.white.withValues(alpha: .72),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: SizedBox(
+            height: 40,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 19, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 7),
+                Text(label,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
+        ),
+      );
 }
 
 class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
