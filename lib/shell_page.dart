@@ -2,6 +2,26 @@ part of 'main.dart';
 
 final Map<String, ImageProvider> _avatarProviderCache = {};
 
+/// Shows recoverable chat errors at the top of the current page instead of
+/// placing them over the composer as a bottom SnackBar.
+void _showTopErrorBanner(BuildContext context, String message) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.hideCurrentMaterialBanner();
+  messenger.showMaterialBanner(
+    MaterialBanner(
+      leading: const Icon(Icons.error_outline, color: Colors.redAccent),
+      content: Text(message),
+      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+      actions: [
+        TextButton(
+          onPressed: messenger.hideCurrentMaterialBanner,
+          child: const Text('关闭'),
+        ),
+      ],
+    ),
+  );
+}
+
 ImageProvider _cachedAvatarProvider(String url) =>
     _avatarProviderCache.putIfAbsent(url, () => NetworkImage(url));
 
@@ -421,8 +441,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        _showTopErrorBanner(context, '$error');
       }
     }
   }
@@ -951,9 +970,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       activeCallId = null;
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$error')),
-        );
+        _showTopErrorBanner(context, '$error');
       }
     } finally {
       service.dispose();
@@ -1426,9 +1443,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       await recorder.dispose();
       holdRecorder = null;
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('没有麦克风权限')),
-        );
+        _showTopErrorBanner(context, '没有麦克风权限');
       }
       return;
     }
@@ -1502,8 +1517,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       activeCallId = null;
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        _showTopErrorBanner(context, '$error');
       }
     } finally {
       outgoingCallStarting = false;
@@ -1551,9 +1565,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$error')),
-        );
+        _showTopErrorBanner(context, '$error');
       }
     } finally {
       service.dispose();
@@ -1569,9 +1581,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final connected = ImSession.instance.isConnected;
     if (token.isEmpty || !connected) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('网络未连接，图片未发送')),
-        );
+        _showTopErrorBanner(context, '网络未连接，图片未发送');
       }
       return;
     }
@@ -1632,8 +1642,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        _showTopErrorBanner(context, '$error');
       }
     }
   }
@@ -1668,8 +1677,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        _showTopErrorBanner(context, '$error');
       }
     } finally {
       service.dispose();
@@ -1852,8 +1860,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Future<void> _sendLocation() async {
     if (sendingLocation) return;
     if (blockedConversation) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('当前会话不可发送')));
+      _showTopErrorBanner(context, '当前会话不可发送');
       return;
     }
     final confirmed = await showDialog<bool>(
@@ -1885,10 +1892,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              error is ImLocationException ? error.message : '获取位置失败，请稍后重试'),
-        ));
+        _showTopErrorBanner(
+          context,
+          error is ImLocationException ? error.message : '获取位置失败，请稍后重试',
+        );
       }
     } finally {
       sendingLocation = false;
@@ -1904,9 +1911,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (text.trim().isEmpty) return;
     if (blockedConversation) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('当前会话不可发送')),
-        );
+        _showTopErrorBanner(context, '当前会话不可发送');
       }
       return;
     }
@@ -1996,9 +2001,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         }
       }
       if (failureMessage != null && mounted && !reconciled) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(failureMessage)),
-        );
+        _showTopErrorBanner(context, failureMessage);
       }
     } finally {
       service.dispose();
@@ -2984,9 +2987,7 @@ class _ChatSettingsPageState extends State<_ChatSettingsPage> {
     } catch (error) {
       if (mounted) {
         setState(() => changingBlock = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$error')),
-        );
+        _showTopErrorBanner(context, '$error');
       }
     }
   }
@@ -3284,9 +3285,8 @@ class _AudioCallPageState extends State<_AudioCallPage> {
         method == 'remoteMuted') {
       if (mounted) setState(() {});
     } else if (method == 'error' && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('RTC 连接失败：${args is Map ? args['code'] : ''}')),
-      );
+      _showTopErrorBanner(
+          context, 'RTC 连接失败：${args is Map ? args['code'] : ''}');
     }
   }
 
@@ -3323,8 +3323,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
       if (mounted) setState(() => joined = true);
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        _showTopErrorBanner(context, '$error');
       }
     }
   }
