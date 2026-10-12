@@ -82,14 +82,30 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   Future<void> _open(DDPost post) async {
     final deleted = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DynamicDetailPage(
-            postId: post.id,
-            initialPost: post,
-            heroTag: 'dynamic-media-${post.id}',
-          ),
-        ));
+      context,
+      PageRouteBuilder<bool>(
+        opaque: true,
+        barrierColor: Colors.transparent,
+        transitionDuration: const Duration(milliseconds: 420),
+        reverseTransitionDuration: const Duration(milliseconds: 360),
+        pageBuilder: (_, __, ___) => DynamicDetailPage(
+          postId: post.id,
+          initialPost: post,
+          heroTag: 'dynamic-media-${post.id}',
+        ),
+        transitionsBuilder: (_, animation, __, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: child,
+          );
+        },
+      ),
+    );
     if (!mounted || deleted != true) return;
     for (final feed in feeds) {
       feed.posts.removeWhere((item) => item.id == post.id);

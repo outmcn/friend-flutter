@@ -700,20 +700,26 @@ class _DynamicDetailPageState extends State<DynamicDetailPage> {
               );
     return _heroMedia(
       child: Material(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            media,
-            if (item.content.isNotEmpty && image != null && image.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(item.content,
-                    style: const TextStyle(fontSize: 18, height: 1.5)),
-              ),
-          ],
+        type: MaterialType.transparency,
+        color: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              media,
+              if (item.content.isNotEmpty && image != null && image.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(item.content,
+                      style: const TextStyle(fontSize: 18, height: 1.5)),
+                ),
+            ],
+          ),
         ),
       ),
     );
