@@ -479,29 +479,33 @@ class _DDProfilePageState extends State<DDProfilePage> {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        Card(
-                          margin: EdgeInsets.zero,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                              : Colors.white.withValues(alpha: .72),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 2),
-                            leading: const Icon(Icons.groups_rounded,
-                                color: Color(0xffe6a51a)),
-                            title: Text(
-                              '${p?['clubName'] ?? p?['club'] ?? 'Free-Out地下说唱成员'}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                            subtitle: Text(
-                              '${p?['clubMemberCount'] ?? p?['clubCount'] ?? '28/30'}',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
+                        Container(
+                          height: 40,
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest
+                                    : Colors.white.withValues(alpha: .72),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.groups_rounded,
+                                  size: 20, color: Color(0xffe6a51a)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '俱乐部：${p?['clubName'] ?? p?['club'] ?? 'Free-Out地下说唱成员'}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ]),
