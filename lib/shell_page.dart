@@ -1678,7 +1678,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Future<void> _openChatSettings() async {
     final action = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) => _ChatSettingsPage(chatName: widget.chat.name),
+        builder: (_) => _ChatSettingsPage(
+          chatName: widget.chat.name,
+          peerUserId: widget.chat.peerUserId,
+          initiallyBlocked: blockedConversation,
+        ),
       ),
     );
     if (!mounted || action == null) return;
@@ -1716,11 +1720,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       final chatMessages =
           messages.where((item) => !ImCall.isCall(item)).toList();
       if (chatMessages.isNotEmpty) await _reportImMessage(chatMessages.last);
-    } else if (action == 'blacklist') {
+    } else if (action == 'blacklist' || action == 'unblacklist') {
       if (mounted) {
-        setState(() => blockedConversation = true);
+        setState(() => blockedConversation = action == 'blacklist');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('已加入黑名单，当前会话已禁止发送消息')),
+          SnackBar(
+            content: Text(action == 'blacklist' ? '已加入黑名单' : '已取消黑名单'),
+          ),
         );
       }
     }
@@ -2826,8 +2832,14 @@ class _ChatReportPageState extends State<_ChatReportPage> {
 }
 
 class _ChatSettingsPage extends StatefulWidget {
-  const _ChatSettingsPage({required this.chatName});
+  const _ChatSettingsPage({
+    required this.chatName,
+    required this.peerUserId,
+    required this.initiallyBlocked,
+  });
   final String chatName;
+  final String? peerUserId;
+  final bool initiallyBlocked;
 
   @override
   State<_ChatSettingsPage> createState() => _ChatSettingsPageState();
@@ -2836,6 +2848,35 @@ class _ChatSettingsPage extends StatefulWidget {
 class _ChatSettingsPageState extends State<_ChatSettingsPage> {
   bool pinned = false;
   bool muted = false;
+  late bool blocked = widget.initiallyBlocked;
+  bool changingBlock = false;
+
+  Future<void> _toggleBlock() async {
+    final peerId = int.tryParse(widget.peerUserId ?? '');
+    if (peerId == null || changingBlock) return;
+    setState(() => changingBlock = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      final service = DDPostService();
+      final next = await service.toggleUserBlock(token, peerId);
+      service.dispose();
+      if (mounted) {
+        setState(() {
+          blocked = next;
+          changingBlock = false;
+        });
+        Navigator.pop(context, next ? 'blacklist' : 'unblacklist');
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => changingBlock = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$error')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -2861,9 +2902,10 @@ class _ChatSettingsPageState extends State<_ChatSettingsPage> {
             ),
             const Divider(height: 1),
             ListTile(
-              leading: const Icon(Icons.block_outlined),
-              title: const Text('加入黑名单'),
-              onTap: () => Navigator.pop(context, 'blacklist'),
+              leading: Icon(
+                  blocked ? Icons.person_add_outlined : Icons.block_outlined),
+              title: Text(blocked ? '取消黑名单' : '加入黑名单'),
+              onTap: changingBlock ? null : _toggleBlock,
             ),
             ListTile(
               leading: const Icon(Icons.report_outlined),
