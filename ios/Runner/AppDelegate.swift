@@ -307,9 +307,7 @@ private final class NativeLocationPickerViewController: UIViewController, MKMapV
   }
 
   func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-    CLGeocoder().reverseGeocodeLocation(CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude)) { [weak self] placemarks, _ in
-      self?.currentAddress = placemarks?.first?.name
-    }
+    // 地址在点击发送时统一反向解析，避免拖动过程中保存过期地址。
   }
 
   override func viewDidDisappear(_ animated: Bool) {
