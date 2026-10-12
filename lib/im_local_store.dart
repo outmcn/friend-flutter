@@ -9,6 +9,11 @@ import 'package:sqflite/sqflite.dart';
 class ImLocalStore {
   static Database? _database;
 
+  static int? _parseInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse('$value');
+  }
+
   static Future<Database> _db() async {
     if (_database != null) return _database!;
     final root = await getDatabasesPath();
@@ -125,7 +130,7 @@ class ImLocalStore {
         'text': '${item['text'] ?? ''}',
         'kind': '${item['kind'] ?? 'text'}',
         if ('${item['kind'] ?? ''}' == 'call') '_timelineKind': 'call',
-        'durationMs': (item['duration_ms'] as num?)?.toInt() ?? 0,
+        'durationMs': _parseInt(item['duration_ms']) ?? 0,
         'createdAt': item['created_at'],
         'recalledAt': item['recalled_at'],
         'deletedAt': item['deleted_at'],

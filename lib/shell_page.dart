@@ -82,8 +82,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       'calleeId': raw['calleeId'] ?? raw['callee_id'],
       '_timelineKind': 'call',
       'kind': 'call',
-      'localDurationSeconds':
-          raw['localDurationSeconds'] ?? raw['local_duration_seconds'],
+      'localDurationSeconds': raw['localDurationSeconds'] ??
+          raw['local_duration_seconds'] ??
+          raw['durationSeconds'] ??
+          raw['duration_seconds'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           DateTime.now().toIso8601String(),
@@ -561,13 +563,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
 String _callPreviewStatus(Map<String, dynamic> row) {
   final status = '${row['status'] ?? ''}';
-  final durationSeconds = int.tryParse(
-    '${row['localDurationSeconds'] ?? row['local_duration_seconds'] ?? ''}',
-  );
+  final rawDuration = row['localDurationSeconds'] ??
+      row['local_duration_seconds'] ??
+      row['durationSeconds'] ??
+      row['duration_seconds'];
+  final durationSeconds =
+      rawDuration is num ? rawDuration.toInt() : int.tryParse('$rawDuration');
   if (durationSeconds != null) {
-    final duration =
-        '${(durationSeconds ~/ 60).toString().padLeft(2, '0')}:${(durationSeconds % 60).toString().padLeft(2, '0')}';
-    return '已接听 · 通话时间 $duration';
+    return '${(durationSeconds ~/ 60).toString().padLeft(2, '0')}:${(durationSeconds % 60).toString().padLeft(2, '0')}';
   }
   if (status == 'cancelled') return '已取消';
   if (status == 'rejected') return '已拒绝';
@@ -977,8 +980,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       'calleeId': raw['calleeId'] ?? raw['callee_id'],
       '_timelineKind': 'call',
       'kind': 'call',
-      'localDurationSeconds':
-          raw['localDurationSeconds'] ?? raw['local_duration_seconds'],
+      'localDurationSeconds': raw['localDurationSeconds'] ??
+          raw['local_duration_seconds'] ??
+          raw['durationSeconds'] ??
+          raw['duration_seconds'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           DateTime.now().toIso8601String(),
@@ -2984,8 +2989,10 @@ class _AudioCallPageState extends State<_AudioCallPage> {
           raw['calleeId'] ?? raw['callee_id'] ?? widget.call['calleeId'],
       '_timelineKind': 'call',
       'kind': 'call',
-      'localDurationSeconds':
-          raw['localDurationSeconds'] ?? raw['local_duration_seconds'],
+      'localDurationSeconds': raw['localDurationSeconds'] ??
+          raw['local_duration_seconds'] ??
+          raw['durationSeconds'] ??
+          raw['duration_seconds'],
       'createdAt': raw['startedAt'] ??
           raw['createdAt'] ??
           widget.call['startedAt'] ??
