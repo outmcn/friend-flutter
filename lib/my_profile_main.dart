@@ -1,5 +1,54 @@
 part of 'main.dart';
 
+class WalletPage extends StatelessWidget {
+  const WalletPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('钱包')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xff6d5dfc), Color(0xffa66cff)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('我的资产', style: TextStyle(color: Colors.white70)),
+                  SizedBox(height: 10),
+                  Text('0 金币',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text('充值'),
+            ),
+            const SizedBox(height: 12),
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('金币充值功能暂未接入支付'),
+                subtitle: Text('当前仅展示钱包页面，暂不产生真实订单。'),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
 class DDProfilePage extends StatefulWidget {
   const DDProfilePage({super.key});
   @override
@@ -485,7 +534,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               child: _ProfileActionButton(
                                 icon: Icons.account_balance_wallet_outlined,
                                 label: '钱包',
-                                onTap: () {},
+                                onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const WalletPage())),
                               ),
                             ),
                             const SizedBox(width: 12),
