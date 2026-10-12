@@ -2164,13 +2164,41 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                       Padding(
                                         padding:
                                             const EdgeInsets.only(bottom: 12),
-                                        child: _CallRecordBubble(
-                                          record: message,
-                                          currentUserId: currentUserId,
-                                          myAvatar:
-                                              _stableAvatar(myAvatarProvider),
-                                          peerAvatar: peerTopBarAvatar,
-                                          onTap: () => _redialCall(message),
+                                        child: Align(
+                                          alignment: isMine
+                                              ? Alignment.centerRight
+                                              : Alignment.centerLeft,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              if (!isMine) ...[
+                                                CircleAvatar(
+                                                    radius: 15,
+                                                    backgroundImage:
+                                                        bubbleAvatar),
+                                                const SizedBox(width: 6),
+                                              ],
+                                              _CallRecordBubble(
+                                                record: message,
+                                                currentUserId: currentUserId,
+                                                myAvatar: _stableAvatar(
+                                                    myAvatarProvider),
+                                                peerAvatar: peerTopBarAvatar,
+                                                onTap: () =>
+                                                    _redialCall(message),
+                                              ),
+                                              if (isMine) ...[
+                                                const SizedBox(width: 6),
+                                                CircleAvatar(
+                                                    radius: 15,
+                                                    backgroundImage:
+                                                        _stableAvatar(
+                                                            myAvatarProvider)),
+                                              ],
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -3176,51 +3204,32 @@ class _CallRecordBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = '${record['callerId'] ?? ''}' == currentUserId;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Align(
-        alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width * 0.72,
+        ),
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: mine
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(mine ? 16 : 4),
+            bottomRight: Radius.circular(mine ? 4 : 16),
+          ),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (!mine) ...[
-              CircleAvatar(radius: 15, backgroundImage: peerAvatar),
-              const SizedBox(width: 6),
-            ],
-            GestureDetector(
-              onTap: onTap,
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.sizeOf(context).width * 0.72,
-                ),
-                margin: EdgeInsets.zero,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(mine ? 16 : 4),
-                    bottomRight: Radius.circular(mine ? 4 : 16),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.call,
-                        size: 16, color: mine ? Colors.green : Colors.blue),
-                    const SizedBox(width: 6),
-                    Flexible(child: Text('语音通话 · ${_statusText()}')),
-                  ],
-                ),
-              ),
-            ),
-            if (mine) ...[
-              const SizedBox(width: 6),
-              CircleAvatar(radius: 15, backgroundImage: myAvatar),
-            ],
+            Icon(Icons.call,
+                size: 16, color: mine ? Colors.green : Colors.blue),
+            const SizedBox(width: 6),
+            Flexible(child: Text('语音通话 · ${_statusText()}')),
           ],
         ),
       ),
