@@ -1851,6 +1851,29 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   Future<void> _sendLocation() async {
     if (sendingLocation) return;
+    if (blockedConversation) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('当前会话不可发送')));
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('发送位置'),
+        content: const Text('是否发送你的当前位置？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('发送'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     sendingLocation = true;
     try {
       final location = await ImLocation.current();
