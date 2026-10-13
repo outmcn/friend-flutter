@@ -859,134 +859,140 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             ],
           );
         },
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            automaticallyImplyLeading: false,
-            leading: IconButton(
-              tooltip: '返回',
-              onPressed: _closeWithTransition,
-              icon: const Icon(Icons.arrow_back),
-            ),
-            title: item == null
-                ? const Text('动态详情')
-                : InkWell(
-                    onTap: item.userId == null
-                        ? null
-                        : () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => OtherProfilePage(
-                                  userId: item.userId,
-                                  name: item.nickname,
+        child: Material(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              surfaceTintColor: Colors.transparent,
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                tooltip: '返回',
+                onPressed: _closeWithTransition,
+                icon: const Icon(Icons.arrow_back),
+              ),
+              title: item == null
+                  ? const Text('动态详情')
+                  : InkWell(
+                      onTap: item.userId == null
+                          ? null
+                          : () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => OtherProfilePage(
+                                    userId: item.userId,
+                                    name: item.nickname,
+                                  ),
                                 ),
                               ),
-                            ),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Row(
-                      children: [
-                        ClipOval(
-                          child: SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: _PermanentCachedImage(
-                              url: item.avatar,
-                              fit: BoxFit.cover,
-                              placeholder: const Icon(Icons.person_outline),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Row(
+                        children: [
+                          ClipOval(
+                            child: SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: _PermanentCachedImage(
+                                url: item.avatar,
+                                fit: BoxFit.cover,
+                                placeholder: const Icon(Icons.person_outline),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(item.nickname,
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(item.nickname,
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-            actions: [
-              IconButton(
-                tooltip: '分享',
-                onPressed: item == null || deleting
-                    ? null
-                    : () => _openShareMenu(item),
-                icon: Icon(TIcons.share_1),
-              ),
-            ],
-          ),
-          body: Container(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: item == null && loading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                    onRefresh: load,
-                    child: ListView(
-                      controller: scroll,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      children: [
-                        if (error != null)
-                          _PageErrorState(
-                              title: '加载失败', subtitle: error!, onRetry: load),
-                        if (item != null) ...[
-                          if (item.imageUrl?.isNotEmpty == true) ...[
-                            _PostImageHolder(
-                              url: item.imageUrl!,
-                              unlimitedHeight: true,
-                            ),
-                          ],
-                          if (item.videoUrl?.isNotEmpty == true) ...[
-                            _NetworkVideoPreview(
-                              url: item.videoUrl!,
-                              thumbnailUrl: item.thumbnailUrl,
-                              unlimitedHeight: true,
-                            ),
-                          ],
-                          if (item.content.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                              child: Text(item.content,
-                                  style: const TextStyle(
-                                      fontSize: 18, height: 1.5)),
-                            ),
-                          const SizedBox(height: 16),
-                          const Divider(height: 32),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Text('评论',
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${item.comments}',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (comments.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
-                              child: Text('暂无评论'),
-                            )
-                          else
+              actions: [
+                IconButton(
+                  tooltip: '分享',
+                  onPressed: item == null || deleting
+                      ? null
+                      : () => _openShareMenu(item),
+                  icon: Icon(TIcons.share_1),
+                ),
+              ],
+            ),
+            body: Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: item == null && loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RefreshIndicator(
+                      onRefresh: load,
+                      child: ListView(
+                        controller: scroll,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        children: [
+                          if (error != null)
+                            _PageErrorState(
+                                title: '加载失败', subtitle: error!, onRetry: load),
+                          if (item != null) ...[
+                            if (item.imageUrl?.isNotEmpty == true) ...[
+                              _PostImageHolder(
+                                url: item.imageUrl!,
+                                unlimitedHeight: true,
+                              ),
+                            ],
+                            if (item.videoUrl?.isNotEmpty == true) ...[
+                              _NetworkVideoPreview(
+                                url: item.videoUrl!,
+                                thumbnailUrl: item.thumbnailUrl,
+                                unlimitedHeight: true,
+                              ),
+                            ],
+                            if (item.content.isNotEmpty)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                                child: Text(item.content,
+                                    style: const TextStyle(
+                                        fontSize: 18, height: 1.5)),
+                              ),
+                            const SizedBox(height: 16),
+                            const Divider(height: 32),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
-                              child: Column(
-                                children: _buildCommentTree(comments),
+                              child: Row(
+                                children: [
+                                  Text('评论',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '${item.comments}',
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                ],
                               ),
                             ),
+                            if (comments.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
+                                child: Text('暂无评论'),
+                              )
+                            else
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Column(
+                                  children: _buildCommentTree(comments),
+                                ),
+                              ),
+                          ],
                         ],
-                      ],
-                    )),
+                      )),
+            ),
+            bottomNavigationBar: item == null ? null : _composer(item),
           ),
-          bottomNavigationBar: item == null ? null : _composer(item),
         ),
       ),
     );
