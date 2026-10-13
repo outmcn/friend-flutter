@@ -11,7 +11,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
   final _cardKeys = <int, GlobalKey>{};
-  final _hiddenCards = <int>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
 
@@ -87,9 +86,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
     final box = key.currentContext?.findRenderObject() as RenderBox?;
     final topLeft = box?.localToGlobal(Offset.zero);
     final rect = box == null || topLeft == null ? null : topLeft & box.size;
-    if (mounted) {
-      setState(() => _hiddenCards.add(post.id));
-    }
     final deleted = await Navigator.push<bool>(
       context,
       PageRouteBuilder<bool>(
@@ -107,7 +103,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
       ),
     );
     if (!mounted) return;
-    setState(() => _hiddenCards.remove(post.id));
     if (deleted != true) return;
     for (final feed in feeds) {
       feed.posts.removeWhere((item) => item.id == post.id);
@@ -133,7 +128,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
       fullWidth: fullWidth,
       onLike: _like,
       onOpen: _open,
-      hidden: _hiddenCards.contains(post.id),
     );
   }
 
@@ -282,12 +276,10 @@ class _DiscoverFeedCard extends StatefulWidget {
     required this.fullWidth,
     required this.onLike,
     required this.onOpen,
-    required this.hidden,
   });
 
   final DiscoverFeed feed;
   final DDPost post;
-  final bool hidden;
   final bool fullWidth;
   final ValueChanged<DDPost> onLike;
   final ValueChanged<DDPost> onOpen;
@@ -330,13 +322,9 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard> {
       onLike: () => widget.onLike(post),
       onOpen: () => widget.onOpen(post),
     );
-    final visible = Opacity(
-      opacity: widget.hidden ? 0 : 1,
-      child: card,
-    );
     return widget.fullWidth
-        ? Padding(padding: const EdgeInsets.only(bottom: 8), child: visible)
-        : visible;
+        ? Padding(padding: const EdgeInsets.only(bottom: 8), child: card)
+        : card;
   }
 
   @override

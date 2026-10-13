@@ -140,6 +140,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       final screenCenter = Offset(screen.width / 2, screen.height / 2);
       _startOffset = rect.center - screenCenter;
     }
+    if (widget.initialRect == null) {
+      _startScale = 1;
+      _startOffset = Offset.zero;
+    }
     _geometryReady = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _rectController.forward();
