@@ -63,7 +63,20 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final shouldClose = _dragX > width * .28 || velocity > 900;
     if (shouldClose) {
       _closing = true;
-      if (mounted) Navigator.pop(context);
+      final releaseX = _dragX;
+      final releaseY = _dragY;
+      await _dragController.animateTo(
+        1,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOutCubic,
+      );
+      if (mounted) {
+        setState(() {
+          _dragX = releaseX;
+          _dragY = releaseY;
+        });
+        Navigator.pop(context);
+      }
       return;
     }
     await _dragController.animateTo(
@@ -871,8 +884,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   @override
   Widget build(BuildContext context) {
     final item = post;
-    final progress = Curves.easeOut.transform(_dragController.value);
-    final scale = 1 - .28 * progress;
+    final t = Curves.easeOut.transform(_dragController.value);
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onPanStart: _onPanStart,
@@ -890,7 +902,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             Transform.translate(
               offset: Offset(_dragX, _dragY),
               child: Transform.scale(
-                scale: scale,
+                scale: 1 - .28 * t,
                 alignment: Alignment.center,
                 child: child,
               ),
