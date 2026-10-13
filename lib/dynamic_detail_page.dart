@@ -909,114 +909,102 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           alignment: Alignment.center,
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: _swipeClosing
-                ? null
-                : AppBar(
-                    title: item == null
-                        ? const Text('动态详情')
-                        : InkWell(
-                            onTap: item.userId == null
-                                ? null
-                                : () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => OtherProfilePage(
-                                          userId: item.userId,
-                                          name: item.nickname,
-                                        ),
-                                      ),
-                                    ),
-                            borderRadius: BorderRadius.circular(20),
-                            child: Row(
-                              children: [
-                                ClipOval(
-                                  child: SizedBox(
-                                    width: 32,
-                                    height: 32,
-                                    child: _PermanentCachedImage(
-                                      url: item.avatar,
-                                      fit: BoxFit.cover,
-                                      placeholder:
-                                          const Icon(Icons.person_outline),
-                                    ),
+            appBar: AppBar(
+              title: item == null
+                  ? const Text('动态详情')
+                  : InkWell(
+                      onTap: item.userId == null
+                          ? null
+                          : () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => OtherProfilePage(
+                                    userId: item.userId,
+                                    name: item.nickname,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(item.nickname,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis),
+                              ),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Row(
+                        children: [
+                          ClipOval(
+                            child: SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: _PermanentCachedImage(
+                                url: item.avatar,
+                                fit: BoxFit.cover,
+                                placeholder: const Icon(Icons.person_outline),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(item.nickname,
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                      ),
+                    ),
+              actions: [
+                IconButton(
+                  tooltip: '分享',
+                  onPressed: item == null || deleting
+                      ? null
+                      : () => _openShareMenu(item),
+                  icon: Icon(TIcons.share_1),
+                ),
+              ],
+            ),
+            body: item == null && loading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: load,
+                    child: ListView(
+                      controller: scroll,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      children: [
+                        if (error != null)
+                          _PageErrorState(
+                              title: '加载失败', subtitle: error!, onRetry: load),
+                        if (item != null) ...[
+                          _heroBody(item),
+                          const SizedBox(height: 12),
+                          const Divider(height: 32),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                Text('评论',
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${item.comments}',
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
                                 ),
                               ],
                             ),
                           ),
-                    actions: [
-                      IconButton(
-                        tooltip: '分享',
-                        onPressed: item == null || deleting
-                            ? null
-                            : () => _openShareMenu(item),
-                        icon: Icon(TIcons.share_1),
-                      ),
-                    ],
-                  ),
-            body: _swipeClosing
-                ? const SizedBox.shrink()
-                : item == null && loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : RefreshIndicator(
-                        onRefresh: load,
-                        child: ListView(
-                          controller: scroll,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          children: [
-                            if (error != null)
-                              _PageErrorState(
-                                  title: '加载失败',
-                                  subtitle: error!,
-                                  onRetry: load),
-                            if (item != null) ...[
-                              _heroBody(item),
-                              const SizedBox(height: 12),
-                              const Divider(height: 32),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                child: Row(
-                                  children: [
-                                    Text('评论',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '${item.comments}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium,
-                                    ),
-                                  ],
-                                ),
+                          if (comments.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
+                              child: Text('暂无评论'),
+                            )
+                          else
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Column(
+                                children: _buildCommentTree(comments),
                               ),
-                              if (comments.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
-                                  child: Text('暂无评论'),
-                                )
-                              else
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16),
-                                  child: Column(
-                                    children: _buildCommentTree(comments),
-                                  ),
-                                ),
-                            ],
-                          ],
-                        )),
-            bottomNavigationBar:
-                _swipeClosing || item == null ? null : _composer(item),
+                            ),
+                        ],
+                      ],
+                    )),
+            bottomNavigationBar: item == null ? null : _composer(item),
           ),
         ),
       ),
