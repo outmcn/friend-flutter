@@ -83,19 +83,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   Future<void> _open(DDPost post) async {
     final key = _cardKeys.putIfAbsent(post.id, GlobalKey.new);
-    if (key.currentContext != null) {
-      await Scrollable.ensureVisible(
-        key.currentContext!,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.linear,
-      );
-      if (!mounted) return;
-    }
+    if (!mounted) return;
     final box = key.currentContext?.findRenderObject() as RenderBox?;
     final topLeft = box?.localToGlobal(Offset.zero);
-    final rect = box == null || topLeft == null ? null : topLeft & box.size;
-    final deleted = await Navigator.push<bool>(
+    final initialRect =
+        box == null || topLeft == null ? null : topLeft & box.size;
+    final routeFuture = Navigator.push<bool>(
       context,
       PageRouteBuilder<bool>(
         opaque: false,
@@ -105,18 +98,50 @@ class _DiscoverPageState extends State<DiscoverPage> {
         pageBuilder: (_, __, ___) => DynamicDetailPage(
           postId: post.id,
           initialPost: post,
-          initialRect: rect,
+          initialRect: initialRect,
           cardKey: key,
         ),
         transitionsBuilder: (_, __, ___, child) => child,
       ),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _revealCardEdgesOnly(key);
+    });
+    final deleted = await routeFuture;
     if (!mounted) return;
     if (deleted != true) return;
     for (final feed in feeds) {
       feed.posts.removeWhere((item) => item.id == post.id);
     }
     feeds[selectedTab].markChanged();
+  }
+
+  void _revealCardEdgesOnly(GlobalKey key) {
+    final cardContext = key.currentContext;
+    final cardBox = cardContext?.findRenderObject() as RenderBox?;
+    final scrollable =
+        cardContext == null ? null : Scrollable.maybeOf(cardContext);
+    if (cardBox == null ||
+        scrollable == null ||
+        !scrollable.position.hasPixels) {
+      return;
+    }
+    final top = cardBox.localToGlobal(Offset.zero).dy;
+    final bottom = top + cardBox.size.height;
+    final media = MediaQuery.sizeOf(context);
+    final topInset = kToolbarHeight + MediaQuery.paddingOf(context).top;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    var delta = 0.0;
+    if (top < topInset) delta = top - topInset;
+    if (bottom > media.height - bottomInset) {
+      delta = bottom - (media.height - bottomInset);
+    }
+    if (delta == 0) return;
+    final position = scrollable.position;
+    position.jumpTo((position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    ));
   }
 
   Widget _card(DiscoverFeed feed, int index, {bool fullWidth = false}) {
