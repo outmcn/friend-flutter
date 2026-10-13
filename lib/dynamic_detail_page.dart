@@ -740,9 +740,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final tag = widget.heroTag;
     if (tag == null || tag.isEmpty) return child;
     return Hero(
-      tag: tag,
+      tag: 'dynamic-card-${widget.postId}',
       createRectTween: (begin, end) => RectTween(begin: begin, end: end),
-      placeholderBuilder: (context, size, child) => child,
       child: child,
     );
   }

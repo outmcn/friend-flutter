@@ -344,13 +344,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     return 4 / 3;
   }
 
-  Widget _heroMedia({required Widget child}) {
-    return Hero(
-      tag: 'dynamic-card-${post.id}',
-      createRectTween: (begin, end) => RectTween(begin: begin, end: end),
-      child: child,
-    );
-  }
+  Widget _heroMedia({required Widget child}) => child;
 
   Widget _stableMedia({required String url, required bool thumbnail}) =>
       ConstrainedBox(
