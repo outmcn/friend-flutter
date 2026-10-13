@@ -35,8 +35,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   final pendingActions = <String>{};
   final scroll = ScrollController();
   late final AnimationController _rectController;
-  double _startScale = 0.92;
-  Offset _startOffset = Offset.zero;
+  double _startLeft = 0;
+  double _startTop = 0;
+  double _startWidth = 0;
   bool _dragging = false;
   bool _closing = false;
 
@@ -76,10 +77,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         ? null
         : liveTopLeft & liveBox.size;
     if (liveRect != null && liveRect.width > 0) {
-      final screen = MediaQuery.sizeOf(context);
-      _startScale = (liveRect.width / screen.width).clamp(0.05, 1.0).toDouble();
-      _startOffset =
-          liveRect.center - Offset(screen.width / 2, screen.height / 2);
+      _startWidth = liveRect.width;
+      _startLeft = liveRect.left;
+      _startTop = liveRect.top;
     }
     await _rectController.animateTo(
       0,
@@ -99,10 +99,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         ? null
         : liveTopLeft & liveBox.size;
     if (liveRect != null && liveRect.width > 0) {
-      final screen = MediaQuery.sizeOf(context);
-      _startScale = (liveRect.width / screen.width).clamp(0.05, 1.0).toDouble();
-      _startOffset =
-          liveRect.center - Offset(screen.width / 2, screen.height / 2);
+      _startWidth = liveRect.width;
+      _startLeft = liveRect.left;
+      _startTop = liveRect.top;
     }
     await _rectController.animateTo(
       0,
@@ -130,18 +129,15 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       value: 0,
     );
     post = widget.initialPost;
-    final screen = MediaQuery.sizeOf(context);
     final rect = widget.initialRect;
     if (rect != null && rect.width > 0) {
-      final scaleX = rect.width / screen.width;
-      final scaleY = rect.height / screen.height;
-      _startScale = scaleX < scaleY ? scaleX : scaleY;
-      final screenCenter = Offset(screen.width / 2, screen.height / 2);
-      _startOffset = rect.center - screenCenter;
+      _startWidth = rect.width;
+      _startLeft = rect.left;
+      _startTop = rect.top;
     }
     if (widget.initialRect == null) {
-      _startScale = 1;
-      _startOffset = Offset.zero;
+      _startLeft = 0;
+      _startTop = 0;
     }
     _rectController.forward();
     load();
@@ -833,11 +829,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         animation: _rectController,
         builder: (context, child) {
           final t = Curves.easeOutCubic.transform(_rectController.value);
-          final scale = _startScale + (1 - _startScale) * t;
-          final offset = Offset(
-            _startOffset.dx * (1 - t),
-            _startOffset.dy * (1 - t),
-          );
+          final screen = MediaQuery.sizeOf(context);
+          final left = _startLeft * (1 - t);
+          final top = _startTop * (1 - t);
+          final width = _startWidth + (screen.width - _startWidth) * t;
+          final scale = width / screen.width;
+          final offset = Offset(left, top);
           final radius = 14 * (1 - t);
           final opacity = 0.35 * (1 - t);
           return Stack(
