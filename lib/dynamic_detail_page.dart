@@ -39,7 +39,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   Offset _startOffset = Offset.zero;
   bool _dragging = false;
   bool _closing = false;
-  bool _geometryReady = false;
 
   void _onDragStart(DragStartDetails details) {
     if (loading || _closing) return;
@@ -144,10 +143,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       _startScale = 1;
       _startOffset = Offset.zero;
     }
-    _geometryReady = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _rectController.forward();
-    });
+    _rectController.forward();
     load();
     if (widget.focusComment) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -827,9 +823,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    if (!_geometryReady) {
-      return const SizedBox.expand();
-    }
     final item = post;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
@@ -867,7 +860,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           );
         },
         child: Material(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          type: MaterialType.transparency,
+          color: Colors.transparent,
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
