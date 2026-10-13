@@ -87,6 +87,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
     final box = key.currentContext?.findRenderObject() as RenderBox?;
     final topLeft = box?.localToGlobal(Offset.zero);
     final rect = box == null || topLeft == null ? null : topLeft & box.size;
+    if (mounted) {
+      setState(() => _hiddenCards.add(post.id));
+    }
     final deleted = await Navigator.push<bool>(
       context,
       PageRouteBuilder<bool>(
