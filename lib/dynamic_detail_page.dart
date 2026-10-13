@@ -51,12 +51,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       _swipeVerticalOffset += details.delta.dy;
       final width = MediaQuery.sizeOf(context).width;
       final height = MediaQuery.sizeOf(context).height;
-      _swipeOffset = _swipeOffset.clamp(-width, width);
+      _swipeOffset = _swipeOffset.clamp(0.0, width);
       _swipeVerticalOffset = _swipeVerticalOffset.clamp(-height, height);
-      _swipeScale = 1 -
-          ((_swipeOffset > 0 ? _swipeOffset : 0).abs() / width)
-                  .clamp(0.0, 1.0) *
-              .28;
+      _swipeScale = 1 - (_swipeOffset / width).clamp(0.0, 1.0) * .32;
     });
   }
 
@@ -64,7 +61,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     if (!_swipeTracking || _swipeClosing) return;
     _swipeTracking = false;
     final width = MediaQuery.sizeOf(context).width;
-    final velocity = details.primaryVelocity ?? 0;
+    final velocity = details.velocity.pixelsPerSecond.dx;
     final shouldClose = _swipeOffset > width * .28 || velocity > 900;
     if (shouldClose) {
       setState(() => _swipeClosing = true);
@@ -931,9 +928,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final scale = _swipeScale;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onHorizontalDragStart: _onSwipeStart,
-      onHorizontalDragUpdate: _onSwipeUpdate,
-      onHorizontalDragEnd: _onSwipeEnd,
+      onPanStart: _onSwipeStart,
+      onPanUpdate: _onSwipeUpdate,
+      onPanEnd: _onSwipeEnd,
       child: Transform.translate(
         offset: Offset(_swipeOffset, _swipeVerticalOffset),
         child: Transform.scale(
