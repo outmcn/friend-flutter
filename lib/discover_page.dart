@@ -186,6 +186,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          surfaceTintColor: Colors.transparent,
+          toolbarHeight: kToolbarHeight,
           titleSpacing: 16,
           title: Row(
             children: ['推荐', _discoverLocalTabLabel, '关注']
