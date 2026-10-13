@@ -33,68 +33,66 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   bool refreshing = false;
   final pendingActions = <String>{};
   final scroll = ScrollController();
-  double _swipeOffset = 0;
-  double _swipeVerticalOffset = 0;
-  double _swipeScale = 1;
-  bool _swipeTracking = false;
-  bool _swipeClosing = false;
+  late final AnimationController _dragController;
+  double _dragX = 0;
+  double _dragY = 0;
+  bool _dragging = false;
+  bool _closing = false;
 
-  void _onSwipeStart(DragStartDetails details) {
-    if (loading || _swipeClosing) return;
-    _swipeTracking = true;
+  void _onPanStart(DragStartDetails details) {
+    if (loading || _closing) return;
+    _dragging = true;
   }
 
-  void _onSwipeUpdate(DragUpdateDetails details) {
-    if (!_swipeTracking || _swipeClosing) return;
+  void _onPanUpdate(DragUpdateDetails details) {
+    if (!_dragging || _closing) return;
+    final width = MediaQuery.sizeOf(context).width;
+    final height = MediaQuery.sizeOf(context).height;
     setState(() {
-      _swipeOffset += details.delta.dx;
-      _swipeVerticalOffset += details.delta.dy;
-      final width = MediaQuery.sizeOf(context).width;
-      final height = MediaQuery.sizeOf(context).height;
-      _swipeOffset = _swipeOffset.clamp(0.0, width);
-      _swipeVerticalOffset = _swipeVerticalOffset.clamp(-height, height);
-      _swipeScale = 1 - (_swipeOffset / width).clamp(0.0, 1.0) * .32;
+      _dragX = (_dragX + details.delta.dx).clamp(0.0, width);
+      _dragY = (_dragY + details.delta.dy).clamp(-height, height);
+      _dragController.value = (_dragX / width).clamp(0.0, 1.0);
     });
   }
 
-  Future<void> _onSwipeEnd(DragEndDetails details) async {
-    if (!_swipeTracking || _swipeClosing) return;
-    _swipeTracking = false;
+  Future<void> _onPanEnd(DragEndDetails details) async {
+    if (!_dragging || _closing) return;
+    _dragging = false;
     final width = MediaQuery.sizeOf(context).width;
     final velocity = details.velocity.pixelsPerSecond.dx;
-    final shouldClose = _swipeOffset > width * .28 || velocity > 900;
+    final shouldClose = _dragX > width * .28 || velocity > 900;
     if (shouldClose) {
-      setState(() => _swipeClosing = true);
-      if (mounted) Navigator.pop(context);
-    } else {
-      await _animateSwipeBack();
-    }
-  }
-
-  Future<void> _animateSwipeBack() async {
-    final controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 280),
-    );
-    final beginX = _swipeOffset;
-    final beginY = _swipeVerticalOffset;
-    final beginScale = _swipeScale;
-    try {
-      final animation = CurvedAnimation(
-        parent: controller,
-        curve: Curves.easeOutBack,
-      );
-      animation.addListener(() {
-        if (!mounted) return;
-        setState(() {
-          _swipeOffset = beginX * (1 - animation.value);
-          _swipeVerticalOffset = beginY * (1 - animation.value);
-          _swipeScale = beginScale + (1 - beginScale) * animation.value;
+      _closing = true;
+      final beginX = _dragX;
+      final beginY = _dragY;
+      _dragController
+        ..value = (beginX / width).clamp(0.0, 1.0)
+        ..addListener(() {
+          if (!mounted) return;
+          final t = _dragController.value;
+          setState(() {
+            _dragX = beginX + (width - beginX) * t;
+            _dragY = beginY * (1 - t);
+          });
         });
+      await _dragController.animateTo(
+        1,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOutCubic,
+      );
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+    await _dragController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+    if (mounted) {
+      setState(() {
+        _dragX = 0;
+        _dragY = 0;
       });
-      await controller.forward();
-    } finally {
-      controller.dispose();
     }
   }
 
@@ -111,6 +109,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   @override
   void initState() {
     super.initState();
+    _dragController = AnimationController(vsync: this, value: 0);
     post = widget.initialPost;
     load();
     if (widget.focusComment) {
@@ -122,6 +121,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   @override
   void dispose() {
+    _dragController.dispose();
     scroll.dispose();
     commentFocusNode.dispose();
     commentController.dispose();
@@ -896,117 +896,128 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   @override
   Widget build(BuildContext context) {
     final item = post;
-    final scale = _swipeScale;
+    final progress = Curves.easeOut.transform(_dragController.value);
+    final scale = 1 - .28 * progress;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onPanStart: _onSwipeStart,
-      onPanUpdate: _onSwipeUpdate,
-      onPanEnd: _onSwipeEnd,
-      child: Transform.translate(
-        offset: Offset(_swipeOffset, _swipeVerticalOffset),
-        child: Transform.scale(
-          scale: scale,
-          alignment: Alignment.center,
-          child: Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: AppBar(
-              title: item == null
-                  ? const Text('动态详情')
-                  : InkWell(
-                      onTap: item.userId == null
-                          ? null
-                          : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => OtherProfilePage(
-                                    userId: item.userId,
-                                    name: item.nickname,
-                                  ),
+      onPanStart: _onPanStart,
+      onPanUpdate: _onPanUpdate,
+      onPanEnd: _onPanEnd,
+      child: AnimatedBuilder(
+        animation: _dragController,
+        builder: (context, child) => Stack(
+          children: [
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ColoredBox(color: Colors.transparent),
+              ),
+            ),
+            Transform.translate(
+              offset: Offset(_dragX, _dragY),
+              child: Transform.scale(
+                scale: scale,
+                alignment: Alignment.center,
+                child: child,
+              ),
+            ),
+          ],
+        ),
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            title: item == null
+                ? const Text('动态详情')
+                : InkWell(
+                    onTap: item.userId == null
+                        ? null
+                        : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => OtherProfilePage(
+                                  userId: item.userId,
+                                  name: item.nickname,
                                 ),
                               ),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Row(
-                        children: [
-                          ClipOval(
-                            child: SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: _PermanentCachedImage(
-                                url: item.avatar,
-                                fit: BoxFit.cover,
-                                placeholder: const Icon(Icons.person_outline),
-                              ),
+                            ),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Row(
+                      children: [
+                        ClipOval(
+                          child: SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: _PermanentCachedImage(
+                              url: item.avatar,
+                              fit: BoxFit.cover,
+                              placeholder: const Icon(Icons.person_outline),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(item.nickname,
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(item.nickname,
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
+                      ],
                     ),
-              actions: [
-                IconButton(
-                  tooltip: '分享',
-                  onPressed: item == null || deleting
-                      ? null
-                      : () => _openShareMenu(item),
-                  icon: Icon(TIcons.share_1),
-                ),
-              ],
-            ),
-            body: item == null && loading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                    onRefresh: load,
-                    child: ListView(
-                      controller: scroll,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      children: [
-                        if (error != null)
-                          _PageErrorState(
-                              title: '加载失败', subtitle: error!, onRetry: load),
-                        if (item != null) ...[
-                          _heroBody(item),
-                          const SizedBox(height: 12),
-                          const Divider(height: 32),
+                  ),
+            actions: [
+              IconButton(
+                tooltip: '分享',
+                onPressed: item == null || deleting
+                    ? null
+                    : () => _openShareMenu(item),
+                icon: Icon(TIcons.share_1),
+              ),
+            ],
+          ),
+          body: item == null && loading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: load,
+                  child: ListView(
+                    controller: scroll,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    children: [
+                      if (error != null)
+                        _PageErrorState(
+                            title: '加载失败', subtitle: error!, onRetry: load),
+                      if (item != null) ...[
+                        _heroBody(item),
+                        const SizedBox(height: 12),
+                        const Divider(height: 32),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Text('评论',
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${item.comments}',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (comments.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
+                            child: Text('暂无评论'),
+                          )
+                        else
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Text('评论',
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${item.comments}',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ],
+                            child: Column(
+                              children: _buildCommentTree(comments),
                             ),
                           ),
-                          if (comments.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
-                              child: Text('暂无评论'),
-                            )
-                          else
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Column(
-                                children: _buildCommentTree(comments),
-                              ),
-                            ),
-                        ],
                       ],
-                    )),
-            bottomNavigationBar:
-                _swipeClosing || item == null ? null : _composer(item),
-          ),
+                    ],
+                  )),
+          bottomNavigationBar: item == null ? null : _composer(item),
         ),
       ),
     );
