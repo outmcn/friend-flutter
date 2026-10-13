@@ -328,7 +328,10 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard> {
       onLike: () => widget.onLike(post),
       onOpen: () => widget.onOpen(post),
     );
-    final visible = widget.hidden ? const SizedBox.shrink() : card;
+    final visible = Opacity(
+      opacity: widget.hidden ? 0 : 1,
+      child: card,
+    );
     return widget.fullWidth
         ? Padding(padding: const EdgeInsets.only(bottom: 8), child: visible)
         : visible;
