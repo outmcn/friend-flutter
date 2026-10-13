@@ -64,7 +64,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     if (!shouldClose) {
       await _rectController.animateTo(
         1,
-        duration: const Duration(milliseconds: 220),
+        duration: const Duration(milliseconds: 160),
         curve: Curves.linear,
       );
       return;
@@ -84,7 +84,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     }
     await _rectController.animateTo(
       0,
-      duration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 180),
       curve: Curves.linear,
     );
     if (mounted) Navigator.pop(context);
@@ -107,7 +107,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     }
     await _rectController.animateTo(
       0,
-      duration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 180),
       curve: Curves.linear,
     );
     if (mounted) Navigator.pop(context);
@@ -127,7 +127,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     super.initState();
     _rectController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 220),
       value: 0,
     );
     post = widget.initialPost;
