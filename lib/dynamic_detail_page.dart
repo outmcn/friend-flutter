@@ -63,20 +63,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final shouldClose = _dragX > width * .28 || velocity > 900;
     if (shouldClose) {
       _closing = true;
-      final releaseX = _dragX;
-      final releaseY = _dragY;
       await _dragController.animateTo(
         1,
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeInOutCubic,
       );
-      if (mounted) {
-        setState(() {
-          _dragX = releaseX;
-          _dragY = releaseY;
-        });
-        Navigator.pop(context);
-      }
+      if (mounted) Navigator.pop(context);
       return;
     }
     await _dragController.animateTo(
