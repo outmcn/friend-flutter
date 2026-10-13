@@ -846,24 +846,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             _startOffset.dy * (1 - t),
           );
           final radius = 14 * (1 - t);
-          final opacity = 0.35 * (1 - t);
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: ColoredBox(
-                    color: Color.fromRGBO(0, 0, 0, opacity),
-                  ),
-                ),
-              ),
-              Transform.translate(
-                offset: offset,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(radius),
-                  child: Transform.scale(scale: scale, child: child),
-                ),
-              ),
-            ],
+          return Transform.translate(
+            offset: offset,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radius),
+              child: Transform.scale(scale: scale, child: child),
+            ),
           );
         },
         child: Material(
