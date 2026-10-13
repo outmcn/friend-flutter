@@ -39,6 +39,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   Offset _startOffset = Offset.zero;
   bool _dragging = false;
   bool _closing = false;
+  bool _geometryReady = false;
 
   void _onDragStart(DragStartDetails details) {
     if (loading || _closing) return;
@@ -130,11 +131,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       value: 0,
     );
     post = widget.initialPost;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _rectController.forward();
-      }
-    });
     final screen = MediaQuery.sizeOf(context);
     final rect = widget.initialRect;
     if (rect != null && rect.width > 0) {
@@ -144,6 +140,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       final screenCenter = Offset(screen.width / 2, screen.height / 2);
       _startOffset = rect.center - screenCenter;
     }
+    _geometryReady = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _rectController.forward();
+    });
     load();
     if (widget.focusComment) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -823,6 +823,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   @override
   Widget build(BuildContext context) {
+    if (!_geometryReady) {
+      return const SizedBox.expand();
+    }
     final item = post;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
