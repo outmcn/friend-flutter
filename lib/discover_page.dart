@@ -105,7 +105,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       ),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _revealCardEdgesOnly(key);
+      if (mounted) _revealCardEdgesOnly(key, feeds[selectedTab].scroll);
     });
     final deleted = await routeFuture;
     if (!mounted) return;
@@ -116,14 +116,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
     feeds[selectedTab].markChanged();
   }
 
-  void _revealCardEdgesOnly(GlobalKey key) {
+  void _revealCardEdgesOnly(GlobalKey key, ScrollController scroll) {
     final cardContext = key.currentContext;
     final cardBox = cardContext?.findRenderObject() as RenderBox?;
-    final scrollable =
-        cardContext == null ? null : Scrollable.maybeOf(cardContext);
-    if (cardBox == null ||
-        scrollable == null ||
-        !scrollable.position.hasPixels) {
+    if (cardBox == null || !scroll.hasClients) {
       return;
     }
     final top = cardBox.localToGlobal(Offset.zero).dy;
@@ -137,7 +133,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       delta = bottom - (media.height - bottomInset);
     }
     if (delta == 0) return;
-    final position = scrollable.position;
+    final position = scroll.position;
     position.jumpTo((position.pixels + delta).clamp(
       position.minScrollExtent,
       position.maxScrollExtent,
