@@ -65,7 +65,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       await _rectController.animateTo(
         1,
         duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
+        curve: Curves.linear,
       );
       return;
     }
@@ -85,7 +85,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     await _rectController.animateTo(
       0,
       duration: const Duration(milliseconds: 240),
-      curve: Curves.easeOut,
+      curve: Curves.linear,
     );
     if (mounted) Navigator.pop(context);
   }
@@ -108,7 +108,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     await _rectController.animateTo(
       0,
       duration: const Duration(milliseconds: 240),
-      curve: Curves.easeOut,
+      curve: Curves.linear,
     );
     if (mounted) Navigator.pop(context);
   }
@@ -839,7 +839,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       child: AnimatedBuilder(
         animation: _rectController,
         builder: (context, child) {
-          final t = Curves.easeOutCubic.transform(_rectController.value);
+          final t = _rectController.value;
           final scale = _startScale + (1 - _startScale) * t;
           final offset = Offset(
             _startOffset.dx * (1 - t),
