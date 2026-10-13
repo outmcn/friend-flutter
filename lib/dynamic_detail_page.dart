@@ -52,6 +52,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       value: 0,
     );
     post = widget.initialPost;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _rectController.forward();
+      }
+    });
     load();
     if (widget.focusComment) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
