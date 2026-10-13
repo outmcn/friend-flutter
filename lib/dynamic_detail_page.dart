@@ -719,15 +719,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     );
   }
 
-  Widget _heroMedia({required Widget child}) {
-    final tag = widget.heroTag;
-    if (tag == null || tag.isEmpty) return child;
-    return Hero(
-      tag: 'dynamic-card-${widget.postId}',
-      createRectTween: (begin, end) => RectTween(begin: begin, end: end),
-      child: child,
-    );
-  }
+  Widget _heroMedia({required Widget child}) => child;
 
   List<String> _topics(DDPost item) {
     final matches = RegExp(r'#([^#\s]+)').allMatches(item.content);
