@@ -167,7 +167,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       title: '动态加载失败',
                       subtitle: feed.error!,
                       onRetry: () => feed.load(refresh: !feed.hasMore))
-                  : feed.busy
+                  : feed.busy && feed.posts.isEmpty
                       ? const Center(child: CircularProgressIndicator())
                       : feed.posts.isEmpty
                           ? const Center(child: Text('暂无动态'))
