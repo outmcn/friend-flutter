@@ -130,15 +130,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     );
     post = widget.initialPost;
     final rect = widget.initialRect;
-    final screen = MediaQuery.sizeOf(context);
-    if (rect != null && rect.width > 0 && rect.height > 0) {
+    if (rect != null && rect.width > 0) {
       _startWidth = rect.width;
       _startLeft = rect.left;
       _startTop = rect.top;
-    } else {
-      _startWidth = screen.width;
-      _startLeft = 0;
-      _startTop = 0;
     }
     if (widget.initialRect == null) {
       _startLeft = 0;
@@ -839,25 +834,23 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           final top = _startTop * (1 - t);
           final width = _startWidth + (screen.width - _startWidth) * t;
           final scale = width / screen.width;
+          final offset = Offset(left, top);
           final radius = 14 * (1 - t);
+          final opacity = 0.35 * (1 - t);
           return Stack(
             children: [
-              Positioned(
-                left: left,
-                top: top,
-                width: screen.width,
-                height: screen.height,
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ColoredBox(
+                    color: Color.fromRGBO(0, 0, 0, opacity),
+                  ),
+                ),
+              ),
+              Transform.translate(
+                offset: offset,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(radius),
-                  child: Transform.scale(
-                    alignment: Alignment.topLeft,
-                    scale: scale,
-                    child: SizedBox(
-                      width: screen.width,
-                      height: screen.height,
-                      child: child,
-                    ),
-                  ),
+                  child: Transform.scale(scale: scale, child: child),
                 ),
               ),
             ],
