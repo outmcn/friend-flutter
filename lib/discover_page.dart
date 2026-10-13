@@ -10,7 +10,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final service = DDPostService();
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
-  final _cardKeys = <int, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
 
@@ -82,28 +81,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   Future<void> _open(DDPost post) async {
-    final key = _cardKeys.putIfAbsent(post.id, GlobalKey.new);
-    final box = key.currentContext?.findRenderObject() as RenderBox?;
-    final topLeft = box?.localToGlobal(Offset.zero);
-    final rect = box == null || topLeft == null ? null : topLeft & box.size;
     final deleted = await Navigator.push<bool>(
-      context,
-      PageRouteBuilder<bool>(
-        opaque: false,
-        barrierColor: Colors.transparent,
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-        pageBuilder: (_, __, ___) => DynamicDetailPage(
-          postId: post.id,
-          initialPost: post,
-          initialRect: rect,
-          cardKey: key,
-        ),
-        transitionsBuilder: (_, __, ___, child) => child,
-      ),
-    );
-    if (!mounted) return;
-    if (deleted != true) return;
+        context,
+        MaterialPageRoute(
+          builder: (_) => DynamicDetailPage(
+            postId: post.id,
+            initialPost: post,
+          ),
+        ));
+    if (!mounted || deleted != true) return;
     for (final feed in feeds) {
       feed.posts.removeWhere((item) => item.id == post.id);
     }
@@ -122,7 +108,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       }
     }
     return _DiscoverFeedCard(
-      key: _cardKeys.putIfAbsent(post.id, GlobalKey.new),
+      key: ValueKey(post.id),
       feed: feed,
       post: post,
       fullWidth: fullWidth,
@@ -186,9 +172,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          surfaceTintColor: Colors.transparent,
-          toolbarHeight: kToolbarHeight,
           titleSpacing: 16,
           title: Row(
             children: ['推荐', _discoverLocalTabLabel, '关注']
