@@ -7,11 +7,13 @@ class DynamicDetailPage extends StatefulWidget {
     this.focusComment = false,
     this.initialPost,
     this.initialRect,
+    this.cardKey,
     this.onChanged,
   });
   final int postId;
   final DDPost? initialPost;
   final Rect? initialRect;
+  final GlobalKey? cardKey;
   final ValueChanged<DDPost>? onChanged;
   final bool focusComment;
   @override
@@ -67,6 +69,18 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       return;
     }
     _closing = true;
+    final liveBox =
+        widget.cardKey?.currentContext?.findRenderObject() as RenderBox?;
+    final liveTopLeft = liveBox?.localToGlobal(Offset.zero);
+    final liveRect = liveBox == null || liveTopLeft == null
+        ? null
+        : liveTopLeft & liveBox.size;
+    if (liveRect != null && liveRect.width > 0) {
+      final screen = MediaQuery.sizeOf(context);
+      _startScale = (liveRect.width / screen.width).clamp(0.05, 1.0).toDouble();
+      _startOffset =
+          liveRect.center - Offset(screen.width / 2, screen.height / 2);
+    }
     await _rectController.animateTo(
       0,
       duration: const Duration(milliseconds: 240),

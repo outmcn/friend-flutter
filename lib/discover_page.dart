@@ -97,6 +97,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           postId: post.id,
           initialPost: post,
           initialRect: rect,
+          cardKey: key,
         ),
         transitionsBuilder: (_, __, ___, child) => child,
       ),
