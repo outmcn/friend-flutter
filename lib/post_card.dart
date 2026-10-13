@@ -360,134 +360,138 @@ class _DiscoverProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final image = post.imageUrl?.trim();
     final video = post.videoUrl?.trim();
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onOpen,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (image != null && image.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: _heroMedia(
-                    child: _stableMedia(url: image, thumbnail: false),
-                  ),
-                )
-              else if (video != null && video.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: _heroMedia(
-                    child: Stack(
-                      alignment: Alignment.topCenter,
-                      children: [
-                        post.thumbnailUrl?.isNotEmpty == true
-                            ? _stableMedia(
-                                url: post.thumbnailUrl!, thumbnail: true)
-                            : const SizedBox(
-                                height: 96,
-                                child: ColoredBox(color: Colors.transparent),
-                              ),
-                        const Positioned.fill(
-                          child: Center(
-                            child: Icon(Icons.play_circle_outline,
-                                size: 42, color: Colors.white),
-                          ),
-                        ),
-                      ],
+    return Hero(
+      tag: 'dynamic-card-${post.id}',
+      createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onOpen,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (image != null && image.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _heroMedia(
+                      child: _stableMedia(url: image, thumbnail: false),
                     ),
-                  ),
-                )
-              else
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(minHeight: 96),
-                    padding: const EdgeInsets.all(14),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xff6556d9), Color(0xffdf76b8)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  )
+                else if (video != null && video.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _heroMedia(
+                      child: Stack(
+                        alignment: Alignment.topCenter,
+                        children: [
+                          post.thumbnailUrl?.isNotEmpty == true
+                              ? _stableMedia(
+                                  url: post.thumbnailUrl!, thumbnail: true)
+                              : const SizedBox(
+                                  height: 96,
+                                  child: ColoredBox(color: Colors.transparent),
+                                ),
+                          const Positioned.fill(
+                            child: Center(
+                              child: Icon(Icons.play_circle_outline,
+                                  size: 42, color: Colors.white),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    alignment: Alignment.center,
+                  )
+                else
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(minHeight: 96),
+                      padding: const EdgeInsets.all(14),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xff6556d9), Color(0xffdf76b8)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        post.content.trim(),
+                        maxLines: 5,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          height: 1.4,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (post.content.trim().isNotEmpty &&
+                    (image != null && image.isNotEmpty ||
+                        video != null && video.isNotEmpty))
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
                     child: Text(
                       post.content.trim(),
-                      maxLines: 5,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        height: 1.4,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: const TextStyle(fontSize: 18, height: 1.35),
                     ),
                   ),
-                ),
-              if (post.content.trim().isNotEmpty &&
-                  (image != null && image.isNotEmpty ||
-                      video != null && video.isNotEmpty))
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
-                  child: Text(
-                    post.content.trim(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 18, height: 1.35),
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Row(
-                  children: [
-                    ClipOval(
-                      child: post.avatar.trim().isEmpty
-                          ? const Icon(Icons.person_outline, size: 22)
-                          : SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: _PermanentCachedImage(
-                                url: post.avatar,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Row(
+                    children: [
+                      ClipOval(
+                        child: post.avatar.trim().isEmpty
+                            ? const Icon(Icons.person_outline, size: 22)
+                            : SizedBox(
                                 width: 22,
                                 height: 22,
-                                fit: BoxFit.cover,
-                                placeholder:
-                                    const Icon(Icons.person_outline, size: 22),
+                                child: _PermanentCachedImage(
+                                  url: post.avatar,
+                                  width: 22,
+                                  height: 22,
+                                  fit: BoxFit.cover,
+                                  placeholder: const Icon(Icons.person_outline,
+                                      size: 22),
+                                ),
                               ),
-                            ),
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        post.nickname,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          post.nickname,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      onPressed: onLike,
-                      iconSize: 17,
-                      padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints.tightFor(width: 24, height: 24),
-                      color: post.liked ? Colors.red : null,
-                      icon: Icon(TIcons.thumb_up_1),
-                    ),
-                    Text('${post.likes}', style: const TextStyle(fontSize: 12)),
-                  ],
+                      IconButton(
+                        onPressed: onLike,
+                        iconSize: 17,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                            width: 24, height: 24),
+                        color: post.liked ? Colors.red : null,
+                        icon: Icon(TIcons.thumb_up_1),
+                      ),
+                      Text('${post.likes}',
+                          style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

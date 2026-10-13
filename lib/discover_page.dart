@@ -91,7 +91,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         pageBuilder: (_, __, ___) => DynamicDetailPage(
           postId: post.id,
           initialPost: post,
-          heroTag: 'dynamic-media-${post.id}',
+          heroTag: 'dynamic-card-${post.id}',
         ),
         transitionsBuilder: (_, animation, __, child) {
           final opacity = animation.drive(
