@@ -10,6 +10,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final service = DDPostService();
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
+  final _cardKeys = <int, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
 
@@ -81,14 +82,25 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   Future<void> _open(DDPost post) async {
+    final key = _cardKeys.putIfAbsent(post.id, GlobalKey.new);
+    final box = key.currentContext?.findRenderObject() as RenderBox?;
+    final topLeft = box?.localToGlobal(Offset.zero);
+    final rect = box == null || topLeft == null ? null : topLeft & box.size;
     final deleted = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DynamicDetailPage(
-            postId: post.id,
-            initialPost: post,
-          ),
-        ));
+      context,
+      PageRouteBuilder<bool>(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => DynamicDetailPage(
+          postId: post.id,
+          initialPost: post,
+          initialRect: rect,
+        ),
+        transitionsBuilder: (_, __, ___, child) => child,
+      ),
+    );
     if (!mounted || deleted != true) return;
     for (final feed in feeds) {
       feed.posts.removeWhere((item) => item.id == post.id);
@@ -108,7 +120,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       }
     }
     return _DiscoverFeedCard(
-      key: ValueKey(post.id),
+      key: _cardKeys.putIfAbsent(post.id, GlobalKey.new),
       feed: feed,
       post: post,
       fullWidth: fullWidth,
