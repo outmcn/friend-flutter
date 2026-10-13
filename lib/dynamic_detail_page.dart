@@ -859,7 +859,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              backgroundColor: Colors.grey[850],
               surfaceTintColor: Colors.transparent,
               toolbarHeight: kToolbarHeight,
               titleSpacing: 16,
