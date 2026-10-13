@@ -869,11 +869,17 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             appBar: AppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               surfaceTintColor: Colors.transparent,
+              toolbarHeight: kToolbarHeight,
+              titleSpacing: 16,
               automaticallyImplyLeading: false,
-              leading: IconButton(
-                tooltip: '返回',
-                onPressed: _closeWithTransition,
-                icon: const Icon(Icons.arrow_back),
+              leadingWidth: 56,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: IconButton(
+                  tooltip: '返回',
+                  onPressed: _closeWithTransition,
+                  icon: const Icon(Icons.arrow_back),
+                ),
               ),
               title: item == null
                   ? const Text('动态详情')
