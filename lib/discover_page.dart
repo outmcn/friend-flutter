@@ -86,12 +86,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
       PageRouteBuilder<bool>(
         opaque: false,
         barrierColor: null,
-        transitionDuration: const Duration(milliseconds: 420),
-        reverseTransitionDuration: const Duration(milliseconds: 360),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
         pageBuilder: (_, __, ___) => DynamicDetailPage(
           postId: post.id,
           initialPost: post,
-          heroTag: 'dynamic-card-${post.id}',
+          heroTag: null,
         ),
         transitionsBuilder: (_, animation, __, child) {
           return child;
