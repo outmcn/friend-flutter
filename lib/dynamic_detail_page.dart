@@ -33,6 +33,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   final pendingActions = <String>{};
   final scroll = ScrollController();
   late final AnimationController _rectController;
+  double _startScale = 0.92;
+  Offset _startOffset = Offset.zero;
   // 默认只显示每个父评论的 1 条直接回复，点击“显示更多”后每次增加 3 条。
   int visibleRootCount = 30;
   final Map<int, int> visibleReplyCounts = <int, int>{};
@@ -57,6 +59,15 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         _rectController.forward();
       }
     });
+    final screen = MediaQuery.sizeOf(context);
+    final rect = widget.initialRect;
+    if (rect != null && rect.width > 0) {
+      final scaleX = rect.width / screen.width;
+      final scaleY = rect.height / screen.height;
+      _startScale = scaleX < scaleY ? scaleX : scaleY;
+      final screenCenter = Offset(screen.width / 2, screen.height / 2);
+      _startOffset = rect.center - screenCenter;
+    }
     load();
     if (widget.focusComment) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -739,10 +750,18 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final item = post;
     return AnimatedBuilder(
       animation: _rectController,
-      builder: (context, child) => Transform.scale(
-        scale: 0.92 + 0.08 * _rectController.value,
-        child: child,
-      ),
+      builder: (context, child) {
+        final t = Curves.easeOutCubic.transform(_rectController.value);
+        final scale = _startScale + (1 - _startScale) * t;
+        final offset = Offset(
+          _startOffset.dx * (1 - t),
+          _startOffset.dy * (1 - t),
+        );
+        return Transform.translate(
+          offset: offset,
+          child: Transform.scale(scale: scale, child: child),
+        );
+      },
       child: Scaffold(
         appBar: AppBar(
           title: item == null
