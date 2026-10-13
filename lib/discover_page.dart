@@ -94,10 +94,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           heroTag: 'dynamic-card-${post.id}',
         ),
         transitionsBuilder: (_, animation, __, child) {
-          final opacity = animation.drive(
-            CurveTween(curve: Curves.easeOutCubic),
-          );
-          return FadeTransition(opacity: opacity, child: child);
+          return child;
         },
       ),
     );

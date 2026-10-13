@@ -65,6 +65,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final shouldClose = _swipeOffset > width * .28 || velocity > 900;
     if (shouldClose) {
       setState(() => _swipeClosing = true);
+      await _animateSwipeBack();
       if (mounted) Navigator.pop(context);
     } else {
       await _animateSwipeBack();
@@ -89,7 +90,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         setState(() {
           _swipeOffset = beginX * (1 - animation.value);
           _swipeVerticalOffset = beginY * (1 - animation.value);
-          _swipeScale = beginScale + (1 - beginScale) * animation.value;
+          _swipeScale = beginScale * (1 - animation.value);
         });
       });
       await controller.forward();
