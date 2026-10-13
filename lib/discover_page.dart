@@ -83,16 +83,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   Future<void> _open(DDPost post) async {
     final key = _cardKeys.putIfAbsent(post.id, GlobalKey.new);
-    final cardContext = key.currentContext;
-    if (cardContext != null) {
-      await Scrollable.ensureVisible(
-        cardContext,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.linear,
-        alignment: 0.5,
-        alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
-      );
-    }
     if (!mounted) return;
     final box = key.currentContext?.findRenderObject() as RenderBox?;
     final topLeft = box?.localToGlobal(Offset.zero);
