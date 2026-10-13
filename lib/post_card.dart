@@ -346,9 +346,8 @@ class _DiscoverProfileCard extends StatelessWidget {
 
   Widget _heroMedia({required Widget child}) {
     return Hero(
-      tag: 'dynamic-media-${post.id}',
+      tag: 'dynamic-card-${post.id}',
       createRectTween: (begin, end) => RectTween(begin: begin, end: end),
-      placeholderBuilder: (context, size, child) => child,
       child: child,
     );
   }
