@@ -112,69 +112,63 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
   Widget build(BuildContext context) {
     final active = controller;
     if (active == null || !active.value.isInitialized) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: GestureDetector(
-          onTap: _play,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              LayoutBuilder(
-                builder: (context, constraints) => Container(
-                  width: double.infinity,
-                  color: Colors.transparent,
-                  alignment: Alignment.center,
-                  child: widget.thumbnailUrl?.isNotEmpty == true
-                      ? ConstrainedBox(
-                          constraints: widget.unlimitedHeight
-                              ? const BoxConstraints()
-                              : const BoxConstraints(maxHeight: 400),
-                          child: _PermanentCachedImage(
-                            url: widget.thumbnailUrl!,
-                            fit: BoxFit.contain,
-                          ),
-                        )
-                      : const SizedBox(height: 225),
-                ),
+      return GestureDetector(
+        onTap: _play,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) => Container(
+                width: double.infinity,
+                color: Colors.transparent,
+                alignment: Alignment.center,
+                child: widget.thumbnailUrl?.isNotEmpty == true
+                    ? ConstrainedBox(
+                        constraints: widget.unlimitedHeight
+                            ? const BoxConstraints()
+                            : const BoxConstraints(maxHeight: 400),
+                        child: _PermanentCachedImage(
+                          url: widget.thumbnailUrl!,
+                          fit: BoxFit.contain,
+                        ),
+                      )
+                    : const SizedBox(height: 225),
               ),
-              loading
-                  ? const CircularProgressIndicator()
-                  : const Icon(
-                      Icons.play_circle_outline,
-                      size: 64,
-                      color: Colors.white,
-                    ),
-            ],
-          ),
+            ),
+            loading
+                ? const CircularProgressIndicator()
+                : const Icon(
+                    Icons.play_circle_outline,
+                    size: 64,
+                    color: Colors.white,
+                  ),
+          ],
         ),
       );
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final height = widget.unlimitedHeight
-                  ? width / active.value.aspectRatio
-                  : math.min(400.0, width / active.value.aspectRatio);
-              return SizedBox(
-                width: width,
-                height: height,
-                child: VideoPlayer(active),
-              );
-            },
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final height = widget.unlimitedHeight
+                ? width / active.value.aspectRatio
+                : math.min(400.0, width / active.value.aspectRatio);
+            return SizedBox(
+              width: width,
+              height: height,
+              child: VideoPlayer(active),
+            );
+          },
+        ),
+        if (ended)
+          GestureDetector(
+            onTap: _replay,
+            child: const Icon(Icons.replay_circle_filled,
+                size: 64, color: Colors.white),
           ),
-          if (ended)
-            GestureDetector(
-              onTap: _replay,
-              child: const Icon(Icons.replay_circle_filled,
-                  size: 64, color: Colors.white),
-            ),
-        ],
-      ),
+      ],
     );
   }
 }
