@@ -742,6 +742,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     return Hero(
       tag: tag,
       createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+      placeholderBuilder: (context, size, child) => child,
       child: child,
     );
   }
