@@ -64,6 +64,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int playbookTab = 0;
   bool playbookLoading = false;
   String? playbookError;
+  List<dynamic> remoteCompanions = const [];
   List<Map<String, dynamic>> remotePlaybook = const [];
   late final PageController _bannerController;
   int _bannerIndex = 0;
@@ -75,6 +76,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     _bannerController = PageController();
     _loadPlaybook();
     _loadBanners();
+    _loadCompanions();
   }
 
   @override
@@ -586,6 +588,19 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       );
 
   Widget _topTabBody() {
+    if (tab == 3) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text('全部陪玩',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          ),
+          ..._allClubCompanions(),
+        ],
+      );
+    }
     if (tab == 0) {
       return ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
@@ -621,16 +636,20 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 
   List<Widget> _allClubCompanions() {
-    final people = <_ClubCompanion>[
-      const _ClubCompanion('周浩男', '80', ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰']),
-      const _ClubCompanion('胡进', '64', ['金牌娱乐', '三角洲巅峰', '秒接单']),
-      const _ClubCompanion('魔王S大神', '108', ['魔王S', '三角洲巅峰', '技术指导']),
-      const _ClubCompanion('金牌大神', '96', ['金牌大神', '航天基地', '秒接单']),
-    ]..sort((a, b) => a.name.compareTo(b.name));
-    return people
-        .map((p) =>
-            _DeltaCompanionCard(name: p.name, price: p.price, tags: p.tags))
-        .toList();
+    if (remoteCompanions.isNotEmpty) {
+      final people = [...remoteCompanions]..sort((a, b) =>
+          '${a['nickname'] ?? ''}'.compareTo('${b['nickname'] ?? ''}'));
+      return people
+          .map((p) => _DeltaCompanionCard(
+                name: '${p['nickname'] ?? '用户'}',
+                price: '${p['price'] ?? '0'}',
+                tags: (p['tags'] as List? ?? const []).cast<String>(),
+              ))
+          .toList();
+    }
+    return const [
+      _DeltaCompanionCard(name: '暂无陪玩', price: '-', tags: ['俱乐部暂未上架陪玩']),
+    ];
   }
 
   Widget _playbookBody() {
@@ -717,6 +736,17 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _loadCompanions() async {
+    try {
+      final api = GameClubBackendClient();
+      final result = await api.get('/api/game-club/companions');
+      api.dispose();
+      if (mounted && result['companions'] is List) {
+        setState(() => remoteCompanions = result['companions'] as List);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadBanners() async {
