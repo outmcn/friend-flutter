@@ -87,8 +87,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
     try {
       final values = await Future.wait([
         api.get('/api/game-club/companions'),
-        api.get('/api/admin/game-club/categories'),
-        api.get('/api/admin/game-club/projects'),
+        api.get('/api/game-club/categories'),
+        api.get('/api/game-club/projects'),
         api.get('/api/game-club/orders'),
         api.get('/api/game-club/banners')
       ]);
@@ -100,7 +100,6 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         categories = values[1]['categories'] as List? ?? [];
         projects = values[2]['projects'] as List? ?? [];
         myOrders = values[3]['orders'] as List? ?? [];
-        myCompanions = values[4]['companions'] as List? ?? [];
         banners = values[4]['banners'] as List? ?? [];
         loading = false;
       });
