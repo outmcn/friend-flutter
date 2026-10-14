@@ -493,7 +493,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   Future<void> _openDeltaAdmin() async {
     final api = GameClubBackendClient();
     try {
-      final access = await api.get('/api/game-club/access');
+      final access = await api.get('/api/game-club/access?gameId=$gameId');
       if (!mounted) return;
       final isManager = access['canManage'] == true;
       if (isManager) {
