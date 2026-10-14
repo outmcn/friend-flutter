@@ -71,7 +71,6 @@ part 'reset_password_page.dart';
 part 'filled_login_page.dart';
 part 'verification_page.dart';
 part 'phone_register_page.dart';
-part 'email_register_page.dart';
 part 'password_setup_page.dart';
 part 'profile_setup_page.dart';
 part 'auth_scaffold.dart';
