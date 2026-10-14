@@ -84,8 +84,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
     try {
       final values = await Future.wait([
         api.get('/api/game-club/companions'),
-        api.get('/api/game-club/categories'),
-        api.get('/api/game-club/projects'),
+        api.get('/api/admin/game-club/categories'),
+        api.get('/api/admin/game-club/projects'),
         api.get('/api/game-club/orders')
       ]);
       if (!mounted) {
