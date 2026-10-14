@@ -665,8 +665,9 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       groups.putIfAbsent('${item['level1'] ?? '未命名分类'}', () => []).add(item);
     }
     final names = groups.keys.toList();
-    final selected = names.isEmpty ? '' : names.first;
-    final items = groups[selected] ?? const <Map<String, dynamic>>[];
+    final selectedIndex =
+        names.isEmpty ? 0 : playbookTab.clamp(0, names.length - 1);
+    final selected = names.isEmpty ? '' : names[selectedIndex];
     return Row(children: [
       SizedBox(
         width: 148,
@@ -701,7 +702,8 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                     fontSize: 22,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 18),
-            ...items.map((item) => _ConfiguredCategoryItem(item: item)),
+            ...((groups[selected] ?? const <Map<String, dynamic>>[])
+                .map((item) => _ConfiguredCategoryItem(item: item))),
           ],
         ),
       ),
