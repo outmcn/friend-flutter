@@ -130,7 +130,7 @@ class _VoiceRecordPageState extends State<_VoiceRecordPage> {
   }
 
   Future<void> _deleteCloudVoice() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除云端声音'),

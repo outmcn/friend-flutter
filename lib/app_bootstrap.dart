@@ -16,6 +16,81 @@ void _showTopNotice(BuildContext context, Widget content) {
   );
 }
 
+Future<T?> showAppDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+  Color barrierColor = const Color(0x88000000),
+}) {
+  return showGeneralDialog<T>(
+    context: context,
+    barrierDismissible: barrierDismissible,
+    barrierLabel: '关闭',
+    barrierColor: barrierColor,
+    transitionDuration: const Duration(milliseconds: 180),
+    pageBuilder: (context, _, __) => Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 520),
+          margin: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(blurRadius: 24, color: Color(0x44000000))
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: builder(context),
+        ),
+      ),
+    ),
+    transitionBuilder: (_, animation, __, child) => FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+          scale: Tween(begin: .96, end: 1.0).animate(animation), child: child),
+    ),
+  );
+}
+
+Future<T?> showAppSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool isScrollControlled = false,
+  bool showDragHandle = false,
+}) {
+  return showGeneralDialog<T>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: '关闭',
+    barrierColor: const Color(0x66000000),
+    transitionDuration: const Duration(milliseconds: 180),
+    pageBuilder: (context, _, __) => Align(
+      alignment: Alignment.bottomCenter,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * .85),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: SafeArea(top: false, child: builder(context)),
+        ),
+      ),
+    ),
+    transitionBuilder: (_, animation, __, child) => SlideTransition(
+      position:
+          Tween(begin: const Offset(0, 1), end: Offset.zero).animate(animation),
+      child: child,
+    ),
+  );
+}
+
 class DDApp extends StatelessWidget {
   const DDApp({super.key});
 

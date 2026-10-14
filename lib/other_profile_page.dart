@@ -545,7 +545,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
-  void _showProfileMenu(BuildContext context) => showModalBottomSheet<void>(
+  void _showProfileMenu(BuildContext context) => showAppSheet<void>(
         context: context,
         showDragHandle: true,
         builder: (_) => SafeArea(

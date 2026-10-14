@@ -54,7 +54,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
   Future<void> _pickMedia() async {
-    final type = await showModalBottomSheet<String>(
+    final type = await showAppSheet<String>(
       context: context,
       builder: (_) => SafeArea(
         child: Wrap(
@@ -389,7 +389,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               leading: _iconFor(Icons.public),
               title: Text(visibility),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => showModalBottomSheet<void>(
+              onTap: () => showAppSheet<void>(
                 context: context,
                 builder: (_) => SafeArea(
                   child: Column(

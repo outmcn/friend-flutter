@@ -62,7 +62,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
   }
 
   Future<void> _deletePost(DDPost post) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('确认删除'),

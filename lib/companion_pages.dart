@@ -480,9 +480,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 
   void _showTopMessage(String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$title功能')),
-    );
+    _showTopNotice(context, Text('$title功能'));
   }
 
   Future<void> _openDeltaAdmin() async {
@@ -970,7 +968,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 
   Future<void> _showProject(List<dynamic> project) async {
-    await showDialog<void>(
+    await showAppDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text('${project[1]}'),
@@ -1268,7 +1266,7 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
   void _open(CompanionProfile c) => Navigator.push(context,
       MaterialPageRoute(builder: (_) => CompanionProfilePage(data: c)));
   Future<void> _showFakeOrderDialog() async {
-    await showDialog<void>(
+    await showAppDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('胡进正在伪装，请稍后……'),
