@@ -110,11 +110,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
         transitionsBuilder: (_, __, ___, child) => child,
       ),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _revealCardEdgesOnly(key, feed.scroll);
-      }
-    });
     final deleted = await routeFuture;
     if (!mounted) return;
     if (deleted != true) return;
@@ -122,34 +117,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
       feed.posts.removeWhere((item) => item.id == post.id);
     }
     feed.markChanged();
-  }
-
-  void _revealCardEdgesOnly(GlobalKey key, ScrollController scroll) {
-    final cardContext = key.currentContext;
-    final cardBox = cardContext?.findRenderObject() as RenderBox?;
-    if (cardBox == null || !scroll.hasClients) {
-      return;
-    }
-    final viewport =
-        scroll.position.context.storageContext.findRenderObject() as RenderBox?;
-    if (viewport == null) return;
-    final cardTop = cardBox.localToGlobal(Offset.zero).dy;
-    final cardBottom = cardTop + cardBox.size.height;
-    final viewportTop = viewport.localToGlobal(Offset.zero).dy;
-    final viewportBottom = viewportTop + viewport.size.height;
-    var delta = 0.0;
-    if (cardTop < viewportTop) delta = cardTop - viewportTop;
-    if (cardBottom > viewportBottom) {
-      delta = cardBottom - viewportBottom;
-    }
-    if (delta == 0) return;
-    const cardGap = 8.0;
-    delta += delta > 0 ? cardGap : -cardGap;
-    final position = scroll.position;
-    position.jumpTo((position.pixels + delta).clamp(
-      position.minScrollExtent,
-      position.maxScrollExtent,
-    ));
   }
 
   Widget _card(DiscoverFeed feed, int index, {bool fullWidth = false}) {
