@@ -1153,24 +1153,47 @@ class _ConfiguredCategoryItem extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('${item['level1'] ?? ''}',
-                style: const TextStyle(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
             Text('${item['level2'] ?? ''}',
-                style: const TextStyle(fontSize: 16)),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-            Text('${item['price'] ?? ''}',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w700)),
-            if ((item['tags'] as List? ?? const []).isNotEmpty) ...[
-              const SizedBox(height: 8),
+            if ((item['tags'] as List? ?? const []).isNotEmpty)
               Wrap(
-                  spacing: 6,
-                  children: (item['tags'] as List)
-                      .map((x) => Chip(label: Text('$x')))
-                      .toList()),
-            ],
+                spacing: 4,
+                runSpacing: 4,
+                children: (item['tags'] as List)
+                    .map((x) => Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text('$x',
+                              style: const TextStyle(
+                                  fontSize: 10, color: Colors.grey)),
+                        ))
+                    .toList(),
+              ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text('${item['price'] ?? ''}',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w700)),
+                FilledButton(
+                    onPressed: () {},
+                    style: FilledButton.styleFrom(
+                        minimumSize: const Size(64, 32),
+                        padding: const EdgeInsets.symmetric(horizontal: 12)),
+                    child: const Text('下单')),
+              ],
+            ),
           ]),
         ),
       );
