@@ -62,7 +62,6 @@ class _BannerDot extends StatelessWidget {
 class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int tab = 0;
   int playbookTab = 0;
-  bool showAllCompanions = false;
   bool playbookLoading = false;
   String? playbookError;
   List<Map<String, dynamic>> remotePlaybook = const [];
@@ -595,25 +594,27 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     }
     return ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
-        children: const [
-          Text('我的要求',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-          Card(
-              child: ListTile(title: Text('性别'), subtitle: Text('不限 · 男 · 女'))),
-          Card(child: ListTile(title: Text('服务模式'), subtitle: Text('机密价'))),
-          Card(child: ListTile(title: Text('游戏模式'), subtitle: Text('不限'))),
-          Card(
-              child: ListTile(
-                  title: Text('游戏地图'),
-                  subtitle: Text('不限 · 巴克什 · 潮汐监狱 · 航天基地 · 长弓溪谷 · 零号大坝'))),
-          Card(
-              child: ListTile(
-                  title: Text('考核等级'), subtitle: Text('不限 · 魔王S · 金牌大神'))),
-          Card(child: ListTile(title: Text('是否单陪'), subtitle: Text('不限'))),
-          Card(
-              child: ListTile(
-                  title: Text('更多要求'), subtitle: Text('达到等级 ≥ 白银2 后解锁'))),
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text('全部陪玩',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          ),
+          ..._allClubCompanions(),
         ]);
+  }
+
+  List<Widget> _allClubCompanions() {
+    final people = <_ClubCompanion>[
+      const _ClubCompanion('周浩男', '80', ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰']),
+      const _ClubCompanion('胡进', '64', ['金牌娱乐', '三角洲巅峰', '秒接单']),
+      const _ClubCompanion('魔王S大神', '108', ['魔王S', '三角洲巅峰', '技术指导']),
+      const _ClubCompanion('金牌大神', '96', ['金牌大神', '航天基地', '秒接单']),
+    ]..sort((a, b) => a.name.compareTo(b.name));
+    return people
+        .map((p) =>
+            _DeltaCompanionCard(name: p.name, price: p.price, tags: p.tags))
+        .toList();
   }
 
   Widget _playbookBody() {
@@ -622,11 +623,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         : data.map((entry) => entry.cast<String, dynamic>()).toList();
     final safeIndex = playbookTab.clamp(0, source.length - 1);
     final item = source[safeIndex];
-    final items = showAllCompanions
-        ? source
-            .expand((entry) => (entry['items'] as List).cast<List<dynamic>>())
-            .toList()
-        : (item['items'] as List).cast<List<dynamic>>();
+    final items = (item['items'] as List).cast<List<dynamic>>();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -637,30 +634,13 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(12, 18, 12, 24),
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 0, 0, 18),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text('玩法合集',
-                            style: TextStyle(
-                                color: Color(0xfff3f4f6),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700)),
-                      ),
-                      InkWell(
-                        onTap: () => setState(() => showAllCompanions = true),
-                        borderRadius: BorderRadius.circular(6),
-                        child: const Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                          child: Text('全部陪玩',
-                              style: TextStyle(
-                                  color: Color(0xffff6a1f), fontSize: 11)),
-                        ),
-                      ),
-                    ],
-                  ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(6, 0, 0, 18),
+                  child: Text('玩法合集',
+                      style: TextStyle(
+                          color: Color(0xfff3f4f6),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700)),
                 ),
                 for (var i = 0; i < source.length; i++)
                   Padding(
@@ -676,20 +656,14 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
             children: [
               Row(children: [
                 Expanded(
-                  child: Text(showAllCompanions ? '全部陪玩' : '${item['title']}',
+                  child: Text('${item['title']}',
                       style: const TextStyle(
                           color: Color(0xfff3f4f6),
                           fontSize: 22,
                           fontWeight: FontWeight.w700)),
                 ),
-                OutlinedButton.icon(
-                  onPressed: () =>
-                      setState(() => showAllCompanions = !showAllCompanions),
-                  icon: const Icon(Icons.groups_outlined, size: 16),
-                  label: Text(showAllCompanions ? '返回分类' : '全部陪玩'),
-                ),
               ]),
-              if (!showAllCompanions) ...[
+              if (item['badge'] != null && '${item['badge']}'.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Container(
                     padding:
@@ -705,7 +679,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                             fontWeight: FontWeight.w600))),
               ],
               const SizedBox(height: 6),
-              Text(showAllCompanions ? '浏览全部玩法分类中的陪玩项目。' : '${item['desc']}',
+              Text('${item['desc']}',
                   style: const TextStyle(
                       color: Color(0xff9ca3af), fontSize: 13, height: 1.6)),
               const SizedBox(height: 24),
@@ -970,6 +944,13 @@ class _DeltaGameEntryButton extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _ClubCompanion {
+  const _ClubCompanion(this.name, this.price, this.tags);
+  final String name;
+  final String price;
+  final List<String> tags;
 }
 
 class _DeltaCompanionCard extends StatelessWidget {
