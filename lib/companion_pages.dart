@@ -19,7 +19,7 @@ class _DeltaBanner extends StatelessWidget {
   final String subtitle;
   @override
   Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.fromLTRB(16, 8, 0, 0),
+        margin: const EdgeInsets.only(top: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
