@@ -64,6 +64,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   List<dynamic> categories = [];
   List<dynamic> projects = [];
   List<dynamic> orders = [];
+  List<dynamic> myOrders = [];
+  List<dynamic> myCompanions = [];
   List<dynamic> banners = [];
   @override
   void initState() {
@@ -97,7 +99,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         companions = values[0]['companions'] as List? ?? [];
         categories = values[1]['categories'] as List? ?? [];
         projects = values[2]['projects'] as List? ?? [];
-        orders = values[3]['orders'] as List? ?? [];
+        myOrders = values[3]['orders'] as List? ?? [];
+        myCompanions = values[4]['companions'] as List? ?? [];
         banners = values[4]['banners'] as List? ?? [];
         loading = false;
       });
@@ -220,7 +223,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
             child: Text('玩法项目：${projects.length}'))
       ]);
   Widget _orders() => ListView(
-      children: orders
+      children: myOrders
           .map((o) => ListTile(
               title: Text('订单 #${o['id']} · ${o['status']}'),
               subtitle: Text(
@@ -277,4 +280,77 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                       child: const Text('确定'))
                 ]));
   }
+}
+
+class GameClubOrdersPage extends StatefulWidget {
+  const GameClubOrdersPage({super.key});
+  @override
+  State<GameClubOrdersPage> createState() => _GameClubOrdersPageState();
+}
+
+class _GameClubOrdersPageState extends State<GameClubOrdersPage> {
+  List<dynamic> orders = [];
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    try {
+      final a = GameClubBackendClient();
+      final d = await a.get('/api/game-club/my-orders');
+      a.dispose();
+      if (mounted) setState(() => orders = d['orders'] as List? ?? []);
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext c) => Scaffold(
+      appBar: AppBar(title: const Text('我的订单')),
+      body: ListView(
+          children: orders
+              .map((o) => ListTile(
+                  title: Text('订单 #${o['id']} · ${o['status']}'),
+                  subtitle: Text(
+                      '${o['companion_nickname'] ?? ''} · ${o['project_title'] ?? ''}')))
+              .toList()));
+}
+
+class GameClubFavoritesPage extends StatefulWidget {
+  const GameClubFavoritesPage({super.key});
+  @override
+  State<GameClubFavoritesPage> createState() => _GameClubFavoritesPageState();
+}
+
+class _GameClubFavoritesPageState extends State<GameClubFavoritesPage> {
+  List<dynamic> people = [];
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    try {
+      final a = GameClubBackendClient();
+      final d = await a.get('/api/game-club/my-companions');
+      a.dispose();
+      if (mounted) setState(() => people = d['companions'] as List? ?? []);
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext c) => Scaffold(
+      appBar: AppBar(title: const Text('收藏的陪玩')),
+      body: ListView(
+          children: people
+              .map((p) => ListTile(
+                  title: Text('${p['nickname'] ?? '用户'}'),
+                  subtitle: Text('价格：${p['price']}')))
+              .toList()));
 }

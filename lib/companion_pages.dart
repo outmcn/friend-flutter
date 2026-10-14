@@ -447,16 +447,20 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         actions: [
           TextButton(
             onPressed: _openDeltaAdmin,
-            child: const Text('后台'),
+            child: const Icon(TIcons.setting, size: 20),
           ),
           IconButton(
             tooltip: '订单',
-            onPressed: () => _showTopMessage('订单'),
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const GameClubOrdersPage())),
             icon: const Icon(Icons.receipt_long_outlined),
           ),
           IconButton(
             tooltip: '收藏',
-            onPressed: () => _showTopMessage('收藏'),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const GameClubFavoritesPage())),
             icon: const Icon(TIcons.bookmark),
           ),
         ],
