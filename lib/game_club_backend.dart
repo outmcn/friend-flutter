@@ -121,7 +121,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                     SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                            children: ['陪玩管理', '玩法管理', '订单管理']
+                            children: ['陪玩管理', '申请列表', '订单管理', '玩法管理', '推广管理']
                                 .asMap()
                                 .entries
                                 .map((e) => Padding(
@@ -133,18 +133,25 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                                             setState(() => tab = e.key))))
                                 .toList())),
                     Expanded(
-                        child: [_companions(), _playbook(), _orders()][tab])
+                        child: [
+                      _companions(),
+                      _applications(),
+                      _orders(),
+                      _playbook(),
+                      _promotion()
+                    ][tab])
                   ]),
       );
   Widget _companions() => ListView(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: FilledButton.icon(
-              onPressed: _addCompanion,
-              icon: const Icon(Icons.person_add),
-              label: const Text('从 App 用户添加陪玩'),
-            ),
+            child: Text('申请列表', style: Theme.of(context).textTheme.titleLarge),
+          ),
+          const ListTile(
+            leading: Icon(Icons.inbox_outlined),
+            title: Text('暂无申请'),
+            subtitle: Text('用户提交陪玩申请后会显示在这里'),
           ),
           ...companions.map((c) => ListTile(
                 title: Text('${c['nickname'] ?? '用户'}  #${c['user_id']}'),
@@ -166,6 +173,28 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
               )),
         ],
       );
+  Widget _applications() => ListView(
+        padding: const EdgeInsets.all(16),
+        children: const [
+          ListTile(
+            leading: Icon(Icons.inbox_outlined),
+            title: Text('申请列表'),
+            subtitle: Text('陪玩申请审核功能待接入'),
+          ),
+        ],
+      );
+
+  Widget _promotion() => ListView(
+        padding: const EdgeInsets.all(16),
+        children: const [
+          ListTile(
+            leading: Icon(Icons.campaign_outlined),
+            title: Text('推广管理'),
+            subtitle: Text('推广配置功能待接入'),
+          ),
+        ],
+      );
+
   Widget _playbook() => ListView(children: [
         Padding(
             padding: const EdgeInsets.all(16),
@@ -209,14 +238,6 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   Future<void> _patch(String path, Map<String, dynamic> body) async {
     await api.patch(path, body);
     await load();
-  }
-
-  Future<void> _addCompanion() async {
-    final id = await _input('App 用户 ID');
-    if (id != null) {
-      await api.post('/api/game-club/companions', {'userId': int.tryParse(id)});
-      await load();
-    }
   }
 
   Future<void> _addCategory() async {
