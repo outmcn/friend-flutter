@@ -10,7 +10,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final service = DDPostService();
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
-  final _cardKeys = <int, GlobalKey>{};
+  final _cardKeys = <String, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
 
@@ -87,8 +87,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   Future<void> _open(DDPost post) async {
-    final key = _cardKeys.putIfAbsent(post.id, GlobalKey.new);
     final feed = feeds[selectedTab];
+    final key = _cardKeys.putIfAbsent(
+      '$selectedTab:${post.id}',
+      GlobalKey.new,
+    );
     if (!mounted) return;
     final box = key.currentContext?.findRenderObject() as RenderBox?;
     final topLeft = box?.localToGlobal(Offset.zero);
@@ -121,6 +124,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   Widget _card(DiscoverFeed feed, int index, {bool fullWidth = false}) {
     final post = feed.posts[index];
+    final feedIndex = feeds.indexOf(feed);
     if (index + 1 < feed.posts.length) {
       final next = feed.posts[index + 1];
       if (next.imageUrl?.isNotEmpty == true) {
@@ -131,7 +135,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
       }
     }
     return _DiscoverFeedCard(
-      key: _cardKeys.putIfAbsent(post.id, GlobalKey.new),
+      key: _cardKeys.putIfAbsent(
+        '$feedIndex:${post.id}',
+        GlobalKey.new,
+      ),
       feed: feed,
       post: post,
       fullWidth: fullWidth,
