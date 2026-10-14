@@ -488,13 +488,17 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     try {
       final access = await api.get('/api/game-club/access');
       if (!mounted) return;
+      final isManager = access['canManage'] == true;
+      if (isManager) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const GameClubAdminPage()),
+        );
+        return;
+      }
       await Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => access['canManage'] == true
-              ? const GameClubAdminPage()
-              : const GameClubApplyPage(),
-        ),
+        MaterialPageRoute(builder: (_) => const GameClubApplyPage()),
       );
     } catch (error) {
       if (mounted) {
