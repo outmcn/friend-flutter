@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -19,11 +20,20 @@ class FriendAuthClient {
   final Uri _baseUri;
 
   Future<Map<String, dynamic>> sendSmsCode(String phone) async {
-    final response = await _client.post(
-      _baseUri.resolve('/api/auth/sms/send'),
-      headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({'phone': phone.trim()}),
-    );
+    late final http.Response response;
+    try {
+      response = await _client
+          .post(
+            _baseUri.resolve('/api/auth/sms/send'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({'phone': phone.trim()}),
+          )
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw const FriendAuthException('请求超时，请稍后重试');
+    } on http.ClientException {
+      throw const FriendAuthException('网络连接失败，请检查网络');
+    }
     final data = _decode(response);
     if (response.statusCode != 200) {
       throw FriendAuthException(data['error']?.toString() ?? '验证码发送失败');
@@ -33,11 +43,20 @@ class FriendAuthClient {
 
   Future<String> loginBySms(
       {required String phone, required String code}) async {
-    final response = await _client.post(
-      _baseUri.resolve('/api/auth/sms/login'),
-      headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({'phone': phone.trim(), 'code': code.trim()}),
-    );
+    late final http.Response response;
+    try {
+      response = await _client
+          .post(
+            _baseUri.resolve('/api/auth/sms/login'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({'phone': phone.trim(), 'code': code.trim()}),
+          )
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw const FriendAuthException('请求超时，请稍后重试');
+    } on http.ClientException {
+      throw const FriendAuthException('网络连接失败，请检查网络');
+    }
     final data = _decode(response);
     if (response.statusCode != 200) {
       throw FriendAuthException(data['error']?.toString() ?? '验证码登录失败');

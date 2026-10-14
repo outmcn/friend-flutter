@@ -49,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
   Timer? timer;
   int seconds = 0;
   bool loading = false;
+  bool sendingCode = false;
   String? error;
 
   @override
@@ -61,10 +62,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> sendCode() async {
+    if (sendingCode || seconds > 0) return;
     if (!RegExp(r'^1\d{10}$').hasMatch(phone.text.trim())) {
       setState(() => error = '请输入正确的手机号');
       return;
     }
+    setState(() {
+      sendingCode = true;
+      error = null;
+    });
     try {
       await auth.sendSmsCode(phone.text.trim());
       setState(() {
@@ -81,11 +87,17 @@ class _LoginPageState extends State<LoginPage> {
       });
     } catch (e) {
       if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => sendingCode = false);
     }
   }
 
   Future<void> login() async {
-    if (phone.text.trim().isEmpty || code.text.trim().isEmpty) {
+    if (!RegExp(r'^1\d{10}$').hasMatch(phone.text.trim())) {
+      setState(() => error = '请输入正确的手机号');
+      return;
+    }
+    if (!RegExp(r'^\d{6}$').hasMatch(code.text.trim())) {
       setState(() => error = '请输入手机号和验证码');
       return;
     }
@@ -122,8 +134,12 @@ class _LoginPageState extends State<LoginPage> {
                     controller: code)),
             const SizedBox(width: 8),
             TextButton(
-                onPressed: seconds == 0 ? sendCode : null,
-                child: Text(seconds == 0 ? '获取验证码' : '${seconds}s'))
+                onPressed: seconds == 0 && !sendingCode ? sendCode : null,
+                child: Text(sendingCode
+                    ? '发送中…'
+                    : seconds == 0
+                        ? '获取验证码'
+                        : '${seconds}s'))
           ]),
           if (error != null)
             Align(
