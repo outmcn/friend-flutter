@@ -273,10 +273,7 @@ class _AuthGateState extends State<AuthGate> {
     if (loading) {
       return const DDShell();
     }
-    return AuthPage(
-      auth: auth,
-      onAuthenticated: (value) => setState(() => token = value),
-    );
+    return const PasswordLoginPage();
   }
 }
 
