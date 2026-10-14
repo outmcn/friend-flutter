@@ -145,15 +145,6 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
       );
   Widget _companions() => ListView(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text('申请列表', style: Theme.of(context).textTheme.titleLarge),
-          ),
-          const ListTile(
-            leading: Icon(Icons.inbox_outlined),
-            title: Text('暂无申请'),
-            subtitle: Text('用户提交陪玩申请后会显示在这里'),
-          ),
           ...companions.map((c) => ListTile(
                 title: Text('${c['nickname'] ?? '用户'}  #${c['user_id']}'),
                 subtitle: Text(
