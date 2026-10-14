@@ -221,7 +221,7 @@ class _DynamicPostCard extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: post.liked ? Colors.red : null,
                 ),
-                icon: Icon(TIcons.thumb_up_1),
+                icon: Icon(TIcons.thumb_up_2),
                 label: Text('${post.likes}'),
               ),
               TextButton.icon(
@@ -283,7 +283,7 @@ class _DynamicPostCard extends StatelessWidget {
                       height: 24,
                     ),
                     color: post.liked ? Colors.red : null,
-                    icon: Icon(TIcons.thumb_up_1),
+                    icon: Icon(TIcons.thumb_up_2),
                   ),
                   const SizedBox(width: 2),
                   Text('${post.likes}', style: const TextStyle(fontSize: 12)),
@@ -480,7 +480,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       constraints:
                           const BoxConstraints.tightFor(width: 24, height: 24),
                       color: post.liked ? Colors.red : null,
-                      icon: Icon(TIcons.thumb_up_1),
+                      icon: Icon(TIcons.thumb_up_2),
                     ),
                     Text('${post.likes}', style: const TextStyle(fontSize: 12)),
                   ],

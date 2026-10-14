@@ -389,8 +389,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         child: Wrap(
           children: [
             ListTile(
-              leading: Icon(
-                  comment.liked ? Icons.thumb_up : Icons.thumb_up_outlined),
+              leading: Icon(TIcons.thumb_up_2),
               title: const Text('点赞'),
               onTap: () => Navigator.pop(context, 'like'),
             ),
@@ -575,9 +574,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              comment.liked
-                                  ? Icons.thumb_up
-                                  : Icons.thumb_up_outlined,
+                              TIcons.thumb_up_2,
                               size: 16,
                               color: comment.liked
                                   ? Theme.of(context).colorScheme.primary
@@ -788,7 +785,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           child: Row(
             children: [
               _DetailAction(
-                icon: TIcons.thumb_up_1,
+                icon: TIcons.thumb_up_2,
                 label: '${item.likes}',
                 active: item.liked,
                 onTap: _toggleLike,
