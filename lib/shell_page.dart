@@ -376,7 +376,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           IconButton(
             tooltip: '通讯录',
             onPressed: _openContacts,
-            icon: const Icon(Icons.contacts_outlined),
+            icon: const Icon(TIcons.user_list),
           ),
           IconButton(
             tooltip: '搜索',

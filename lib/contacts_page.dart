@@ -84,7 +84,18 @@ class _ContactsPageState extends State<_ContactsPage>
                 return ListTile(
                   leading:
                       CircleAvatar(backgroundImage: widget.avatarFor(contact)),
-                  title: Text(contact.name),
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: Text(contact.name)),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        TIcons.verified_filled,
+                        size: 16,
+                        color: Color(0xff3b82f6),
+                      ),
+                    ],
+                  ),
                   onTap: () => widget.onOpen(contact),
                 );
               },
