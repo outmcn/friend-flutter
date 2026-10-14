@@ -69,7 +69,6 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   List<dynamic> myCompanions = [];
   List<dynamic> banners = [];
   List<dynamic> applications = [];
-  List<dynamic> pageTabs = [];
   @override
   void initState() {
     super.initState();
@@ -105,7 +104,6 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         myOrders = values[2]['orders'] as List? ?? [];
         banners = values[3]['banners'] as List? ?? [];
         applications = values[4]['applications'] as List? ?? [];
-        pageTabs = values[1]['tabs'] as List? ?? [];
         loading = false;
       });
     } catch (e) {
@@ -131,7 +129,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                     SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                            children: ['陪玩管理', '申请列表', '订单管理', '游戏页配置', '推广管理']
+                            children: ['陪玩管理', '申请列表', '订单管理', '售后管理']
                                 .asMap()
                                 .entries
                                 .map((e) => Padding(
@@ -148,8 +146,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                       _companions(),
                       _applications(),
                       _orders(),
-                      _pageConfig(),
-                      _promotion()
+                      _afterSale()
                     ][tab])
                   ]),
       );
@@ -204,58 +201,31 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                 .toList(),
       );
 
-  Widget _promotion() => ListView(
+  Widget _afterSale() => ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const ListTile(
-              leading: Icon(Icons.campaign_outlined), title: Text('推广管理')),
-          ListTile(
-              title: const Text('明星陪玩推广'),
-              subtitle: Text(
-                  '当前 ${companions.where((c) => c['is_star'] == true).length} 人')),
-          ListTile(
-              title: const Text('魔王技术推广'),
-              subtitle: Text(
-                  '当前 ${companions.where((c) => c['is_king'] == true).length} 人')),
-          const Divider(),
-          const Text('主页横幅'),
-          ...banners.map((b) => ListTile(
-              title: Text('${b['title']}'),
-              subtitle: Text('${b['subtitle']}'))),
-        ],
-      );
-
-  Widget _pageConfig() => ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text('游戏页配置',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          ...banners.map((b) => ListTile(
-                title: Text('${b['title'] ?? ''}'),
-                subtitle: Text('${b['subtitle'] ?? ''}'),
-              )),
+              leading: Icon(Icons.support_agent_outlined), title: Text('售后管理')),
+          const SizedBox(height: 8),
+          const Text('处理订单取消、退款和售后申请。'),
           const SizedBox(height: 16),
-          const Text('Tab 配置', style: TextStyle(fontWeight: FontWeight.bold)),
-          ...pageTabs.map((t) => Card(
+          ...myOrders.map((o) => Card(
                 child: ListTile(
-                  title: Text('${t['title'] ?? ''}'),
-                  subtitle:
-                      Text(t['tab_type'] == 'companions' ? '陪玩卡片' : '分类卡片'),
-                  onTap: () => _editPageTab(t),
+                  title: Text('订单 #${o['id']} · ${o['status']}'),
+                  subtitle: Text(
+                      '${o['companion_nickname'] ?? ''} · ${o['project_title'] ?? ''}'),
+                  trailing: PopupMenuButton<String>(
+                    onSelected: (status) => _patch(
+                        '/api/game-club/orders/${o['id']}', {'status': status}),
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'cancelled', child: Text('取消订单')),
+                      PopupMenuItem(value: 'refunded', child: Text('退款处理')),
+                    ],
+                  ),
                 ),
               )),
         ],
       );
-
-  Future<void> _editPageTab(dynamic tabConfig) async {
-    final title =
-        await _input('Tab 名称', initial: '${tabConfig['title'] ?? ''}');
-    if (title == null) return;
-    await api.patch(
-        '/api/game-club/manage/tabs/${tabConfig['id']}', {'title': title});
-    await load();
-  }
 
   Widget _orders() => ListView(
       children: myOrders
