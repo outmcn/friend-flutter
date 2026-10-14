@@ -121,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) => AuthScaffold(
         title: '登录 / 注册',
-        subtitle: '使用阿里云短信验证码',
+        subtitle: '使用手机号或密码登录',
         child: Column(children: [
           _AuthFieldController(
               label: '手机号码', icon: Icons.phone_outlined, controller: phone),

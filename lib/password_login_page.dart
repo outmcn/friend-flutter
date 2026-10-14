@@ -54,7 +54,7 @@ class _PasswordLoginPageState extends State<PasswordLoginPage> {
   @override
   Widget build(BuildContext context) => AuthScaffold(
         title: '密码登录',
-        subtitle: '使用手机号和密码登录 DD',
+        subtitle: '使用手机号或密码登录',
         child: Column(
           children: [
             _AuthFieldController(
