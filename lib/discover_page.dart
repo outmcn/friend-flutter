@@ -140,6 +140,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
     if (cardBottom > viewportBottom) {
       delta = cardBottom - viewportBottom;
     }
+    if (delta != 0) {
+      final extraGap = cardBox.size.height + 8;
+      delta += delta > 0 ? extraGap : -extraGap;
+    }
     if (delta == 0 || passes >= 3) return;
     final position = scroll.position;
     position.jumpTo((position.pixels + delta).clamp(
