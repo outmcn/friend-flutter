@@ -80,6 +80,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     '大红单',
     '礼物单',
     '任务单',
+    '全部陪玩',
   ];
 
   static const data = <Map<String, dynamic>>[
@@ -432,6 +433,37 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
           '40',
           '/1000w',
           ['跑刀', '包战损', '可监督']
+        ],
+      ],
+    },
+    {
+      'title': '全部陪玩',
+      'badge': '全部项目',
+      'desc': '浏览全部陪玩项目，选择适合你的游戏服务。',
+      'items': [
+        [
+          '🎮',
+          '标准陪玩',
+          '语音陪伴、报点、组队开黑。',
+          '38',
+          '/小时',
+          ['语音', '报点', '组队']
+        ],
+        [
+          '🛡️',
+          '保底护航',
+          '机密图护航，稳定积累哈夫币。',
+          '128',
+          '/单',
+          ['机密', '保底', '补局']
+        ],
+        [
+          '🎭',
+          '趣味整活',
+          '剧情、人设和娱乐玩法。',
+          '68',
+          '/局',
+          ['人设', '剧情', '整活']
         ],
       ],
     },
