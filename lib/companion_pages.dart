@@ -640,18 +640,55 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 
   Widget _configuredCategoryTab(Map<String, dynamic> config) {
-    final items = (config['card_items'] as List? ?? const []);
-    return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
-        children: [
-          Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text('${config['title'] ?? '分类卡片'}',
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.w800))),
-          ...items.map((x) => _ConfiguredCategoryItem(
-              item: Map<String, dynamic>.from(x as Map))),
-        ]);
+    final raw = (config['card_items'] as List? ?? const [])
+        .map((x) => Map<String, dynamic>.from(x as Map))
+        .toList();
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final item in raw) {
+      groups.putIfAbsent('${item['level1'] ?? '未命名分类'}', () => []).add(item);
+    }
+    final names = groups.keys.toList();
+    final selected = names.isEmpty ? '' : names.first;
+    final items = groups[selected] ?? const <Map<String, dynamic>>[];
+    return Row(children: [
+      SizedBox(
+        width: 148,
+        child: ColoredBox(
+          color: const Color(0xff141416),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(12, 18, 12, 24),
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(6, 0, 0, 18),
+                child: Text('玩法合集',
+                    style: TextStyle(
+                        color: Color(0xfff3f4f6),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700)),
+              ),
+              ...names.map((name) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: _sidebarItem(names.indexOf(name), name),
+                  )),
+            ],
+          ),
+        ),
+      ),
+      Expanded(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 48),
+          children: [
+            Text(selected,
+                style: const TextStyle(
+                    color: Color(0xfff3f4f6),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 18),
+            ...items.map((item) => _ConfiguredCategoryItem(item: item)),
+          ],
+        ),
+      ),
+    ]);
   }
 
   Widget _topTabBody() {
