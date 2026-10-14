@@ -370,6 +370,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
               comment.likes + (liked == comment.liked ? 0 : (liked ? 1 : -1)),
           liked: liked,
           city: comment.city,
+          avatar: comment.avatar,
         );
       });
     } catch (e) {
@@ -492,23 +493,39 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            InkWell(
-              onTap: comment.userId == null
-                  ? null
-                  : () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => OtherProfilePage(
-                            userId: comment.userId,
-                            name: comment.nickname,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                InkWell(
+                  onTap: comment.userId == null
+                      ? null
+                      : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => OtherProfilePage(
+                                userId: comment.userId,
+                                name: comment.nickname,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-              borderRadius: BorderRadius.circular(20),
-              child: const CircleAvatar(
-                radius: 20,
-                child: Icon(Icons.person_outline, size: 18),
-              ),
+                  borderRadius: BorderRadius.circular(20),
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundImage: comment.avatar.trim().isEmpty
+                        ? null
+                        : NetworkImage(comment.avatar.trim()),
+                    child: comment.avatar.trim().isEmpty
+                        ? const Icon(Icons.person_outline, size: 18)
+                        : null,
+                  ),
+                ),
+                if (comment.city.trim().isNotEmpty)
+                  Positioned(
+                    right: -6,
+                    bottom: -2,
+                    child: _ProfileTag(text: comment.city.trim()),
+                  ),
+              ],
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -527,10 +544,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                           color: displayColor,
                         ),
                       ),
-                      if (comment.city.trim().isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        _ProfileTag(text: comment.city.trim()),
-                      ],
                     ],
                   ),
                   const SizedBox(height: 2),
@@ -541,7 +554,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                         child: Text(comment.content),
                       ),
                       const SizedBox(width: 8),
-                      Column(
+                      Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           InkWell(
@@ -556,6 +569,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                   : Theme.of(context).hintColor,
                             ),
                           ),
+                          const SizedBox(width: 4),
                           Text('${comment.likes}',
                               style: const TextStyle(fontSize: 12)),
                         ],
