@@ -129,6 +129,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                                     child: ChoiceChip(
                                         label: Text(e.value),
                                         selected: tab == e.key,
+                                        showCheckmark: false,
                                         onSelected: (_) =>
                                             setState(() => tab = e.key))))
                                 .toList())),

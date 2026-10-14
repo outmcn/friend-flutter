@@ -1091,7 +1091,7 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
             controller: search,
             onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
-              hintText: '搜索游戏、声音或陪玩',
+              hintText: '搜索游戏俱乐部',
               prefixIcon: Icon(Icons.search),
             ),
           ),
