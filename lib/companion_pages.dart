@@ -61,8 +61,6 @@ class _BannerDot extends StatelessWidget {
 
 class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int tab = 0;
-  int selectedGame = 0;
-  List<dynamic> games = const [];
   int playbookTab = 0;
   bool playbookLoading = false;
   String? playbookError;
@@ -79,7 +77,6 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     _loadPlaybook();
     _loadBanners();
     _loadCompanions();
-    _loadGames();
   }
 
   @override
@@ -473,7 +470,6 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       body: Column(
         children: [
           _deltaBanners(),
-          if (games.isNotEmpty) _gameSelector(),
           _topTabs(),
           Expanded(child: tab >= 2 ? _playbookBody() : _topTabBody()),
         ],
@@ -554,21 +550,6 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
               ],
             ),
           ),
-        ),
-      );
-
-  Widget _gameSelector() => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        child: DropdownButtonFormField<int>(
-          initialValue: selectedGame,
-          decoration: const InputDecoration(
-              labelText: '选择游戏', border: OutlineInputBorder()),
-          items: [
-            const DropdownMenuItem(value: 0, child: Text('全部游戏')),
-            ...games.asMap().entries.map((e) => DropdownMenuItem(
-                value: e.key + 1, child: Text('${e.value['title']}'))),
-          ],
-          onChanged: (value) => setState(() => selectedGame = value ?? 0),
         ),
       );
 
@@ -755,15 +736,6 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ),
       ],
     );
-  }
-
-  Future<void> _loadGames() async {
-    try {
-      final api = GameClubBackendClient();
-      final result = await api.get('/api/game-club/games');
-      api.dispose();
-      if (mounted) setState(() => games = result['games'] as List? ?? []);
-    } catch (_) {}
   }
 
   Future<void> _loadCompanions() async {
