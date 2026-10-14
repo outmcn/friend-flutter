@@ -30,12 +30,19 @@ class DiscoverFeed extends ChangeNotifier {
   bool hasMore = true;
   bool disposed = false;
   String? error;
+  bool restoring = false;
 
   Future<void> restoreCache() async {
     if (cacheKey == null || disposed) return;
+    restoring = true;
+    notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(cacheKey!);
-    if (raw == null || raw.isEmpty) return;
+    if (raw == null || raw.isEmpty) {
+      restoring = false;
+      notifyListeners();
+      return;
+    }
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
@@ -51,7 +58,11 @@ class DiscoverFeed extends ChangeNotifier {
       initialized = true;
       hasMore = true;
       notifyListeners();
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      restoring = false;
+      if (!disposed) notifyListeners();
+    }
   }
 
   Future<void> _saveCache() async {
