@@ -1046,9 +1046,14 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
         title: const Text('Game 俱乐部'),
         actions: [
           IconButton(
-            tooltip: '后台',
-            onPressed: _openAdmin,
-            icon: const Icon(Icons.admin_panel_settings_outlined),
+            tooltip: '订单',
+            onPressed: () => _openCompanionAction(context, '订单'),
+            icon: const Icon(Icons.receipt_long_outlined),
+          ),
+          IconButton(
+            tooltip: '收藏',
+            onPressed: () => _openCompanionAction(context, '收藏'),
+            icon: const Icon(TIcons.bookmark),
           ),
         ],
       ),
@@ -1097,6 +1102,18 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
             .showSnackBar(SnackBar(content: Text('$error')));
       }
     }
+  }
+
+  void _openCompanionAction(BuildContext context, String title) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: Text(title)),
+          body: Center(child: Text('$title功能')),
+        ),
+      ),
+    );
   }
 
   void _open(CompanionProfile c) => Navigator.push(context,
