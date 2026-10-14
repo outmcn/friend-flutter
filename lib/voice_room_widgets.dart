@@ -91,58 +91,158 @@ class _CompanionListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         margin: const EdgeInsets.only(bottom: 12),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
           child: Padding(
-            padding: const EdgeInsets.all(15),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Stack(children: [
-                  CircleAvatar(radius: 26, child: Icon(data.icon, size: 25)),
-                  Positioned(right: 0, bottom: 0, child: _OnlineDot()),
-                ]),
-                const SizedBox(width: 12),
-                Expanded(
-                    child: Column(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(data.icon, size: 30),
+                        ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: -7,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('Lv68',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text(data.name,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      Text('${data.game} · ★${data.rating} · 在线',
-                          style: Theme.of(context).textTheme.labelSmall),
-                    ])),
-                FilledButton(onPressed: onOrder, child: const Text('约玩')),
-              ]),
-              const SizedBox(height: 10),
-              Text(data.voice,
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.primary)),
-              const SizedBox(height: 9),
-              Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: data.tags
-                      .map((t) => Chip(
-                          label: Text(t), visualDensity: VisualDensity.compact))
-                      .toList()),
-              const Divider(height: 24),
-              Row(children: [
-                Text('¥ ${data.price}/局起',
-                    style: const TextStyle(
-                        fontSize: 20,
-                        color: Color(0xffff4d8a),
-                        fontWeight: FontWeight.w800)),
-                const Spacer(),
-                const Text('已服务 1,286 次',
-                    style: TextStyle(fontSize: 11, color: Colors.grey)),
-              ]),
-            ]),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(data.name,
+                                    style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800)),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(TIcons.verified_filled,
+                                  size: 16, color: Color(0xff3b82f6)),
+                              const Spacer(),
+                              const _OnlineDot(),
+                              const SizedBox(width: 4),
+                              const Text('在线',
+                                  style: TextStyle(
+                                      color: Colors.green, fontSize: 11)),
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          Row(
+                            children: [
+                              _CompactTag(text: '${data.game} · 战神'),
+                              const SizedBox(width: 6),
+                              Text('★${data.rating}',
+                                  style: const TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          Wrap(
+                            spacing: 5,
+                            runSpacing: 5,
+                            children: data.tags
+                                .take(3)
+                                .map((tag) => _CompactTag(text: tag))
+                                .toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Divider(height: 1),
+                const SizedBox(height: 10),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _CompanionMetric(value: '320', label: '接单'),
+                    _CompanionMetric(value: '98%', label: '好评'),
+                    _CompanionMetric(value: '2分钟', label: '响应'),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text('¥${data.price}/局',
+                        style: const TextStyle(
+                            color: Color(0xffff4d8a),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800)),
+                    const Spacer(),
+                    FilledButton(onPressed: onOrder, child: const Text('立即下单')),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
+      );
+}
+
+class _CompactTag extends StatelessWidget {
+  const _CompactTag({required this.text});
+  final String text;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Text(text, style: const TextStyle(fontSize: 10)),
+      );
+}
+
+class _CompanionMetric extends StatelessWidget {
+  const _CompanionMetric({required this.value, required this.label});
+  final String value;
+  final String label;
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 2),
+          Text(label,
+              style:
+                  TextStyle(fontSize: 11, color: Theme.of(context).hintColor)),
+        ],
       );
 }
 
