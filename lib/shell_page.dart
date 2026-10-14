@@ -187,7 +187,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
     callDialogShowing = true;
     try {
-      final accepted = await showAppDialog<String>(
+      final accepted = await showDialog<String>(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) {
@@ -409,7 +409,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
    * 与其他页面的系统安全区、标题高度和操作按钮间距产生差异。
    */
   Future<void> _openNewChat() async {
-    final selected = await showAppSheet<Map<String, dynamic>>(
+    final selected = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _NewChatSheet(controller: userSearchController),
@@ -450,7 +450,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _openUserSearch() async {
     userSearchController.clear();
-    await showAppSheet<void>(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _NewChatSheet(controller: userSearchController),
@@ -999,7 +999,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   // Unread-only sync is represented by the live IM session events.
   Future<void> _redialCall(Map<String, dynamic> record) async {
-    final confirmed = await showAppDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('语音通话'),
@@ -1113,7 +1113,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     activeCallId = callId;
     callDialogShowing = true;
     try {
-      final accepted = await showAppDialog<String>(
+      final accepted = await showDialog<String>(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) {
@@ -1426,7 +1426,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       );
     }
     return GestureDetector(
-      onTap: () => showAppDialog<void>(
+      onTap: () => showDialog<void>(
         context: context,
         builder: (_) => Dialog(
           child: InteractiveViewer(child: Image.file(File(filePath))),
@@ -1676,7 +1676,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         context,
         const Text('举报已提交'),
       );
-      final shouldBlock = await showAppDialog<bool>(
+      final shouldBlock = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('举报成功'),
@@ -1728,7 +1728,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     );
     if (!mounted || action == null) return;
     if (action == 'clear') {
-      final confirmed = await showAppDialog<bool>(
+      final confirmed = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('清空当前聊天记录'),
@@ -1784,7 +1784,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         status != 'deleted' &&
         createdAt != null &&
         DateTime.now().difference(createdAt).inSeconds <= 180;
-    final choice = await showAppSheet<String>(
+    final choice = await showModalBottomSheet<String>(
       context: context,
       builder: (_) => SafeArea(
         child: Wrap(
@@ -1896,7 +1896,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       _showTopErrorBanner(context, '当前会话不可发送');
       return;
     }
-    final confirmed = await showAppDialog<String>(
+    final confirmed = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('发送位置'),

@@ -369,7 +369,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
 
   Future<String?> _input(String title, {String initial = ''}) async {
     final controller = TextEditingController(text: initial);
-    return showAppDialog<String>(
+    return showDialog<String>(
         context: context,
         builder: (_) => AlertDialog(
                 title: Text(title),

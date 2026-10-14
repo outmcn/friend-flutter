@@ -56,7 +56,7 @@ class SettingsPage extends StatelessWidget {
                     applicationLegalese: 'Friend',
                   );
                 } else if (item == '退出登录') {
-                  final ok = await showAppDialog<bool>(
+                  final ok = await showDialog<bool>(
                     context: context,
                     builder: (dialogContext) => AlertDialog(
                       title: const Text('退出登录'),

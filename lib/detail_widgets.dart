@@ -37,7 +37,7 @@ class _PostImageHolder extends StatelessWidget {
   final bool unlimitedHeight;
 
   Future<void> _showViewer(BuildContext context) async {
-    await showAppDialog<void>(
+    await showDialog<void>(
       context: context,
       barrierColor: Colors.black87,
       builder: (_) => GestureDetector(

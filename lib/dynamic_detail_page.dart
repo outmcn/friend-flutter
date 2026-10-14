@@ -401,7 +401,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   Future<void> _commentMenu(DDComment comment) async {
     final isMine = currentUserId != null && comment.userId == currentUserId;
     final canDelete = isMine || isOwner;
-    final action = await showAppSheet<String>(
+    final action = await showModalBottomSheet<String>(
       context: context,
       builder: (_) => SafeArea(
         child: Wrap(
@@ -452,7 +452,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       }
     } else if (action == 'report') {
       if (!mounted) return;
-      final reason = await showAppSheet<String>(
+      final reason = await showModalBottomSheet<String>(
         context: context,
         builder: (_) => SafeArea(
           child: ListView(
@@ -647,7 +647,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   Future<void> _delete() async {
     if (deleting) return;
-    final confirmed = await showAppDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('确认删除动态'),
@@ -681,7 +681,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   Future<void> _askBlockAfterReport(int? userId) async {
     if (!mounted || userId == null || userId == currentUserId) return;
-    final shouldBlock = await showAppDialog<bool>(
+    final shouldBlock = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('举报成功'),
@@ -729,7 +729,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   }
 
   Future<void> _openShareMenu(DDPost item) async {
-    final action = await showAppSheet<String>(
+    final action = await showModalBottomSheet<String>(
       context: context,
       builder: (_) => SafeArea(
         child: Wrap(
@@ -774,7 +774,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   }
 
   void _openGiftMenu() {
-    showAppSheet<void>(
+    showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(

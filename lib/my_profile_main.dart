@@ -165,7 +165,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   }
 
   Future<void> _openPresenceControls() async {
-    await showAppSheet<void>(
+    await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
