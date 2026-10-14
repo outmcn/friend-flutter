@@ -1295,18 +1295,6 @@ class _DeltaCompanionCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 color: Colors.grey, fontSize: 12)),
-                      const SizedBox(height: 7),
-                      Wrap(
-                        spacing: 5,
-                        runSpacing: 5,
-                        children: tags
-                            .map((tag) => Chip(
-                                  label: Text(tag),
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                ))
-                            .toList(),
-                      ),
                       const SizedBox(height: 4),
                       Text('$price 币 / 小时',
                           style: TextStyle(
