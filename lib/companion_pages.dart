@@ -875,10 +875,68 @@ class _GameClubCard extends StatelessWidget {
       );
 }
 
+class _GameplayCollection extends StatelessWidget {
+  const _GameplayCollection({required this.selected, required this.onSelected});
+  final int selected;
+  final ValueChanged<int> onSelected;
+
+  static const categories = [
+    {'title': '经典玩法', 'subtitle': '经典陪玩模式'},
+    {'title': '娱乐开黑', 'subtitle': '轻松组队娱乐'},
+    {'title': '语音陪伴', 'subtitle': '边玩边聊'},
+    {'title': '新手教学', 'subtitle': '快速熟悉玩法'},
+  ];
+
+  @override
+  Widget build(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          height: 210,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 108,
+                child: ColoredBox(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: ListView.builder(
+                    itemCount: categories.length,
+                    itemBuilder: (_, index) => ListTile(
+                      dense: true,
+                      selected: selected == index,
+                      title: Text(categories[index]['title']!),
+                      onTap: () => onSelected(index),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(categories[selected]['title']!,
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 10),
+                      Text(categories[selected]['subtitle']!),
+                      const SizedBox(height: 18),
+                      const Text('当前分类内容将在此处显示'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
 class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
   final search = TextEditingController();
   int game = 0;
   int type = 0;
+  int gameplay = 0;
   final games = const ['王者荣耀', '英雄联盟', '和平精英', '原神', '更多'];
   final types = const ['全部', '上分陪玩', '娱乐开黑', '语音陪伴', '新手教学'];
   final companions = const [
@@ -956,6 +1014,11 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
             subtitle: '体验更多游戏玩法',
             icon: TIcons.app,
             colors: const [Color(0xff2b78c5), Color(0xff39b4bb)],
+          ),
+          const SizedBox(height: 12),
+          _GameplayCollection(
+            selected: gameplay,
+            onSelected: (value) => setState(() => gameplay = value),
           ),
         ],
       ),
