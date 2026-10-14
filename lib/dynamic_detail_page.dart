@@ -493,68 +493,28 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                InkWell(
-                  onTap: comment.userId == null
-                      ? null
-                      : () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => OtherProfilePage(
-                                userId: comment.userId,
-                                name: comment.nickname,
-                              ),
-                            ),
+            InkWell(
+              onTap: comment.userId == null
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OtherProfilePage(
+                            userId: comment.userId,
+                            name: comment.nickname,
                           ),
-                  borderRadius: BorderRadius.circular(20),
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundImage: comment.avatar.trim().isEmpty
-                        ? null
-                        : NetworkImage(comment.avatar.trim()),
-                    child: comment.avatar.trim().isEmpty
-                        ? const Icon(Icons.person_outline, size: 18)
-                        : null,
-                  ),
-                ),
-                if (comment.city.trim().isNotEmpty)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: -9,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          border: Border.all(
-                            color: Theme.of(context).dividerColor,
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x19000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          comment.city.trim(),
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelSmall,
                         ),
                       ),
-                    ),
-                  ),
-              ],
+              borderRadius: BorderRadius.circular(20),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: comment.avatar.trim().isEmpty
+                    ? null
+                    : NetworkImage(comment.avatar.trim()),
+                child: comment.avatar.trim().isEmpty
+                    ? const Icon(Icons.person_outline, size: 18)
+                    : null,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -582,13 +542,39 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                       Expanded(
                         child: Text(comment.content),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      Text(
+                        formatDDTime(comment.createdAt),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      if (comment.city.trim().isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          comment.city.trim(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ],
                       const SizedBox(width: 8),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          InkWell(
-                            onTap: () => _toggleCommentLike(comment),
-                            child: Icon(
+                      Text(
+                        '回复',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).hintColor,
+                        ),
+                      ),
+                      const Spacer(),
+                      InkWell(
+                        onTap: () => _toggleCommentLike(comment),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
                               comment.liked
                                   ? Icons.thumb_up
                                   : Icons.thumb_up_outlined,
@@ -597,18 +583,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                   ? Theme.of(context).colorScheme.primary
                                   : Theme.of(context).hintColor,
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text('${comment.likes}',
-                              style: const TextStyle(fontSize: 12)),
-                        ],
+                            const SizedBox(width: 4),
+                            Text('${comment.likes}',
+                                style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    formatDDTime(comment.createdAt),
-                    style: const TextStyle(fontSize: 11),
                   ),
                 ],
               ),
