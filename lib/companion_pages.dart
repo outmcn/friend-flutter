@@ -932,11 +932,80 @@ class _GameplayCollection extends StatelessWidget {
       );
 }
 
+class _ClubMenuCard extends StatelessWidget {
+  const _ClubMenuCard({required this.selected, required this.onSelected});
+  final int selected;
+  final ValueChanged<int> onSelected;
+  static const menus = ['明星陪玩', '魔王技术', '玩法合集'];
+
+  @override
+  Widget build(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          height: 360,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 110,
+                child: ColoredBox(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: ListView.builder(
+                    itemCount: menus.length,
+                    itemBuilder: (_, index) => ListTile(
+                      dense: true,
+                      selected: index == selected,
+                      title: Text(menus[index]),
+                      onTap: () => onSelected(index),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: selected == 0
+                      ? const _ClubContent(
+                          title: '明星陪玩', subtitle: '高人气陪玩，快速开黑')
+                      : selected == 1
+                          ? const _ClubContent(
+                              title: '魔王技术', subtitle: '技术指导，提升游戏体验')
+                          : const _GameplayCollection(
+                              selected: 0, onSelected: _ignoreClubSelection),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  static void _ignoreClubSelection(int _) {}
+}
+
+class _ClubContent extends StatelessWidget {
+  const _ClubContent({required this.title, required this.subtitle});
+  final String title;
+  final String subtitle;
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          Text(subtitle),
+          const SizedBox(height: 24),
+          const Text('相关内容将在此处显示'),
+        ],
+      );
+}
+
 class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
   final search = TextEditingController();
   int game = 0;
   int type = 0;
   int gameplay = 0;
+  int selectedClubMenu = 0;
   final games = const ['王者荣耀', '英雄联盟', '和平精英', '原神', '更多'];
   final types = const ['全部', '上分陪玩', '娱乐开黑', '语音陪伴', '新手教学'];
   final companions = const [
@@ -989,36 +1058,13 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
           _DeltaGameEntryButton(
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const DeltaCompanionPage(),
-              ),
+              MaterialPageRoute(builder: (_) => const DeltaCompanionPage()),
             ),
           ),
           const SizedBox(height: 16),
-          _GameClubCard(
-            title: '明星陪玩',
-            subtitle: '高人气陪玩，快速开黑',
-            icon: TIcons.star_filled,
-            colors: const [Color(0xffff8a4c), Color(0xffff4f81)],
-          ),
-          const SizedBox(height: 12),
-          _GameClubCard(
-            title: '魔王技术',
-            subtitle: '技术指导，提升游戏体验',
-            icon: TIcons.rocket,
-            colors: const [Color(0xff6b4de6), Color(0xffb04bd8)],
-          ),
-          const SizedBox(height: 12),
-          _GameClubCard(
-            title: '玩法合集',
-            subtitle: '体验更多游戏玩法',
-            icon: TIcons.app,
-            colors: const [Color(0xff2b78c5), Color(0xff39b4bb)],
-          ),
-          const SizedBox(height: 12),
-          _GameplayCollection(
-            selected: gameplay,
-            onSelected: (value) => setState(() => gameplay = value),
+          _ClubMenuCard(
+            selected: selectedClubMenu,
+            onSelected: (value) => setState(() => selectedClubMenu = value),
           ),
         ],
       ),
