@@ -20,7 +20,8 @@ class _DeltaBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         margin: const EdgeInsets.only(top: 8),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        height: 96,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
               colors: [Color(0xff263b59), Color(0xff9b4c48)]),
@@ -38,7 +39,31 @@ class _DeltaBanner extends StatelessWidget {
             const SizedBox(height: 3),
             Text(subtitle,
                 style: const TextStyle(color: Colors.white70, fontSize: 11)),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _BannerDot(active: title == '百强大神推荐榜'),
+                _BannerDot(active: title == '三角洲巅峰护航'),
+                _BannerDot(active: title == '新手体验专区'),
+              ],
+            ),
           ],
+        ),
+      );
+}
+
+class _BannerDot extends StatelessWidget {
+  const _BannerDot({required this.active});
+  final bool active;
+  @override
+  Widget build(BuildContext context) => Container(
+        width: active ? 16 : 6,
+        height: 6,
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.white54,
+          borderRadius: BorderRadius.circular(99),
         ),
       );
 }
