@@ -83,6 +83,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   Future<void> _open(DDPost post) async {
     final key = _cardKeys.putIfAbsent(post.id, GlobalKey.new);
+    final feed = feeds[selectedTab];
     if (!mounted) return;
     final box = key.currentContext?.findRenderObject() as RenderBox?;
     final topLeft = box?.localToGlobal(Offset.zero);
@@ -106,7 +107,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _revealCardEdgesOnly(key, feeds[selectedTab].scroll);
+        _revealCardEdgesOnly(key, feed.scroll);
       }
     });
     final deleted = await routeFuture;
@@ -115,7 +116,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     for (final feed in feeds) {
       feed.posts.removeWhere((item) => item.id == post.id);
     }
-    feeds[selectedTab].markChanged();
+    feed.markChanged();
   }
 
   void _revealCardEdgesOnly(GlobalKey key, ScrollController scroll) {
