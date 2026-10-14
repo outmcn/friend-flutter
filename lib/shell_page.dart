@@ -2044,7 +2044,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                               physics: const AlwaysScrollableScrollPhysics(),
                               reverse: true,
                               keyboardDismissBehavior:
-                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                                  ScrollViewKeyboardDismissBehavior.manual,
                               padding: const EdgeInsets.all(16),
                               itemCount:
                                   _timeline.length + (peerTyping ? 1 : 0),
