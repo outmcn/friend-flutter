@@ -1,4 +1,5 @@
 part of 'main.dart';
+// ignore_for_file: unused_element
 
 class GameCompanionPlazaPage extends StatefulWidget {
   const GameCompanionPlazaPage({super.key});
@@ -891,72 +892,30 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
 
   @override
   Widget build(BuildContext context) {
-    final q = search.text.trim();
-    final visible = companions
-        .where((c) =>
-            q.isEmpty ||
-            c.name.contains(q) ||
-            c.game.contains(q) ||
-            c.tags.any((tag) => tag.contains(q)))
-        .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('陪玩广场'), actions: [
-        IconButton(
-            onPressed: () => _notice('陪玩订单'),
-            icon: const Icon(Icons.receipt_long_outlined))
-      ]),
+      appBar: AppBar(title: const Text('Game 俱乐部')),
       body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
-          children: [
-            _DeltaGameEntryButton(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const DeltaCompanionPage(),
-                ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+        children: [
+          TextField(
+            controller: search,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              hintText: '搜索游戏、声音或陪玩',
+              prefixIcon: Icon(Icons.search),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _DeltaGameEntryButton(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const DeltaCompanionPage(),
               ),
             ),
-            const SizedBox(height: 12),
-            const _CompanionNotice(),
-            const SizedBox(height: 12),
-            TextField(
-                controller: search,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                    hintText: '搜索游戏、声音或陪玩', prefixIcon: Icon(Icons.search))),
-            const SizedBox(height: 13),
-            _GameFilterRow(
-                labels: games,
-                selected: game,
-                onSelected: (v) => setState(() => game = v),
-                icon: Icons.sports_esports_outlined),
-            const SizedBox(height: 9),
-            _GameFilterRow(
-                labels: types,
-                selected: type,
-                onSelected: (v) => setState(() => type = v)),
-            const _CompanionSection(title: '今日推荐'),
-            SizedBox(
-                height: 208,
-                child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: companions
-                        .take(3)
-                        .map((c) => _CompanionRecommendCard(
-                            data: c, onTap: () => _open(c)))
-                        .toList())),
-            const _CompanionSection(title: '在线陪玩'),
-            ...visible.map((c) => _CompanionListCard(
-                data: c, onTap: () => _open(c), onOrder: _showFakeOrderDialog)),
-          ]),
-      bottomNavigationBar: SafeArea(
-          top: false,
-          child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: FilledButton.icon(
-                  onPressed: () => _notice('发布陪玩需求'),
-                  icon: const Icon(Icons.add),
-                  label: const Text('发布陪玩需求')))),
+          ),
+        ],
+      ),
     );
   }
 
