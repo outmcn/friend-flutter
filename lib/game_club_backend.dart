@@ -68,6 +68,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   List<dynamic> myCompanions = [];
   List<dynamic> banners = [];
   List<dynamic> applications = [];
+  List<dynamic> games = [];
   @override
   void initState() {
     super.initState();
@@ -92,7 +93,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         api.get('/api/game-club/projects'),
         api.get('/api/game-club/orders'),
         api.get('/api/game-club/banners'),
-        api.get('/api/game-club/applications')
+        api.get('/api/game-club/applications'),
+        api.get('/api/game-club/manage/games')
       ]);
       if (!mounted) {
         return;
@@ -104,6 +106,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         myOrders = values[3]['orders'] as List? ?? [];
         banners = values[4]['banners'] as List? ?? [];
         applications = values[5]['applications'] as List? ?? [];
+        games = values[6]['games'] as List? ?? [];
         loading = false;
       });
     } catch (e) {
@@ -129,7 +132,14 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                     SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                            children: ['陪玩管理', '申请列表', '订单管理', '玩法管理', '推广管理']
+                            children: [
+                          '陪玩管理',
+                          '申请列表',
+                          '订单管理',
+                          '玩法管理',
+                          '推广管理',
+                          '游戏管理'
+                        ]
                                 .asMap()
                                 .entries
                                 .map((e) => Padding(
@@ -147,7 +157,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                       _applications(),
                       _orders(),
                       _playbook(),
-                      _promotion()
+                      _promotion(),
+                      _games()
                     ][tab])
                   ]),
       );
@@ -220,6 +231,31 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
           ...banners.map((b) => ListTile(
               title: Text('${b['title']}'),
               subtitle: Text('${b['subtitle']}'))),
+        ],
+      );
+
+  Widget _games() => ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          FilledButton.icon(
+              onPressed: _addGame,
+              icon: const Icon(Icons.add),
+              label: const Text('增加游戏')),
+          ...games.map((g) => Card(
+                  child: ExpansionTile(
+                title: Text('${g['title']}'),
+                trailing: IconButton(
+                    onPressed: () =>
+                        _delete('/api/game-club/manage/games/${g['id']}'),
+                    icon: const Icon(Icons.delete_outline)),
+                children: [
+                  ListTile(
+                      title: const Text('俱乐部管理员'),
+                      trailing: IconButton(
+                          onPressed: () => _addGameManager(g),
+                          icon: const Icon(Icons.person_add_outlined))),
+                ],
+              )))
         ],
       );
 
@@ -349,6 +385,23 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
           .where((e) => e.isNotEmpty)
           .toList(),
     });
+  }
+
+  Future<void> _addGame() async {
+    final title = await _input('游戏名称');
+    if (title != null && title.trim().isNotEmpty) {
+      await api.post('/api/game-club/manage/games', {'title': title});
+      await load();
+    }
+  }
+
+  Future<void> _addGameManager(dynamic game) async {
+    final phone = await _input('管理员手机号');
+    if (phone != null && phone.trim().isNotEmpty) {
+      await api.post('/api/game-club/manage/games/${game['id']}/managers',
+          {'phone': phone});
+      await load();
+    }
   }
 
   Future<void> _addCategory() async {
