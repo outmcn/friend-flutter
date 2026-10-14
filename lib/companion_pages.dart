@@ -479,13 +479,11 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
           children: const [
             _DeltaCompanionCard(
-                name: '若尘',
+                name: '周浩男',
                 price: '80',
                 tags: ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰', '秒接单']),
             _DeltaCompanionCard(
-                name: '圆子ovo冲冲冲', price: '64', tags: ['金牌娱乐', '三角洲巅峰', '秒接单']),
-            _DeltaCompanionCard(
-                name: '董可爱呀', price: '88', tags: ['魔王技术', '金牌娱乐', '三角洲巅峰']),
+                name: '胡进', price: '64', tags: ['金牌娱乐', '三角洲巅峰', '秒接单']),
           ]);
     }
     if (tab == 1) {
