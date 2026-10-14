@@ -838,6 +838,43 @@ class CompanionProfile {
   final String voice;
 }
 
+class _GameClubCard extends StatelessWidget {
+  const _GameClubCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.colors,
+  });
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: colors),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            leading: Icon(icon, color: Colors.white, size: 34),
+            title: Text(title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800)),
+            subtitle:
+                Text(subtitle, style: const TextStyle(color: Colors.white70)),
+            trailing: const Icon(TIcons.chevron_right, color: Colors.white),
+          ),
+        ),
+      );
+}
+
 class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
   final search = TextEditingController();
   int game = 0;
@@ -898,6 +935,27 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
                 builder: (_) => const DeltaCompanionPage(),
               ),
             ),
+          ),
+          const SizedBox(height: 16),
+          _GameClubCard(
+            title: '明星陪玩',
+            subtitle: '高人气陪玩，快速开黑',
+            icon: TIcons.star_filled,
+            colors: const [Color(0xffff8a4c), Color(0xffff4f81)],
+          ),
+          const SizedBox(height: 12),
+          _GameClubCard(
+            title: '魔王技术',
+            subtitle: '技术指导，提升游戏体验',
+            icon: TIcons.rocket,
+            colors: const [Color(0xff6b4de6), Color(0xffb04bd8)],
+          ),
+          const SizedBox(height: 12),
+          _GameClubCard(
+            title: '玩法合集',
+            subtitle: '体验更多游戏玩法',
+            icon: TIcons.app,
+            colors: const [Color(0xff2b78c5), Color(0xff39b4bb)],
           ),
         ],
       ),
