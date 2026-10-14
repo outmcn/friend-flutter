@@ -151,8 +151,11 @@ class _LoginPageState extends State<LoginPage> {
               label: loading ? '登录中…' : '登录 / 注册',
               onTap: loading ? () {} : login),
           TextButton(
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const PasswordLoginPage())),
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          PasswordLoginPage(initialPhone: phone.text.trim()))),
               child: const Text('密码登录')),
         ]),
       );

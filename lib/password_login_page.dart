@@ -1,7 +1,8 @@
 part of 'main.dart';
 
 class PasswordLoginPage extends StatefulWidget {
-  const PasswordLoginPage({super.key});
+  const PasswordLoginPage({super.key, this.initialPhone = ''});
+  final String initialPhone;
   @override
   State<PasswordLoginPage> createState() => _PasswordLoginPageState();
 }
@@ -12,6 +13,12 @@ class _PasswordLoginPageState extends State<PasswordLoginPage> {
   final _service = DDPostService();
   bool _loading = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _username.text = widget.initialPhone;
+  }
 
   @override
   void dispose() {

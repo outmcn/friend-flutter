@@ -406,7 +406,9 @@ class _AuthPageState extends State<AuthPage> {
             TextButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const PasswordLoginPage()),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        PasswordLoginPage(initialPhone: phone.text.trim())),
               ),
               child: const Text('密码登录'),
             ),
