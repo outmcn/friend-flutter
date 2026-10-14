@@ -646,6 +646,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                 padding: EdgeInsets.all(24), child: Text('该 Tab 暂无陪玩')),
           ...source.map((p) => _DeltaCompanionCard(
               name: '${p['nickname'] ?? '用户'}',
+              gender: '${p['gender'] ?? ''}',
               price: '${p['price'] ?? '0'}',
               tags:
                   (p['tags'] as List? ?? const []).map((x) => '$x').toList())),
@@ -763,6 +764,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       return people
           .map((p) => _DeltaCompanionCard(
                 name: '${p['nickname'] ?? '用户'}',
+                gender: '${p['gender'] ?? ''}',
                 price: '${p['price'] ?? '0'}',
                 tags: (p['tags'] as List? ?? const []).cast<String>(),
               ))
@@ -1177,10 +1179,12 @@ class _DeltaCompanionCard extends StatelessWidget {
   const _DeltaCompanionCard({
     required this.name,
     required this.price,
+    this.gender = '',
     required this.tags,
   });
   final String name;
   final String price;
+  final String gender;
   final List<String> tags;
 
   void _open(BuildContext context) {
@@ -1221,9 +1225,23 @@ class _DeltaCompanionCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name,
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w800)),
+                      Row(children: [
+                        Flexible(
+                            child: Text(name,
+                                style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800))),
+                        if (gender == '男')
+                          const Padding(
+                              padding: EdgeInsets.only(left: 4),
+                              child: Icon(Icons.male,
+                                  color: Colors.blue, size: 19)),
+                        if (gender == '女')
+                          const Padding(
+                              padding: EdgeInsets.only(left: 4),
+                              child: Icon(Icons.female,
+                                  color: Colors.pink, size: 19)),
+                      ]),
                       const SizedBox(height: 7),
                       Wrap(
                         spacing: 5,
