@@ -293,7 +293,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 'localDurationSeconds': local['local_duration_seconds'] ??
                     local['localDurationSeconds'],
               });
-        final preview = localPreview ?? row.lastMessage?.text ?? '开始一段新的聊天';
+        final preview = localPreview ??
+            _conversationLastMessagePreview(row.lastMessage) ??
+            '开始一段新的聊天';
         mapped.add(_ChatPreview(
           row.peer?.nickname ?? '会话 ${row.id}',
           preview,
@@ -653,6 +655,25 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
   if (kind == 'image') return '[图片]';
   if (kind == 'audio') return '[语音]';
   return '${row['text'] ?? ''}';
+}
+
+String? _conversationLastMessagePreview(DDImLastMessage? message) {
+  if (message == null) return null;
+  if (message.recalledAt != null) return '消息已撤回';
+  if (message.deletedAt != null) return '消息已删除';
+  switch (message.kind) {
+    case 'audio':
+      return '[语音]';
+    case 'image':
+      return '[图片]';
+    case 'location':
+      return '[位置]';
+    case 'call':
+      return '[语音通话]';
+    default:
+      final text = message.text.trim();
+      return text.isEmpty ? null : text;
+  }
 }
 
 class _ChatPreview {
