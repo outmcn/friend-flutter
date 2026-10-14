@@ -372,19 +372,19 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         title: const Text('消息'),
         actions: [
           IconButton(
-            tooltip: '设置',
-            onPressed: () {},
-            icon: Icon(TIcons.setting),
+            tooltip: '通讯录',
+            onPressed: _openContacts,
+            icon: const Icon(Icons.contacts_outlined),
           ),
           IconButton(
-            tooltip: '新建聊天',
+            tooltip: '搜索',
+            onPressed: _openUserSearch,
+            icon: const Icon(Icons.search),
+          ),
+          IconButton(
+            tooltip: '添加',
             onPressed: _openNewChat,
-            icon: Icon(TIcons.add_circle),
-          ),
-          IconButton(
-            tooltip: '好友申请',
-            onPressed: () {},
-            icon: Icon(TIcons.user_add),
+            icon: const Icon(Icons.add),
           ),
         ],
       ),
@@ -443,6 +443,65 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       if (mounted) {
         _showTopErrorBanner(context, '$error');
       }
+    }
+  }
+
+  Future<void> _openUserSearch() async {
+    userSearchController.clear();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _NewChatSheet(controller: userSearchController),
+    );
+  }
+
+  Future<void> _openContacts() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: 360,
+          child: conversations.isEmpty
+              ? const Center(child: Text('暂无联系人'))
+              : ListView.builder(
+                  itemCount: conversations.length,
+                  itemBuilder: (_, index) {
+                    final chat = conversations[index];
+                    return ListTile(
+                      leading: CircleAvatar(backgroundImage: _avatarFor(chat)),
+                      title: Text(chat.name),
+                      subtitle: Text(chat.preview),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        _openConversation(chat);
+                      },
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openConversation(_ChatPreview chat) async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentUserId = prefs.getString('friend.auth.userId') ?? '';
+    if (!mounted) return;
+    await _stopListSocket();
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _ChatDetailPage(
+          chat: chat,
+          currentUserId: currentUserId,
+        ),
+      ),
+    );
+    if (mounted) {
+      unawaited(_loadConversations(showLoading: false));
+      unawaited(_restartListSocket());
     }
   }
 
