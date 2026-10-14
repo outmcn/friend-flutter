@@ -19,7 +19,7 @@ class ImSendException implements Exception {
 class DDPostService {
   DDPostService({http.Client? client}) : _client = client ?? http.Client();
 
-  static final Uri _base = Uri.parse('https://friend.outmcn.net');
+  static final Uri _base = Uri.parse('https://friend.outmcn.com');
   final http.Client _client;
   static const profileTabCachePrefix = 'dd.profile.tab.cache.';
 

@@ -32,7 +32,7 @@ class FriendImSocket {
     _emitState('connecting');
     try {
       final channel = IOWebSocketChannel.connect(
-        Uri.parse('wss://chat.outmcn.net/ws'),
+        Uri.parse('wss://chat.outmcn.com/ws'),
         pingInterval: const Duration(seconds: 25),
       );
       _channel = channel;

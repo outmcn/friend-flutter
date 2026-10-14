@@ -57,7 +57,7 @@ void main() {
       var posts = 0;
       final sender = coordinator((request) async {
         posts++;
-        expect(request.url.origin, 'https://friend.outmcn.net');
+        expect(request.url.origin, 'https://friend.outmcn.com');
         final body = jsonDecode(request.body) as Map;
         expect(body['kind'], kind);
         if (kind == 'location') expect(body['metadata'], location);
