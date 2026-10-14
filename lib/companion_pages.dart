@@ -75,6 +75,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int _bannerIndex = 0;
   List<Map<String, dynamic>> remoteBanners = const [];
   List<Map<String, dynamic>> remoteTabs = const [];
+  bool _pageLoading = true;
 
   @override
   void initState() {
@@ -474,13 +475,15 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _deltaBanners(),
-          _topTabs(),
-          Expanded(child: _configuredTabBody()),
-        ],
-      ),
+      body: _pageLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                _deltaBanners(),
+                _topTabs(),
+                Expanded(child: _configuredTabBody()),
+              ],
+            ),
     );
   }
 
@@ -853,13 +856,15 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       api.dispose();
       if (mounted) {
         setState(() {
-          if (result['banners'] is List) {
-            remoteBanners =
-                (result['banners'] as List).cast<Map<String, dynamic>>();
-          }
-          if (result['tabs'] is List) {
-            remoteTabs = (result['tabs'] as List).cast<Map<String, dynamic>>();
-          }
+          remoteBanners = (result['banners'] as List? ?? const [])
+              .whereType<Map>()
+              .map((x) => Map<String, dynamic>.from(x))
+              .toList();
+          remoteTabs = (result['tabs'] as List? ?? const [])
+              .whereType<Map>()
+              .map((x) => Map<String, dynamic>.from(x))
+              .toList();
+          _pageLoading = false;
         });
       }
     } catch (_) {}
