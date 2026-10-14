@@ -1,10 +1,13 @@
 import 'package:flutter/widgets.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'post_service.dart';
 
 // 每个标签独立持有请求状态和滚动位置，切换不销毁列表。
 class DiscoverFeed extends ChangeNotifier {
-  DiscoverFeed(this.fetch);
+  DiscoverFeed(this.fetch, {this.cacheKey});
   final Future<List<DDPost>> Function(int offset) fetch;
+  final String? cacheKey;
   final scroll = ScrollController();
   final posts = <DDPost>[];
   final postChanges = ValueNotifier<DDPost?>(null);
@@ -28,6 +31,38 @@ class DiscoverFeed extends ChangeNotifier {
   bool disposed = false;
   String? error;
 
+  Future<void> restoreCache() async {
+    if (cacheKey == null || disposed) return;
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(cacheKey!);
+    if (raw == null || raw.isEmpty) return;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return;
+      final restored = decoded
+          .whereType<Map<String, dynamic>>()
+          .map((item) => DDPost.fromJson(item, preserveMediaKeys: true))
+          .toList();
+      if (restored.isEmpty || disposed) return;
+      posts
+        ..clear()
+        ..addAll(restored);
+      offset = restored.length;
+      initialized = true;
+      hasMore = true;
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _saveCache() async {
+    if (cacheKey == null || disposed || posts.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      cacheKey!,
+      jsonEncode(posts.map((post) => post.toJson()).toList()),
+    );
+  }
+
   Future<void> load({bool refresh = false}) async {
     if (disposed || busy || (!refresh && initialized && !hasMore)) return;
     busy = true;
@@ -47,6 +82,7 @@ class DiscoverFeed extends ChangeNotifier {
       posts.addAll(batch.where((post) => ids.add(post.id)));
       hasMore = batch.length == 30;
       initialized = true;
+      await _saveCache();
     } catch (e) {
       if (!disposed) error = e.toString().replaceFirst('Exception: ', '');
     } finally {

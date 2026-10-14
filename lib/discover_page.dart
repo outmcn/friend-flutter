@@ -46,7 +46,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 : await service.fetchFollowingPosts(token, offset: offset);
         return Future.wait(
             posts.map((post) => service.resolvePostMedia(token, post)));
-      });
+      }, cacheKey: 'dd.discover.feed.$tab');
       feed.scroll.addListener(() {
         if (feed.scroll.hasClients &&
             feed.scroll.position.extentAfter < 500 &&
@@ -57,7 +57,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
       });
       return feed;
     });
-    feeds.first.load();
+    for (final feed in feeds) {
+      unawaited(feed.restoreCache().then((_) {
+        if (!feed.initialized) return feed.load();
+        return Future<void>.value();
+      }));
+    }
     unawaited(_loadDiscoverCity());
   }
 
