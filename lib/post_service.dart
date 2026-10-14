@@ -114,6 +114,41 @@ class DDPostService {
         .toList();
   }
 
+  Future<Map<String, dynamic>> createWerewolfRoom(String token) async =>
+      _werewolfPost(token, '/werewolf/rooms', {});
+  Future<Map<String, dynamic>> joinWerewolfRoom(
+          String token, String code) async =>
+      _werewolfPost(token, '/werewolf/rooms/join', {'roomCode': code});
+  Future<Map<String, dynamic>> takeWerewolfSeat(
+          String token, String roomId, int seat) async =>
+      _werewolfPost(token, '/werewolf/rooms/$roomId/seat', {'seat': seat});
+  Future<Map<String, dynamic>> readyWerewolfRoom(
+          String token, String roomId, bool ready) async =>
+      _werewolfPost(token, '/werewolf/rooms/$roomId/ready', {'ready': ready});
+  Future<Map<String, dynamic>> startWerewolfMatch(String token) async =>
+      _werewolfPost(token, '/werewolf/match/start', {});
+  Future<Map<String, dynamic>> stopWerewolfMatch(String token) async =>
+      _werewolfPost(token, '/werewolf/match/stop', {});
+  Future<Map<String, dynamic>> _werewolfPost(
+      String token, String path, Map<String, dynamic> body) async {
+    final response = await _client.post(_api(path),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode(body));
+    final value = response.body.trim().isEmpty
+        ? <String, dynamic>{}
+        : jsonDecode(response.body);
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        value is! Map) {
+      throw Exception(
+          value is Map ? '${value['error'] ?? '狼人杀操作失败'}' : '狼人杀操作失败');
+    }
+    return value.cast<String, dynamic>();
+  }
+
   Future<String> createDirectConversation(String token, String peerId) async {
     final response = await _client.post(
       _api('/im/conversations/direct'),

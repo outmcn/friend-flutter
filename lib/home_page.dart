@@ -96,7 +96,10 @@ class HomePage extends StatelessWidget {
                 subtitle: '拨开迷雾，寻找真相',
                 badge: 'GO',
                 colors: const [Color(0xff352b62), Color(0xff8b4e9f)],
-                onTap: () => _unavailable(context, '玩剧本'),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WerewolfGamePage()),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
