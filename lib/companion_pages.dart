@@ -63,6 +63,9 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int tab = 0;
   int playbookTab = 0;
   bool showAllCompanions = false;
+  bool playbookLoading = false;
+  String? playbookError;
+  List<Map<String, dynamic>> remotePlaybook = const [];
   late final PageController _bannerController;
   int _bannerIndex = 0;
 
@@ -70,6 +73,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   void initState() {
     super.initState();
     _bannerController = PageController();
+    _loadPlaybook();
   }
 
   @override
@@ -77,17 +81,6 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     _bannerController.dispose();
     super.dispose();
   }
-
-  static const categories = <String>[
-    '体验单',
-    '保底单',
-    '趣味单',
-    '陪玩单',
-    '转盘单',
-    '大红单',
-    '礼物单',
-    '任务单',
-  ];
 
   static const data = <Map<String, dynamic>>[
     {
@@ -624,9 +617,13 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 
   Widget _playbookBody() {
-    final item = data[playbookTab];
+    final source = remotePlaybook.isNotEmpty
+        ? remotePlaybook
+        : data.map((entry) => entry.cast<String, dynamic>()).toList();
+    final safeIndex = playbookTab.clamp(0, source.length - 1);
+    final item = source[safeIndex];
     final items = showAllCompanions
-        ? data
+        ? source
             .expand((entry) => (entry['items'] as List).cast<List<dynamic>>())
             .toList()
         : (item['items'] as List).cast<List<dynamic>>();
@@ -665,10 +662,10 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                     ],
                   ),
                 ),
-                for (var i = 0; i < categories.length; i++)
+                for (var i = 0; i < source.length; i++)
                   Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: _sidebarItem(i, categories[i])),
+                      child: _sidebarItem(i, '${source[i]['title']}')),
               ],
             ),
           ),
@@ -730,6 +727,59 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _loadPlaybook() async {
+    setState(() {
+      playbookLoading = true;
+      playbookError = null;
+    });
+    try {
+      final api = GameClubBackendClient();
+      final results = await Future.wait([
+        api.get('/api/game-club/categories'),
+        api.get('/api/game-club/projects'),
+      ]);
+      api.dispose();
+      final cats = (results[0]['categories'] as List? ?? const [])
+          .cast<Map<String, dynamic>>();
+      final projects = (results[1]['projects'] as List? ?? const [])
+          .cast<Map<String, dynamic>>();
+      final grouped = cats.map((category) {
+        final id = '${category['id']}';
+        final rows = projects
+            .where((project) => '${project['category_id']}' == id)
+            .map((project) => <dynamic>[
+                  '🎮',
+                  project['title'] ?? '',
+                  project['description'] ?? '',
+                  project['price'] ?? '',
+                  project['unit'] ?? '',
+                  (project['tags'] as List? ?? const []).cast<String>(),
+                ])
+            .toList();
+        return <String, dynamic>{
+          'title': category['title'] ?? '',
+          'badge': category['badge'] ?? '',
+          'desc': category['description'] ?? '',
+          'items': rows,
+        };
+      }).toList();
+      if (mounted) {
+        setState(() {
+          remotePlaybook = grouped;
+          playbookLoading = false;
+          if (playbookTab >= grouped.length) playbookTab = 0;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          playbookError = '$error';
+          playbookLoading = false;
+        });
+      }
+    }
   }
 
   Widget _sidebarItem(int index, String label) {
