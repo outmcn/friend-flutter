@@ -499,7 +499,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       if (isManager) {
         await Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const GameClubAdminPage()),
+          MaterialPageRoute(builder: (_) => GameClubAdminPage(gameId: gameId)),
         );
         return;
       }
@@ -1277,7 +1277,7 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
       final canManage = access['canManage'] == true;
       if (canManage) {
         await Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const GameClubAdminPage()));
+            MaterialPageRoute(builder: (_) => GameClubAdminPage(gameId: 2)));
         return;
       }
       ScaffoldMessenger.of(context)

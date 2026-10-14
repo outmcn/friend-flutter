@@ -50,7 +50,8 @@ class GameClubBackendClient {
 }
 
 class GameClubAdminPage extends StatefulWidget {
-  const GameClubAdminPage({super.key});
+  const GameClubAdminPage({super.key, required this.gameId});
+  final int gameId;
   @override
   State<GameClubAdminPage> createState() => _GameClubAdminPageState();
 }
@@ -87,23 +88,22 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
     });
     try {
       final values = await Future.wait([
-        api.get('/api/game-club/companions'),
-        api.get('/api/game-club/categories'),
-        api.get('/api/game-club/projects'),
-        api.get('/api/game-club/orders'),
-        api.get('/api/game-club/banners'),
-        api.get('/api/game-club/applications')
+        api.get('/api/game-club/companions?gameId=${widget.gameId}'),
+        api.get('/api/game-club/page-config/${widget.gameId}'),
+        api.get('/api/game-club/orders?gameId=${widget.gameId}'),
+        api.get('/api/game-club/banners?gameId=${widget.gameId}'),
+        api.get('/api/game-club/applications?gameId=${widget.gameId}')
       ]);
       if (!mounted) {
         return;
       }
       setState(() {
         companions = values[0]['companions'] as List? ?? [];
-        categories = values[1]['categories'] as List? ?? [];
-        projects = values[2]['projects'] as List? ?? [];
-        myOrders = values[3]['orders'] as List? ?? [];
-        banners = values[4]['banners'] as List? ?? [];
-        applications = values[5]['applications'] as List? ?? [];
+        categories = const [];
+        projects = const [];
+        myOrders = values[2]['orders'] as List? ?? [];
+        banners = values[3]['banners'] as List? ?? [];
+        applications = values[4]['applications'] as List? ?? [];
         loading = false;
       });
     } catch (e) {
@@ -129,7 +129,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                     SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                            children: ['陪玩管理', '申请列表', '订单管理', '玩法管理', '推广管理']
+                            children: ['陪玩管理', '申请列表', '订单管理', '游戏页配置', '推广管理']
                                 .asMap()
                                 .entries
                                 .map((e) => Padding(
@@ -146,7 +146,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                       _companions(),
                       _applications(),
                       _orders(),
-                      _playbook(),
+                      _pageConfig(),
                       _promotion()
                     ][tab])
                   ]),
@@ -223,64 +223,22 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         ],
       );
 
-  Widget _playbook() => ListView(
-        padding: const EdgeInsets.only(bottom: 24),
+  Widget _pageConfig() => ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: FilledButton.icon(
-                onPressed: _addCategory,
-                icon: const Icon(Icons.add),
-                label: const Text('增加一级分类')),
-          ),
-          ...categories.map((c) {
-            final categoryProjects = projects
-                .where((p) => '${p['category_id']}' == '${c['id']}')
-                .toList();
-            return Card(
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: ExpansionTile(
-                title: Text('${c['title']}'),
-                subtitle: Text('${c['description'] ?? ''}'),
-                trailing: Wrap(
-                  children: [
-                    IconButton(
-                        tooltip: '增加二级玩法',
-                        onPressed: () => _addProject(c),
-                        icon: const Icon(Icons.add_circle_outline)),
-                    IconButton(
-                        tooltip: '删除一级分类',
-                        onPressed: () =>
-                            _delete('/api/game-club/categories/${c['id']}'),
-                        icon: const Icon(Icons.delete_outline)),
-                  ],
-                ),
-                children: [
-                  if (categoryProjects.isEmpty)
-                    const ListTile(title: Text('暂无二级玩法')),
-                  ...categoryProjects.map((p) => ListTile(
-                        title: Text('${p['title']}'),
-                        subtitle: Text(
-                            '${p['description'] ?? ''}\n价格：${p['price'] ?? ''}${p['unit'] ?? ''}  标签：${(p['tags'] as List? ?? []).join('、')}'),
-                        isThreeLine: true,
-                        trailing: Wrap(children: [
-                          IconButton(
-                              tooltip: '修改玩法',
-                              onPressed: () => _editProject(p),
-                              icon: const Icon(Icons.edit_outlined)),
-                          IconButton(
-                              tooltip: '删除玩法',
-                              onPressed: () =>
-                                  _delete('/api/game-club/projects/${p['id']}'),
-                              icon: const Icon(Icons.delete_outline)),
-                        ]),
-                      )),
-                ],
-              ),
-            );
-          }),
+          const Text('游戏页配置',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ...banners.map((b) => ListTile(
+                title: Text('${b['title'] ?? ''}'),
+                subtitle: Text('${b['subtitle'] ?? ''}'),
+              )),
+          const SizedBox(height: 12),
+          const Text('分类卡片'),
+          const Text('分类内容请在网页后台设置。'),
         ],
       );
+
   Widget _orders() => ListView(
       children: myOrders
           .map((o) => ListTile(
