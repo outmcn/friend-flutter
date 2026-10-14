@@ -8,7 +8,7 @@ class _CompanionNotice extends StatelessWidget {
       decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(12)),
-      child: Text('陪玩广场', style: Theme.of(context).textTheme.labelSmall));
+      child: Text('Game 俱乐部', style: Theme.of(context).textTheme.labelSmall));
 }
 
 class _VoiceRoomNotice extends StatelessWidget {

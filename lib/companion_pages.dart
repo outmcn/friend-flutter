@@ -384,17 +384,12 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: tab == 2 ? const Color(0xff0f0f11) : null,
-      appBar: AppBar(title: const Text('三角洲端游')),
-      body: Column(
-        children: [
-          _deltaBanner(),
-          _topTabs(),
-          Expanded(child: tab == 2 ? _playbookBody() : _topTabBody()),
-        ],
-      ),
+      appBar: AppBar(title: const Text('三角洲 - 端游')),
+      body: const SizedBox.shrink(),
     );
   }
 
+  // ignore: unused_element
   Widget _deltaBanner() => Container(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         height: 156,
@@ -421,6 +416,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ),
       );
 
+  // ignore: unused_element
   Widget _topTabs() => SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
@@ -455,6 +451,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ),
       );
 
+  // ignore: unused_element
   Widget _topTabBody() {
     if (tab == 0) {
       return ListView(
@@ -503,6 +500,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ]);
   }
 
+  // ignore: unused_element
   Widget _playbookBody() {
     final item = data[tab];
     final items = (item['items'] as List).cast<List<dynamic>>();
