@@ -1077,39 +1077,26 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
     );
   }
 
-  void _openAdmin() {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Game 俱乐部后台'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.receipt_long_outlined),
-              title: Text('订单管理'),
-              subtitle: Text('查看和处理陪玩订单'),
-            ),
-            ListTile(
-              leading: Icon(Icons.people_outline),
-              title: Text('陪玩管理'),
-              subtitle: Text('管理陪玩资料和上下架状态'),
-            ),
-            ListTile(
-              leading: Icon(Icons.category_outlined),
-              title: Text('玩法管理'),
-              subtitle: Text('管理玩法分类和项目'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
+  Future<void> _openAdmin() async {
+    try {
+      final api = GameClubBackendClient();
+      final access = await api.get('/api/game-club/access');
+      api.dispose();
+      if (!mounted) return;
+      final canManage = access['canManage'] == true;
+      if (canManage) {
+        await Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const GameClubAdminPage()));
+        return;
+      }
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('当前账号没有 Game 俱乐部管理权限')));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    }
   }
 
   void _open(CompanionProfile c) => Navigator.push(context,
