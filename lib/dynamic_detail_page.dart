@@ -527,8 +527,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                     child: Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 3,
+                          horizontal: 6,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surface,
@@ -546,6 +546,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                         ),
                         child: Text(
                           comment.city.trim(),
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                       ),
