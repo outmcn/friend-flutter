@@ -106,7 +106,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _revealCardEdgesOnly(key, feeds[selectedTab].scroll, passes: 0);
+        _revealCardEdgesOnly(key, feeds[selectedTab].scroll);
       }
     });
     final deleted = await routeFuture;
@@ -118,11 +118,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     feeds[selectedTab].markChanged();
   }
 
-  void _revealCardEdgesOnly(
-    GlobalKey key,
-    ScrollController scroll, {
-    required int passes,
-  }) {
+  void _revealCardEdgesOnly(GlobalKey key, ScrollController scroll) {
     final cardContext = key.currentContext;
     final cardBox = cardContext?.findRenderObject() as RenderBox?;
     if (cardBox == null || !scroll.hasClients) {
@@ -140,21 +136,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
     if (cardBottom > viewportBottom) {
       delta = cardBottom - viewportBottom;
     }
-    if (delta != 0) {
-      final extraGap = cardBox.size.height + 8;
-      delta += delta > 0 ? extraGap : -extraGap;
-    }
-    if (delta == 0 || passes >= 3) return;
+    if (delta == 0) return;
     final position = scroll.position;
     position.jumpTo((position.pixels + delta).clamp(
       position.minScrollExtent,
       position.maxScrollExtent,
     ));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _revealCardEdgesOnly(key, scroll, passes: passes + 1);
-      }
-    });
   }
 
   Widget _card(DiscoverFeed feed, int index, {bool fullWidth = false}) {
