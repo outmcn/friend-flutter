@@ -291,21 +291,59 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
-  final username = TextEditingController();
-  final password = TextEditingController();
+  final phone = TextEditingController();
+  final code = TextEditingController();
+  Timer? timer;
+  int seconds = 0;
   bool loading = false;
+  bool sendingCode = false;
   String? error;
 
   @override
   void dispose() {
-    username.dispose();
-    password.dispose();
+    timer?.cancel();
+    phone.dispose();
+    code.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
-    if (username.text.trim().isEmpty || password.text.isEmpty) {
-      setState(() => error = '请输入账号和密码');
+  Future<void> _sendCode() async {
+    if (sendingCode || seconds > 0) return;
+    if (!RegExp(r'^1\d{10}$').hasMatch(phone.text.trim())) {
+      setState(() => error = '请输入正确的手机号');
+      return;
+    }
+    setState(() {
+      sendingCode = true;
+      error = null;
+    });
+    try {
+      await widget.auth.sendSmsCode(phone.text.trim());
+      if (!mounted) return;
+      setState(() => seconds = 60);
+      timer?.cancel();
+      timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() {
+          if (seconds > 0) seconds--;
+        });
+      });
+    } on FriendAuthException catch (e) {
+      if (mounted) setState(() => error = e.message);
+    } catch (_) {
+      if (mounted) setState(() => error = '无法连接新后端');
+    } finally {
+      if (mounted) setState(() => sendingCode = false);
+    }
+  }
+
+  Future<void> _loginBySms() async {
+    if (!RegExp(r'^1\d{10}$').hasMatch(phone.text.trim())) {
+      setState(() => error = '请输入正确的手机号');
+      return;
+    }
+    if (!RegExp(r'^\d{6}$').hasMatch(code.text.trim())) {
+      setState(() => error = '请输入6位验证码');
       return;
     }
     setState(() {
@@ -313,9 +351,9 @@ class _AuthPageState extends State<AuthPage> {
       error = null;
     });
     try {
-      final value = await widget.auth.login(
-        username: username.text,
-        password: password.text,
+      final value = await widget.auth.loginBySms(
+        phone: phone.text,
+        code: code.text,
       );
       await ImSession.instance.start(value);
       if (mounted) widget.onAuthenticated(value);
@@ -330,20 +368,30 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) => AuthScaffold(
-        title: '密码登录',
-        subtitle: '使用手机号和密码登录 DD',
+        title: '短信登录',
+        subtitle: '使用手机号或密码登录',
         child: Column(
           children: [
             _AuthFieldController(
-                label: '手机号码',
-                icon: Icons.phone_outlined,
-                controller: username),
+                label: '手机号码', icon: Icons.phone_outlined, controller: phone),
             const SizedBox(height: 14),
-            _AuthFieldController(
-                label: '密码',
-                icon: Icons.lock_outline,
-                controller: password,
-                obscureText: true),
+            Row(children: [
+              Expanded(
+                child: _AuthFieldController(
+                    label: '验证码',
+                    icon: Icons.verified_outlined,
+                    controller: code),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: seconds == 0 && !sendingCode ? _sendCode : null,
+                child: Text(sendingCode
+                    ? '发送中…'
+                    : seconds == 0
+                        ? '获取验证码'
+                        : '${seconds}s'),
+              ),
+            ]),
             if (error != null) ...[
               const SizedBox(height: 10),
               Align(
@@ -353,9 +401,15 @@ class _AuthPageState extends State<AuthPage> {
             ],
             const SizedBox(height: 18),
             _PrimaryAuthButton(
-                label: loading ? '登录中…' : '登录',
-                onTap: loading ? () {} : _login),
-            TextButton(onPressed: () {}, child: const Text('没有账号？注册')),
+                label: loading ? '登录中…' : '登录 / 注册',
+                onTap: loading ? () {} : _loginBySms),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PasswordLoginPage()),
+              ),
+              child: const Text('密码登录'),
+            ),
           ],
         ),
       );
