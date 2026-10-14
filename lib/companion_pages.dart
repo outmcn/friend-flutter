@@ -803,7 +803,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       final api = GameClubBackendClient();
       final results = await Future.wait([
         api.get('/api/game-club/categories'),
-        api.get('/api/game-club/projects'),
+        api.get('/api/game-club/projects?gameId=2'),
       ]);
       api.dispose();
       final cats = (results[0]['categories'] as List? ?? const [])
