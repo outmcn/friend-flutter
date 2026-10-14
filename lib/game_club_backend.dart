@@ -67,6 +67,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   List<dynamic> myOrders = [];
   List<dynamic> myCompanions = [];
   List<dynamic> banners = [];
+  List<dynamic> applications = [];
   @override
   void initState() {
     super.initState();
@@ -90,7 +91,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         api.get('/api/game-club/categories'),
         api.get('/api/game-club/projects'),
         api.get('/api/game-club/orders'),
-        api.get('/api/game-club/banners')
+        api.get('/api/game-club/banners'),
+        api.get('/api/game-club/applications')
       ]);
       if (!mounted) {
         return;
@@ -101,6 +103,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         projects = values[2]['projects'] as List? ?? [];
         myOrders = values[3]['orders'] as List? ?? [];
         banners = values[4]['banners'] as List? ?? [];
+        applications = values[5]['applications'] as List? ?? [];
         loading = false;
       });
     } catch (e) {
@@ -172,13 +175,31 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
       );
   Widget _applications() => ListView(
         padding: const EdgeInsets.all(16),
-        children: const [
-          ListTile(
-            leading: Icon(Icons.inbox_outlined),
-            title: Text('申请列表'),
-            subtitle: Text('陪玩申请审核功能待接入'),
-          ),
-        ],
+        children: applications.isEmpty
+            ? const [
+                ListTile(
+                  leading: Icon(Icons.inbox_outlined),
+                  title: Text('暂无申请'),
+                ),
+              ]
+            : applications
+                .map((a) => ListTile(
+                      title: Text(
+                          '${a['nickname'] ?? a['username'] ?? '用户'} · ${a['status']}'),
+                      subtitle:
+                          Text('联系方式：${a['contact']}\n${a['description']}'),
+                      isThreeLine: true,
+                      trailing: PopupMenuButton<String>(
+                        onSelected: (status) => _patch(
+                            '/api/game-club/applications/${a['id']}',
+                            {'status': status}),
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(value: 'approved', child: Text('通过')),
+                          PopupMenuItem(value: 'rejected', child: Text('拒绝')),
+                        ],
+                      ),
+                    ))
+                .toList(),
       );
 
   Widget _promotion() => ListView(
