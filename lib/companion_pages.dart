@@ -62,6 +62,7 @@ class _BannerDot extends StatelessWidget {
 class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int tab = 0;
   int playbookTab = 0;
+  bool showAllCompanions = false;
   late final PageController _bannerController;
   int _bannerIndex = 0;
 
@@ -86,7 +87,6 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     '大红单',
     '礼物单',
     '任务单',
-    '全部陪玩',
   ];
 
   static const data = <Map<String, dynamic>>[
@@ -442,44 +442,27 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ],
       ],
     },
-    {
-      'title': '全部陪玩',
-      'badge': '全部项目',
-      'desc': '浏览全部陪玩项目，选择适合你的游戏服务。',
-      'items': [
-        [
-          '🎮',
-          '标准陪玩',
-          '语音陪伴、报点、组队开黑。',
-          '38',
-          '/小时',
-          ['语音', '报点', '组队']
-        ],
-        [
-          '🛡️',
-          '保底护航',
-          '机密图护航，稳定积累哈夫币。',
-          '128',
-          '/单',
-          ['机密', '保底', '补局']
-        ],
-        [
-          '🎭',
-          '趣味整活',
-          '剧情、人设和娱乐玩法。',
-          '68',
-          '/局',
-          ['人设', '剧情', '整活']
-        ],
-      ],
-    },
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: tab == 2 ? const Color(0xff0f0f11) : null,
-      appBar: AppBar(title: const Text('三角洲 - 端游')),
+      appBar: AppBar(
+        title: const Text('三角洲 - 端游'),
+        actions: [
+          IconButton(
+            tooltip: '订单',
+            onPressed: () => _showTopMessage('订单'),
+            icon: const Icon(Icons.receipt_long_outlined),
+          ),
+          IconButton(
+            tooltip: '收藏',
+            onPressed: () => _showTopMessage('收藏'),
+            icon: const Icon(TIcons.bookmark),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           _deltaBanners(),
@@ -487,6 +470,12 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
           Expanded(child: tab == 2 ? _playbookBody() : _topTabBody()),
         ],
       ),
+    );
+  }
+
+  void _showTopMessage(String title) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$title功能')),
     );
   }
 
@@ -609,7 +598,11 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
 
   Widget _playbookBody() {
     final item = data[playbookTab];
-    final items = (item['items'] as List).cast<List<dynamic>>();
+    final items = showAllCompanions
+        ? data
+            .expand((entry) => (entry['items'] as List).cast<List<dynamic>>())
+            .toList()
+        : (item['items'] as List).cast<List<dynamic>>();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -640,12 +633,22 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 48),
             children: [
               Row(children: [
-                Text('${item['title']}',
-                    style: const TextStyle(
-                        color: Color(0xfff3f4f6),
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700)),
-                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(showAllCompanions ? '全部陪玩' : '${item['title']}',
+                      style: const TextStyle(
+                          color: Color(0xfff3f4f6),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700)),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      setState(() => showAllCompanions = !showAllCompanions),
+                  icon: const Icon(Icons.groups_outlined, size: 16),
+                  label: Text(showAllCompanions ? '返回分类' : '全部陪玩'),
+                ),
+              ]),
+              if (!showAllCompanions) ...[
+                const SizedBox(height: 6),
                 Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -657,10 +660,10 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                         style: const TextStyle(
                             color: Color(0xffff6a1f),
                             fontSize: 11,
-                            fontWeight: FontWeight.w600)))
-              ]),
+                            fontWeight: FontWeight.w600))),
+              ],
               const SizedBox(height: 6),
-              Text('${item['desc']}',
+              Text(showAllCompanions ? '浏览全部玩法分类中的陪玩项目。' : '${item['desc']}',
                   style: const TextStyle(
                       color: Color(0xff9ca3af), fontSize: 13, height: 1.6)),
               const SizedBox(height: 24),
