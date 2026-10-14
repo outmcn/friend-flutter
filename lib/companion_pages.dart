@@ -69,6 +69,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   late final PageController _bannerController;
   int _bannerIndex = 0;
   List<Map<String, dynamic>> remoteBanners = const [];
+  List<Map<String, dynamic>> remoteTabs = const [];
 
   @override
   void initState() {
@@ -76,6 +77,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     _bannerController = PageController();
     _loadPlaybook();
     _loadBanners();
+    _loadPageConfig();
     _loadCompanions();
   }
 
@@ -561,7 +563,8 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
         child: Row(
-          children: List.generate(4, (index) {
+          children: List.generate(remoteTabs.isEmpty ? 4 : remoteTabs.length,
+              (index) {
             final selected = tab == index;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -577,7 +580,10 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(99),
                   ),
-                  child: Text(['明星陪玩', '魔王技术', '玩法合集', '全部陪玩'][index],
+                  child: Text(
+                      remoteTabs.isNotEmpty && index < remoteTabs.length
+                          ? '${remoteTabs[index]['title']}'
+                          : ['明星陪玩', '魔王技术', '玩法合集', '全部陪玩'][index],
                       style: TextStyle(
                           color: selected
                               ? Colors.white
@@ -744,6 +750,25 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _loadPageConfig() async {
+    try {
+      final api = GameClubBackendClient();
+      final result = await api.get('/api/game-club/page-config/2');
+      api.dispose();
+      if (mounted) {
+        setState(() {
+          if (result['banners'] is List) {
+            remoteBanners =
+                (result['banners'] as List).cast<Map<String, dynamic>>();
+          }
+          if (result['tabs'] is List) {
+            remoteTabs = (result['tabs'] as List).cast<Map<String, dynamic>>();
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCompanions() async {
