@@ -451,15 +451,9 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       appBar: AppBar(
         title: const Text('三角洲 - 端游'),
         actions: [
-          IconButton(
-            tooltip: '订单',
-            onPressed: () => _showTopMessage('订单'),
-            icon: const Icon(Icons.receipt_long_outlined),
-          ),
-          IconButton(
-            tooltip: '收藏',
-            onPressed: () => _showTopMessage('收藏'),
-            icon: const Icon(TIcons.bookmark),
+          TextButton(
+            onPressed: () {},
+            child: const Text('申请'),
           ),
         ],
       ),
