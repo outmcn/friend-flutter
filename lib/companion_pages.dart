@@ -478,7 +478,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         children: [
           _deltaBanners(),
           _topTabs(),
-          Expanded(child: tab >= 2 ? _playbookBody() : _topTabBody()),
+          Expanded(child: _configuredTabBody()),
         ],
       ),
     );
@@ -601,6 +601,58 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
           }),
         ),
       );
+
+  Widget _configuredTabBody() {
+    if (remoteTabs.isNotEmpty && tab < remoteTabs.length) {
+      final type = '${remoteTabs[tab]['tab_type'] ?? 'companions'}';
+      if (type == 'companions') return _configuredCompanionTab(remoteTabs[tab]);
+      return _configuredCategoryTab(remoteTabs[tab]);
+    }
+    return _topTabBody();
+  }
+
+  Widget _configuredCompanionTab(Map<String, dynamic> config) {
+    final ids = (config['companions'] as List? ?? const [])
+        .map((x) => '${x['user_id']}')
+        .toSet();
+    final source = ids.isEmpty
+        ? remoteCompanions
+        : remoteCompanions
+            .where((x) => ids.contains('${x['user_id']}'))
+            .toList();
+    return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+        children: [
+          Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text('${config['title'] ?? '陪玩卡片'}',
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w800))),
+          if (source.isEmpty)
+            const Padding(
+                padding: EdgeInsets.all(24), child: Text('该 Tab 暂无陪玩')),
+          ...source.map((p) => _DeltaCompanionCard(
+              name: '${p['nickname'] ?? '用户'}',
+              price: '${p['price'] ?? '0'}',
+              tags:
+                  (p['tags'] as List? ?? const []).map((x) => '$x').toList())),
+        ]);
+  }
+
+  Widget _configuredCategoryTab(Map<String, dynamic> config) {
+    final items = (config['card_items'] as List? ?? const []);
+    return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+        children: [
+          Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text('${config['title'] ?? '分类卡片'}',
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w800))),
+          ...items.map((x) => _ConfiguredCategoryItem(
+              item: Map<String, dynamic>.from(x as Map))),
+        ]);
+  }
 
   Widget _topTabBody() {
     if (tab == 3) {
@@ -1025,6 +1077,39 @@ class _GameEntryCard extends StatelessWidget {
               const Icon(Icons.chevron_right, color: Colors.white),
             ]),
           ),
+        ),
+      );
+}
+
+class _ConfiguredCategoryItem extends StatelessWidget {
+  const _ConfiguredCategoryItem({required this.item});
+  final Map<String, dynamic> item;
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${item['level1'] ?? ''}',
+                style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Text('${item['level2'] ?? ''}',
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            Text('${item['price'] ?? ''}',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w700)),
+            if ((item['tags'] as List? ?? const []).isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                  spacing: 6,
+                  children: (item['tags'] as List)
+                      .map((x) => Chip(label: Text('$x')))
+                      .toList()),
+            ],
+          ]),
         ),
       );
 }
