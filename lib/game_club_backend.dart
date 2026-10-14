@@ -27,13 +27,23 @@ class GameClubBackendClient {
     }
     final response = await _client.send(request);
     final text = await response.stream.bytesToString();
-    final data = text.isEmpty
-        ? <String, dynamic>{}
-        : (jsonDecode(text) as Map).cast<String, dynamic>();
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(data['error']?.toString() ?? '请求失败');
+      Map<String, dynamic>? data;
+      try {
+        final decoded = jsonDecode(text);
+        if (decoded is Map) {
+          data = decoded.cast<String, dynamic>();
+        }
+      } catch (_) {
+        // A proxy or stale deployment may return an HTML error page.
+      }
+      throw Exception(data?['error']?.toString() ??
+          'Game 俱乐部服务暂不可用（HTTP ${response.statusCode}）');
     }
-    return data;
+    if (text.trim().isEmpty) return <String, dynamic>{};
+    final decoded = jsonDecode(text);
+    if (decoded is! Map) throw const FormatException('后端返回格式错误');
+    return decoded.cast<String, dynamic>();
   }
 
   void dispose() => _client.close();
