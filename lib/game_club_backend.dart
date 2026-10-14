@@ -161,6 +161,9 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                     if (c['is_star'] == true) const Chip(label: Text('明星陪玩')),
                     if (c['is_king'] == true) const Chip(label: Text('魔王技术')),
                     IconButton(
+                        onPressed: () => _editCompanionLabel(c),
+                        icon: const Icon(Icons.edit_outlined)),
+                    IconButton(
                         onPressed: () => _delete(
                             '/api/game-club/companions/${c['user_id']}'),
                         icon: const Icon(Icons.delete_outline)),
@@ -248,6 +251,34 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                         PopupMenuItem(value: 'refunded', child: Text('退款'))
                       ])))
           .toList());
+  Future<void> _editCompanionLabel(dynamic c) async {
+    final controller = TextEditingController(text: '${c['card_label'] ?? ''}');
+    final label = await showDialog<String>(
+        context: context,
+        builder: (_) => AlertDialog(
+                title: const Text('陪玩卡片标签'),
+                content: TextField(
+                    controller: controller,
+                    maxLength: 6,
+                    autofocus: true,
+                    decoration: const InputDecoration(hintText: '最多6个字')),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('取消')),
+                  FilledButton(
+                      onPressed: () =>
+                          Navigator.pop(context, controller.text.trim()),
+                      child: const Text('保存'))
+                ]));
+    controller.dispose();
+    if (label != null) {
+      await api.patch('/api/admin/game-club/companions/${c['user_id']}/label',
+          {'cardLabel': label});
+      await load();
+    }
+  }
+
   Future<void> _delete(String path) async {
     await api.delete(path);
     await load();
