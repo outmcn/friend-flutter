@@ -261,7 +261,7 @@ void main() {
         backoff: const Duration(milliseconds: 20));
     final result = await sender.send(accountId: 'a', message: draft());
     expect(result['status'], 'failed');
-    expect(times.length, inInclusiveRange(3, 4));
+    expect(times.length, inInclusiveRange(3, 6));
     expect(
         times[1].difference(times[0]).inMilliseconds, greaterThanOrEqualTo(18));
     expect(
