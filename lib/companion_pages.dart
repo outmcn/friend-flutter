@@ -451,7 +451,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         actions: [
           TextButton(
             onPressed: _openDeltaAdmin,
-            child: const Icon(TIcons.setting, size: 20),
+            child: const Icon(TIcons.verified_filled, size: 20),
           ),
           IconButton(
             tooltip: '订单',
