@@ -1,5 +1,4 @@
 part of 'main.dart';
-// ignore_for_file: unused_element
 
 class GameCompanionPlazaPage extends StatefulWidget {
   const GameCompanionPlazaPage({super.key});
@@ -386,7 +385,13 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     return Scaffold(
       backgroundColor: tab == 2 ? const Color(0xff0f0f11) : null,
       appBar: AppBar(title: const Text('三角洲 - 端游')),
-      body: const SizedBox.shrink(),
+      body: Column(
+        children: [
+          _deltaBanner(),
+          _topTabs(),
+          Expanded(child: tab == 2 ? _playbookBody() : _topTabBody()),
+        ],
+      ),
     );
   }
 
@@ -744,7 +749,7 @@ class _DeltaGameEntryButton extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('三角洲 - 端游',
+                      Text('三角洲端游',
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -838,174 +843,10 @@ class CompanionProfile {
   final String voice;
 }
 
-class _GameClubCard extends StatelessWidget {
-  const _GameClubCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.colors,
-  });
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final List<Color> colors;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        clipBehavior: Clip.antiAlias,
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: colors),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            leading: Icon(icon, color: Colors.white, size: 34),
-            title: Text(title,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800)),
-            subtitle:
-                Text(subtitle, style: const TextStyle(color: Colors.white70)),
-            trailing: const Icon(TIcons.chevron_right, color: Colors.white),
-          ),
-        ),
-      );
-}
-
-class _GameplayCollection extends StatelessWidget {
-  const _GameplayCollection({required this.selected, required this.onSelected});
-  final int selected;
-  final ValueChanged<int> onSelected;
-
-  static const categories = [
-    {'title': '经典玩法', 'subtitle': '经典陪玩模式'},
-    {'title': '娱乐开黑', 'subtitle': '轻松组队娱乐'},
-    {'title': '语音陪伴', 'subtitle': '边玩边聊'},
-    {'title': '新手教学', 'subtitle': '快速熟悉玩法'},
-  ];
-
-  @override
-  Widget build(BuildContext context) => Card(
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          height: 210,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 108,
-                child: ColoredBox(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: ListView.builder(
-                    itemCount: categories.length,
-                    itemBuilder: (_, index) => ListTile(
-                      dense: true,
-                      selected: selected == index,
-                      title: Text(categories[index]['title']!),
-                      onTap: () => onSelected(index),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(categories[selected]['title']!,
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 10),
-                      Text(categories[selected]['subtitle']!),
-                      const SizedBox(height: 18),
-                      const Text('当前分类内容将在此处显示'),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
-class _ClubMenuCard extends StatelessWidget {
-  const _ClubMenuCard({required this.selected, required this.onSelected});
-  final int selected;
-  final ValueChanged<int> onSelected;
-  static const menus = ['明星陪玩', '魔王技术', '玩法合集'];
-
-  @override
-  Widget build(BuildContext context) => Card(
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          height: 360,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 110,
-                child: ColoredBox(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: ListView.builder(
-                    itemCount: menus.length,
-                    itemBuilder: (_, index) => ListTile(
-                      dense: true,
-                      selected: index == selected,
-                      title: Text(menus[index]),
-                      onTap: () => onSelected(index),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: selected == 0
-                      ? const _ClubContent(
-                          title: '明星陪玩', subtitle: '高人气陪玩，快速开黑')
-                      : selected == 1
-                          ? const _ClubContent(
-                              title: '魔王技术', subtitle: '技术指导，提升游戏体验')
-                          : const _GameplayCollection(
-                              selected: 0, onSelected: _ignoreClubSelection),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-
-  static void _ignoreClubSelection(int _) {}
-}
-
-class _ClubContent extends StatelessWidget {
-  const _ClubContent({required this.title, required this.subtitle});
-  final String title;
-  final String subtitle;
-  @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style:
-                  const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          Text(subtitle),
-          const SizedBox(height: 24),
-          const Text('相关内容将在此处显示'),
-        ],
-      );
-}
-
 class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
   final search = TextEditingController();
   int game = 0;
   int type = 0;
-  int gameplay = 0;
-  int selectedClubMenu = 0;
   final games = const ['王者荣耀', '英雄联盟', '和平精英', '原神', '更多'];
   final types = const ['全部', '上分陪玩', '娱乐开黑', '语音陪伴', '新手教学'];
   final companions = const [
@@ -1050,24 +891,72 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
 
   @override
   Widget build(BuildContext context) {
+    final q = search.text.trim();
+    final visible = companions
+        .where((c) =>
+            q.isEmpty ||
+            c.name.contains(q) ||
+            c.game.contains(q) ||
+            c.tags.any((tag) => tag.contains(q)))
+        .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Game 俱乐部')),
+      appBar: AppBar(title: const Text('陪玩广场'), actions: [
+        IconButton(
+            onPressed: () => _notice('陪玩订单'),
+            icon: const Icon(Icons.receipt_long_outlined))
+      ]),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-        children: [
-          _DeltaGameEntryButton(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const DeltaCompanionPage()),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
+          children: [
+            _DeltaGameEntryButton(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const DeltaCompanionPage(),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          _ClubMenuCard(
-            selected: selectedClubMenu,
-            onSelected: (value) => setState(() => selectedClubMenu = value),
-          ),
-        ],
-      ),
+            const SizedBox(height: 12),
+            const _CompanionNotice(),
+            const SizedBox(height: 12),
+            TextField(
+                controller: search,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                    hintText: '搜索游戏、声音或陪玩', prefixIcon: Icon(Icons.search))),
+            const SizedBox(height: 13),
+            _GameFilterRow(
+                labels: games,
+                selected: game,
+                onSelected: (v) => setState(() => game = v),
+                icon: Icons.sports_esports_outlined),
+            const SizedBox(height: 9),
+            _GameFilterRow(
+                labels: types,
+                selected: type,
+                onSelected: (v) => setState(() => type = v)),
+            const _CompanionSection(title: '今日推荐'),
+            SizedBox(
+                height: 208,
+                child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: companions
+                        .take(3)
+                        .map((c) => _CompanionRecommendCard(
+                            data: c, onTap: () => _open(c)))
+                        .toList())),
+            const _CompanionSection(title: '在线陪玩'),
+            ...visible.map((c) => _CompanionListCard(
+                data: c, onTap: () => _open(c), onOrder: _showFakeOrderDialog)),
+          ]),
+      bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: FilledButton.icon(
+                  onPressed: () => _notice('发布陪玩需求'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('发布陪玩需求')))),
     );
   }
 
