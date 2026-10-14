@@ -223,25 +223,64 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         ],
       );
 
-  Widget _playbook() => ListView(children: [
-        Padding(
+  Widget _playbook() => ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          Padding(
             padding: const EdgeInsets.all(16),
             child: FilledButton.icon(
                 onPressed: _addCategory,
                 icon: const Icon(Icons.add),
-                label: const Text('增加分类'))),
-        ...categories.map((c) => ListTile(
-            title: Text('${c['title']}'),
-            subtitle: Text('${c['description'] ?? ''}'),
-            trailing: IconButton(
-                onPressed: () =>
-                    _delete('/api/game-club/categories/${c['id']}'),
-                icon: const Icon(Icons.delete_outline)))),
-        const Divider(),
-        Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text('玩法项目：${projects.length}'))
-      ]);
+                label: const Text('增加一级分类')),
+          ),
+          ...categories.map((c) {
+            final categoryProjects = projects
+                .where((p) => '${p['category_id']}' == '${c['id']}')
+                .toList();
+            return Card(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: ExpansionTile(
+                title: Text('${c['title']}'),
+                subtitle: Text('${c['description'] ?? ''}'),
+                trailing: Wrap(
+                  children: [
+                    IconButton(
+                        tooltip: '增加二级玩法',
+                        onPressed: () => _addProject(c),
+                        icon: const Icon(Icons.add_circle_outline)),
+                    IconButton(
+                        tooltip: '删除一级分类',
+                        onPressed: () =>
+                            _delete('/api/game-club/categories/${c['id']}'),
+                        icon: const Icon(Icons.delete_outline)),
+                  ],
+                ),
+                children: [
+                  if (categoryProjects.isEmpty)
+                    const ListTile(title: Text('暂无二级玩法')),
+                  ...categoryProjects.map((p) => ListTile(
+                        title: Text('${p['title']}'),
+                        subtitle: Text(
+                            '${p['description'] ?? ''}\n价格：${p['price'] ?? ''}${p['unit'] ?? ''}  标签：${(p['tags'] as List? ?? []).join('、')}'),
+                        isThreeLine: true,
+                        trailing: Wrap(children: [
+                          IconButton(
+                              tooltip: '修改玩法',
+                              onPressed: () => _editProject(p),
+                              icon: const Icon(Icons.edit_outlined)),
+                          IconButton(
+                              tooltip: '删除玩法',
+                              onPressed: () =>
+                                  _delete('/api/game-club/projects/${p['id']}'),
+                              icon: const Icon(Icons.delete_outline)),
+                        ]),
+                      )),
+                ],
+              ),
+            );
+          }),
+        ],
+      );
   Widget _orders() => ListView(
       children: myOrders
           .map((o) => ListTile(
@@ -266,6 +305,50 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   Future<void> _patch(String path, Map<String, dynamic> body) async {
     await api.patch(path, body);
     await load();
+  }
+
+  Future<void> _addProject(dynamic category) async {
+    final title = await _input('二级玩法名称');
+    if (title == null || title.trim().isEmpty) return;
+    final description = await _input('玩法简介');
+    final price = await _input('价格');
+    final unit = await _input('单位', initial: '/局');
+    final tagsText = await _input('标签（用逗号分隔）');
+    await api.post('/api/game-club/projects', {
+      'categoryId': category['id'],
+      'title': title,
+      'description': description ?? '',
+      'price': price ?? '',
+      'unit': unit ?? '',
+      'tags': (tagsText ?? '')
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+    });
+    await load();
+  }
+
+  Future<void> _editProject(dynamic project) async {
+    final title = await _input('玩法名称', initial: '${project['title']}');
+    if (title == null || title.trim().isEmpty) return;
+    final description =
+        await _input('玩法简介', initial: '${project['description'] ?? ''}');
+    final price = await _input('价格', initial: '${project['price'] ?? ''}');
+    final unit = await _input('单位', initial: '${project['unit'] ?? ''}');
+    final oldTags = (project['tags'] as List? ?? const []).join(',');
+    final tagsText = await _input('标签（用逗号分隔）', initial: oldTags);
+    await _patch('/api/game-club/projects/${project['id']}', {
+      'title': title,
+      'description': description ?? '',
+      'price': price ?? '',
+      'unit': unit ?? '',
+      'tags': (tagsText ?? '')
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+    });
   }
 
   Future<void> _addCategory() async {
