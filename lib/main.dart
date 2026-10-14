@@ -60,6 +60,7 @@ part 'recommendation_pages.dart';
 part 'detail_support_pages.dart';
 part 'app_startup_pages.dart';
 part 'app_bootstrap.dart';
+part 'contacts_page.dart';
 part 'auth_entry_pages.dart';
 part 'password_login_page.dart';
 part 'register_page.dart';

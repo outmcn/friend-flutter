@@ -379,12 +379,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           IconButton(
             tooltip: '搜索',
             onPressed: _openUserSearch,
-            icon: const Icon(Icons.search),
+            icon: _tdIcon('search'),
           ),
           IconButton(
             tooltip: '添加',
             onPressed: _openNewChat,
-            icon: const Icon(Icons.add),
+            icon: _tdIcon('add'),
           ),
         ],
       ),
@@ -456,29 +456,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _openContacts() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: SizedBox(
-          height: 360,
-          child: conversations.isEmpty
-              ? const Center(child: Text('暂无联系人'))
-              : ListView.builder(
-                  itemCount: conversations.length,
-                  itemBuilder: (_, index) {
-                    final chat = conversations[index];
-                    return ListTile(
-                      leading: CircleAvatar(backgroundImage: _avatarFor(chat)),
-                      title: Text(chat.name),
-                      subtitle: Text(chat.preview),
-                      onTap: () {
-                        Navigator.pop(sheetContext);
-                        _openConversation(chat);
-                      },
-                    );
-                  },
-                ),
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _ContactsPage(
+          conversations: conversations,
+          avatarFor: _avatarFor,
+          onOpen: _openConversation,
         ),
       ),
     );
