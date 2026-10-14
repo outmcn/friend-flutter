@@ -521,9 +521,35 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 ),
                 if (comment.city.trim().isNotEmpty)
                   Positioned(
-                    right: -6,
-                    bottom: -2,
-                    child: _ProfileTag(text: comment.city.trim()),
+                    left: 0,
+                    right: 0,
+                    bottom: -9,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x19000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          comment.city.trim(),
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),
