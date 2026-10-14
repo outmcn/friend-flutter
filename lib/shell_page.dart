@@ -3054,6 +3054,7 @@ class _AudioCallPageState extends State<_AudioCallPage> {
   bool rtcJoined = false;
   late String callStatus;
   Route<dynamic>? callRoute;
+  bool minimized = false;
 
   @override
   void didChangeDependencies() {
@@ -3276,51 +3277,101 @@ class _AudioCallPageState extends State<_AudioCallPage> {
           if (!didPop) unawaited(_leave());
         },
         child: Scaffold(
-          appBar: AppBar(title: const Text('语音通话')),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircleAvatar(
-                    radius: 42, child: Icon(Icons.person, size: 42)),
-                const SizedBox(height: 16),
-                Text(
-                  callStatus == 'answered' ? _elapsedText() : '等待接听',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton.filled(
-                      onPressed: () async {
-                        final next = !muted;
-                        await AliyunRtcBridge.setMuted(next);
-                        if (mounted) setState(() => muted = next);
-                      },
-                      icon: Icon(muted ? Icons.mic_off : Icons.mic),
-                    ),
-                    const SizedBox(width: 28),
-                    IconButton.filled(
-                      onPressed: () async {
-                        final next = !speakerEnabled;
-                        await AliyunRtcBridge.setSpeakerEnabled(next);
-                        if (mounted) setState(() => speakerEnabled = next);
-                      },
-                      icon: Icon(
-                        speakerEnabled ? Icons.volume_up : Icons.phone_in_talk,
-                      ),
-                    ),
-                    const SizedBox(width: 28),
-                    IconButton.filled(
-                      onPressed: _leave,
-                      icon: const Icon(Icons.call_end),
+          backgroundColor: minimized ? Colors.transparent : null,
+          appBar: minimized
+              ? null
+              : AppBar(
+                  title: const Text('语音通话'),
+                  actions: [
+                    IconButton(
+                      tooltip: '最小化',
+                      onPressed: () => setState(() => minimized = true),
+                      icon: _tdIcon('minus'),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+          body: minimized
+              ? SafeArea(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                      child: Material(
+                        elevation: 4,
+                        borderRadius: BorderRadius.circular(18),
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () => setState(() => minimized = false),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 9),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _tdIcon('phone'),
+                                const SizedBox(width: 8),
+                                Text(callStatus == 'answered'
+                                    ? '通话中 ${_elapsedText()}'
+                                    : '等待接听'),
+                                const SizedBox(width: 8),
+                                _tdIcon('chevron-right'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircleAvatar(
+                          radius: 42, child: Icon(Icons.person, size: 42)),
+                      const SizedBox(height: 16),
+                      Text(
+                        callStatus == 'answered' ? _elapsedText() : '等待接听',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 40),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton.filled(
+                            onPressed: () async {
+                              final next = !muted;
+                              await AliyunRtcBridge.setMuted(next);
+                              if (mounted) setState(() => muted = next);
+                            },
+                            icon: Icon(muted ? Icons.mic_off : Icons.mic),
+                          ),
+                          const SizedBox(width: 28),
+                          IconButton.filled(
+                            onPressed: () async {
+                              final next = !speakerEnabled;
+                              await AliyunRtcBridge.setSpeakerEnabled(next);
+                              if (mounted) {
+                                setState(() => speakerEnabled = next);
+                              }
+                            },
+                            icon: Icon(
+                              speakerEnabled
+                                  ? Icons.volume_up
+                                  : Icons.phone_in_talk,
+                            ),
+                          ),
+                          const SizedBox(width: 28),
+                          IconButton.filled(
+                            onPressed: _leave,
+                            icon: const Icon(Icons.call_end),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
         ),
       );
 }

@@ -423,6 +423,8 @@ Widget _tdIcon(String name, {double size = 22, Color? color}) {
     'user-add': TIcons.user_add,
     'search': TIcons.search,
     'add': TIcons.add_circle,
+    'minus': TIcons.remove,
+    'chevron-right': TIcons.chevron_right,
     'notification': TIcons.notification,
     'bookmark': TIcons.bookmark,
     'heart': TIcons.heart,
