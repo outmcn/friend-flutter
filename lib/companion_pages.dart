@@ -19,7 +19,7 @@ class _DeltaBanner extends StatelessWidget {
   final String subtitle;
   @override
   Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(top: 8),
+        margin: EdgeInsets.zero,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
         height: 96,
         decoration: BoxDecoration(
@@ -39,15 +39,6 @@ class _DeltaBanner extends StatelessWidget {
             const SizedBox(height: 3),
             Text(subtitle,
                 style: const TextStyle(color: Colors.white70, fontSize: 11)),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _BannerDot(active: title == '百强大神推荐榜'),
-                _BannerDot(active: title == '三角洲巅峰护航'),
-                _BannerDot(active: title == '新手体验专区'),
-              ],
-            ),
           ],
         ),
       );
@@ -71,6 +62,21 @@ class _BannerDot extends StatelessWidget {
 class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int tab = 0;
   int playbookTab = 0;
+  late final PageController _bannerController;
+  int _bannerIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _bannerController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _bannerController.dispose();
+    super.dispose();
+  }
+
   static const categories = <String>[
     '体验单',
     '保底单',
@@ -484,15 +490,40 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     );
   }
 
-  Widget _deltaBanners() => SizedBox(
-        height: 78,
-        child: PageView(
-          controller: PageController(viewportFraction: .92),
-          children: const [
-            _DeltaBanner(title: '百强大神推荐榜', subtitle: '服务贴心 · 好评优选'),
-            _DeltaBanner(title: '三角洲巅峰护航', subtitle: '高 KD 打手 · 快速接单'),
-            _DeltaBanner(title: '新手体验专区', subtitle: '低门槛尝鲜 · 轻松开局'),
-          ],
+  Widget _deltaBanners() => Padding(
+        padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
+        child: SizedBox(
+          height: 112,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                PageView(
+                  controller: _bannerController,
+                  onPageChanged: (index) =>
+                      setState(() => _bannerIndex = index),
+                  children: const [
+                    _DeltaBanner(title: '百强大神推荐榜', subtitle: '服务贴心 · 好评优选'),
+                    _DeltaBanner(title: '三角洲巅峰护航', subtitle: '高 KD 打手 · 快速接单'),
+                    _DeltaBanner(title: '新手体验专区', subtitle: '低门槛尝鲜 · 轻松开局'),
+                  ],
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 10,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      3,
+                      (index) => _BannerDot(active: _bannerIndex == index),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
 
