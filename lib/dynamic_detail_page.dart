@@ -115,7 +115,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   int visibleRootCount = 30;
   final Map<int, int> visibleReplyCounts = <int, int>{};
-  final Set<int> expandedThirdLevelParents = <int>{};
   String? error;
   int? currentUserId;
   bool ownerResolved = false;
@@ -215,7 +214,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         comments = value;
         visibleRootCount = 30;
         visibleReplyCounts.clear();
-        expandedThirdLevelParents.clear();
       });
     }
     return value;
@@ -310,38 +308,25 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
     void appendReplies(DDComment parent, int depth) {
       final replies = repliesByParent[parent.id] ?? const <DDComment>[];
-      final visible =
-          depth >= 2 && !expandedThirdLevelParents.contains(parent.id)
-              ? 0
-              : (visibleReplyCounts[parent.id] ?? 1);
+      final visible = visibleReplyCounts[parent.id] ?? 1;
       for (final reply in replies.take(visible)) {
         result.add(Padding(
-          padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : 42.0),
+          padding: const EdgeInsets.only(left: 42),
           child: _commentTile(
             reply,
             depth: depth,
-            // 只有回复三级评论时显示“某某 回复 某某”。
-            replyTo: depth >= 2 ? parent.nickname : null,
+            replyTo: null,
           ),
         ));
-        appendReplies(reply, depth + 1);
       }
-      if (replies.isNotEmpty &&
-          ((depth >= 2 && !expandedThirdLevelParents.contains(parent.id)) ||
-              visible < replies.length)) {
+      if (replies.isNotEmpty && visible < replies.length) {
         result.add(Padding(
-          padding: EdgeInsets.only(left: depth >= 2 ? 84.0 : 42.0),
+          padding: const EdgeInsets.only(left: 42),
           child: Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
-              onPressed: () => setState(() {
-                if (depth >= 2) {
-                  expandedThirdLevelParents.add(parent.id);
-                  visibleReplyCounts[parent.id] = replies.length;
-                } else {
-                  visibleReplyCounts[parent.id] = visible + 3;
-                }
-              }),
+              onPressed: () =>
+                  setState(() => visibleReplyCounts[parent.id] = visible + 3),
               child: const Text('显示更多'),
             ),
           ),
