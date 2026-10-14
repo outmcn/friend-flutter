@@ -269,6 +269,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
             : const SizedBox.shrink(),
         actions: [
           IconButton(
+            tooltip: '消息',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatPage()),
+            ),
+            icon: const Icon(TIcons.chat_bubble_1),
+          ),
+          IconButton(
             tooltip: '浏览记录',
             onPressed: () => Navigator.push(
               context,
