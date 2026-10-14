@@ -8,27 +8,23 @@ class GameClubApplyPage extends StatefulWidget {
 
 class _GameClubApplyPageState extends State<GameClubApplyPage> {
   final description = TextEditingController();
-  final contact = TextEditingController();
   bool submitting = false;
   @override
   void dispose() {
     description.dispose();
-    contact.dispose();
     super.dispose();
   }
 
   Future<void> submit() async {
-    if (description.text.trim().isEmpty || contact.text.trim().isEmpty) {
-      _showTopNotice(context, const Text('请填写申请说明和联系方式'));
+    if (description.text.trim().isEmpty) {
+      _showTopNotice(context, const Text('请填写申请说明'));
       return;
     }
     setState(() => submitting = true);
     try {
       final api = GameClubBackendClient();
-      await api.post('/api/game-club/applications', {
-        'description': description.text.trim(),
-        'contact': contact.text.trim()
-      });
+      await api.post('/api/game-club/applications',
+          {'description': description.text.trim()});
       api.dispose();
       if (mounted) _showTopNotice(context, const Text('申请已提交，请等待俱乐部审核'));
     } catch (e) {
@@ -53,13 +49,6 @@ class _GameClubApplyPageState extends State<GameClubApplyPage> {
                   hintText: '介绍你的游戏经验、擅长地图和陪玩风格',
                   border: OutlineInputBorder()),
               maxLines: 5),
-          const SizedBox(height: 16),
-          TextField(
-              controller: contact,
-              decoration: const InputDecoration(
-                  labelText: '联系方式',
-                  hintText: '请输入手机号或微信号',
-                  border: OutlineInputBorder())),
           const SizedBox(height: 20),
           FilledButton(
               onPressed: submitting ? null : submit,
