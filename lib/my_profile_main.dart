@@ -440,7 +440,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                '${p?['nickname'] ?? 'DD 用户'}',
+                                                '${p?['nickname'] ?? 'DD 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
