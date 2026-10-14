@@ -68,6 +68,15 @@ void main() {
     }
   });
 
+  test('latest server direction replaces stale local direction', () {
+    final merged = ImCall.merge(
+      const {'callerId': 'old-caller', 'calleeId': 'old-callee'},
+      const {'callerId': 'new-caller', 'calleeId': 'new-callee'},
+    );
+    expect(merged['callerId'], 'new-caller');
+    expect(merged['calleeId'], 'new-callee');
+  });
+
   test('incoming event is emitted only after SQLite commit and survives reopen',
       () async {
     final event = ImSession.instance.events

@@ -995,13 +995,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         '${call['conversationId'] ?? ''}' != widget.chat.conversationId) {
       return;
     }
+    final normalizedCall = {
+      ...call,
+      if (call['callerId'] == null && call['caller_id'] != null)
+        'callerId': '${call['caller_id']}',
+      if (call['calleeId'] == null && call['callee_id'] != null)
+        'calleeId': '${call['callee_id']}',
+    };
     final index = messages.indexWhere(
         (item) => ImCall.isCall(item) && '${item['id']}' == '${call['id']}');
     setState(() {
       if (index >= 0) {
-        messages[index] = ImCall.merge(messages[index], call);
+        messages[index] = ImCall.merge(messages[index], normalizedCall);
       } else {
-        messages.add(ImCall.merge({}, call));
+        messages.add(ImCall.merge({}, normalizedCall));
       }
       messages.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
     });
@@ -2056,8 +2063,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 final isCall =
                                     message['_timelineKind'] == 'call';
                                 final isMine = currentUserId.isNotEmpty &&
-                                    '${message['senderId'] ?? ''}' ==
-                                        currentUserId;
+                                    (isCall
+                                        ? '${message['callerId'] ?? message['caller_id'] ?? ''}' ==
+                                            currentUserId
+                                        : '${message['senderId'] ?? ''}' ==
+                                            currentUserId);
                                 final status = '${message['status'] ?? 'sent'}';
                                 final isRecalled = status == 'recalled';
                                 final isDeleted = status == 'deleted';

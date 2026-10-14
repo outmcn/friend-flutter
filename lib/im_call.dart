@@ -38,6 +38,13 @@ class ImCall {
       final value = update[key] ?? update[snake] ?? previous[key];
       if (value != null) next[key] = value;
     }
+    // The latest server event is authoritative for call direction.
+    for (final key in ['callerId', 'calleeId']) {
+      final snake = key.replaceAllMapped(
+          RegExp('[A-Z]'), (m) => '_${m[0]!.toLowerCase()}');
+      final value = update[key] ?? update[snake];
+      if (value != null && '$value'.isNotEmpty) next[key] = '$value';
+    }
     next['createdAt'] = previous['createdAt'] ??
         update['startedAt'] ??
         update['createdAt'] ??
