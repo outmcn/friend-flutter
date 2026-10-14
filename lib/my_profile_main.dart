@@ -113,6 +113,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
   String? _avatarUrl;
   String? error;
   List<String> _tags = <String>[];
+  bool _stealth = false;
+  bool _antiHarassment = false;
+  bool _smartBlock = false;
+  bool _matching = false;
 
   @override
   void initState() {
@@ -158,6 +162,58 @@ class _DDProfilePageState extends State<DDProfilePage> {
     _sonicPlayer.dispose();
     service.dispose();
     super.dispose();
+  }
+
+  Future<void> _openPresenceControls() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (_, setSheetState) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('在线 / 隐身'),
+                subtitle: Text(_stealth ? '当前：隐身' : '当前：在线'),
+                trailing: Switch(
+                  value: !_stealth,
+                  onChanged: (value) {
+                    setSheetState(() => _stealth = !value);
+                    setState(() {});
+                  },
+                ),
+              ),
+              SwitchListTile(
+                title: const Text('全站防骚扰'),
+                value: _antiHarassment,
+                onChanged: (value) {
+                  setSheetState(() => _antiHarassment = value);
+                  setState(() {});
+                },
+              ),
+              SwitchListTile(
+                title: const Text('智能屏蔽'),
+                value: _smartBlock,
+                onChanged: (value) {
+                  setSheetState(() => _smartBlock = value);
+                  setState(() {});
+                },
+              ),
+              ListTile(
+                title: Text(_matching ? '停止匹配' : '开启匹配'),
+                trailing: _tdIcon(_matching ? 'pause' : 'play'),
+                onTap: () {
+                  setSheetState(() => _matching = !_matching);
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _invalidateProfileCacheAndReload() async {
@@ -437,30 +493,47 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                       ],
                                     ),
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xfff0fdf4),
-                                      border: Border.all(
-                                          color: const Color(0xffbbf7d0)),
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
+                                  GestureDetector(
+                                    onTap: _openPresenceControls,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _stealth
+                                            ? const Color(0xfff3f4f6)
+                                            : const Color(0xfff0fdf4),
+                                        border: Border.all(
+                                            color: _stealth
+                                                ? const Color(0xffd1d5db)
+                                                : const Color(0xffbbf7d0)),
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
                                             width: 6,
                                             height: 6,
-                                            decoration: const BoxDecoration(
-                                                color: Color(0xff22c55e),
-                                                shape: BoxShape.circle)),
-                                        const SizedBox(width: 5),
-                                        const Text('在线',
+                                            decoration: BoxDecoration(
+                                              color: _stealth
+                                                  ? const Color(0xff9ca3af)
+                                                  : const Color(0xff22c55e),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            _stealth ? '隐身' : '在线',
                                             style: TextStyle(
-                                                color: Color(0xff16a34a),
-                                                fontSize: 11)),
-                                      ],
+                                              color: _stealth
+                                                  ? const Color(0xff6b7280)
+                                                  : const Color(0xff16a34a),
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ],
