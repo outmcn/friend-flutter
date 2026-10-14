@@ -67,12 +67,14 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   List<Map<String, dynamic>> remotePlaybook = const [];
   late final PageController _bannerController;
   int _bannerIndex = 0;
+  List<Map<String, dynamic>> remoteBanners = const [];
 
   @override
   void initState() {
     super.initState();
     _bannerController = PageController();
     _loadPlaybook();
+    _loadBanners();
   }
 
   @override
@@ -511,11 +513,21 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                   controller: _bannerController,
                   onPageChanged: (index) =>
                       setState(() => _bannerIndex = index),
-                  children: const [
-                    _DeltaBanner(title: '百强大神推荐榜', subtitle: '服务贴心 · 好评优选'),
-                    _DeltaBanner(title: '三角洲巅峰护航', subtitle: '高 KD 打手 · 快速接单'),
-                    _DeltaBanner(title: '新手体验专区', subtitle: '低门槛尝鲜 · 轻松开局'),
-                  ],
+                  children: remoteBanners.isEmpty
+                      ? const [
+                          _DeltaBanner(
+                              title: '百强大神推荐榜', subtitle: '服务贴心 · 好评优选'),
+                          _DeltaBanner(
+                              title: '三角洲巅峰护航', subtitle: '高 KD 打手 · 快速接单'),
+                          _DeltaBanner(
+                              title: '新手体验专区', subtitle: '低门槛尝鲜 · 轻松开局'),
+                        ]
+                      : remoteBanners
+                          .map((banner) => _DeltaBanner(
+                                title: '${banner['title']}',
+                                subtitle: '${banner['subtitle']}',
+                              ))
+                          .toList(),
                 ),
                 Positioned(
                   left: 0,
@@ -524,7 +536,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
-                      3,
+                      remoteBanners.isEmpty ? 3 : remoteBanners.length,
                       (index) => _BannerDot(active: _bannerIndex == index),
                     ),
                   ),
@@ -701,6 +713,18 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _loadBanners() async {
+    try {
+      final api = GameClubBackendClient();
+      final result = await api.get('/api/game-club/banners');
+      api.dispose();
+      if (mounted && result['banners'] is List) {
+        setState(() => remoteBanners =
+            (result['banners'] as List).cast<Map<String, dynamic>>());
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadPlaybook() async {

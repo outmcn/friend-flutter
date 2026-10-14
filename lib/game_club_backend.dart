@@ -64,6 +64,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   List<dynamic> categories = [];
   List<dynamic> projects = [];
   List<dynamic> orders = [];
+  List<dynamic> banners = [];
   @override
   void initState() {
     super.initState();
@@ -86,7 +87,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         api.get('/api/game-club/companions'),
         api.get('/api/admin/game-club/categories'),
         api.get('/api/admin/game-club/projects'),
-        api.get('/api/game-club/orders')
+        api.get('/api/game-club/orders'),
+        api.get('/api/game-club/banners')
       ]);
       if (!mounted) {
         return;
@@ -96,6 +98,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         categories = values[1]['categories'] as List? ?? [];
         projects = values[2]['projects'] as List? ?? [];
         orders = values[3]['orders'] as List? ?? [];
+        banners = values[4]['banners'] as List? ?? [];
         loading = false;
       });
     } catch (e) {
@@ -178,12 +181,22 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
 
   Widget _promotion() => ListView(
         padding: const EdgeInsets.all(16),
-        children: const [
+        children: [
+          const ListTile(
+              leading: Icon(Icons.campaign_outlined), title: Text('推广管理')),
           ListTile(
-            leading: Icon(Icons.campaign_outlined),
-            title: Text('推广管理'),
-            subtitle: Text('推广配置功能待接入'),
-          ),
+              title: const Text('明星陪玩推广'),
+              subtitle: Text(
+                  '当前 ${companions.where((c) => c['is_star'] == true).length} 人')),
+          ListTile(
+              title: const Text('魔王技术推广'),
+              subtitle: Text(
+                  '当前 ${companions.where((c) => c['is_king'] == true).length} 人')),
+          const Divider(),
+          const Text('主页横幅'),
+          ...banners.map((b) => ListTile(
+              title: Text('${b['title']}'),
+              subtitle: Text('${b['subtitle']}'))),
         ],
       );
 
