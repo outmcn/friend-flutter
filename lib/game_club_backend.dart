@@ -69,6 +69,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   List<dynamic> myCompanions = [];
   List<dynamic> banners = [];
   List<dynamic> applications = [];
+  List<dynamic> pageTabs = [];
   @override
   void initState() {
     super.initState();
@@ -104,6 +105,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         myOrders = values[2]['orders'] as List? ?? [];
         banners = values[3]['banners'] as List? ?? [];
         applications = values[4]['applications'] as List? ?? [];
+        pageTabs = values[1]['tabs'] as List? ?? [];
         loading = false;
       });
     } catch (e) {
@@ -233,11 +235,27 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                 title: Text('${b['title'] ?? ''}'),
                 subtitle: Text('${b['subtitle'] ?? ''}'),
               )),
-          const SizedBox(height: 12),
-          const Text('分类卡片'),
-          const Text('分类内容请在网页后台设置。'),
+          const SizedBox(height: 16),
+          const Text('Tab 配置', style: TextStyle(fontWeight: FontWeight.bold)),
+          ...pageTabs.map((t) => Card(
+                child: ListTile(
+                  title: Text('${t['title'] ?? ''}'),
+                  subtitle:
+                      Text(t['tab_type'] == 'companions' ? '陪玩卡片' : '分类卡片'),
+                  onTap: () => _editPageTab(t),
+                ),
+              )),
         ],
       );
+
+  Future<void> _editPageTab(dynamic tabConfig) async {
+    final title =
+        await _input('Tab 名称', initial: '${tabConfig['title'] ?? ''}');
+    if (title == null) return;
+    await api.patch(
+        '/api/game-club/manage/tabs/${tabConfig['id']}', {'title': title});
+    await load();
+  }
 
   Widget _orders() => ListView(
       children: myOrders
