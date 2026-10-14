@@ -188,15 +188,23 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                       subtitle:
                           Text('联系方式：${a['contact']}\n${a['description']}'),
                       isThreeLine: true,
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (status) => _patch(
-                            '/api/game-club/applications/${a['id']}',
-                            {'status': status}),
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(value: 'approved', child: Text('通过')),
-                          PopupMenuItem(value: 'rejected', child: Text('拒绝')),
-                        ],
-                      ),
+                      trailing: Wrap(spacing: 4, children: [
+                        OutlinedButton(
+                            onPressed: () => _patch(
+                                '/api/game-club/applications/${a['id']}?gameId=${widget.gameId}',
+                                {'status': 'assessed'}),
+                            child: const Text('考核')),
+                        OutlinedButton(
+                            onPressed: () => _patch(
+                                '/api/game-club/applications/${a['id']}?gameId=${widget.gameId}',
+                                {'status': 'approved', 'gameId': widget.gameId}),
+                            child: const Text('通过')),
+                        TextButton(
+                            onPressed: () => _patch(
+                                '/api/game-club/applications/${a['id']}?gameId=${widget.gameId}',
+                                {'status': 'rejected'}),
+                            child: const Text('拒绝')),
+                      ]),
                     ))
                 .toList(),
       );
