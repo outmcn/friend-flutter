@@ -488,13 +488,14 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     try {
       final access = await api.get('/api/game-club/access');
       if (!mounted) return;
-      if (access['canManage'] == true) {
-        await Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const GameClubAdminPage()));
-      } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('当前账号没有 Game 俱乐部管理权限')));
-      }
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => access['canManage'] == true
+              ? const GameClubAdminPage()
+              : const GameClubApplyPage(),
+        ),
+      );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)

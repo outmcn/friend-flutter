@@ -50,6 +50,7 @@ part 'profile_widgets.dart';
 part 'voice_pages.dart';
 part 'companion_pages.dart';
 part 'game_club_backend.dart';
+part 'game_club_apply_page.dart';
 part 'companion_profile_page.dart';
 part 'voice_room_page.dart';
 part 'voice_room_widgets.dart';
