@@ -50,11 +50,6 @@ class _ContactsPageState extends State<_ContactsPage>
           title: const Text('通讯录'),
           actions: [
             IconButton(
-              tooltip: '搜索',
-              onPressed: () {},
-              icon: _tdIcon('search'),
-            ),
-            IconButton(
               tooltip: '添加联系人',
               onPressed: () {},
               icon: _tdIcon('user-add'),
