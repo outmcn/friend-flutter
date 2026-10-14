@@ -467,7 +467,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         children: [
           _deltaBanners(),
           _topTabs(),
-          Expanded(child: tab == 2 ? _playbookBody() : _topTabBody()),
+          Expanded(child: tab >= 2 ? _playbookBody() : _topTabBody()),
         ],
       ),
     );
@@ -520,7 +520,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
         child: Row(
-          children: List.generate(3, (index) {
+          children: List.generate(4, (index) {
             final selected = tab == index;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -536,7 +536,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(99),
                   ),
-                  child: Text(['明星陪玩', '魔王技术', '玩法合集'][index],
+                  child: Text(['明星陪玩', '魔王技术', '玩法合集', '全部陪玩'][index],
                       style: TextStyle(
                           color: selected
                               ? Colors.white
@@ -613,13 +613,31 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(12, 18, 12, 24),
               children: [
-                const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 0, 10, 18),
-                    child: Text('玩法合集',
-                        style: TextStyle(
-                            color: Color(0xfff3f4f6),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700))),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 0, 0, 18),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text('玩法合集',
+                            style: TextStyle(
+                                color: Color(0xfff3f4f6),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                      InkWell(
+                        onTap: () => setState(() => showAllCompanions = true),
+                        borderRadius: BorderRadius.circular(6),
+                        child: const Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          child: Text('全部陪玩',
+                              style: TextStyle(
+                                  color: Color(0xffff6a1f), fontSize: 11)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 for (var i = 0; i < categories.length; i++)
                   Padding(
                       padding: const EdgeInsets.only(bottom: 4),
@@ -698,6 +716,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 6,
