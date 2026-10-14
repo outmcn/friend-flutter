@@ -493,7 +493,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   Widget _deltaBanners() => Padding(
         padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
         child: SizedBox(
-          height: 112,
+          height: 130,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Stack(
