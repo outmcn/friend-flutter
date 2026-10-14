@@ -1339,27 +1339,32 @@ class CompanionSelfEditPage extends StatefulWidget {
 }
 
 class _CompanionSelfEditPageState extends State<CompanionSelfEditPage> {
-  late final TextEditingController price,
-      skill,
-      maps,
-      modes,
-      screenshots,
-      cardLabel,
-      companionType,
-      companionDescription;
+  late final TextEditingController price;
+  late final TextEditingController skill;
+  late final TextEditingController maps;
+  late final TextEditingController modes;
+  late final TextEditingController screenshots;
+  late final TextEditingController cardLabel;
+  late final TextEditingController companionType;
+  late final TextEditingController companionDescription;
+
   @override
   void initState() {
     super.initState();
-    final d = widget.initial ?? {};
+    final d = widget.initial ?? const <String, dynamic>{};
     price = TextEditingController(text: '${d['price'] ?? ''}');
     skill = TextEditingController(text: '${d['skill_text'] ?? ''}');
-    maps =
-        TextEditingController(text: (d['maps'] as List? ?? const []).join('/'));
-    modes = TextEditingController(
-        text: (d['modes'] as List? ?? const []).join('/'));
-    screenshots = TextEditingController(
-        text: (d['screenshots'] as List? ?? const []).join('/'));
+    maps = TextEditingController(text: _join(d['maps']));
+    modes = TextEditingController(text: _join(d['modes']));
+    screenshots = TextEditingController(text: _join(d['screenshots']));
+    cardLabel = TextEditingController(text: '${d['card_label'] ?? ''}');
+    companionType = TextEditingController(text: '${d['companion_type'] ?? ''}');
+    companionDescription =
+        TextEditingController(text: '${d['companion_description'] ?? ''}');
   }
+
+  String _join(dynamic value) =>
+      value is List ? value.map((x) => '$x').join('/') : '';
 
   @override
   void dispose() {
@@ -1374,32 +1379,24 @@ class _CompanionSelfEditPageState extends State<CompanionSelfEditPage> {
     super.dispose();
   }
 
+  List<String> _split(String value) =>
+      value.split('/').map((x) => x.trim()).where((x) => x.isNotEmpty).toList();
+
   Future<void> save() async {
     final api = GameClubBackendClient();
     try {
       await api.patch('/api/game-club/companions/me', {
         'gameId': widget.gameId,
-        'price': price.text,
-        'skillText': skill.text,
-        'maps': maps.text
-            .split('/')
-            .map((x) => x.trim())
-            .where((x) => x.isNotEmpty)
-            .toList(),
-        'modes': modes.text
-            .split('/')
-            .map((x) => x.trim())
-            .where((x) => x.isNotEmpty)
-            .toList(),
-        'screenshots': screenshots.text
-            .split('/')
-            .map((x) => x.trim())
-            .where((x) => x.isNotEmpty)
-            .toList()
+        'price': price.text.trim(),
+        'skillText': skill.text.trim(),
+        'cardLabel': cardLabel.text.trim().characters.take(6).toString(),
+        'companionType': companionType.text.trim(),
+        'companionDescription': companionDescription.text.trim(),
+        'maps': _split(maps.text),
+        'modes': _split(modes.text),
+        'screenshots': _split(screenshots.text),
       });
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -1410,29 +1407,104 @@ class _CompanionSelfEditPageState extends State<CompanionSelfEditPage> {
     }
   }
 
+  Widget _sectionTitle(String text) => Padding(
+        padding: const EdgeInsets.only(top: 20, bottom: 10),
+        child: Text(text,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+      );
+
+  Widget _readOnlyRow(String label, String value) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(label),
+        trailing: Text(value, style: const TextStyle(color: Colors.grey)),
+      );
+
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text('编辑陪玩资料')),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        TextField(
-            controller: price,
-            decoration: const InputDecoration(labelText: '价格')),
-        TextField(
-            controller: skill,
-            maxLines: 3,
-            decoration: const InputDecoration(labelText: '游戏技能')),
-        TextField(
-            controller: screenshots,
-            decoration: const InputDecoration(labelText: '游戏截图（图片地址用/分隔）')),
-        TextField(
-            controller: maps,
-            decoration: const InputDecoration(labelText: '擅长地图（用/分隔）')),
-        TextField(
-            controller: modes,
-            decoration: const InputDecoration(labelText: '游戏模式（用/分隔）')),
-        const SizedBox(height: 20),
-        FilledButton(onPressed: save, child: const Text('保存'))
-      ]));
+        appBar: AppBar(title: const Text('编辑陪玩资料')),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(children: [
+                  const CircleAvatar(radius: 40, child: Icon(Icons.person)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('陪玩主页预览',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 5),
+                          Text('保存后会同步到陪玩卡片和详情页',
+                              style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant)),
+                        ]),
+                  ),
+                ]),
+              ),
+            ),
+            _sectionTitle('基础资料'),
+            TextField(
+                controller: cardLabel,
+                maxLength: 6,
+                decoration: const InputDecoration(labelText: '卡片标签（最多6个字）')),
+            TextField(
+                controller: companionType,
+                decoration: const InputDecoration(labelText: '陪玩通用标签（如甜妹、御姐）')),
+            TextField(
+                controller: companionDescription,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: '陪玩说明')),
+            TextField(
+                controller: price,
+                decoration: const InputDecoration(labelText: '价格')),
+            _sectionTitle('游戏技能'),
+            TextField(
+                controller: skill,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                    labelText: '游戏技能', hintText: '填写段位、时长、擅长风格等')),
+            TextField(
+                controller: maps,
+                decoration: const InputDecoration(labelText: '擅长地图（多个用 / 分隔）')),
+            TextField(
+                controller: modes,
+                decoration: const InputDecoration(labelText: '游戏模式（多个用 / 分隔）')),
+            TextField(
+                controller: screenshots,
+                maxLines: 2,
+                decoration:
+                    const InputDecoration(labelText: '游戏截图地址（多个用 / 分隔）')),
+            _sectionTitle('只读数据'),
+            const Card(
+              child: Column(children: [
+                _ReadOnlyStat(label: '近期表现', value: '由订单数据统计'),
+                _ReadOnlyStat(label: '总体评分', value: '由用户评价统计'),
+                _ReadOnlyStat(label: '用户评价', value: '不可由陪玩修改'),
+              ]),
+            ),
+            const SizedBox(height: 22),
+            FilledButton(onPressed: save, child: const Text('保存资料')),
+          ],
+        ),
+      );
+}
+
+class _ReadOnlyStat extends StatelessWidget {
+  const _ReadOnlyStat({required this.label, required this.value});
+  final String label;
+  final String value;
+  @override
+  Widget build(BuildContext context) => ListTile(
+        title: Text(label),
+        trailing: Text(value, style: const TextStyle(color: Colors.grey)),
+      );
 }
 
 class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
