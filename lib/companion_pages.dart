@@ -15,6 +15,7 @@ class DeltaCompanionPage extends StatefulWidget {
 
 class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int tab = 0;
+  int playbookTab = 0;
   static const categories = <String>[
     '体验单',
     '保底单',
@@ -426,7 +427,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
         child: Row(
-          children: List.generate(4, (index) {
+          children: List.generate(3, (index) {
             final selected = tab == index;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -442,7 +443,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(99),
                   ),
-                  child: Text(['明星陪玩', '魔王技术', '玩法合集', '一键找人'][index],
+                  child: Text(['明星陪玩', '魔王技术', '玩法合集'][index],
                       style: TextStyle(
                           color: selected
                               ? Colors.white
@@ -505,7 +506,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 
   Widget _playbookBody() {
-    final item = data[tab];
+    final item = data[playbookTab];
     final items = (item['items'] as List).cast<List<dynamic>>();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -582,9 +583,9 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 
   Widget _sidebarItem(int index, String label) {
-    final active = tab == index;
+    final active = playbookTab == index;
     return GestureDetector(
-      onTap: () => setState(() => tab = index),
+      onTap: () => setState(() => playbookTab = index),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         decoration: BoxDecoration(
