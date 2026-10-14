@@ -161,9 +161,6 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                     if (c['is_star'] == true) const Chip(label: Text('明星陪玩')),
                     if (c['is_king'] == true) const Chip(label: Text('魔王技术')),
                     IconButton(
-                        onPressed: () => _editCompanion(c),
-                        icon: const Icon(Icons.edit)),
-                    IconButton(
                         onPressed: () => _delete(
                             '/api/game-club/companions/${c['user_id']}'),
                         icon: const Icon(Icons.delete_outline)),
@@ -259,31 +256,6 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
   Future<void> _patch(String path, Map<String, dynamic> body) async {
     await api.patch(path, body);
     await load();
-  }
-
-  Future<void> _editCompanion(dynamic c) async {
-    final price = await _input('价格', initial: '${c['price']}');
-    if (price != null) {
-      await _patch(
-          '/api/game-club/companions/${c['user_id']}', {'price': price});
-    }
-  }
-
-  Future<String?> _input(String title, {String initial = ''}) async {
-    final controller = TextEditingController(text: initial);
-    return showDialog<String>(
-        context: context,
-        builder: (_) => AlertDialog(
-                title: Text(title),
-                content: TextField(controller: controller, autofocus: true),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('取消')),
-                  FilledButton(
-                      onPressed: () => Navigator.pop(context, controller.text),
-                      child: const Text('确定'))
-                ]));
   }
 }
 
