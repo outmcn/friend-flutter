@@ -8,7 +8,10 @@ class GameCompanionPlazaPage extends StatefulWidget {
 }
 
 class DeltaCompanionPage extends StatefulWidget {
-  const DeltaCompanionPage({super.key});
+  const DeltaCompanionPage(
+      {super.key, required this.gameId, required this.title});
+  final int gameId;
+  final String title;
   @override
   State<DeltaCompanionPage> createState() => _DeltaCompanionPageState();
 }
@@ -62,6 +65,8 @@ class _BannerDot extends StatelessWidget {
 class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int tab = 0;
   int playbookTab = 0;
+  int get gameId => widget.gameId;
+  String get gameTitle => widget.title;
   bool playbookLoading = false;
   String? playbookError;
   List<dynamic> remoteCompanions = const [];
@@ -447,7 +452,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     return Scaffold(
       backgroundColor: tab == 2 ? const Color(0xff0f0f11) : null,
       appBar: AppBar(
-        title: const Text('三角洲 - 端游'),
+        title: Text(gameTitle),
         actions: [
           TextButton(
             onPressed: _openDeltaAdmin,
@@ -755,7 +760,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   Future<void> _loadPageConfig() async {
     try {
       final api = GameClubBackendClient();
-      final result = await api.get('/api/game-club/page-config/2');
+      final result = await api.get('/api/game-club/page-config/$gameId');
       api.dispose();
       if (mounted) {
         setState(() {
@@ -774,7 +779,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   Future<void> _loadCompanions() async {
     try {
       final api = GameClubBackendClient();
-      final result = await api.get('/api/game-club/companions');
+      final result = await api.get('/api/game-club/companions?gameId=$gameId');
       api.dispose();
       if (mounted && result['companions'] is List) {
         setState(() => remoteCompanions = result['companions'] as List);
@@ -785,7 +790,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   Future<void> _loadBanners() async {
     try {
       final api = GameClubBackendClient();
-      final result = await api.get('/api/game-club/banners');
+      final result = await api.get('/api/game-club/banners?gameId=$gameId');
       api.dispose();
       if (mounted && result['banners'] is List) {
         setState(() => remoteBanners =
@@ -803,7 +808,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       final api = GameClubBackendClient();
       final results = await Future.wait([
         api.get('/api/game-club/categories'),
-        api.get('/api/game-club/projects?gameId=2'),
+        api.get('/api/game-club/projects?gameId=$gameId'),
       ]);
       api.dispose();
       final cats = (results[0]['categories'] as List? ?? const [])
@@ -986,8 +991,9 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 }
 
-class _DeltaGameEntryButton extends StatelessWidget {
-  const _DeltaGameEntryButton({required this.onTap});
+class _GameEntryCard extends StatelessWidget {
+  const _GameEntryCard({required this.title, required this.onTap});
+  final String title;
   final VoidCallback onTap;
 
   @override
@@ -1007,31 +1013,17 @@ class _DeltaGameEntryButton extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(18),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.shield_outlined,
-                    color: Colors.white, size: 34),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('三角洲 - 端游',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800)),
-                      SizedBox(height: 4),
-                      Text('百强大神推荐榜 · 好评优选',
-                          style:
-                              TextStyle(color: Colors.white70, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.white),
-              ],
-            ),
+            child: Row(children: [
+              const Icon(Icons.shield_outlined, color: Colors.white, size: 34),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(title,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800))),
+              const Icon(Icons.chevron_right, color: Colors.white),
+            ]),
           ),
         ),
       );
@@ -1146,7 +1138,8 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
   final search = TextEditingController();
   int game = 0;
   int type = 0;
-  final games = const ['王者荣耀', '英雄联盟', '和平精英', '原神', '更多'];
+  bool gamesLoading = true;
+  List<Map<String, dynamic>> games = const [];
   final types = const ['全部', '上分陪玩', '娱乐开黑', '语音陪伴', '新手教学'];
   final companions = const [
     CompanionProfile(
@@ -1183,6 +1176,30 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
         voice: '治愈音 · 试听 14 秒'),
   ];
   @override
+  void initState() {
+    super.initState();
+    _loadGames();
+  }
+
+  Future<void> _loadGames() async {
+    try {
+      final api = GameClubBackendClient();
+      final result = await api.get('/api/game-club/games');
+      api.dispose();
+      if (!mounted) return;
+      setState(() {
+        games = (result['games'] as List? ?? const [])
+            .whereType<Map>()
+            .map((x) => Map<String, dynamic>.from(x))
+            .toList();
+        gamesLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => gamesLoading = false);
+    }
+  }
+
+  @override
   void dispose() {
     search.dispose();
     super.dispose();
@@ -1218,14 +1235,34 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
             ),
           ),
           const SizedBox(height: 12),
-          _DeltaGameEntryButton(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const DeltaCompanionPage(),
+          if (gamesLoading)
+            const Center(
+                child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(),
+            ))
+          else if (games.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text('暂无可用游戏'),
+            )
+          else
+            for (final item in games)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _GameEntryCard(
+                  title: '${item['title'] ?? ''}',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DeltaCompanionPage(
+                        gameId: int.tryParse('${item['id']}') ?? 0,
+                        title: '${item['title'] ?? ''}',
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
         ],
       ),
     );
