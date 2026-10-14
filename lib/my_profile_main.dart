@@ -108,7 +108,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   final ScrollController _profileScrollController = ScrollController();
   bool _showStickyNickname = false;
 
-  bool _sonicPlaying = false;
+  final bool _sonicPlaying = false;
   String? _sonicUrl;
   String? _avatarUrl;
   String? error;
@@ -158,17 +158,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
     _sonicPlayer.dispose();
     service.dispose();
     super.dispose();
-  }
-
-  Future<void> _toggleSonic() async {
-    final url = _sonicUrl;
-    if (url == null || url.isEmpty) return;
-    if (_sonicPlaying) {
-      await _sonicPlayer.pause();
-    } else {
-      await _sonicPlayer.play(UrlSource(url));
-    }
-    if (mounted) setState(() => _sonicPlaying = !_sonicPlaying);
   }
 
   Future<void> _invalidateProfileCacheAndReload() async {
@@ -422,9 +411,20 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                         const SizedBox(height: 10),
                                         _SonicProfileButton(
                                           playing: _sonicPlaying,
-                                          enabled:
-                                              _sonicUrl?.isNotEmpty == true,
-                                          onTap: _toggleSonic,
+                                          enabled: true,
+                                          onTap: () async {
+                                            await Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    _VoiceRecordPage(
+                                                        currentUrl: _sonicUrl),
+                                              ),
+                                            );
+                                            if (mounted) {
+                                              await load(forceRefresh: true);
+                                            }
+                                          },
                                         ),
                                       ],
                                     ),
