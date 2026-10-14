@@ -506,6 +506,16 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         );
         return;
       }
+      if (access['isCompanion'] == true) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => CompanionSelfEditPage(
+                  gameId: gameId,
+                  initial: access['companion'] as Map<String, dynamic>?)),
+        );
+        return;
+      }
       await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const GameClubApplyPage()),
@@ -1259,6 +1269,101 @@ class CompanionProfile {
   final IconData icon;
   final List<String> tags;
   final String voice;
+}
+
+class CompanionSelfEditPage extends StatefulWidget {
+  const CompanionSelfEditPage({super.key, required this.gameId, this.initial});
+  final int gameId;
+  final Map<String, dynamic>? initial;
+  @override
+  State<CompanionSelfEditPage> createState() => _CompanionSelfEditPageState();
+}
+
+class _CompanionSelfEditPageState extends State<CompanionSelfEditPage> {
+  late final TextEditingController price, skill, maps, modes, screenshots;
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.initial ?? {};
+    price = TextEditingController(text: '${d['price'] ?? ''}');
+    skill = TextEditingController(text: '${d['skill_text'] ?? ''}');
+    maps =
+        TextEditingController(text: (d['maps'] as List? ?? const []).join('/'));
+    modes = TextEditingController(
+        text: (d['modes'] as List? ?? const []).join('/'));
+    screenshots = TextEditingController(
+        text: (d['screenshots'] as List? ?? const []).join('/'));
+  }
+
+  @override
+  void dispose() {
+    price.dispose();
+    skill.dispose();
+    maps.dispose();
+    modes.dispose();
+    screenshots.dispose();
+    super.dispose();
+  }
+
+  Future<void> save() async {
+    final api = GameClubBackendClient();
+    try {
+      await api.patch('/api/game-club/companions/me', {
+        'gameId': widget.gameId,
+        'price': price.text,
+        'skillText': skill.text,
+        'maps': maps.text
+            .split('/')
+            .map((x) => x.trim())
+            .where((x) => x.isNotEmpty)
+            .toList(),
+        'modes': modes.text
+            .split('/')
+            .map((x) => x.trim())
+            .where((x) => x.isNotEmpty)
+            .toList(),
+        'screenshots': screenshots.text
+            .split('/')
+            .map((x) => x.trim())
+            .where((x) => x.isNotEmpty)
+            .toList()
+      });
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+      }
+    } finally {
+      api.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: const Text('编辑陪玩资料')),
+      body: ListView(padding: const EdgeInsets.all(16), children: [
+        TextField(
+            controller: price,
+            decoration: const InputDecoration(labelText: '价格')),
+        TextField(
+            controller: skill,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: '游戏技能')),
+        TextField(
+            controller: screenshots,
+            decoration: const InputDecoration(labelText: '游戏截图（图片地址用/分隔）')),
+        TextField(
+            controller: maps,
+            decoration: const InputDecoration(labelText: '擅长地图（用/分隔）')),
+        TextField(
+            controller: modes,
+            decoration: const InputDecoration(labelText: '游戏模式（用/分隔）')),
+        const SizedBox(height: 20),
+        FilledButton(onPressed: save, child: const Text('保存'))
+      ]));
 }
 
 class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
