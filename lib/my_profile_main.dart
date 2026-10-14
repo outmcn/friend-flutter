@@ -201,12 +201,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
                 },
               ),
               ListTile(
-                title: Text(_matching ? '停止匹配' : '开启匹配'),
-                trailing: _tdIcon(_matching ? 'pause' : 'play'),
-                onTap: () {
-                  setSheetState(() => _matching = !_matching);
-                  setState(() {});
-                },
+                title: const Text('开启匹配'),
+                trailing: Switch(
+                  value: _matching,
+                  onChanged: (value) {
+                    setSheetState(() => _matching = value);
+                    setState(() {});
+                  },
+                ),
               ),
               const SizedBox(height: 12),
             ],
@@ -324,14 +326,6 @@ class _DDProfilePageState extends State<DDProfilePage> {
               )
             : const SizedBox.shrink(),
         actions: [
-          IconButton(
-            tooltip: '消息',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ChatPage()),
-            ),
-            icon: const Icon(TIcons.chat_bubble_1),
-          ),
           IconButton(
             tooltip: '浏览记录',
             onPressed: () => Navigator.push(

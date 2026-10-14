@@ -293,8 +293,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 'localDurationSeconds': local['local_duration_seconds'] ??
                     local['localDurationSeconds'],
               });
-        final preview = localPreview ??
-            _conversationLastMessagePreview(row.lastMessage) ??
+        final preview = _conversationLastMessagePreview(row.lastMessage) ??
+            localPreview ??
             '开始一段新的聊天';
         mapped.add(_ChatPreview(
           row.peer?.nickname ?? '会话 ${row.id}',
