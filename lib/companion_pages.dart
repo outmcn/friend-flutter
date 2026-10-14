@@ -13,6 +13,36 @@ class DeltaCompanionPage extends StatefulWidget {
   State<DeltaCompanionPage> createState() => _DeltaCompanionPageState();
 }
 
+class _DeltaBanner extends StatelessWidget {
+  const _DeltaBanner({required this.title, required this.subtitle});
+  final String title;
+  final String subtitle;
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.fromLTRB(16, 8, 0, 0),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              colors: [Color(0xff263b59), Color(0xff9b4c48)]),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800)),
+            const SizedBox(height: 3),
+            Text(subtitle,
+                style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          ],
+        ),
+      );
+}
+
 class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   int tab = 0;
   int playbookTab = 0;
@@ -389,7 +419,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       appBar: AppBar(title: const Text('三角洲 - 端游')),
       body: Column(
         children: [
-          _deltaBanner(),
+          _deltaBanners(),
           _topTabs(),
           Expanded(child: tab == 2 ? _playbookBody() : _topTabBody()),
         ],
@@ -397,28 +427,14 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     );
   }
 
-  Widget _deltaBanner() => Container(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        height: 156,
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-              colors: [Color(0xff263b59), Color(0xff9b4c48)]),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text('百强大神推荐榜',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w900)),
-            SizedBox(height: 6),
-            Text('服务贴心 · 好评优选',
-                style: TextStyle(color: Colors.white70, fontSize: 14)),
+  Widget _deltaBanners() => SizedBox(
+        height: 78,
+        child: PageView(
+          controller: PageController(viewportFraction: .92),
+          children: const [
+            _DeltaBanner(title: '百强大神推荐榜', subtitle: '服务贴心 · 好评优选'),
+            _DeltaBanner(title: '三角洲巅峰护航', subtitle: '高 KD 打手 · 快速接单'),
+            _DeltaBanner(title: '新手体验专区', subtitle: '低门槛尝鲜 · 轻松开局'),
           ],
         ),
       );
