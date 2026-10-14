@@ -20,6 +20,24 @@ class DynamicDetailPage extends StatefulWidget {
   State<DynamicDetailPage> createState() => _DynamicDetailPageState();
 }
 
+class _DetailChromeClipper extends CustomClipper<Rect> {
+  const _DetailChromeClipper(this.progress);
+  final double progress;
+
+  @override
+  Rect getClip(Size size) {
+    final topInset = kToolbarHeight * (1 - progress);
+    final bottomInset = 80.0 * (1 - progress);
+    final top = topInset.clamp(0.0, size.height);
+    final bottom = (size.height - bottomInset).clamp(top, size.height);
+    return Rect.fromLTRB(0, top, size.width, bottom);
+  }
+
+  @override
+  bool shouldReclip(_DetailChromeClipper oldClipper) =>
+      oldClipper.progress != progress;
+}
+
 class _DynamicDetailPageState extends State<DynamicDetailPage>
     with SingleTickerProviderStateMixin {
   final DDPostService service = DDPostService();
@@ -856,7 +874,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             offset: offset,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(radius),
-              child: Transform.scale(scale: scale, child: child),
+              child: ClipRect(
+                clipper: _DetailChromeClipper(t),
+                child: Transform.scale(scale: scale, child: child),
+              ),
             ),
           );
         },
