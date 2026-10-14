@@ -451,6 +451,10 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       appBar: AppBar(
         title: const Text('三角洲 - 端游'),
         actions: [
+          TextButton(
+            onPressed: _openDeltaAdmin,
+            child: const Text('后台'),
+          ),
           IconButton(
             tooltip: '订单',
             onPressed: () => _showTopMessage('订单'),
@@ -477,6 +481,28 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('$title功能')),
     );
+  }
+
+  Future<void> _openDeltaAdmin() async {
+    final api = GameClubBackendClient();
+    try {
+      final access = await api.get('/api/game-club/access');
+      if (!mounted) return;
+      if (access['canManage'] == true) {
+        await Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const GameClubAdminPage()));
+      } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('当前账号没有 Game 俱乐部管理权限')));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    } finally {
+      api.dispose();
+    }
   }
 
   Widget _deltaBanners() => Padding(
