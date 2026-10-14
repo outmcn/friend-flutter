@@ -1042,7 +1042,16 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Game 俱乐部')),
+      appBar: AppBar(
+        title: const Text('Game 俱乐部'),
+        actions: [
+          IconButton(
+            tooltip: '后台',
+            onPressed: _openAdmin,
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
         children: [
@@ -1062,6 +1071,41 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
                 builder: (_) => const DeltaCompanionPage(),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openAdmin() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Game 俱乐部后台'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.receipt_long_outlined),
+              title: Text('订单管理'),
+              subtitle: Text('查看和处理陪玩订单'),
+            ),
+            ListTile(
+              leading: Icon(Icons.people_outline),
+              title: Text('陪玩管理'),
+              subtitle: Text('管理陪玩资料和上下架状态'),
+            ),
+            ListTile(
+              leading: Icon(Icons.category_outlined),
+              title: Text('玩法管理'),
+              subtitle: Text('管理玩法分类和项目'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
           ),
         ],
       ),
