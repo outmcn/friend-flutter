@@ -611,6 +611,10 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                 tags: ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰', '秒接单']),
             _DeltaCompanionCard(
                 name: '胡进', price: '64', tags: ['金牌娱乐', '三角洲巅峰', '秒接单']),
+            _DeltaCompanionCard(
+                name: '小雨兔叽萌萌',
+                price: '58',
+                tags: ['明星陪玩', '三角洲巅峰', '萌新友好', '秒接单']),
           ]);
     }
     if (tab == 1) {
