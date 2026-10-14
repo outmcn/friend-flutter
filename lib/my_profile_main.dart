@@ -288,26 +288,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
             icon: const Icon(Icons.crop_free),
           ),
           IconButton(
-            tooltip: '更多',
-            onPressed: () => showModalBottomSheet<void>(
-              context: context,
-              showDragHandle: true,
-              builder: (_) => const SafeArea(
-                child: Wrap(
-                  children: [
-                    ListTile(
-                      leading: Icon(Icons.share_outlined),
-                      title: Text('分享主页'),
-                    ),
-                    ListTile(
-                      leading: Icon(Icons.settings_outlined),
-                      title: Text('设置'),
-                    ),
-                  ],
-                ),
-              ),
+            tooltip: '设置',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsPage()),
             ),
-            icon: const Icon(Icons.hexagon_outlined),
+            icon: const Icon(Icons.settings_outlined),
           ),
         ],
       ),

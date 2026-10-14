@@ -8,13 +8,23 @@ class SettingsPage extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            const _SettingsGroup(
+            _SettingsGroup(
               title: '账号与安全',
-              items: ['账号信息', '修改密码', '绑定邮箱和手机号'],
+              items: const ['账号与安全', '修改密码', '绑定手机号'],
+              onItemTap: (item) {
+                if (item == '修改密码') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PasswordSetupPage(),
+                    ),
+                  );
+                }
+              },
             ),
             _SettingsGroup(
               title: '隐私与通知',
-              items: const ['隐私设置', '通知设置', '黑名单'],
+              items: const ['隐私设置', '通知设置'],
               onItemTap: (item) {
                 if (item == '通知设置') {
                   Navigator.push(
@@ -26,7 +36,57 @@ class SettingsPage extends StatelessWidget {
                 }
               },
             ),
-            const _SettingsGroup(title: '其他', items: ['清理缓存', '关于 DD', '退出登录']),
+            _SettingsGroup(
+              title: '其他',
+              items: const ['清理缓存', '关于软件', '退出登录'],
+              onItemTap: (item) async {
+                if (item == '清理缓存') {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.clear();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('缓存已清理')),
+                    );
+                  }
+                } else if (item == '关于软件') {
+                  showAboutDialog(
+                    context: context,
+                    applicationName: 'DD',
+                    applicationVersion: '1.0.0',
+                    applicationLegalese: 'Friend',
+                  );
+                } else if (item == '退出登录') {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: const Text('退出登录'),
+                      content: const Text('确定要退出当前账号吗？'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: const Text('取消'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: const Text('退出'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok == true && context.mounted) {
+                    final navigator = Navigator.of(context);
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('friend.auth.token');
+                    await prefs.remove('friend.auth.userId');
+                    if (!context.mounted) return;
+                    navigator.pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      (_) => false,
+                    );
+                  }
+                }
+              },
+            ),
           ],
         ),
       );
