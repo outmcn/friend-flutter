@@ -751,7 +751,7 @@ class _DeltaGameEntryButton extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('三角洲端游',
+                      Text('三角洲 - 端游',
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
