@@ -647,6 +647,9 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
           ...source.map((p) => _DeltaCompanionCard(
               name: '${p['nickname'] ?? '用户'}',
               gender: '${p['gender'] ?? ''}',
+              cardLabel: '${p['card_label'] ?? ''}',
+              companionType: '${p['companion_type'] ?? ''}',
+              companionDescription: '${p['companion_description'] ?? ''}',
               price: '${p['price'] ?? '0'}',
               tags:
                   (p['tags'] as List? ?? const []).map((x) => '$x').toList())),
@@ -765,6 +768,9 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
           .map((p) => _DeltaCompanionCard(
                 name: '${p['nickname'] ?? '用户'}',
                 gender: '${p['gender'] ?? ''}',
+                cardLabel: '${p['card_label'] ?? ''}',
+                companionType: '${p['companion_type'] ?? ''}',
+                companionDescription: '${p['companion_description'] ?? ''}',
                 price: '${p['price'] ?? '0'}',
                 tags: (p['tags'] as List? ?? const []).cast<String>(),
               ))
@@ -1180,11 +1186,17 @@ class _DeltaCompanionCard extends StatelessWidget {
     required this.name,
     required this.price,
     this.gender = '',
+    this.cardLabel = '',
+    this.companionType = '',
+    this.companionDescription = '',
     required this.tags,
   });
   final String name;
   final String price;
   final String gender;
+  final String cardLabel;
+  final String companionType;
+  final String companionDescription;
   final List<String> tags;
 
   void _open(BuildContext context) {
@@ -1242,6 +1254,22 @@ class _DeltaCompanionCard extends StatelessWidget {
                               child: Icon(Icons.female,
                                   color: Colors.pink, size: 19)),
                       ]),
+                      if (cardLabel.isNotEmpty)
+                        Text(cardLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: Colors.grey, fontSize: 12)),
+                      if (companionType.isNotEmpty ||
+                          companionDescription.isNotEmpty)
+                        Text(
+                            [companionType, companionDescription]
+                                .where((x) => x.isNotEmpty)
+                                .join(' · '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: Colors.grey, fontSize: 12)),
                       const SizedBox(height: 7),
                       Wrap(
                         spacing: 5,
@@ -1298,7 +1326,14 @@ class CompanionSelfEditPage extends StatefulWidget {
 }
 
 class _CompanionSelfEditPageState extends State<CompanionSelfEditPage> {
-  late final TextEditingController price, skill, maps, modes, screenshots;
+  late final TextEditingController price,
+      skill,
+      maps,
+      modes,
+      screenshots,
+      cardLabel,
+      companionType,
+      companionDescription;
   @override
   void initState() {
     super.initState();
@@ -1320,6 +1355,9 @@ class _CompanionSelfEditPageState extends State<CompanionSelfEditPage> {
     maps.dispose();
     modes.dispose();
     screenshots.dispose();
+    cardLabel.dispose();
+    companionType.dispose();
+    companionDescription.dispose();
     super.dispose();
   }
 
