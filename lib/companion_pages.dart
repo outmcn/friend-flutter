@@ -603,87 +603,56 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       );
 
   Widget _topTabBody() {
-    final config =
-        tab < remoteTabs.length ? remoteTabs[tab] : const <String, dynamic>{};
-    final type = '${config['tab_type'] ?? 'companions'}';
-    if (type == 'companions') {
-      final ids = (config['companions'] as List? ?? const [])
-          .map((x) => '${x['user_id']}')
-          .toSet();
-      final source = ids.isEmpty
-          ? remoteCompanions
-          : remoteCompanions
-              .where((x) => ids.contains('${x['user_id']}'))
-              .toList();
+    if (tab == 3) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text('${config['title'] ?? '陪玩卡片'}',
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text('全部陪玩',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
           ),
-          if (source.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('该 Tab 暂无陪玩'),
-            )
-          else
-            ...source.map((p) => _DeltaCompanionCard(
-                  name: '${p['nickname'] ?? '用户'}',
-                  price: '${p['price'] ?? '0'}',
-                  tags: (p['tags'] as List? ?? const [])
-                      .map((x) => '$x')
-                      .toList(),
-                )),
+          ..._allClubCompanions(),
         ],
       );
     }
+    if (tab == 0) {
+      return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+          children: const [
+            _DeltaCompanionCard(
+                name: '周浩男',
+                price: '80',
+                tags: ['百强大神榜TOP10', '金牌娱乐', '三角洲巅峰', '秒接单']),
+            _DeltaCompanionCard(
+                name: '胡进', price: '64', tags: ['金牌娱乐', '三角洲巅峰', '秒接单']),
+            _DeltaCompanionCard(
+                name: '小雨兔叽萌萌',
+                price: '58',
+                tags: ['明星陪玩', '三角洲巅峰', '萌新友好', '秒接单']),
+          ]);
+    }
+    if (tab == 1) {
+      return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+          children: const [
+            _DeltaCompanionCard(
+                name: '魔王S大神', price: '108', tags: ['魔王S', '三角洲巅峰', '技术指导']),
+            _DeltaCompanionCard(
+                name: '金牌大神', price: '96', tags: ['金牌大神', '航天基地', '秒接单']),
+          ]);
+    }
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
-      children: [
-        Text('${config['level1_title'] ?? config['title'] ?? '分类'}',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 8),
-        Text('${config['card_subtitle'] ?? ''}',
-            style: const TextStyle(color: Colors.grey)),
-        const SizedBox(height: 16),
-        Row(children: [
-          Expanded(
-              child:
-                  _categoryCardText('一级分类', '${config['level1_title'] ?? ''}')),
-          const SizedBox(width: 10),
-          Expanded(
-              child:
-                  _categoryCardText('二级分类', '${config['level2_title'] ?? ''}')),
-          const SizedBox(width: 10),
-          Expanded(
-              child: _categoryCardText('价格', '${config['card_price'] ?? ''}')),
-        ]),
-        const SizedBox(height: 16),
-        ..._playbookBodyChildren(),
-      ],
-    );
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text('全部陪玩',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          ),
+          ..._allClubCompanions(),
+        ]);
   }
-
-  Widget _categoryCardText(String label, String value) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0x12000000),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-          const SizedBox(height: 4),
-          Text(value.isEmpty ? '未设置' : value,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700)),
-        ]),
-      );
-
-  List<Widget> _playbookBodyChildren() => const <Widget>[];
 
   List<Widget> _allClubCompanions() {
     if (remoteCompanions.isNotEmpty) {
