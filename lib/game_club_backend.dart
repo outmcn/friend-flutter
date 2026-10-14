@@ -265,58 +265,6 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
     await load();
   }
 
-  Future<void> _addProject(dynamic category) async {
-    final title = await _input('二级玩法名称');
-    if (title == null || title.trim().isEmpty) return;
-    final description = await _input('玩法简介');
-    final price = await _input('价格');
-    final unit = await _input('单位', initial: '/局');
-    final tagsText = await _input('标签（用逗号分隔）');
-    await api.post('/api/game-club/projects', {
-      'categoryId': category['id'],
-      'title': title,
-      'description': description ?? '',
-      'price': price ?? '',
-      'unit': unit ?? '',
-      'tags': (tagsText ?? '')
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList(),
-    });
-    await load();
-  }
-
-  Future<void> _editProject(dynamic project) async {
-    final title = await _input('玩法名称', initial: '${project['title']}');
-    if (title == null || title.trim().isEmpty) return;
-    final description =
-        await _input('玩法简介', initial: '${project['description'] ?? ''}');
-    final price = await _input('价格', initial: '${project['price'] ?? ''}');
-    final unit = await _input('单位', initial: '${project['unit'] ?? ''}');
-    final oldTags = (project['tags'] as List? ?? const []).join(',');
-    final tagsText = await _input('标签（用逗号分隔）', initial: oldTags);
-    await _patch('/api/game-club/projects/${project['id']}', {
-      'title': title,
-      'description': description ?? '',
-      'price': price ?? '',
-      'unit': unit ?? '',
-      'tags': (tagsText ?? '')
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList(),
-    });
-  }
-
-  Future<void> _addCategory() async {
-    final title = await _input('分类名称');
-    if (title != null && title.trim().isNotEmpty) {
-      await api.post('/api/game-club/categories', {'title': title});
-      await load();
-    }
-  }
-
   Future<void> _editCompanion(dynamic c) async {
     final price = await _input('价格', initial: '${c['price']}');
     if (price != null) {
