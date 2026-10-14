@@ -852,47 +852,71 @@ class _DeltaCompanionCard extends StatelessWidget {
   final String price;
   final List<String> tags;
 
+  void _open(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CompanionProfilePage(
+          data: CompanionProfile(
+            name: name,
+            game: '三角洲 - 端游',
+            price: price,
+            rating: '4.9',
+            icon: Icons.person_outline,
+            tags: tags,
+            voice: '温柔声线 · 语音陪伴',
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Card(
         margin: const EdgeInsets.only(bottom: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 30,
-                child: Icon(Icons.person_outline, size: 30),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 7),
-                    Wrap(
-                      spacing: 5,
-                      runSpacing: 5,
-                      children: tags
-                          .map((tag) => Chip(
-                                label: Text(tag),
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                              ))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 4),
-                    Text('$price 币 / 小时',
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w700)),
-                  ],
+        child: InkWell(
+          onTap: () => _open(context),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 30,
+                  child: Icon(Icons.person_outline, size: 30),
                 ),
-              ),
-              FilledButton(onPressed: () {}, child: const Text('查看')),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 7),
+                      Wrap(
+                        spacing: 5,
+                        runSpacing: 5,
+                        children: tags
+                            .map((tag) => Chip(
+                                  label: Text(tag),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                ))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 4),
+                      Text('$price 币 / 小时',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+                FilledButton(
+                    onPressed: () => _open(context), child: const Text('查看')),
+              ],
+            ),
           ),
         ),
       );
