@@ -68,13 +68,6 @@ class _WalletPageState extends State<WalletPage> {
               detail: '',
               colors: const [Color(0xffe07a22), Color(0xfff0b44d)],
             ),
-            _WalletAssetCard(
-              title: '魅力值',
-              subtitle: '',
-              amount: loading ? '加载中…' : '$charmCoins 金币',
-              detail: '',
-              colors: const [Color(0xffd54f8a), Color(0xfff07b76)],
-            ),
             const SizedBox(height: 16),
             _WalletAssetCard(
               title: '钻石钱包',
@@ -239,6 +232,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   final DDPostService service = DDPostService();
   Map<String, dynamic>? profile;
   int coinBalance = 0;
+  int charmCoins = 0;
   bool walletLoading = false;
   List<DDPost> posts = [];
   int selectedTab = 0;
@@ -422,6 +416,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
             profile = loadedProfile;
             coinBalance =
                 int.tryParse('${loadedProfile['coinBalance'] ?? 0}') ?? 0;
+            charmCoins =
+                int.tryParse('${loadedProfile['charmCoins'] ?? 0}') ?? 0;
             _avatarUrl = avatar;
             _tags = tags;
           });
@@ -721,6 +717,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                                         const _UserRelationListPage(
                                                             relation: 'likers',
                                                             title: '获赞'))))),
+                                    Expanded(
+                                        child: _InlineProfileStat(
+                                      label: '魅力',
+                                      value: '$charmCoins',
+                                      onTap: () {},
+                                    )),
                                   ],
                                 ),
                               ),
