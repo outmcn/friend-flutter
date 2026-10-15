@@ -298,6 +298,8 @@ class GameClubOrdersPage extends StatefulWidget {
 
 class _GameClubOrdersPageState extends State<GameClubOrdersPage> {
   List<dynamic> orders = [];
+  bool loading = true;
+
   @override
   void initState() {
     super.initState();
@@ -306,25 +308,155 @@ class _GameClubOrdersPageState extends State<GameClubOrdersPage> {
 
   Future<void> load() async {
     try {
-      final a = GameClubBackendClient();
-      final d = await a.get('/api/game-club/my-orders');
-      a.dispose();
-      if (mounted) setState(() => orders = d['orders'] as List? ?? []);
+      final api = GameClubBackendClient();
+      final data = await api.get('/api/game-club/my-orders');
+      api.dispose();
+      if (mounted)
+        setState(() {
+          orders = data['orders'] as List? ?? [];
+          loading = false;
+        });
+    } catch (e) {
+      if (mounted) {
+        setState(() => loading = false);
+        _showTopNotice(context, Text('$e'));
+      }
+    }
+  }
+
+  Future<void> _openDetail(dynamic order) async {
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              GameClubOrderDetailPage(orderId: int.parse('${order['id']}')),
+        ));
+    load();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('我的订单')),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: load,
+                child: ListView(
+                  children: orders
+                      .map((o) => ListTile(
+                            onTap: () => _openDetail(o),
+                            title: Text('订单 #${o['id']} · ${o['status']}'),
+                            subtitle: Text(
+                                '${o['companion_nickname'] ?? ''} · ${o['project_title'] ?? ''}\n备注：${o['note'] ?? ''}'),
+                            isThreeLine: true,
+                            trailing: Text('${o['amount'] ?? '0'} 钻石'),
+                          ))
+                      .toList(),
+                ),
+              ),
+      );
+}
+
+class GameClubOrderDetailPage extends StatefulWidget {
+  const GameClubOrderDetailPage({super.key, required this.orderId});
+  final int orderId;
+  @override
+  State<GameClubOrderDetailPage> createState() =>
+      _GameClubOrderDetailPageState();
+}
+
+class _GameClubOrderDetailPageState extends State<GameClubOrderDetailPage> {
+  Map<String, dynamic>? order;
+  List<dynamic> events = [];
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    try {
+      final api = GameClubBackendClient();
+      final data = await api.get('/api/game-club/orders/${widget.orderId}');
+      api.dispose();
+      if (mounted)
+        setState(() {
+          order = data['order'] as Map<String, dynamic>?;
+          events = data['events'] as List? ?? [];
+        });
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    }
+  }
+
+  Future<void> _action(String action) async {
+    try {
+      final api = GameClubBackendClient();
+      await api.post(
+          '/api/game-club/orders/${widget.orderId}/action', {'action': action});
+      api.dispose();
+      await load();
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
   @override
-  Widget build(BuildContext c) => Scaffold(
-      appBar: AppBar(title: const Text('我的订单')),
-      body: ListView(
-          children: orders
-              .map((o) => ListTile(
-                  title: Text('订单 #${o['id']} · ${o['status']}'),
-                  subtitle: Text(
-                      '${o['companion_nickname'] ?? ''} · ${o['project_title'] ?? ''}')))
-              .toList()));
+  Widget build(BuildContext context) {
+    final o = order;
+    return Scaffold(
+      appBar: AppBar(title: const Text('订单详情')),
+      body: error != null
+          ? Center(child: Text(error!))
+          : o == null
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Text('订单 #${o['id']}',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 12),
+                    Text('陪玩：${o['companion_nickname'] ?? ''}'),
+                    Text('服务：${o['project_title'] ?? '陪玩服务'}'),
+                    Text('金额：${o['amount'] ?? '0'} 钻石'),
+                    Text('状态：${o['status'] ?? ''}'),
+                    Text('备注：${o['note'] ?? ''}'),
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (o['status'] == 'pending' ||
+                            o['status'] == 'accepted')
+                          OutlinedButton(
+                              onPressed: () => _action('cancel'),
+                              child: const Text('取消订单')),
+                        if (o['status'] == 'awaiting_confirm')
+                          FilledButton(
+                              onPressed: () => _action('confirm'),
+                              child: const Text('确认完成')),
+                        if (['accepted', 'in_progress', 'awaiting_confirm']
+                            .contains(o['status']))
+                          OutlinedButton(
+                              onPressed: () => _action('after_sale'),
+                              child: const Text('申请售后')),
+                      ],
+                    ),
+                    const Divider(height: 32),
+                    const Text('订单记录',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    ...events.map((e) => ListTile(
+                          dense: true,
+                          title:
+                              Text('${e['from_status']} → ${e['to_status']}'),
+                          subtitle: Text('${e['action']}  ${e['note'] ?? ''}'),
+                        )),
+                  ],
+                ),
+    );
+  }
 }
 
 class GameClubFavoritesPage extends StatefulWidget {
