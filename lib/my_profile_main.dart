@@ -9,8 +9,8 @@ class WalletPage extends StatefulWidget {
 
 class _WalletPageState extends State<WalletPage> {
   final DDPostService service = DDPostService();
-  String balance = '0.00';
-  String frozenBalance = '0.00';
+  String diamondBalance = '0.00';
+  String diamondFrozenBalance = '0.00';
   bool loading = true;
   String? error;
 
@@ -27,8 +27,8 @@ class _WalletPageState extends State<WalletPage> {
       final user = await service.fetchMe(token);
       if (mounted) {
         setState(() {
-          balance = '${user['coinBalance'] ?? '0.00'}';
-          frozenBalance = '${user['frozenCoinBalance'] ?? '0.00'}';
+          diamondBalance = '${user['diamondBalance'] ?? '0.00'}';
+          diamondFrozenBalance = '${user['diamondFrozenBalance'] ?? '0.00'}';
         });
       }
     } catch (e) {
@@ -60,15 +60,15 @@ class _WalletPageState extends State<WalletPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('我的资产', style: TextStyle(color: Colors.white70)),
+                  const Text('钻石资产', style: TextStyle(color: Colors.white70)),
                   const SizedBox(height: 10),
-                  Text(loading ? '加载中…' : '$balance 金币',
+                  Text(loading ? '加载中…' : '$diamondBalance 钻石',
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
-                  Text('冻结：$frozenBalance 金币',
+                  Text('冻结：$diamondFrozenBalance 钻石',
                       style: const TextStyle(color: Colors.white70)),
                 ],
               ),
