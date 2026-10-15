@@ -579,9 +579,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
                       delegate: SliverChildListDelegate([
                         if (error != null)
                           _PageErrorState(
-                            title: '资料加载失败',
+                            title: profile == null ? '资料加载失败' : '动态加载失败',
                             subtitle: error!,
-                            onRetry: load,
+                            onRetry: profile == null
+                                ? load
+                                : () => load(
+                                    tab: selectedTab, forceRefresh: true),
                           ),
                         Align(
                           alignment: Alignment.centerLeft,
@@ -898,9 +901,21 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _ProfileTabsHeaderDelegate(
-                      child: _MyProfileIconTabs(
-                        selectedTab: selectedTab,
-                        onSelect: (tab) => load(tab: tab),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          _MyProfileIconTabs(
+                            selectedTab: selectedTab,
+                            onSelect: (tab) => load(tab: tab),
+                          ),
+                          if (tabLoading)
+                            const Positioned(
+                              bottom: 0,
+                              left: 24,
+                              right: 24,
+                              child: LinearProgressIndicator(minHeight: 2),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -934,29 +949,28 @@ class _ProfileActionButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surfaceContainerHighest
-            : Colors.white.withValues(alpha: .72),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest.withValues(alpha: .55),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: SizedBox(
-            height: 40,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon,
-                    size: 19, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 7),
-                Text(label,
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
-              ],
-            ),
+        onTap: onTap,
+        child: SizedBox(
+          height: 40,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 19, color: scheme.primary),
+              const SizedBox(width: 7),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
