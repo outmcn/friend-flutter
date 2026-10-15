@@ -1359,8 +1359,7 @@ class _DeltaCompanionCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                FilledButton(
-                    onPressed: () => _open(context), child: const Text('查看')),
+                const SizedBox(width: 10),
               ],
             ),
           ),
