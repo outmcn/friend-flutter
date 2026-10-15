@@ -386,6 +386,13 @@ class _DDProfilePageState extends State<DDProfilePage> {
     super.dispose();
   }
 
+  Future<void> _openEditProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EditProfilePage()),
+    );
+    if (mounted) await _refreshProfileOnly();
+  }
   Future<void> _toggleSonic() async {
     final url = _sonicUrl;
     if (url == null || url.isEmpty) {
@@ -638,7 +645,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
           : Stack(
               children: [
                 RefreshIndicator(
-              onRefresh: () => load(forceRefresh: true),
+                  onRefresh: () => load(forceRefresh: true),
               child: CustomScrollView(
                 controller: _profileScrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -749,14 +756,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                             ),
                                             IconButton(
                                               tooltip: '编辑资料',
-                                              onPressed: () async {
-                                                await Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (_) =>
-                                                            const EditProfilePage()));
-                                                if (mounted) await _refreshProfileOnly();
-                                              },
+                                              onPressed: _openEditProfile,
                                               icon: const Icon(
                                                   Icons.edit_outlined,
                                                   size: 22),
