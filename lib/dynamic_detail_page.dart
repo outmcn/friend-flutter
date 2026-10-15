@@ -49,6 +49,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   DDPost? post;
   List<DDComment> comments = const [];
   List<Map<String, dynamic>> receivedGifts = const [];
+  int dynamicCharmCoins = 0;
   bool loading = true;
   bool deleting = false;
   bool submitting = false;
@@ -263,7 +264,19 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       }
     }
     final aggregated = totals.values.toList();
-    if (mounted) setState(() => receivedGifts = aggregated);
+    final charm = value.fold<num>(
+      0,
+      (sum, gift) =>
+          sum +
+          (num.tryParse('${gift['coin_amount'] ?? gift['coinAmount'] ?? 0}') ??
+              0),
+    );
+    if (mounted) {
+      setState(() {
+        receivedGifts = aggregated;
+        dynamicCharmCoins = charm.toInt();
+      });
+    }
     return aggregated;
   }
 
@@ -1059,6 +1072,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                         style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700)),
+                                    const SizedBox(height: 4),
+                                    Text('动态魅力值：$dynamicCharmCoins 金币',
+                                        style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary)),
                                     const SizedBox(height: 8),
                                     Wrap(
                                       spacing: 8,
