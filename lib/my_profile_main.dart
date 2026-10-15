@@ -203,7 +203,7 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
-      final value = await service.fetchMyGifts(token);
+      final value = await service.fetchMyUserGifts(token);
       if (mounted) setState(() => gifts = value);
     } catch (e) {
       if (mounted) setState(() => error = '$e');

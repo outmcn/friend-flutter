@@ -1058,6 +1058,9 @@ class DDPostService {
   Future<List<Map<String, dynamic>>> fetchMyGifts(String token) =>
       fetchObjectList(token, '/api/me/gifts', 'gifts');
 
+  Future<List<Map<String, dynamic>>> fetchMyUserGifts(String token) =>
+      fetchObjectList(token, '/api/me/user-gifts', 'gifts');
+
   Future<List<Map<String, dynamic>>> fetchGiftItems(String token) =>
       fetchObjectList(token, '/api/gifts', 'gifts');
 
