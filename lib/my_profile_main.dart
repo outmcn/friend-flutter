@@ -14,6 +14,7 @@ class _WalletPageState extends State<WalletPage> {
   String diamondBalance = '0.00';
   String diamondFrozenBalance = '0.00';
   String coinBalance = '0';
+  String charmCoins = '0';
   bool loading = true;
   String? error;
 
@@ -33,6 +34,7 @@ class _WalletPageState extends State<WalletPage> {
           diamondBalance = '${user['diamondBalance'] ?? '0.00'}';
           diamondFrozenBalance = '${user['diamondFrozenBalance'] ?? '0.00'}';
           coinBalance = _integerAmount(user['coinBalance']);
+          charmCoins = _integerAmount(user['charmCoins']);
         });
       }
     } catch (e) {
@@ -65,6 +67,13 @@ class _WalletPageState extends State<WalletPage> {
               amount: loading ? '加载中…' : '$coinBalance 金币',
               detail: '',
               colors: const [Color(0xffe07a22), Color(0xfff0b44d)],
+            ),
+            _WalletAssetCard(
+              title: '魅力值',
+              subtitle: '',
+              amount: loading ? '加载中…' : '$charmCoins 金币',
+              detail: '',
+              colors: const [Color(0xffd54f8a), Color(0xfff07b76)],
             ),
             const SizedBox(height: 16),
             _WalletAssetCard(
