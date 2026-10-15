@@ -1279,6 +1279,10 @@ class _DeltaCompanionCard extends StatelessWidget {
             icon: Icons.person_outline,
             tags: tags,
             voice: '温柔声线 · 语音陪伴',
+            gender: gender,
+            cardLabel: cardLabel,
+            companionType: companionType,
+            description: companionDescription,
           ),
         ),
       ),
@@ -1355,15 +1359,20 @@ class _DeltaCompanionCard extends StatelessWidget {
 }
 
 class CompanionProfile {
-  const CompanionProfile(
-      {required this.name,
-      this.userId = '',
-      required this.game,
-      required this.price,
-      required this.rating,
-      required this.icon,
-      required this.tags,
-      required this.voice});
+  const CompanionProfile({
+    required this.name,
+    this.userId = '',
+    required this.game,
+    required this.price,
+    required this.rating,
+    required this.icon,
+    required this.tags,
+    required this.voice,
+    this.gender = '',
+    this.cardLabel = '',
+    this.companionType = '',
+    this.description = '',
+  });
   final String name;
   final String userId;
   final String game;
@@ -1372,6 +1381,10 @@ class CompanionProfile {
   final IconData icon;
   final List<String> tags;
   final String voice;
+  final String gender;
+  final String cardLabel;
+  final String companionType;
+  final String description;
 }
 
 class CompanionSelfEditPage extends StatefulWidget {
