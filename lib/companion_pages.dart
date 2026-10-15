@@ -485,40 +485,50 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
               ],
             ),
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: OutlinedButton.icon(
-                onPressed: () => _showTopMessage('客服'),
-                icon: const Icon(Icons.support_agent_outlined),
-                label: const Text('客服'),
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 12,
+                offset: Offset(0, -3),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              flex: 5,
-              child: FilledButton(
-                onPressed: () => _showTopMessage('自助下单'),
-                child: const Text('自助下单'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              flex: 2,
-              child: OutlinedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const WalletPage(showCoinBalance: false),
-                  ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showTopMessage('客服'),
+                  icon: const Icon(Icons.support_agent_outlined),
+                  label: const Text('客服'),
                 ),
-                icon: const Icon(Icons.diamond_outlined),
-                label: const Text('钱包'),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => _showTopMessage('自助下单'),
+                  child: const Text('自助下单'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const WalletPage(showCoinBalance: false),
+                    ),
+                  ),
+                  icon: const Icon(Icons.diamond_outlined),
+                  label: const Text('钱包'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
