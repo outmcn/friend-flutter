@@ -55,22 +55,20 @@ class _WalletPageState extends State<WalletPage> {
           padding: const EdgeInsets.all(20),
           children: [
             _WalletAssetCard(
+              title: '金币钱包',
+              subtitle: '',
+              amount: loading ? '加载中…' : '$coinBalance 金币',
+              detail: '',
+              colors: const [Color(0xffe07a22), Color(0xfff0b44d)],
+            ),
+            const SizedBox(height: 16),
+            _WalletAssetCard(
               title: '钻石钱包',
-              subtitle: '用于陪玩消费',
+              subtitle: '',
               amount: loading ? '加载中…' : '$diamondBalance 钻石',
-              detail: '冻结：$diamondFrozenBalance 钻石，完成后结算给主播',
+              detail: '冻结：$diamondFrozenBalance 钻石',
               colors: const [Color(0xff6d5dfc), Color(0xffa66cff)],
             ),
-            if (widget.showCoinBalance) ...[
-              const SizedBox(height: 16),
-              _WalletAssetCard(
-                title: '金币钱包',
-                subtitle: '用于整个平台消费',
-                amount: loading ? '加载中…' : '$coinBalance 金币',
-                detail: '金币不冻结，全部归平台',
-                colors: const [Color(0xffe07a22), Color(0xfff0b44d)],
-              ),
-            ],
             const SizedBox(height: 20),
             FilledButton.icon(
                 onPressed: () {},
@@ -118,16 +116,19 @@ class _WalletAssetCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(color: Colors.white60)),
-            const SizedBox(height: 10),
+            if (subtitle.isNotEmpty) ...[
+              Text(subtitle, style: const TextStyle(color: Colors.white60)),
+              const SizedBox(height: 10),
+            ],
             Text(amount,
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 30,
                     fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            Text(detail, style: const TextStyle(color: Colors.white70)),
+            if (detail.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(detail, style: const TextStyle(color: Colors.white70)),
+            ],
           ],
         ),
       );
