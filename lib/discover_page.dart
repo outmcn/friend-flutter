@@ -11,6 +11,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
   final _cardKeys = <String, GlobalKey>{};
+  final _mediaKeys = <String, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
 
@@ -93,7 +94,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
       GlobalKey.new,
     );
     if (!mounted) return;
-    final box = key.currentContext?.findRenderObject() as RenderBox?;
+    final mediaKey = _mediaKeys.putIfAbsent(
+      '$selectedTab:${post.id}',
+      GlobalKey.new,
+    );
+    final box = mediaKey.currentContext?.findRenderObject() as RenderBox?;
     final topLeft = box?.localToGlobal(Offset.zero);
     final initialRect =
         box == null || topLeft == null ? null : topLeft & box.size;
@@ -108,6 +113,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           postId: post.id,
           initialPost: post,
           initialRect: initialRect,
+          mediaKey: mediaKey,
           cardKey: key,
         ),
         transitionsBuilder: (_, __, ___, child) => child,
@@ -170,6 +176,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
       feed: feed,
       post: post,
       fullWidth: fullWidth,
+      mediaKey: _mediaKeys.putIfAbsent(
+        '$feedIndex:${post.id}',
+        GlobalKey.new,
+      ),
       onLike: _like,
       onOpen: _open,
     );
@@ -321,12 +331,14 @@ class _DiscoverFeedCard extends StatefulWidget {
     required this.feed,
     required this.post,
     required this.fullWidth,
+    this.mediaKey,
     required this.onLike,
     required this.onOpen,
   });
 
   final DiscoverFeed feed;
   final DDPost post;
+  final GlobalKey? mediaKey;
   final bool fullWidth;
   final ValueChanged<DDPost> onLike;
   final ValueChanged<DDPost> onOpen;
@@ -366,6 +378,7 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard> {
   Widget build(BuildContext context) {
     final card = _DiscoverProfileCard(
       post: post,
+      mediaKey: widget.mediaKey,
       onLike: () => widget.onLike(post),
       onOpen: () => widget.onOpen(post),
     );

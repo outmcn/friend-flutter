@@ -327,10 +327,12 @@ class _DiscoverProfileCard extends StatelessWidget {
     // ignore: unused_element_parameter
     super.key,
     required this.post,
+    this.mediaKey,
     required this.onLike,
     required this.onOpen,
   });
   final DDPost post;
+  final GlobalKey? mediaKey;
   final VoidCallback onLike;
   final VoidCallback onOpen;
 
@@ -370,11 +372,13 @@ class _DiscoverProfileCard extends StatelessWidget {
             children: [
               if (image != null && image.isNotEmpty)
                 ClipRRect(
+                  key: mediaKey,
                   borderRadius: BorderRadius.circular(12),
                   child: _stableMedia(url: image, thumbnail: false),
                 )
               else if (video != null && video.isNotEmpty)
                 ClipRRect(
+                  key: mediaKey,
                   borderRadius: BorderRadius.circular(12),
                   child: Stack(
                     alignment: Alignment.topCenter,

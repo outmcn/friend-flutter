@@ -7,10 +7,12 @@ class DynamicDetailPage extends StatefulWidget {
     this.focusComment = false,
     this.initialPost,
     this.initialRect,
+    this.mediaKey,
     this.cardKey,
     this.onChanged,
   });
   final int postId;
+  final GlobalKey? mediaKey;
   final DDPost? initialPost;
   final Rect? initialRect;
   final GlobalKey? cardKey;
@@ -91,7 +93,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     }
     _closing = true;
     final liveBox =
-        widget.cardKey?.currentContext?.findRenderObject() as RenderBox?;
+        widget.mediaKey?.currentContext?.findRenderObject() as RenderBox?;
     final liveTopLeft = liveBox?.localToGlobal(Offset.zero);
     final liveRect = liveBox == null || liveTopLeft == null
         ? null
@@ -114,7 +116,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     if (_closing) return;
     _closing = true;
     final liveBox =
-        widget.cardKey?.currentContext?.findRenderObject() as RenderBox?;
+        widget.mediaKey?.currentContext?.findRenderObject() as RenderBox?;
     final liveTopLeft = liveBox?.localToGlobal(Offset.zero);
     final liveRect = liveBox == null || liveTopLeft == null
         ? null
