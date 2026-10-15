@@ -646,11 +646,11 @@ class _DDProfilePageState extends State<DDProfilePage> {
               children: [
                 RefreshIndicator(
                   onRefresh: () => load(forceRefresh: true),
-              child: CustomScrollView(
-                controller: _profileScrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverPadding(
+                  child: CustomScrollView(
+                    controller: _profileScrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverPadding(
                     padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
@@ -1047,12 +1047,22 @@ class _DDProfilePageState extends State<DDProfilePage> {
                           emptyActionLabel: selectedTab == 0
                               ? '去发布动态'
                               : '去发现内容',
-                          onEmptyAction: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CreatePostPage(),
-                            ),
-                          ),
+                          onEmptyAction: selectedTab == 0
+                              ? () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const CreatePostPage(),
+                                    ),
+                                  );
+                                  if (mounted) await load(forceRefresh: true);
+                                }
+                              : () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const DiscoverPage(),
+                                  ),
+                                ),
                           onChanged: _invalidateProfileCacheAndReload,
                         ),
                       ]),
