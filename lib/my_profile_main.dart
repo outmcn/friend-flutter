@@ -1,7 +1,9 @@
 part of 'main.dart';
 
 class WalletPage extends StatefulWidget {
-  const WalletPage({super.key});
+  const WalletPage({super.key, this.showCoinBalance = true});
+
+  final bool showCoinBalance;
 
   @override
   State<WalletPage> createState() => _WalletPageState();
@@ -11,6 +13,7 @@ class _WalletPageState extends State<WalletPage> {
   final DDPostService service = DDPostService();
   String diamondBalance = '0.00';
   String diamondFrozenBalance = '0.00';
+  String coinBalance = '0.00';
   bool loading = true;
   String? error;
 
@@ -29,6 +32,7 @@ class _WalletPageState extends State<WalletPage> {
         setState(() {
           diamondBalance = '${user['diamondBalance'] ?? '0.00'}';
           diamondFrozenBalance = '${user['diamondFrozenBalance'] ?? '0.00'}';
+          coinBalance = '${user['coinBalance'] ?? '0.00'}';
         });
       }
     } catch (e) {
@@ -70,6 +74,11 @@ class _WalletPageState extends State<WalletPage> {
                   const SizedBox(height: 8),
                   Text('冻结：$diamondFrozenBalance 钻石',
                       style: const TextStyle(color: Colors.white70)),
+                  if (widget.showCoinBalance) ...[
+                    const SizedBox(height: 8),
+                    Text('金币余额：$coinBalance',
+                        style: const TextStyle(color: Colors.white70)),
+                  ],
                 ],
               ),
             ),

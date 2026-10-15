@@ -484,6 +484,43 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                 Expanded(child: _configuredTabBody()),
               ],
             ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: OutlinedButton.icon(
+                onPressed: () => _showTopMessage('客服'),
+                icon: const Icon(Icons.support_agent_outlined),
+                label: const Text('客服'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 5,
+              child: FilledButton(
+                onPressed: () => _showTopMessage('自助下单'),
+                child: const Text('自助下单'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 2,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const WalletPage(showCoinBalance: false),
+                  ),
+                ),
+                icon: const Icon(Icons.diamond_outlined),
+                label: const Text('钱包'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
