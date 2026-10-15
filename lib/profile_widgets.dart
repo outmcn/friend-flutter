@@ -275,9 +275,13 @@ class _MyProfilePostCard extends StatelessWidget {
                   ),
                 )
               else
-                AspectRatio(
-                  aspectRatio: 1,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: 120,
+                    maxHeight: 240,
+                  ),
                   child: Container(
+                    width: double.infinity,
                     color: scheme.surfaceContainerHighest,
                     alignment: Alignment.center,
                     padding: const EdgeInsets.all(16),
@@ -285,7 +289,7 @@ class _MyProfilePostCard extends StatelessWidget {
                       post.content.trim().isEmpty
                           ? '暂无动态内容'
                           : post.content.trim(),
-                      maxLines: 8,
+                      maxLines: 10,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -297,7 +301,7 @@ class _MyProfilePostCard extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (post.content.trim().isNotEmpty &&
+                if (post.content.trim().isNotEmpty &&
                   ((image != null && image.isNotEmpty) ||
                       (video != null && video.isNotEmpty)))
                 Padding(
