@@ -13,7 +13,7 @@ class _WalletPageState extends State<WalletPage> {
   final DDPostService service = DDPostService();
   String diamondBalance = '0.00';
   String diamondFrozenBalance = '0.00';
-  String coinBalance = '0.00';
+  String coinBalance = '0';
   bool loading = true;
   String? error;
 
@@ -32,7 +32,7 @@ class _WalletPageState extends State<WalletPage> {
         setState(() {
           diamondBalance = '${user['diamondBalance'] ?? '0.00'}';
           diamondFrozenBalance = '${user['diamondFrozenBalance'] ?? '0.00'}';
-          coinBalance = '${user['coinBalance'] ?? '0.00'}';
+          coinBalance = _integerAmount(user['coinBalance']);
         });
       }
     } catch (e) {
@@ -40,6 +40,11 @@ class _WalletPageState extends State<WalletPage> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  String _integerAmount(dynamic value) {
+    final parsed = num.tryParse('$value');
+    return parsed == null ? '0' : parsed.truncate().toString();
   }
 
   @override
