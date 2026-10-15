@@ -848,19 +848,30 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                             ),
                                           );
                                           if (selected != null && mounted) {
-                                            final t = await _token();
-                                            final updated =
-                                                await service.updateMe(
-                                                    token: t, tags: selected);
-                                            setState(() {
-                                              _tags = selected;
-                                              profile = {
-                                                ...(profile ??
-                                                    <String, dynamic>{}),
-                                                ...updated,
-                                                'tags': selected,
-                                              };
-                                            });
+                                            final previousTags = List<String>.of(_tags);
+                                            try {
+                                              final t = await _token();
+                                              final updated =
+                                                  await service.updateMe(
+                                                      token: t, tags: selected);
+                                              if (!mounted) return;
+                                              setState(() {
+                                                _tags = selected;
+                                                profile = {
+                                                  ...(profile ??
+                                                      <String, dynamic>{}),
+                                                  ...updated,
+                                                  'tags': selected,
+                                                };
+                                              });
+                                            } catch (e) {
+                                              if (mounted) {
+                                                setState(() => _tags = previousTags);
+                                                _showTopNotice(
+                                                    context,
+                                                    Text('标签保存失败：$e'));
+                                              }
+                                            }
                                           }
                                         },
                                         child: const _ProfileTag(text: '+'),
