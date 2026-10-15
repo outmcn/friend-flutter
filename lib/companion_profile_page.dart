@@ -164,12 +164,23 @@ class CompanionProfilePage extends StatelessWidget {
                 alignment: Alignment.bottomCenter,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                        onPressed: () =>
-                            openCompanionChat(context, data.userId, data.name),
-                        child: const Text('⚡ 聊一聊')),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => openCompanionChat(
+                              context, data.userId, data.name),
+                          child: const Text('⚡ 聊一聊'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => _showOrderNotice(context),
+                          child: const Text('下单'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -177,6 +188,10 @@ class CompanionProfilePage extends StatelessWidget {
           ],
         ),
       );
+}
+
+void _showOrderNotice(BuildContext context) {
+  _showTopNotice(context, const Text('下单流程正在接入，请稍后再试'));
 }
 
 class _DetailServiceRow extends StatelessWidget {
