@@ -107,53 +107,67 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         builder: (sheetContext) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: gifts.isEmpty
-                ? const SizedBox(
-                    height: 120,
-                    child: Center(child: Text('暂无可送礼物')),
-                  )
-                : GridView.builder(
-                    shrinkWrap: true,
-                    itemCount: gifts.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: .85,
-                    ),
-                    itemBuilder: (_, index) {
-                      final gift = gifts[index];
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          Navigator.pop(sheetContext);
-                          unawaited(_sendUserGift(gift));
-                        },
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('${gift['icon'] ?? '🎁'}',
-                                    style: const TextStyle(fontSize: 28)),
-                                const SizedBox(height: 4),
-                                Text('${gift['name'] ?? '礼物'}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
-                                Text(
-                                    '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        color: Theme.of(context).hintColor)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    '主页礼物',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
+                ),
+                gifts.isEmpty
+                    ? const SizedBox(
+                        height: 120,
+                        child: Center(child: Text('暂无可送礼物')),
+                      )
+                    : GridView.builder(
+                        shrinkWrap: true,
+                        itemCount: gifts.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: .85,
+                        ),
+                        itemBuilder: (_, index) {
+                          final gift = gifts[index];
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              Navigator.pop(sheetContext);
+                              unawaited(_sendUserGift(gift));
+                            },
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text('${gift['icon'] ?? '🎁'}',
+                                        style: const TextStyle(fontSize: 28)),
+                                    const SizedBox(height: 4),
+                                    Text('${gift['name'] ?? '礼物'}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis),
+                                    Text(
+                                        '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color:
+                                                Theme.of(context).hintColor)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ],
+            ),
           ),
         ),
       );

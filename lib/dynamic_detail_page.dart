@@ -816,9 +816,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             children: [
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('送礼',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                child: const Text(
+                  '动态礼物',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
               ),
               ...gifts.map((gift) => ListTile(
                     leading: Text('${gift['icon'] ?? '🎁'}',
