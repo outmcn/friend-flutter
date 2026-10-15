@@ -629,7 +629,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         .map((x) => '${x['user_id']}')
         .toSet();
     final source = ids.isEmpty
-        ? remoteCompanions
+        ? const <dynamic>[]
         : remoteCompanions
             .where((x) => ids.contains('${x['user_id']}'))
             .toList();
