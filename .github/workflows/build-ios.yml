@@ -39,6 +39,6 @@ jobs:
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: dd-ios-ipa-${{ github.sha }}
-          path: DD-ios-unsigned-${{ github.sha }}.ipa
+          name: friend-ios-ipa-${{ github.sha }}
+          path: Friend-ios-unsigned-${{ github.sha }}.ipa
           if-no-files-found: error
