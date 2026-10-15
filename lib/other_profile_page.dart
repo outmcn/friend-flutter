@@ -91,12 +91,98 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     super.dispose();
   }
 
-  void _openGiftNotice() {
-    if (!mounted || actionLoading) return;
-    _showTopNotice(
-      context,
-      const Text('请在动态详情页选择礼物后送出'),
-    );
+  bool _giftSubmitting = false;
+
+  Future<void> _openGiftMenu() async {
+    if (widget.userId == null || _giftSubmitting || !mounted) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final gifts = await service.fetchGiftItems(token);
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: gifts.isEmpty
+                ? const SizedBox(
+                    height: 120,
+                    child: Center(child: Text('暂无可送礼物')),
+                  )
+                : GridView.builder(
+                    shrinkWrap: true,
+                    itemCount: gifts.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                      childAspectRatio: .85,
+                    ),
+                    itemBuilder: (_, index) {
+                      final gift = gifts[index];
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          unawaited(_sendUserGift(gift));
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('${gift['icon'] ?? '🎁'}',
+                                    style: const TextStyle(fontSize: 28)),
+                                const SizedBox(height: 4),
+                                Text('${gift['name'] ?? '礼物'}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                    '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: Theme.of(context).hintColor)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  Future<void> _sendUserGift(Map<String, dynamic> gift) async {
+    if (_giftSubmitting || widget.userId == null || !mounted) return;
+    setState(() => _giftSubmitting = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      await service.sendUserGift(
+        token: token,
+        userId: widget.userId!,
+        giftId: int.parse('${gift['id']}'),
+      );
+      if (mounted) {
+        _showTopNotice(context, const Text('礼物已送出'));
+        await load();
+      }
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    } finally {
+      if (mounted) setState(() => _giftSubmitting = false);
+    }
   }
 
   Future<void> load() async {
@@ -236,7 +322,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           if (!loading && !isSelfProfile)
             IconButton(
               tooltip: '送礼',
-              onPressed: _openGiftNotice,
+              onPressed: _openGiftMenu,
               icon: const Icon(Icons.card_giftcard_outlined),
             ),
           if (!loading && !isSelfProfile)

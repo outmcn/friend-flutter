@@ -1061,6 +1061,26 @@ class DDPostService {
   Future<List<Map<String, dynamic>>> fetchGiftItems(String token) =>
       fetchObjectList(token, '/api/gifts', 'gifts');
 
+  Future<Map<String, dynamic>> sendUserGift({
+    required String token,
+    required int userId,
+    required int giftId,
+    int quantity = 1,
+  }) async {
+    final response = await _client.post(
+      _api('/users/$userId/gifts'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'giftId': giftId, 'quantity': quantity}),
+    );
+    return _decodeResponse(response, '送礼失败');
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUserGifts(String token, int userId) =>
+      fetchObjectList(token, '/users/$userId/gifts', 'gifts');
+
   Future<Map<String, dynamic>> sendPostGift({
     required String token,
     required int postId,
