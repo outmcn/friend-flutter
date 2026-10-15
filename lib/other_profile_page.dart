@@ -27,6 +27,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool isSelfProfile = false;
   bool blocked = false;
   int profileLikes = 0;
+  int charmCoins = 0;
   int selectedContentTab = 0;
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
@@ -132,6 +133,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           isSelfProfile = '${data['id']}' == '${me['id']}';
           blocked = currentBlocked;
           profileLikes = int.tryParse('${data['receivedLikes'] ?? 0}') ?? 0;
+          charmCoins = int.tryParse('${data['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(data['voiceUrl']?.toString());
           _avatarUrl = signedAvatar;
         });
@@ -223,6 +225,15 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               )
             : const SizedBox.shrink(),
         actions: [
+          if (!loading && !isSelfProfile)
+            IconButton(
+              tooltip: '送礼',
+              onPressed: () => _showTopNotice(
+                context,
+                const SnackBar(content: Text('请在动态详情页送礼')),
+              ),
+              icon: const Icon(Icons.card_giftcard_outlined),
+            ),
           if (!loading && !isSelfProfile)
             Padding(
               padding: const EdgeInsets.only(right: 6),
@@ -352,6 +363,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                                 label: '获赞',
                                                 value:
                                                     '${p?['receivedLikes'] ?? 0}',
+                                                valueFontSize: 18,
+                                                labelFontSize: 14,
+                                              ),
+                                              const SizedBox(width: 18),
+                                              _InlineProfileStat(
+                                                label: '魅力',
+                                                value: '$charmCoins',
                                                 valueFontSize: 18,
                                                 labelFontSize: 14,
                                               ),
@@ -496,6 +514,23 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ProfileActionButton(
+                          icon: Icons.auto_awesome_outlined,
+                          label: '展馆',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const GiftExhibitionPage(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
                   _MyProfileIconTabs(
