@@ -134,9 +134,14 @@ class _ProfilePostFeedState extends State<_ProfilePostFeed> {
 }
 
 class _MyProfileGrid extends StatefulWidget {
-  const _MyProfileGrid({required this.posts, this.onChanged});
+  const _MyProfileGrid({
+    required this.posts,
+    this.onChanged,
+    this.emptyLabel = '暂无内容',
+  });
   final List<DDPost> posts;
   final VoidCallback? onChanged;
+  final String emptyLabel;
 
   @override
   State<_MyProfileGrid> createState() => _MyProfileGridState();
@@ -149,9 +154,9 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
   Widget build(BuildContext context) {
     final posts = widget.posts;
     if (posts.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 48),
-        child: Center(child: Text('暂无内容')),
+      return Padding(
+        padding: const EdgeInsets.only(top: 48),
+        child: Center(child: Text(widget.emptyLabel)),
       );
     }
     return MasonryGridView.count(
