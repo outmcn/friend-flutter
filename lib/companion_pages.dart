@@ -646,6 +646,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                 padding: EdgeInsets.all(24), child: Text('该 Tab 暂无陪玩')),
           ...source.map((p) => _DeltaCompanionCard(
               name: '${p['nickname'] ?? '用户'}',
+              userId: '${p['user_id'] ?? ''}',
               gender: '${p['gender'] ?? ''}',
               cardLabel: '${p['card_label'] ?? ''}',
               companionType: '${p['companion_type'] ?? ''}',
@@ -769,6 +770,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       return people
           .map((p) => _DeltaCompanionCard(
                 name: '${p['nickname'] ?? '用户'}',
+                userId: '${p['user_id'] ?? ''}',
                 gender: '${p['gender'] ?? ''}',
                 cardLabel: '${p['card_label'] ?? ''}',
                 companionType: '${p['companion_type'] ?? ''}',
@@ -1213,6 +1215,7 @@ class _DeltaCompanionCard extends StatelessWidget {
     this.gender = '',
     this.cardLabel = '',
     this.companionType = '',
+    this.userId = '',
     this.companionDescription = '',
     required this.tags,
   });
@@ -1221,6 +1224,7 @@ class _DeltaCompanionCard extends StatelessWidget {
   final String gender;
   final String cardLabel;
   final String companionType;
+  final String userId;
   final String companionDescription;
   final List<String> tags;
 
@@ -1231,6 +1235,7 @@ class _DeltaCompanionCard extends StatelessWidget {
         builder: (_) => CompanionProfilePage(
           data: CompanionProfile(
             name: name,
+            userId: userId,
             game: '三角洲 - 端游',
             price: price,
             rating: '4.9',
