@@ -728,18 +728,26 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                           ],
                                         ),
                                         const SizedBox(height: 10),
-                                        _SonicProfileButton(
-                                          playing: _sonicPlaying,
-                                          enabled: _sonicUrl != null &&
-                                              _sonicUrl!.isNotEmpty,
-                                          onTap: _toggleSonic,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        IconButton(
-                                          tooltip: '编辑语音',
-                                          onPressed: _editSonic,
-                                          icon: const Icon(Icons.edit_outlined,
-                                              size: 18),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _SonicProfileButton(
+                                              playing: _sonicPlaying,
+                                              enabled: _sonicUrl != null &&
+                                                  _sonicUrl!.isNotEmpty,
+                                              onTap: _toggleSonic,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              tooltip: '编辑语音',
+                                              onPressed: _editSonic,
+                                              visualDensity:
+                                                  VisualDensity.compact,
+                                              icon: const Icon(
+                                                  Icons.edit_outlined,
+                                                  size: 18),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
