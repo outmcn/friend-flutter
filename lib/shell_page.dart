@@ -141,44 +141,47 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: GestureDetector(
-            onTap: () {
-              final id = int.tryParse(widget.peerId);
-              if (id != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CompanionProfilePage(
-                      data: CompanionProfile(
-                        name: widget.peerName,
-                        userId: widget.peerId,
-                        game: '三角洲 - 端游',
-                        price: '0',
-                        rating: '4.9',
-                        icon: Icons.person_outline,
-                        tags: const [],
-                        voice: '温柔声线 · 语音陪伴',
+          title: Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () {
+                final id = int.tryParse(widget.peerId);
+                if (id != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CompanionProfilePage(
+                        data: CompanionProfile(
+                          name: widget.peerName,
+                          userId: widget.peerId,
+                          game: '三角洲 - 端游',
+                          price: '0',
+                          rating: '4.9',
+                          icon: Icons.person_outline,
+                          tags: const [],
+                          voice: '温柔声线 · 语音陪伴',
+                        ),
                       ),
                     ),
+                  );
+                }
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 15,
+                    backgroundImage: widget.chat.avatarUrl == null
+                        ? null
+                        : NetworkImage(widget.chat.avatarUrl!),
                   ),
-                );
-              }
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 15,
-                  backgroundImage: widget.chat.avatarUrl == null
-                      ? null
-                      : NetworkImage(widget.chat.avatarUrl!),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  widget.peerName,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.peerName,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
