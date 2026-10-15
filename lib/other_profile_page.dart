@@ -91,6 +91,14 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     super.dispose();
   }
 
+  void _openGiftNotice() {
+    if (!mounted || actionLoading) return;
+    _showTopNotice(
+      context,
+      const Text('请在动态详情页选择礼物后送出'),
+    );
+  }
+
   Future<void> load() async {
     setState(() {
       loading = true;
@@ -228,10 +236,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           if (!loading && !isSelfProfile)
             IconButton(
               tooltip: '送礼',
-              onPressed: () => _showTopNotice(
-                context,
-                const SnackBar(content: Text('请在动态详情页送礼')),
-              ),
+              onPressed: _openGiftNotice,
               icon: const Icon(Icons.card_giftcard_outlined),
             ),
           if (!loading && !isSelfProfile)
