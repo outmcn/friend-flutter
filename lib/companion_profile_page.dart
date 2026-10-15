@@ -213,6 +213,7 @@ Future<void> _openOrder(BuildContext context, CompanionProfile data) async {
     return;
   }
   final controller = TextEditingController(text: '1');
+  final noteController = TextEditingController();
   final confirmed = await showDialog<int>(
     context: context,
     builder: (dialogContext) => AlertDialog(
@@ -228,6 +229,12 @@ Future<void> _openOrder(BuildContext context, CompanionProfile data) async {
             controller: controller,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: '购买小时数'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: noteController,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: '订单备注（选填）'),
           ),
         ],
       ),
@@ -247,7 +254,9 @@ Future<void> _openOrder(BuildContext context, CompanionProfile data) async {
       ],
     ),
   );
+  final orderNote = noteController.text.trim();
   controller.dispose();
+  noteController.dispose();
   if (confirmed == null || !context.mounted) return;
   final amount = price * confirmed;
   try {
@@ -255,6 +264,7 @@ Future<void> _openOrder(BuildContext context, CompanionProfile data) async {
     await api.post('/api/game-club/orders', {
       'companionUserId': int.tryParse(data.userId),
       'amount': amount,
+      'note': orderNote,
     });
     api.dispose();
     if (context.mounted) {
