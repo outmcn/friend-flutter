@@ -31,6 +31,30 @@ void _dismissIncomingDialog(BuildContext? dialogContext) {
   if (route?.isCurrent == true) Navigator.of(dialogContext).pop();
 }
 
+Future<void> openCompanionChat(
+    BuildContext context, String peerId, String name) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('friend.auth.token') ?? '';
+  if (token.isEmpty) return;
+  final service = DDPostService();
+  try {
+    final conversationId =
+        await service.createDirectConversation(token, peerId);
+    final me = await service.fetchMe(token);
+    final currentUserId = '${me['id'] ?? ''}';
+    final chat =
+        _ChatPreview(name, '开始一段新的聊天', null, null, peerId, conversationId, 0);
+    if (!context.mounted) return;
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) =>
+                _ChatDetailPage(chat: chat, currentUserId: currentUserId)));
+  } finally {
+    service.dispose();
+  }
+}
+
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 

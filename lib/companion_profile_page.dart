@@ -167,7 +167,9 @@ class CompanionProfilePage extends StatelessWidget {
                   child: SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                        onPressed: () {}, child: const Text('⚡ 聊一聊')),
+                        onPressed: () =>
+                            openCompanionChat(context, data.userId, data.name),
+                        child: const Text('⚡ 聊一聊')),
                   ),
                 ),
               ),

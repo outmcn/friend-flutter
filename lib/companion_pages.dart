@@ -1315,6 +1315,7 @@ class _DeltaCompanionCard extends StatelessWidget {
 class CompanionProfile {
   const CompanionProfile(
       {required this.name,
+      this.userId = '',
       required this.game,
       required this.price,
       required this.rating,
@@ -1322,6 +1323,7 @@ class CompanionProfile {
       required this.tags,
       required this.voice});
   final String name;
+  final String userId;
   final String game;
   final String price;
   final String rating;
