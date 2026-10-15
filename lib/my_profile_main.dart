@@ -335,6 +335,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   bool _antiHarassment = false;
   bool _smartBlock = false;
   bool _matching = false;
+  bool _profileRefreshing = false;
 
   @override
   void initState() {
@@ -471,6 +472,39 @@ class _DDProfilePageState extends State<DDProfilePage> {
     );
   }
 
+  Future<void> _refreshProfileOnly() async {
+    if (_profileRefreshing) return;
+    setState(() => _profileRefreshing = true);
+    try {
+      final token = await _token();
+      final loaded = await service.fetchMe(token);
+      final avatarKey = '${loaded['avatarKey'] ?? ''}'.trim();
+      final avatar = avatarKey.isEmpty
+          ? null
+          : await service.resolveAvatarUrl(token, avatarKey);
+      final rawTags = loaded['tags'];
+      final tags = rawTags is List
+          ? rawTags
+              .map((value) => '$value')
+              .where((value) => value.trim().isNotEmpty)
+              .toList()
+          : <String>[];
+      if (mounted) {
+        setState(() {
+          profile = loaded;
+          coinBalance = int.tryParse('${loaded['coinBalance'] ?? 0}') ?? 0;
+          charmCoins = int.tryParse('${loaded['charmCoins'] ?? 0}') ?? 0;
+          _sonicUrl = DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
+          _avatarUrl = avatar;
+          _tags = tags;
+        });
+      }
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('资料刷新失败：$e'));
+    } finally {
+      if (mounted) setState(() => _profileRefreshing = false);
+    }
+  }
   Future<void> _invalidateProfileCacheAndReload() async {
     await DDPostService.clearProfileTabCaches();
     for (final feed in feeds) {
@@ -601,7 +635,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          : Stack(
+              children: [
+                RefreshIndicator(
               onRefresh: () => load(forceRefresh: true),
               child: CustomScrollView(
                 controller: _profileScrollController,
@@ -719,7 +755,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                                     MaterialPageRoute(
                                                         builder: (_) =>
                                                             const EditProfilePage()));
-                                                if (mounted) load();
+                                                if (mounted) await _refreshProfileOnly();
                                               },
                                               icon: const Icon(
                                                   Icons.edit_outlined,
@@ -1020,7 +1056,16 @@ class _DDProfilePageState extends State<DDProfilePage> {
                   ),
                 ],
               ),
-            ),
+              ),
+              if (_profileRefreshing)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
+            ],
+          ),
     );
   }
 }
