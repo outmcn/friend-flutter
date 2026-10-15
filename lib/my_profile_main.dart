@@ -336,6 +336,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   bool _smartBlock = false;
   bool _matching = false;
   bool _profileRefreshing = false;
+  bool _tabSwitching = false;
 
   @override
   void initState() {
@@ -385,6 +386,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
     service.dispose();
     super.dispose();
   }
+
+  bool get _hasProfileData => profile != null;
 
   Future<void> _openEditProfile() async {
     await Navigator.push(
@@ -479,6 +482,15 @@ class _DDProfilePageState extends State<DDProfilePage> {
     );
   }
 
+  Future<void> _selectProfileTab(int tab) async {
+    if (_tabSwitching || tab == selectedTab) return;
+    setState(() => _tabSwitching = true);
+    try {
+      await load(tab: tab);
+    } finally {
+      if (mounted) setState(() => _tabSwitching = false);
+    }
+  }
   Future<void> _refreshProfileOnly() async {
     if (_profileRefreshing) return;
     setState(() => _profileRefreshing = true);
@@ -1020,9 +1032,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
                         children: [
                           _MyProfileIconTabs(
                             selectedTab: selectedTab,
-                            onSelect: (tab) => load(tab: tab),
+                            onSelect: _selectProfileTab,
                           ),
-                          if (tabLoading)
+                          if (tabLoading || _tabSwitching)
                             const Positioned(
                               bottom: 0,
                               left: 24,
