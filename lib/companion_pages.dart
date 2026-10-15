@@ -557,9 +557,8 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         await Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (_) => CompanionSelfEditPage(
-                  gameId: gameId,
-                  initial: access['companion'] as Map<String, dynamic>?)),
+            builder: (_) => CompanionOrderManagementPage(),
+          ),
         );
         return;
       }
@@ -1396,6 +1395,92 @@ class CompanionProfile {
   final String cardLabel;
   final String companionType;
   final String description;
+}
+
+class CompanionOrderManagementPage extends StatefulWidget {
+  const CompanionOrderManagementPage({super.key});
+  @override
+  State<CompanionOrderManagementPage> createState() =>
+      _CompanionOrderManagementPageState();
+}
+
+class _CompanionOrderManagementPageState
+    extends State<CompanionOrderManagementPage> {
+  Future<List<dynamic>> _load() async {
+    final api = GameClubBackendClient();
+    try {
+      final data = await api.get('/api/game-club/companion-orders');
+      return data['orders'] as List? ?? [];
+    } finally {
+      api.dispose();
+    }
+  }
+
+  Future<void> _action(int id, String action) async {
+    try {
+      final api = GameClubBackendClient();
+      await api.post('/api/game-club/orders/$id/action', {'action': action});
+      api.dispose();
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('陪玩订单')),
+        body: FutureBuilder<List<dynamic>>(
+          future: _load(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData)
+              return const Center(child: CircularProgressIndicator());
+            final orders = snapshot.data!;
+            if (orders.isEmpty) return const Center(child: Text('暂无订单'));
+            return RefreshIndicator(
+              onRefresh: () async {
+                if (mounted) setState(() {});
+                await _load();
+              },
+              child: ListView(
+                children: orders
+                    .map((o) => Card(
+                          child: ListTile(
+                            title: Text('订单 #${o['id']} · ${o['status']}'),
+                            subtitle: Text(
+                                '${o['buyer_nickname'] ?? ''} · ${o['amount'] ?? 0} 钻石\n备注：${o['note'] ?? ''}'),
+                            isThreeLine: true,
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (action) =>
+                                  _action(int.parse('${o['id']}'), action),
+                              itemBuilder: (_) => [
+                                if (o['status'] == 'pending')
+                                  const PopupMenuItem(
+                                      value: 'accept', child: Text('接单')),
+                                if (o['status'] == 'accepted')
+                                  const PopupMenuItem(
+                                      value: 'start', child: Text('开始服务')),
+                                if (o['status'] == 'in_progress')
+                                  const PopupMenuItem(
+                                      value: 'complete', child: Text('完成服务')),
+                                if ([
+                                  'pending',
+                                  'accepted',
+                                  'in_progress',
+                                  'after_sale'
+                                ].contains(o['status']))
+                                  const PopupMenuItem(
+                                      value: 'refund', child: Text('退单/退款')),
+                              ],
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+            );
+          },
+        ),
+      );
 }
 
 class CompanionSelfEditPage extends StatefulWidget {
