@@ -147,9 +147,17 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => OtherProfilePage(
-                      userId: id,
-                      name: widget.peerName,
+                    builder: (_) => CompanionProfilePage(
+                      data: CompanionProfile(
+                        name: widget.peerName,
+                        userId: widget.peerId,
+                        game: '三角洲 - 端游',
+                        price: '0',
+                        rating: '4.9',
+                        icon: Icons.person_outline,
+                        tags: const [],
+                        voice: '温柔声线 · 语音陪伴',
+                      ),
                     ),
                   ),
                 );
