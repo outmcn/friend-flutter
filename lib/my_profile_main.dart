@@ -104,6 +104,87 @@ class _WalletPageState extends State<WalletPage> {
       );
 }
 
+class GiftExhibitionPage extends StatefulWidget {
+  const GiftExhibitionPage({super.key});
+
+  @override
+  State<GiftExhibitionPage> createState() => _GiftExhibitionPageState();
+}
+
+class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
+  final DDPostService service = DDPostService();
+  List<Map<String, dynamic>> gifts = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      final value = await service.fetchMyGifts(token);
+      if (mounted) setState(() => gifts = value);
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('礼物展馆')),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+                ? Center(child: Text(error!))
+                : GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.2,
+                    ),
+                    itemCount: gifts.length,
+                    itemBuilder: (_, index) {
+                      final gift = gifts[index];
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('${gift['icon'] ?? '🎁'}',
+                                  style: const TextStyle(fontSize: 34)),
+                              const SizedBox(height: 8),
+                              Text('${gift['name'] ?? '礼物'}',
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 6),
+                              Text('收到 ${gift['received_quantity'] ?? 0} 个'),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+      );
+}
+
 class _WalletAssetCard extends StatelessWidget {
   const _WalletAssetCard({
     required this.title,
@@ -707,9 +788,13 @@ class _DDProfilePageState extends State<DDProfilePage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _ProfileActionButton(
-                                icon: Icons.backpack_outlined,
-                                label: '背包',
-                                onTap: () {},
+                                icon: Icons.auto_awesome_outlined,
+                                label: '展馆',
+                                onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const GiftExhibitionPage())),
                               ),
                             ),
                           ],

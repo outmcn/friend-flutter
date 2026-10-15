@@ -1052,6 +1052,9 @@ class DDPostService {
     return _decodeResponse(response, '定位更新失败');
   }
 
+  Future<List<Map<String, dynamic>>> fetchMyGifts(String token) =>
+      fetchObjectList(token, '/api/me/gifts', 'gifts');
+
   Future<List<Map<String, dynamic>>> fetchGiftItems(String token) =>
       fetchObjectList(token, '/api/gifts', 'gifts');
 
