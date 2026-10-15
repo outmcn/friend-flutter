@@ -191,7 +191,7 @@ class CompanionProfilePage extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: FilledButton(
-                        onPressed: () => _showOrderNotice(context),
+                        onPressed: () => _openOrder(context, data),
                         child: const Text('立即下单'),
                       ),
                     ),
@@ -206,8 +206,64 @@ class CompanionProfilePage extends StatelessWidget {
   }
 }
 
-void _showOrderNotice(BuildContext context) {
-  _showTopNotice(context, const Text('下单流程正在接入，请稍后再试'));
+Future<void> _openOrder(BuildContext context, CompanionProfile data) async {
+  final price = num.tryParse(data.price);
+  if (data.userId.isEmpty || price == null || price <= 0) {
+    _showTopNotice(context, const Text('当前陪玩价格未配置，暂时无法下单'));
+    return;
+  }
+  final controller = TextEditingController(text: '1');
+  final confirmed = await showDialog<int>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('立即下单'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('陪玩：${data.name}'),
+          Text('价格：${data.price} 钻石 / 小时'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: '购买小时数'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('取消')),
+        FilledButton(
+          onPressed: () {
+            final hours = int.tryParse(controller.text.trim());
+            if (hours != null && hours > 0 && hours <= 100) {
+              Navigator.pop(dialogContext, hours);
+            }
+          },
+          child: const Text('确认下单'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (confirmed == null || !context.mounted) return;
+  final amount = price * confirmed;
+  try {
+    final api = GameClubBackendClient();
+    await api.post('/api/game-club/orders', {
+      'companionUserId': int.tryParse(data.userId),
+      'amount': amount,
+    });
+    api.dispose();
+    if (context.mounted) {
+      _showTopNotice(
+          context, Text('下单成功，已冻结 ${amount.toStringAsFixed(2)} 颗钻石'));
+    }
+  } catch (e) {
+    if (context.mounted) _showTopNotice(context, Text('$e'));
+  }
 }
 
 class _DetailServiceRow extends StatelessWidget {
