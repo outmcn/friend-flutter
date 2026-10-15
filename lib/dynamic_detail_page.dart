@@ -46,6 +46,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   DDComment? replyingTo;
   DDPost? post;
   List<DDComment> comments = const [];
+  List<Map<String, dynamic>> receivedGifts = const [];
   bool loading = true;
   bool deleting = false;
   bool submitting = false;
@@ -237,6 +238,16 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     return value;
   }
 
+  Future<List<Map<String, dynamic>>> _loadReceivedGifts(String t) async {
+    final value = await service.fetchObjectList(
+      t,
+      '/api/posts/${widget.postId}/gifts',
+      'gifts',
+    );
+    if (mounted) setState(() => receivedGifts = value);
+    return value;
+  }
+
   void _publish(DDPost value) {
     if (!mounted) return;
     setState(() => post = value);
@@ -269,6 +280,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           }
         }(),
         _loadComments(t),
+        _loadReceivedGifts(t),
         () async {
           if (cached != null) {
             try {
@@ -773,27 +785,54 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     }
   }
 
-  void _openGiftMenu() {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Wrap(
-          children: [
-            const ListTile(
-              leading: Icon(Icons.card_giftcard_outlined),
-              title: Text('送礼'),
-              subtitle: Text('礼物功能暂未接入支付和后台记录'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: const Text('关闭'),
-              onTap: () => Navigator.pop(sheetContext),
-            ),
-          ],
+  Future<void> _openGiftMenu() async {
+    try {
+      final gifts = await service.fetchGiftItems(await token());
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: Wrap(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('送礼',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              ),
+              ...gifts.map((gift) => ListTile(
+                    leading: Text('${gift['icon'] ?? '🎁'}',
+                        style: const TextStyle(fontSize: 24)),
+                    title: Text('${gift['name'] ?? '礼物'}'),
+                    subtitle: Text('${gift['coin_price'] ?? 0} 金币'),
+                    onTap: () async {
+                      Navigator.pop(sheetContext);
+                      try {
+                        await service.sendPostGift(
+                            token: await token(),
+                            postId: widget.postId,
+                            giftId: int.parse('${gift['id']}'));
+                        await _loadReceivedGifts(await token());
+                        if (mounted) {
+                          _showTopNotice(
+                              context, const SnackBar(content: Text('送礼成功')));
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          _showTopNotice(
+                              context, SnackBar(content: Text('$e')));
+                        }
+                      }
+                    },
+                  )),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+    }
   }
 
   Widget _composer(DDPost item) => SafeArea(
@@ -981,6 +1020,33 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                 child: Text(item.content,
                                     style: const TextStyle(
                                         fontSize: 18, height: 1.5)),
+                              ),
+                            if (receivedGifts.isNotEmpty)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('收到的礼物',
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700)),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: receivedGifts
+                                          .map((gift) => Chip(
+                                                avatar: Text(
+                                                    '${gift['icon'] ?? '🎁'}'),
+                                                label: Text(
+                                                    '${gift['name'] ?? '礼物'} ×${gift['quantity'] ?? 1}'),
+                                              ))
+                                          .toList(),
+                                    ),
+                                  ],
+                                ),
                               ),
                             const SizedBox(height: 16),
                             const Divider(height: 32),

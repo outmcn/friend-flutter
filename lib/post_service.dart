@@ -1052,6 +1052,37 @@ class DDPostService {
     return _decodeResponse(response, '定位更新失败');
   }
 
+  Future<List<Map<String, dynamic>>> fetchGiftItems(String token) =>
+      fetchObjectList(token, '/api/gifts', 'gifts');
+
+  Future<Map<String, dynamic>> sendPostGift({
+    required String token,
+    required int postId,
+    required int giftId,
+    int quantity = 1,
+  }) async {
+    final response = await _client.post(
+      _api('/posts/$postId/gifts'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'giftId': giftId, 'quantity': quantity}),
+    );
+    return _decodeResponse(response, '送礼失败');
+  }
+
+  Future<List<Map<String, dynamic>>> fetchObjectList(
+      String token, String path, String key) async {
+    final data = await _fetchObject(token, path);
+    final raw = data[key];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
+  }
+
   Future<Map<String, dynamic>> _fetchObject(String token, String path) async {
     final response = await _client
         .get(_base.resolve(path), headers: {'Authorization': 'Bearer $token'});
