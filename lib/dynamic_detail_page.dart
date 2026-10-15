@@ -50,6 +50,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   bool loading = true;
   bool deleting = false;
   bool submitting = false;
+  bool giftSubmitting = false;
   bool refreshing = false;
   final pendingActions = <String>{};
   final scroll = ScrollController();
@@ -806,25 +807,34 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                         style: const TextStyle(fontSize: 24)),
                     title: Text('${gift['name'] ?? '礼物'}'),
                     subtitle: Text('${gift['coin_price'] ?? 0} 金币'),
-                    onTap: () async {
-                      Navigator.pop(sheetContext);
-                      try {
-                        await service.sendPostGift(
-                            token: await token(),
-                            postId: widget.postId,
-                            giftId: int.parse('${gift['id']}'));
-                        await _loadReceivedGifts(await token());
-                        if (mounted) {
-                          _showTopNotice(
-                              context, const SnackBar(content: Text('送礼成功')));
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          _showTopNotice(
-                              context, SnackBar(content: Text('$e')));
-                        }
-                      }
-                    },
+                    onTap: giftSubmitting
+                        ? null
+                        : () async {
+                            Navigator.pop(sheetContext);
+                            try {
+                              if (mounted) {
+                                setState(() => giftSubmitting = true);
+                              }
+                              await service.sendPostGift(
+                                  token: await token(),
+                                  postId: widget.postId,
+                                  giftId: int.parse('${gift['id']}'));
+                              await _loadReceivedGifts(await token());
+                              if (mounted) {
+                                _showTopNotice(context,
+                                    const SnackBar(content: Text('送礼成功')));
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                _showTopNotice(
+                                    context, SnackBar(content: Text('$e')));
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() => giftSubmitting = false);
+                              }
+                            }
+                          },
                   )),
             ],
           ),
