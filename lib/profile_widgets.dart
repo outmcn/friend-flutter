@@ -262,39 +262,44 @@ class _MyProfilePostCard extends StatelessWidget {
                   builder: (context, constraints) => ConstrainedBox(
                     key: mediaKey,
                     constraints: const BoxConstraints(maxHeight: 300),
-                    child: _profileMedia(url: image, thumbnail: false),
+                    child: _PermanentCachedImage(
+                      url: image,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 )
               else if (video != null && video.isNotEmpty)
                 InkWell(
                   onTap: onTap,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      if (post.thumbnailUrl != null &&
-                          post.thumbnailUrl!.isNotEmpty)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 400),
-                            child: _profileMedia(
-                              url: post.thumbnailUrl!,
-                              thumbnail: true,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            if (post.thumbnailUrl != null &&
+                                post.thumbnailUrl!.isNotEmpty)
+                              SizedBox(
+                                width: double.infinity,
+                                child: ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(maxHeight: 400),
+                                  child: _profileMedia(
+                                    url: post.thumbnailUrl!,
+                                    thumbnail: true,
+                                  ),
+                                ),
+                              )
+                            else
+                              const SizedBox(
+                                height: 225,
+                                child: ColoredBox(color: Colors.transparent),
+                              ),
+                            const Icon(
+                              Icons.play_circle_outline,
+                              size: 56,
+                              color: Colors.white,
                             ),
-                          ),
-                        )
-                      else
-                        const SizedBox(
-                          height: 225,
-                          child: ColoredBox(color: Colors.transparent),
+                          ],
                         ),
-                      const Icon(
-                        Icons.play_circle_outline,
-                        size: 56,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
                 )
               else
                 ConstrainedBox(

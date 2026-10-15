@@ -723,12 +723,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                               ],
                                             ),
                                             child: Text(
-                                          '${p?['city'] ?? ''}'.trim().isEmpty
-                                              ? '添加城市'
-                                              : '${p?['city']}',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .labelSmall),
+                                              '${p?['city'] ?? ''}'.trim().isEmpty
+                                                  ? '添加城市'
+                                                  : '${p?['city']}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelSmall),
                                           ),
                                         ),
                                       ),
@@ -790,44 +790,48 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                   ),
                                   GestureDetector(
                                     onTap: _openPresenceControls,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: _stealth
-                                            ? const Color(0xfff3f4f6)
-                                            : const Color(0xfff0fdf4),
-                                        border: Border.all(
-                                            color: _stealth
-                                                ? const Color(0xffd1d5db)
-                                                : const Color(0xffbbf7d0)),
-                                        borderRadius:
-                                            BorderRadius.circular(999),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: BoxDecoration(
+                                    child: Semantics(
+                                      button: true,
+                                      label: _stealth ? '隐身状态设置' : '在线状态设置',
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: _stealth
+                                              ? const Color(0xfff3f4f6)
+                                              : const Color(0xfff0fdf4),
+                                          border: Border.all(
                                               color: _stealth
-                                                  ? const Color(0xff9ca3af)
-                                                  : const Color(0xff22c55e),
-                                              shape: BoxShape.circle,
+                                                  ? const Color(0xffd1d5db)
+                                                  : const Color(0xffbbf7d0)),
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 6,
+                                              height: 6,
+                                              decoration: BoxDecoration(
+                                                color: _stealth
+                                                    ? const Color(0xff9ca3af)
+                                                    : const Color(0xff22c55e),
+                                                shape: BoxShape.circle,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 5),
-                                          Text(
-                                            _stealth ? '隐身' : '在线',
-                                            style: TextStyle(
-                                              color: _stealth
-                                                  ? const Color(0xff6b7280)
-                                                  : const Color(0xff16a34a),
-                                              fontSize: 11,
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              _stealth ? '隐身' : '在线',
+                                              style: TextStyle(
+                                                color: _stealth
+                                                    ? const Color(0xff6b7280)
+                                                    : const Color(0xff16a34a),
+                                                fontSize: 11,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
