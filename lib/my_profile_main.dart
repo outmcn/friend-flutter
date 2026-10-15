@@ -394,7 +394,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
             children: [
               ListTile(
                 title: const Text('在线 / 隐身'),
-                subtitle: Text(_stealth ? '当前：隐身' : '当前：在线'),
+                subtitle: Text(
+                    '${_stealth ? '当前：隐身' : '当前：在线'} · 仅本机显示'),
                 trailing: Switch(
                   value: !_stealth,
                   onChanged: (value) {
@@ -405,6 +406,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
               ),
               SwitchListTile(
                 title: const Text('全站防骚扰'),
+                subtitle: const Text('仅本机显示，暂未同步服务器'),
                 value: _antiHarassment,
                 onChanged: (value) {
                   setSheetState(() => _antiHarassment = value);
@@ -413,6 +415,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
               ),
               SwitchListTile(
                 title: const Text('智能屏蔽'),
+                subtitle: const Text('仅本机显示，暂未同步服务器'),
                 value: _smartBlock,
                 onChanged: (value) {
                   setSheetState(() => _smartBlock = value);
@@ -421,6 +424,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
               ),
               ListTile(
                 title: const Text('开启匹配'),
+                subtitle: const Text('仅本机显示，暂未同步服务器'),
                 trailing: Switch(
                   value: _matching,
                   onChanged: (value) {
@@ -757,7 +761,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 30),
+                              const SizedBox(height: 18),
                               Container(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 14),
