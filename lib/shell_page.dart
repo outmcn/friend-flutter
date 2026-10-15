@@ -48,11 +48,186 @@ Future<void> openCompanionChat(
     await Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (_) =>
-                _ChatDetailPage(chat: chat, currentUserId: currentUserId)));
+            builder: (_) => _CompanionChatPage(
+                  chat: chat,
+                  currentUserId: currentUserId,
+                  peerId: peerId,
+                  peerName: name,
+                )));
   } finally {
     service.dispose();
   }
+}
+
+class _CompanionChatPage extends StatefulWidget {
+  const _CompanionChatPage({
+    required this.chat,
+    required this.currentUserId,
+    required this.peerId,
+    required this.peerName,
+  });
+  final _ChatPreview chat;
+  final String currentUserId;
+  final String peerId;
+  final String peerName;
+
+  @override
+  State<_CompanionChatPage> createState() => _CompanionChatPageState();
+}
+
+class _CompanionChatPageState extends State<_CompanionChatPage> {
+  final controller = TextEditingController();
+  final service = DDPostService();
+  List<DDImMessage> messages = const [];
+  bool loading = true;
+  bool sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      final value =
+          await service.fetchImMessages(token, widget.chat.conversationId);
+      if (mounted) setState(() => messages = value);
+    } catch (e) {
+      if (mounted) _showTopErrorBanner(context, '$e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _send() async {
+    final text = controller.text.trim();
+    if (text.isEmpty || sending) return;
+    setState(() => sending = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      await service.sendImMessage(
+        token,
+        widget.chat.conversationId,
+        text: text,
+        clientId: 'companion_${DateTime.now().microsecondsSinceEpoch}',
+      );
+      controller.clear();
+      await _load();
+    } catch (e) {
+      if (mounted) _showTopErrorBanner(context, '$e');
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    service.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: GestureDetector(
+            onTap: () {
+              final id = int.tryParse(widget.peerId);
+              if (id != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => OtherProfilePage(
+                      userId: id,
+                      name: widget.peerName,
+                    ),
+                  ),
+                );
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                    backgroundImage: widget.chat.avatarUrl == null
+                        ? null
+                        : NetworkImage(widget.chat.avatarUrl!)),
+                const SizedBox(width: 8),
+                Text(widget.peerName),
+              ],
+            ),
+          ),
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: messages.length,
+                      itemBuilder: (_, index) {
+                        final message = messages[index];
+                        final mine =
+                            message.senderId.toString() == widget.currentUserId;
+                        return Align(
+                          alignment: mine
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: mine
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(message.text),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        minLines: 1,
+                        maxLines: 4,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(),
+                        decoration: const InputDecoration(hintText: '输入消息'),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: sending ? null : _send,
+                      icon: const Icon(Icons.send),
+                    ),
+                    IconButton(
+                      onPressed: () => _showTopErrorBanner(context, '更多功能正在接入'),
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class ChatPage extends StatefulWidget {
