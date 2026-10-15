@@ -81,6 +81,7 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
   List<DDImMessage> messages = const [];
   bool loading = true;
   bool sending = false;
+  bool emojiExpanded = false;
 
   @override
   void initState() {
@@ -167,11 +168,16 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircleAvatar(
-                    backgroundImage: widget.chat.avatarUrl == null
-                        ? null
-                        : NetworkImage(widget.chat.avatarUrl!)),
+                  radius: 15,
+                  backgroundImage: widget.chat.avatarUrl == null
+                      ? null
+                      : NetworkImage(widget.chat.avatarUrl!),
+                ),
                 const SizedBox(width: 8),
-                Text(widget.peerName),
+                Text(
+                  widget.peerName,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
               ],
             ),
           ),
@@ -213,30 +219,88 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
                     ),
             ),
             SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        minLines: 1,
-                        maxLines: 4,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _send(),
-                        decoration: const InputDecoration(hintText: '输入消息'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            minLines: 1,
+                            maxLines: 4,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _send(),
+                            decoration: InputDecoration(
+                              hintText: '输入消息',
+                              suffixIcon: IconButton(
+                                tooltip: '表情',
+                                onPressed: () => setState(
+                                    () => emojiExpanded = !emojiExpanded),
+                                icon: const Icon(Icons.sentiment_satisfied_alt),
+                              ),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () =>
+                              _showTopErrorBanner(context, '更多功能正在接入'),
+                          icon: const Icon(Icons.add_circle_outline),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (emojiExpanded)
+                    SizedBox(
+                      height: 150,
+                      child: GridView.count(
+                        crossAxisCount: 8,
+                        padding: const EdgeInsets.all(8),
+                        children: [
+                          for (final emoji in const [
+                            '😀',
+                            '😂',
+                            '🤣',
+                            '😊',
+                            '😍',
+                            '😘',
+                            '😎',
+                            '🤔',
+                            '😭',
+                            '😡',
+                            '👍',
+                            '👏',
+                            '🙏',
+                            '❤️',
+                            '🎉',
+                            '🔥',
+                          ])
+                            InkWell(
+                              onTap: () {
+                                final value = controller.value;
+                                final text = value.text;
+                                final start = value.selection.start < 0
+                                    ? text.length
+                                    : value.selection.start;
+                                final end = value.selection.end < 0
+                                    ? start
+                                    : value.selection.end;
+                                controller.value = value.copyWith(
+                                  text: text.replaceRange(start, end, emoji),
+                                  selection: TextSelection.collapsed(
+                                      offset: start + emoji.length),
+                                );
+                              },
+                              child: Center(
+                                  child: Text(emoji,
+                                      style: const TextStyle(fontSize: 24))),
+                            ),
+                        ],
                       ),
                     ),
-                    IconButton(
-                      onPressed: sending ? null : _send,
-                      icon: const Icon(Icons.send),
-                    ),
-                    IconButton(
-                      onPressed: () => _showTopErrorBanner(context, '更多功能正在接入'),
-                      icon: const Icon(Icons.add_circle_outline),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ],
