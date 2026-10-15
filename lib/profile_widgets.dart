@@ -272,34 +272,34 @@ class _MyProfilePostCard extends StatelessWidget {
               else if (video != null && video.isNotEmpty)
                 InkWell(
                   onTap: onTap,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            if (post.thumbnailUrl != null &&
-                                post.thumbnailUrl!.isNotEmpty)
-                              SizedBox(
-                                width: double.infinity,
-                                child: ConstrainedBox(
-                                  constraints:
-                                      const BoxConstraints(maxHeight: 400),
-                                  child: _profileMedia(
-                                    url: post.thumbnailUrl!,
-                                    thumbnail: true,
-                                  ),
-                                ),
-                              )
-                            else
-                              const SizedBox(
-                                height: 225,
-                                child: ColoredBox(color: Colors.transparent),
-                              ),
-                            const Icon(
-                              Icons.play_circle_outline,
-                              size: 56,
-                              color: Colors.white,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (post.thumbnailUrl != null &&
+                          post.thumbnailUrl!.isNotEmpty)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ConstrainedBox(
+                            constraints:
+                                const BoxConstraints(maxHeight: 400),
+                            child: _profileMedia(
+                              url: post.thumbnailUrl!,
+                              thumbnail: true,
                             ),
-                          ],
+                          ),
+                        )
+                      else
+                        const SizedBox(
+                          height: 225,
+                          child: ColoredBox(color: Colors.transparent),
                         ),
+                      const Icon(
+                        Icons.play_circle_outline,
+                        size: 56,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
                 )
               else
                 ConstrainedBox(
@@ -329,8 +329,8 @@ class _MyProfilePostCard extends StatelessWidget {
                   ),
                 ),
                 if (post.content.trim().isNotEmpty &&
-                  ((image != null && image.isNotEmpty) ||
-                      (video != null && video.isNotEmpty)))
+                    ((image != null && image.isNotEmpty) ||
+                        (video != null && video.isNotEmpty)))
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
                   child: Text(
@@ -357,15 +357,19 @@ class _MyProfilePostCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(width: 12),
-                    Icon(Icons.bookmark_border,
-                        size: 16, color: scheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('${post.favorites}'),
+                    if (post.favorites > 0) ...[
+                      Icon(Icons.bookmark_border,
+                          size: 16, color: scheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text('${post.favorites}'),
+                    ],
                     const Spacer(),
-                    Icon(Icons.visibility_outlined,
-                        size: 16, color: scheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('${post.views}'),
+                    if (post.views > 0) ...[
+                      Icon(Icons.visibility_outlined,
+                          size: 16, color: scheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text('${post.views}'),
+                    ],
                   ],
                 ),
               ),
