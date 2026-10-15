@@ -142,6 +142,8 @@ class _MyProfileGrid extends StatefulWidget {
   final List<DDPost> posts;
   final VoidCallback? onChanged;
   final String emptyLabel;
+  final VoidCallback? onEmptyAction;
+  final String? emptyActionLabel;
 
   @override
   State<_MyProfileGrid> createState() => _MyProfileGridState();
@@ -156,7 +158,22 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
     if (posts.isEmpty) {
       return Padding(
         padding: const EdgeInsets.only(top: 48),
-        child: Center(child: Text(widget.emptyLabel)),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(widget.emptyLabel),
+              if (widget.onEmptyAction != null &&
+                  widget.emptyActionLabel != null) ...[
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: widget.onEmptyAction,
+                  child: Text(widget.emptyActionLabel!),
+                ),
+              ],
+            ],
+          ),
+        ),
       );
     }
     return MasonryGridView.count(

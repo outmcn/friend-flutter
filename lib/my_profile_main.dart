@@ -947,6 +947,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               child: _ProfileActionButton(
                                 icon: Icons.account_balance_wallet_outlined,
                                 label: '钱包',
+                                subtitle: coinBalance > 0 ? '$coinBalance 金币' : null,
                                 onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -958,6 +959,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               child: _ProfileActionButton(
                                 icon: Icons.auto_awesome_outlined,
                                 label: '展馆',
+                                subtitle: charmCoins > 0 ? '$charmCoins 魅力值' : null,
                                 onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -1002,6 +1004,15 @@ class _DDProfilePageState extends State<DDProfilePage> {
                               : selectedTab == 1
                                   ? '还没有收藏内容'
                                   : '还没有点赞内容',
+                          emptyActionLabel: selectedTab == 0
+                              ? '去发布动态'
+                              : '去发现内容',
+                          onEmptyAction: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CreatePostPage(),
+                            ),
+                          ),
                           onChanged: _invalidateProfileCacheAndReload,
                         ),
                       ]),
@@ -1019,10 +1030,12 @@ class _ProfileActionButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.subtitle,
   });
 
   final IconData icon;
   final String label;
+  final String? subtitle;
   final VoidCallback onTap;
 
   @override
@@ -1035,13 +1048,24 @@ class _ProfileActionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: SizedBox(
-          height: 40,
+          height: subtitle == null ? 40 : 56,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 19, color: scheme.primary),
               const SizedBox(width: 7),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  if (subtitle != null)
+                    Text(subtitle!,
+                        style: TextStyle(
+                            fontSize: 10, color: scheme.onSurfaceVariant)),
+                ],
+              ),
             ],
           ),
         ),
