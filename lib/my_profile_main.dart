@@ -1,5 +1,80 @@
 part of 'main.dart';
 
+class _CharmSourcesPage extends StatefulWidget {
+  const _CharmSourcesPage();
+
+  @override
+  State<_CharmSourcesPage> createState() => _CharmSourcesPageState();
+}
+
+class _CharmSourcesPageState extends State<_CharmSourcesPage> {
+  final service = DDPostService();
+  List<Map<String, dynamic>> sources = const [];
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      final loaded = await service.fetchCharmSources(token);
+      if (mounted) setState(() => sources = loaded);
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('魅力值来源')),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+                ? _PageErrorState(
+                    title: '加载失败', subtitle: error!, onRetry: _load)
+                : sources.isEmpty
+                    ? const Center(child: Text('暂无礼物来源'))
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: sources.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (_, index) {
+                          final source = sources[index];
+                          final sender = '${source['senderNickname'] ?? '用户'}';
+                          final gift = '${source['giftName'] ?? '礼物'}';
+                          final quantity = source['quantity'] ?? 0;
+                          final coins = source['coinAmount'] ?? 0;
+                          final postId = source['postId'];
+                          final created = '${source['createdAt'] ?? ''}';
+                          return ListTile(
+                            leading: CircleAvatar(
+                              child: Text(
+                                  gift.isEmpty ? '礼' : gift.characters.first),
+                            ),
+                            title: Text('$sender送出$gift × $quantity'),
+                            subtitle: Text(
+                                '${postId == null ? '' : '动态 #$postId  · '}$created'),
+                            trailing: Text('+$coins'),
+                          );
+                        },
+                      ),
+      );
+}
+
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key, this.showCoinBalance = true});
 
@@ -721,7 +796,13 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                         child: _InlineProfileStat(
                                       label: '魅力',
                                       value: '$charmCoins',
-                                      onTap: () {},
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const _CharmSourcesPage(),
+                                        ),
+                                      ),
                                     )),
                                   ],
                                 ),
