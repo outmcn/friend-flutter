@@ -7,6 +7,15 @@ class _CharmSourcesPage extends StatefulWidget {
   State<_CharmSourcesPage> createState() => _CharmSourcesPageState();
 }
 
+String _formatCharmSourceTime(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final beijing = parsed.toUtc().add(const Duration(hours: 8));
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${beijing.year}-${two(beijing.month)}-${two(beijing.day)} '
+      '${two(beijing.hour)}:${two(beijing.minute)}:${two(beijing.second)}';
+}
+
 class _CharmSourcesPageState extends State<_CharmSourcesPage> {
   final service = DDPostService();
   List<Map<String, dynamic>> sources = const [];
@@ -58,16 +67,15 @@ class _CharmSourcesPageState extends State<_CharmSourcesPage> {
                           final gift = '${source['giftName'] ?? '礼物'}';
                           final quantity = source['quantity'] ?? 0;
                           final coins = source['coinAmount'] ?? 0;
-                          final postId = source['postId'];
-                          final created = '${source['createdAt'] ?? ''}';
+                          final created = _formatCharmSourceTime(
+                              '${source['createdAt'] ?? ''}');
                           return ListTile(
                             leading: CircleAvatar(
                               child: Text(
                                   gift.isEmpty ? '礼' : gift.characters.first),
                             ),
                             title: Text('$sender送出$gift × $quantity'),
-                            subtitle: Text(
-                                '${postId == null ? '' : '动态 #$postId  · '}$created'),
+                            subtitle: Text('动态  ·  $created'),
                             trailing: Text('+$coins'),
                           );
                         },
