@@ -9,7 +9,8 @@ class WalletPage extends StatefulWidget {
 
 class _WalletPageState extends State<WalletPage> {
   final DDPostService service = DDPostService();
-  int balance = 0;
+  String balance = '0.00';
+  String frozenBalance = '0.00';
   bool loading = true;
   String? error;
 
@@ -25,8 +26,10 @@ class _WalletPageState extends State<WalletPage> {
       final token = prefs.getString('friend.auth.token') ?? '';
       final user = await service.fetchMe(token);
       if (mounted) {
-        setState(
-            () => balance = int.tryParse('${user['coinBalance'] ?? 0}') ?? 0);
+        setState(() {
+          balance = '${user['coinBalance'] ?? '0.00'}';
+          frozenBalance = '${user['frozenCoinBalance'] ?? '0.00'}';
+        });
       }
     } catch (e) {
       if (mounted) setState(() => error = '$e');
@@ -64,6 +67,9 @@ class _WalletPageState extends State<WalletPage> {
                           color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  Text('冻结：$frozenBalance 金币',
+                      style: const TextStyle(color: Colors.white70)),
                 ],
               ),
             ),
