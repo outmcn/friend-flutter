@@ -340,6 +340,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
   void initState() {
     super.initState();
     _profileScrollController.addListener(_handleProfileScroll);
+
     feeds = List.generate(
         3,
         (tab) => DiscoverFeed((_) async {
@@ -540,7 +541,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
         centerTitle: false,
         title: _showStickyNickname
             ? Text(
-                '${p?['nickname'] ?? 'DD 用户'}',
+                '${p?['nickname'] ?? 'Friend 用户'}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               )
@@ -552,7 +553,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
               context,
               MaterialPageRoute(builder: (_) => const _HistoryRecordsPage()),
             ),
-            icon: const Icon(Icons.crop_free),
+            icon: const Icon(Icons.history_outlined),
           ),
           IconButton(
             tooltip: '设置',
@@ -660,7 +661,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                '${p?['nickname'] ?? 'DD 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
+                                                '${p?['nickname'] ?? 'Friend 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
@@ -689,7 +690,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                         const SizedBox(height: 10),
                                         _SonicProfileButton(
                                           playing: _sonicPlaying,
-                                          enabled: true,
+                                          enabled: _sonicUrl != null &&
+                                              _sonicUrl!.isNotEmpty,
                                           onTap: () async {
                                             await Navigator.push(
                                               context,
