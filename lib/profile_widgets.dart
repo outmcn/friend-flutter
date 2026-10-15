@@ -133,13 +133,21 @@ class _ProfilePostFeedState extends State<_ProfilePostFeed> {
       );
 }
 
-class _MyProfileGrid extends StatelessWidget {
+class _MyProfileGrid extends StatefulWidget {
   const _MyProfileGrid({required this.posts, this.onChanged});
   final List<DDPost> posts;
   final VoidCallback? onChanged;
 
   @override
+  State<_MyProfileGrid> createState() => _MyProfileGridState();
+}
+
+class _MyProfileGridState extends State<_MyProfileGrid> {
+  final mediaKeys = <int, GlobalKey>{};
+
+  @override
   Widget build(BuildContext context) {
+    final posts = widget.posts;
     if (posts.isEmpty) {
       return const Padding(
         padding: EdgeInsets.only(top: 48),
@@ -155,16 +163,33 @@ class _MyProfileGrid extends StatelessWidget {
       itemCount: posts.length,
       itemBuilder: (context, index) {
         final post = posts[index];
+        final mediaKey = mediaKeys.putIfAbsent(post.id, GlobalKey.new);
         return _MyProfilePostCard(
           post: post,
+          mediaKey: mediaKey,
           onTap: () async {
+            final box =
+                mediaKey.currentContext?.findRenderObject() as RenderBox?;
+            final topLeft = box?.localToGlobal(Offset.zero);
+            final initialRect =
+                box == null || topLeft == null ? null : topLeft & box.size;
             final changed = await Navigator.push<bool>(
               context,
-              MaterialPageRoute(
-                builder: (_) => DynamicDetailPage(postId: post.id),
+              PageRouteBuilder<bool>(
+                opaque: false,
+                barrierColor: Colors.transparent,
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+                pageBuilder: (_, __, ___) => DynamicDetailPage(
+                  postId: post.id,
+                  initialPost: post,
+                  initialRect: initialRect,
+                  mediaKey: mediaKey,
+                ),
+                transitionsBuilder: (_, __, ___, child) => child,
               ),
             );
-            if (changed == true) onChanged?.call();
+            if (changed == true) widget.onChanged?.call();
           },
         );
       },
@@ -173,10 +198,15 @@ class _MyProfileGrid extends StatelessWidget {
 }
 
 class _MyProfilePostCard extends StatelessWidget {
-  const _MyProfilePostCard(
-      {super.key, required this.post, required this.onTap});
+  const _MyProfilePostCard({
+    super.key,
+    required this.post,
+    required this.onTap,
+    this.mediaKey,
+  });
   final DDPost post;
   final VoidCallback onTap;
+  final GlobalKey? mediaKey;
 
   Widget _profileMedia({required String url, required bool thumbnail}) {
     return ConstrainedBox(
@@ -208,6 +238,7 @@ class _MyProfilePostCard extends StatelessWidget {
               if (image != null && image.isNotEmpty)
                 LayoutBuilder(
                   builder: (context, constraints) => ConstrainedBox(
+                    key: mediaKey,
                     constraints: const BoxConstraints(maxHeight: 300),
                     child: _profileMedia(url: image, thumbnail: false),
                   ),
