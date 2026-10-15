@@ -581,7 +581,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
                     padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        if (error != null)
+                        if (error != null && profile != null)
                           _PageErrorState(
                             title: profile == null ? '资料加载失败' : '动态加载失败',
                             subtitle: error!,
