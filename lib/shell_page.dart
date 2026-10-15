@@ -92,9 +92,15 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
-      final value =
-          await service.fetchImMessages(token, widget.chat.conversationId);
-      if (mounted) setState(() => messages = value);
+      final value = await service.fetchImTimeline(
+        token,
+        widget.chat.conversationId,
+      );
+      if (mounted) {
+        setState(() {
+          messages = value.map((item) => DDImMessage.fromJson(item)).toList();
+        });
+      }
     } catch (e) {
       if (mounted) _showTopErrorBanner(context, '$e');
     } finally {
