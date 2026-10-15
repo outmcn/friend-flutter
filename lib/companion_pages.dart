@@ -1335,12 +1335,6 @@ class _DeltaCompanionCard extends StatelessWidget {
                               child: Icon(Icons.female,
                                   color: Colors.pink, size: 19)),
                       ]),
-                      if (cardLabel.isNotEmpty)
-                        Text(cardLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: Colors.grey, fontSize: 12)),
                       if (companionType.isNotEmpty ||
                           companionDescription.isNotEmpty)
                         Text(
@@ -1359,7 +1353,15 @@ class _DeltaCompanionCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                if (cardLabel.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: _CompactTag(text: cardLabel),
+                    ),
+                  ),
+                const SizedBox(width: 2),
               ],
             ),
           ),
