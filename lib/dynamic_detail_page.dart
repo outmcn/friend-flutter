@@ -819,15 +819,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                   token: await token(),
                                   postId: widget.postId,
                                   giftId: int.parse('${gift['id']}'));
+                              if (!mounted) return;
                               await _loadReceivedGifts(await token());
-                              if (mounted) {
-                                _showTopNotice(context,
-                                    const SnackBar(content: Text('送礼成功')));
-                              }
+                              if (!mounted) return;
+                              _showTopNotice(context, const Text('送礼成功'));
                             } catch (e) {
                               if (mounted) {
-                                _showTopNotice(
-                                    context, SnackBar(content: Text('$e')));
+                                _showTopNotice(context, Text('$e'));
                               }
                             } finally {
                               if (mounted) {
