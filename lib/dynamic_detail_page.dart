@@ -245,8 +245,24 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       '/api/posts/${widget.postId}/gifts',
       'gifts',
     );
-    if (mounted) setState(() => receivedGifts = value);
-    return value;
+    final totals = <String, Map<String, dynamic>>{};
+    for (final gift in value) {
+      final key =
+          '${gift['gift_item_id'] ?? gift['giftItemId'] ?? gift['name']}';
+      final current = totals[key];
+      final quantity = int.tryParse('${gift['quantity'] ?? 1}') ?? 1;
+      if (current == null) {
+        totals[key] = {
+          ...gift,
+          'quantity': quantity,
+        };
+      } else {
+        current['quantity'] = (current['quantity'] as int) + quantity;
+      }
+    }
+    final aggregated = totals.values.toList();
+    if (mounted) setState(() => receivedGifts = aggregated);
+    return aggregated;
   }
 
   void _publish(DDPost value) {
