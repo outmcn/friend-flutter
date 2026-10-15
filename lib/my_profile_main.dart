@@ -325,8 +325,8 @@ class _DDProfilePageState extends State<DDProfilePage> {
   final AudioPlayer _sonicPlayer = AudioPlayer();
   final ScrollController _profileScrollController = ScrollController();
   bool _showStickyNickname = false;
-
-  final bool _sonicPlaying = false;
+  bool _sonicPlaying = false;
+  bool _tagSaving = false;
   String? _sonicUrl;
   String? _avatarUrl;
   String? error;
@@ -340,7 +340,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
   void initState() {
     super.initState();
     _profileScrollController.addListener(_handleProfileScroll);
-
+    _sonicPlayer.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _sonicPlaying = false);
+    });
     feeds = List.generate(
         3,
         (tab) => DiscoverFeed((_) async {
@@ -383,6 +385,34 @@ class _DDProfilePageState extends State<DDProfilePage> {
     super.dispose();
   }
 
+  Future<void> _toggleSonic() async {
+    final url = _sonicUrl;
+    if (url == null || url.isEmpty) {
+      _showTopNotice(context, const Text('暂未设置语音'));
+      return;
+    }
+    try {
+      if (_sonicPlaying) {
+        await _sonicPlayer.pause();
+        if (mounted) setState(() => _sonicPlaying = false);
+      } else {
+        await _sonicPlayer.play(UrlSource(url));
+        if (mounted) setState(() => _sonicPlaying = true);
+      }
+    } catch (_) {
+      if (mounted) _showTopNotice(context, const Text('声音播放失败'));
+    }
+  }
+
+  Future<void> _editSonic() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _VoiceRecordPage(currentUrl: _sonicUrl),
+      ),
+    );
+    if (mounted) await load(forceRefresh: true);
+  }
   Future<void> _openPresenceControls() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -649,7 +679,10 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                                     offset: Offset(0, 2)),
                                               ],
                                             ),
-                                            child: Text('${p?['city'] ?? '未知'}',
+                                            child: Text(
+                                          '${p?['city'] ?? ''}'.trim().isEmpty
+                                              ? '添加城市'
+                                              : '${p?['city']}',
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .labelSmall),
@@ -699,19 +732,14 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                           playing: _sonicPlaying,
                                           enabled: _sonicUrl != null &&
                                               _sonicUrl!.isNotEmpty,
-                                          onTap: () async {
-                                            await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    _VoiceRecordPage(
-                                                        currentUrl: _sonicUrl),
-                                              ),
-                                            );
-                                            if (mounted) {
-                                              await load(forceRefresh: true);
-                                            }
-                                          },
+                                          onTap: _toggleSonic,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          tooltip: '编辑语音',
+                                          onPressed: _editSonic,
+                                          icon: const Icon(Icons.edit_outlined,
+                                              size: 18),
                                         ),
                                       ],
                                     ),
@@ -837,44 +865,65 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                             child: _ProfileTag(text: tag),
                                           )),
                                       GestureDetector(
-                                        onTap: () async {
-                                          final selected = await Navigator.push<
-                                              List<String>>(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  _ProfileTagEditorPage(
-                                                      selectedTags: _tags),
-                                            ),
-                                          );
-                                          if (selected != null && mounted) {
-                                            final previousTags = List<String>.of(_tags);
-                                            try {
-                                              final t = await _token();
-                                              final updated =
-                                                  await service.updateMe(
-                                                      token: t, tags: selected);
-                                              if (!mounted) return;
-                                              setState(() {
-                                                _tags = selected;
-                                                profile = {
-                                                  ...(profile ??
-                                                      <String, dynamic>{}),
-                                                  ...updated,
-                                                  'tags': selected,
-                                                };
-                                              });
-                                            } catch (e) {
-                                              if (mounted) {
-                                                setState(() => _tags = previousTags);
-                                                _showTopNotice(
-                                                    context,
-                                                    Text('标签保存失败：$e'));
-                                              }
-                                            }
-                                          }
-                                        },
-                                        child: const _ProfileTag(text: '+'),
+                                        onTap: _tagSaving
+                                            ? null
+                                            : () async {
+                                                final selected =
+                                                    await Navigator.push<List<String>>(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        _ProfileTagEditorPage(
+                                                            selectedTags: _tags),
+                                                  ),
+                                                );
+                                                if (selected != null && mounted) {
+                                                  final previousTags =
+                                                      List<String>.of(_tags);
+                                                  setState(() => _tagSaving = true);
+                                                  try {
+                                                    final t = await _token();
+                                                    final updated =
+                                                        await service.updateMe(
+                                                            token: t,
+                                                            tags: selected);
+                                                    if (!mounted) return;
+                                                    setState(() {
+                                                      _tags = selected;
+                                                      profile = {
+                                                        ...(profile ??
+                                                            <String, dynamic>{}),
+                                                        ...updated,
+                                                        'tags': selected,
+                                                      };
+                                                    });
+                                                  } catch (e) {
+                                                    if (mounted) {
+                                                      setState(() =>
+                                                          _tags = previousTags);
+                                                      _showTopNotice(context,
+                                                          Text('标签保存失败：$e'));
+                                                    }
+                                                  } finally {
+                                                    if (mounted) {
+                                                      setState(() =>
+                                                          _tagSaving = false);
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                        child: _tagSaving
+                                            ? const SizedBox(
+                                                width: 28,
+                                                height: 28,
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(6),
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 2),
+                                                ),
+                                              )
+                                            : const _ProfileTag(text: '+'),
                                       ),
                                     ],
                                   ),
