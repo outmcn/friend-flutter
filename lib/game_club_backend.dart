@@ -92,15 +92,17 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         api.get('/api/game-club/page-config/${widget.gameId}'),
         api.get('/api/game-club/orders?gameId=${widget.gameId}'),
         api.get('/api/game-club/banners?gameId=${widget.gameId}'),
-        api.get('/api/game-club/applications?gameId=${widget.gameId}')
+        api.get('/api/game-club/applications?gameId=${widget.gameId}'),
+        api.get('/api/game-club/categories?gameId=${widget.gameId}'),
+        api.get('/api/game-club/projects?gameId=${widget.gameId}')
       ]);
       if (!mounted) {
         return;
       }
       setState(() {
         companions = values[0]['companions'] as List? ?? [];
-        categories = const [];
-        projects = const [];
+        categories = values[5]['categories'] as List? ?? [];
+        projects = values[6]['projects'] as List? ?? [];
         myOrders = values[2]['orders'] as List? ?? [];
         banners = values[3]['banners'] as List? ?? [];
         applications = values[4]['applications'] as List? ?? [];
@@ -129,7 +131,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                     SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                            children: ['陪玩管理', '申请列表', '订单管理', '售后管理']
+                            children: ['陪玩管理', '申请列表', '订单管理', '玩法管理', '推广管理']
                                 .asMap()
                                 .entries
                                 .map((e) => Padding(
@@ -146,7 +148,8 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                       _companions(),
                       _applications(),
                       _companionOrders(),
-                      _afterSale()
+                      _playbooks(),
+                      _promotion()
                     ][tab])
                   ]),
       );
@@ -234,6 +237,28 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
               )),
         ],
       );
+
+  Widget _playbooks() => ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text('玩法分类', style: TextStyle(fontWeight: FontWeight.w700)),
+          ...categories.map((c) => ListTile(
+                title: Text('${c['title'] ?? ''}'),
+                subtitle: Text('${c['description'] ?? ''}'),
+              )),
+          const SizedBox(height: 12),
+          const Text('玩法项目', style: TextStyle(fontWeight: FontWeight.w700)),
+          ...projects.map((p) => ListTile(
+                title: Text('${p['title'] ?? ''}'),
+                subtitle: Text(
+                    '${p['price'] ?? ''}${p['unit'] ?? ''} · ${p['description'] ?? ''}'),
+              )),
+          if (categories.isEmpty && projects.isEmpty)
+            const ListTile(title: Text('暂无已配置玩法')),
+        ],
+      );
+
+  Widget _promotion() => const Center(child: Text('推广管理暂未配置推广数据'));
 
   Future<void> _companionAction(int orderId, String action) async {
     try {

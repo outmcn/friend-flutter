@@ -76,6 +76,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   List<Map<String, dynamic>> remoteBanners = const [];
   List<Map<String, dynamic>> remoteTabs = const [];
   bool _pageLoading = true;
+  String? _pageConfigError;
 
   @override
   void initState() {
@@ -477,7 +478,30 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       ),
       body: _pageLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : _pageConfigError != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_pageConfigError!),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: () {
+                            setState(() {
+                              _pageLoading = true;
+                              _pageConfigError = null;
+                            });
+                            _loadPageConfig();
+                          },
+                          child: const Text('重试'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Column(
               children: [
                 _deltaBanners(),
                 _topTabs(),
@@ -557,7 +581,10 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => CompanionOrderManagementPage(),
+            builder: (_) => CompanionSelfEditPage(
+              gameId: gameId,
+              initial: access['companion'] as Map<String, dynamic>?,
+            ),
           ),
         );
         return;
@@ -933,9 +960,17 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
               .map((x) => Map<String, dynamic>.from(x))
               .toList();
           _pageLoading = false;
+          _pageConfigError = null;
         });
       }
-    } catch (_) {}
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _pageLoading = false;
+          _pageConfigError = '俱乐部页面配置加载失败：$error';
+        });
+      }
+    }
   }
 
   Future<void> _loadCompanions() async {
