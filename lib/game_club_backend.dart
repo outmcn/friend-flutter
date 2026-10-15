@@ -145,7 +145,7 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
                         child: [
                       _companions(),
                       _applications(),
-                      _orders(),
+                      _companionOrders(),
                       _afterSale()
                     ][tab])
                   ]),
@@ -235,22 +235,80 @@ class _GameClubAdminPageState extends State<GameClubAdminPage> {
         ],
       );
 
+  Future<void> _companionAction(int orderId, String action) async {
+    try {
+      await api
+          .post('/api/game-club/orders/$orderId/action', {'action': action});
+      await load();
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  Widget _companionOrders() => FutureBuilder<Map<String, dynamic>>(
+        future: api.get('/api/game-club/companion-orders'),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
+          final rows = snapshot.data!['orders'] as List? ?? [];
+          if (rows.isEmpty) return const Center(child: Text('暂无待处理订单'));
+          return ListView(
+            children: rows
+                .map((o) => Card(
+                      child: ListTile(
+                        title: Text('订单 #${o['id']} · ${o['status']}'),
+                        subtitle: Text(
+                            '${o['buyer_nickname'] ?? ''} · ${o['amount'] ?? 0} 钻石\n备注：${o['note'] ?? ''}'),
+                        isThreeLine: true,
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (action) =>
+                              _companionAction(int.parse('${o['id']}'), action),
+                          itemBuilder: (_) => [
+                            if (o['status'] == 'pending')
+                              const PopupMenuItem(
+                                  value: 'accept', child: Text('接单')),
+                            if (o['status'] == 'accepted')
+                              const PopupMenuItem(
+                                  value: 'start', child: Text('开始服务')),
+                            if (o['status'] == 'in_progress')
+                              const PopupMenuItem(
+                                  value: 'complete', child: Text('完成服务')),
+                            if ([
+                              'pending',
+                              'accepted',
+                              'in_progress',
+                              'after_sale'
+                            ].contains(o['status']))
+                              const PopupMenuItem(
+                                  value: 'refund', child: Text('退单/退款')),
+                          ],
+                        ),
+                      ),
+                    ))
+                .toList(),
+          );
+        },
+      );
   Widget _orders() => ListView(
       children: myOrders
           .map((o) => ListTile(
-              title: Text('订单 #${o['id']} · ${o['status']}'),
-              subtitle: Text(
-                  '${o['buyer_nickname']} → ${o['companion_nickname']} · ${o['project_title'] ?? ''}'),
-              trailing: PopupMenuButton<String>(
+                title: Text('订单 #${o['id']} · ${o['status']}'),
+                subtitle: Text(
+                    '${o['buyer_nickname']} → ${o['companion_nickname']} · ${o['project_title'] ?? ''}\n备注：${o['note'] ?? ''}'),
+                isThreeLine: true,
+                trailing: PopupMenuButton<String>(
                   onSelected: (s) =>
                       _patch('/api/game-club/orders/${o['id']}', {'status': s}),
                   itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'accepted', child: Text('接受')),
-                        PopupMenuItem(value: 'completed', child: Text('完成')),
-                        PopupMenuItem(value: 'cancelled', child: Text('取消')),
-                        PopupMenuItem(value: 'refunded', child: Text('退款'))
-                      ])))
+                    PopupMenuItem(value: 'accepted', child: Text('接受')),
+                    PopupMenuItem(value: 'completed', child: Text('完成')),
+                    PopupMenuItem(value: 'cancelled', child: Text('取消')),
+                    PopupMenuItem(value: 'refunded', child: Text('退款')),
+                  ],
+                ),
+              ))
           .toList());
+
   Future<void> _editCompanionLabel(dynamic c) async {
     final controller = TextEditingController(text: '${c['card_label'] ?? ''}');
     final label = await showDialog<String>(
