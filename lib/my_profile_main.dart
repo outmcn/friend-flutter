@@ -54,34 +54,23 @@ class _WalletPageState extends State<WalletPage> {
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xff6d5dfc), Color(0xffa66cff)]),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('钻石资产', style: TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 10),
-                  Text(loading ? '加载中…' : '$diamondBalance 钻石',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 8),
-                  Text('冻结：$diamondFrozenBalance 钻石',
-                      style: const TextStyle(color: Colors.white70)),
-                  if (widget.showCoinBalance) ...[
-                    const SizedBox(height: 8),
-                    Text('金币余额：$coinBalance',
-                        style: const TextStyle(color: Colors.white70)),
-                  ],
-                ],
-              ),
+            _WalletAssetCard(
+              title: '钻石钱包',
+              subtitle: '用于陪玩消费',
+              amount: loading ? '加载中…' : '$diamondBalance 钻石',
+              detail: '冻结：$diamondFrozenBalance 钻石，完成后结算给主播',
+              colors: const [Color(0xff6d5dfc), Color(0xffa66cff)],
             ),
+            if (widget.showCoinBalance) ...[
+              const SizedBox(height: 16),
+              _WalletAssetCard(
+                title: '金币钱包',
+                subtitle: '用于整个平台消费',
+                amount: loading ? '加载中…' : '$coinBalance 金币',
+                detail: '金币不冻结，全部归平台',
+                colors: const [Color(0xffe07a22), Color(0xfff0b44d)],
+              ),
+            ],
             const SizedBox(height: 20),
             FilledButton.icon(
                 onPressed: () {},
@@ -98,6 +87,47 @@ class _WalletPageState extends State<WalletPage> {
                     leading: Icon(Icons.info_outline),
                     title: Text('金币充值功能暂未接入支付'),
                     subtitle: Text('当前仅展示钱包页面，暂不产生真实订单。'))),
+          ],
+        ),
+      );
+}
+
+class _WalletAssetCard extends StatelessWidget {
+  const _WalletAssetCard({
+    required this.title,
+    required this.subtitle,
+    required this.amount,
+    required this.detail,
+    required this.colors,
+  });
+
+  final String title;
+  final String subtitle;
+  final String amount;
+  final String detail;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: colors),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(color: Colors.white60)),
+            const SizedBox(height: 10),
+            Text(amount,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Text(detail, style: const TextStyle(color: Colors.white70)),
           ],
         ),
       );
