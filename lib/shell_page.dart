@@ -39,7 +39,7 @@ Future<void> openCompanionChat(
   final service = DDPostService();
   try {
     final conversationId =
-        await service.createDirectConversation(token, peerId);
+        await service.createCompanionConversation(token, peerId);
     final me = await service.fetchMe(token);
     final currentUserId = '${me['id'] ?? ''}';
     final chat =
