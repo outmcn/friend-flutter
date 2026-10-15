@@ -425,7 +425,10 @@ class _InlineProfileStat extends StatelessWidget {
             onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: child,
+              child: SizedBox(
+                height: 48,
+                child: child,
+              ),
             ),
           );
   }
