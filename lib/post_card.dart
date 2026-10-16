@@ -342,10 +342,15 @@ class _DiscoverProfileCard extends StatelessWidget {
     final image = post.imageUrl?.trim();
     final video = post.videoUrl?.trim();
     if (image != null && image.isNotEmpty) {
-      return _PermanentCachedImage(
-        url: image,
-        width: double.infinity,
-        fit: BoxFit.contain,
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 400),
+        child: ClipRect(
+          child: _PermanentCachedImage(
+            url: image,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+        ),
       );
     }
     if (video != null && video.isNotEmpty) {
@@ -354,10 +359,15 @@ class _DiscoverProfileCard extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           post.thumbnailUrl?.isNotEmpty == true
-              ? _PermanentCachedImage(
-                  url: post.thumbnailUrl!,
-                  width: double.infinity,
-                  fit: BoxFit.contain,
+              ? ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 400),
+                  child: ClipRect(
+                    child: _PermanentCachedImage(
+                      url: post.thumbnailUrl!,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 )
               : const SizedBox(height: 180),
           const Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
