@@ -476,13 +476,25 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (mounted) await _refreshProfileOnly();
   }
 
-  Future<void> _setPresenceMode(String mode) async {
+  Future<void> _setPresenceMode(
+    String mode,
+    void Function(void Function())? setSheetState,
+  ) async {
+    final previous = _stealth;
+    final nextStealth = mode == 'stealth';
+    if (mounted) {
+      setState(() => _stealth = nextStealth);
+      setSheetState?.call(() {});
+    }
     try {
       final token = await _token();
       await service.setPresence(token, mode);
-      if (mounted) setState(() => _stealth = mode == 'stealth');
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('在线状态更新失败：$e'));
+      if (mounted) {
+        setState(() => _stealth = previous);
+        setSheetState?.call(() {});
+        _showTopNotice(context, Text('在线状态更新失败：$e'));
+      }
     }
   }
 
@@ -509,7 +521,10 @@ class _DDProfilePageState extends State<DDProfilePage>
                 trailing: Switch(
                   value: !_stealth,
                   onChanged: (value) {
-                    unawaited(_setPresenceMode(value ? 'online' : 'stealth'));
+                    unawaited(_setPresenceMode(
+                      value ? 'online' : 'stealth',
+                      setSheetState,
+                    ));
                   },
                 ),
               ),
