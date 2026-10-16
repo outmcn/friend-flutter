@@ -396,6 +396,7 @@ class _DDProfilePageState extends State<DDProfilePage> {
     );
     if (mounted) await _refreshProfileOnly();
   }
+
   Future<void> _toggleSonic() async {
     final url = _sonicUrl;
     if (url == null || url.isEmpty) {
@@ -422,8 +423,9 @@ class _DDProfilePageState extends State<DDProfilePage> {
         builder: (_) => _VoiceRecordPage(currentUrl: _sonicUrl),
       ),
     );
-    if (mounted) await load(forceRefresh: true);
+    if (mounted) await _refreshProfileOnly();
   }
+
   Future<void> _openPresenceControls() async {
     await showModalBottomSheet<void>(
       context: context,
