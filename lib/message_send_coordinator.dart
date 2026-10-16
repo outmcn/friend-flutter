@@ -228,7 +228,7 @@ class MessageSendCoordinator {
       final delay = backoff * (1 << attempt.clamp(0, 4));
       attempt++;
       final remaining = operationDeadline.difference(DateTime.now());
-      if (remaining <= Duration.zero) break;
+      if (remaining <= Duration.zero || attempt >= 6) break;
       await Future<void>.delayed(delay < remaining ? delay : remaining);
     }
     message = _publish(account, {
