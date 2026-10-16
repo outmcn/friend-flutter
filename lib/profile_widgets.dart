@@ -239,6 +239,10 @@ class _MyProfilePostCard extends StatelessWidget {
         url: url,
         width: double.infinity,
         fit: BoxFit.cover,
+        placeholder: const SizedBox(
+          height: 180,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
       ),
     );
   }
@@ -268,6 +272,11 @@ class _MyProfilePostCard extends StatelessWidget {
                       url: image,
                       width: double.infinity,
                       fit: BoxFit.contain,
+                      placeholder: const SizedBox(
+                        height: 180,
+                        child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
                     ),
                   ),
                 )
@@ -282,8 +291,7 @@ class _MyProfilePostCard extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: ConstrainedBox(
-                            constraints:
-                                const BoxConstraints(maxHeight: 400),
+                            constraints: const BoxConstraints(maxHeight: 400),
                             child: _profileMedia(
                               url: post.thumbnailUrl!,
                               thumbnail: true,
