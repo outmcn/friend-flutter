@@ -446,16 +446,16 @@ class _DiscoverProfileCard extends StatelessWidget {
                   (image != null && image.isNotEmpty ||
                       video != null && video.isNotEmpty))
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 12, 6, 0),
+                  padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
                   child: Text(
                     post.content.trim(),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 18, height: 1.35),
+                    style: const TextStyle(fontSize: 16, height: 1.3),
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 child: Row(
                   children: [
                     ClipOval(
