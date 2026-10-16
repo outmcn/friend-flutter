@@ -361,6 +361,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _locationRefreshing = false;
   bool _presenceSheetOpen = false;
   bool _tabSwitching = false;
+  Timer? _presenceTimer;
   bool _appActive = true;
 
   @override
@@ -368,6 +369,9 @@ class _DDProfilePageState extends State<DDProfilePage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _profileScrollController.addListener(_handleProfileScroll);
+    _presenceTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (_appActive) _sendPresenceHeartbeat();
+    });
     _sonicPlayer.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _sonicPlaying = false);
     });
@@ -420,6 +424,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _presenceTimer?.cancel();
     _profileScrollController.removeListener(_handleProfileScroll);
     _profileScrollController.dispose();
     for (final feed in feeds) {
@@ -507,6 +512,23 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (mounted) await _refreshProfileOnly();
   }
 
+  Future<void> _setPresenceMode(String mode) async {
+    try {
+      final token = await _token();
+      await service.setPresence(token, mode);
+      if (mounted) setState(() => _stealth = mode == 'stealth');
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('在线状态更新失败：$e'));
+    }
+  }
+
+  Future<void> _sendPresenceHeartbeat() async {
+    try {
+      final token = await _token();
+      await service.presenceHeartbeat(token);
+    } catch (_) {}
+  }
+
   Future<void> _openPresenceControls() async {
     if (_presenceSheetOpen) return;
     setState(() => _presenceSheetOpen = true);
@@ -526,8 +548,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                 trailing: Switch(
                   value: !_stealth,
                   onChanged: (value) {
-                    setSheetState(() => _stealth = !value);
-                    setState(() {});
+                    unawaited(_setPresenceMode(value ? 'online' : 'stealth'));
                   },
                 ),
               ),

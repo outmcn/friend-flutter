@@ -1013,6 +1013,26 @@ class DDPostService {
     return avatarUrl(token, key);
   }
 
+  Future<Map<String, dynamic>> setPresence(String token, String mode) async {
+    final response = await _client.patch(
+      _api('/me/presence'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'mode': mode}),
+    );
+    return _decodeResponse(response, '在线状态更新失败');
+  }
+
+  Future<Map<String, dynamic>> presenceHeartbeat(String token) async {
+    final response = await _client.post(
+      _api('/me/presence/heartbeat'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return _decodeResponse(response, '在线状态心跳失败');
+  }
+
   Future<Map<String, dynamic>> fetchMe(String token) async {
     final data = await _fetchObject(token, '/api/me');
     final user = data['user'];
