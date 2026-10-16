@@ -407,13 +407,16 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
 
-  Future<void> _openCityEditor() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const EditProfilePage()),
-    );
-    if (mounted) await _refreshProfileOnly();
+  Future<void> _refreshCityFromLocation() async {
+    try {
+      final token = await _token();
+      await syncCachedLocation(service, token);
+      await _refreshProfileOnly();
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('定位更新失败：$e'));
+    }
   }
+
   String _formatCount(dynamic value) {
     final number = int.tryParse('$value') ?? 0;
     if (number >= 100000000) {
@@ -754,7 +757,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         bottom: -9,
                                         child: Center(
                                           child: InkWell(
-                                            onTap: _openCityEditor,
+                                            onTap: _refreshCityFromLocation,
                                             borderRadius:
                                                 BorderRadius.circular(999),
                                             child: Container(
@@ -849,11 +852,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       label: _appActive
                                           ? (_stealth ? '隐身状态设置' : '在线状态设置')
                                           : '离线状态设置',
-                                      child: InkWell(
-                                        onTap: _openCityEditor,
-                                        borderRadius:
-                                            BorderRadius.circular(999),
-                                        child: Container(
+                                      child: Container(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
