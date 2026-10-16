@@ -60,6 +60,34 @@ Future<void> openCompanionChat(
   }
 }
 
+class _CompanionChatNotice extends StatelessWidget {
+  const _CompanionChatNotice({required this.onReport});
+  final VoidCallback onReport;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('陪玩系统聊天记录可能作为订单售后依据！'),
+                  SizedBox(height: 3),
+                  Text('请不要私下与对方联系！'),
+                ],
+              ),
+            ),
+            TextButton(onPressed: onReport, child: const Text('举报')),
+          ],
+        ),
+      );
+}
+
 class _CompanionChatPage extends StatefulWidget {
   const _CompanionChatPage({
     required this.chat,
@@ -107,6 +135,42 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
       if (mounted) _showTopErrorBanner(context, '$e');
     } finally {
       if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _reportCompanionChat() async {
+    final candidates = messages.where((message) => message.id.isNotEmpty).toList();
+    if (candidates.isEmpty) {
+      if (mounted) _showTopErrorBanner(context, '暂无可举报的聊天记录');
+      return;
+    }
+    final reason = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => const _ChatReportPage(reasons: [
+          '色情低俗',
+          '诈骗信息',
+          '攻击谩骂',
+          '导流到站外',
+          '违法违规',
+        ]),
+      ),
+    );
+    if (!mounted || reason == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    final service = DDPostService();
+    try {
+      await service.reportImMessage(
+        token,
+        widget.chat.conversationId,
+        candidates.last.id,
+        reason,
+      );
+      if (mounted) _showTopNotice(context, const Text('举报已提交'));
+    } catch (e) {
+      if (mounted) _showTopErrorBanner(context, '$e');
+    } finally {
+      service.dispose();
     }
   }
 
@@ -181,6 +245,12 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
                     widget.peerName,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    TIcons.gamepad,
+                    size: 17,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ],
               ),
             ),
@@ -188,6 +258,7 @@ class _CompanionChatPageState extends State<_CompanionChatPage> {
         ),
         body: Column(
           children: [
+            _CompanionChatNotice(onReport: _reportCompanionChat),
             Expanded(
               child: loading
                   ? const Center(child: CircularProgressIndicator())
@@ -855,8 +926,24 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(chat.name,
-                              style: Theme.of(context).textTheme.bodyLarge),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(chat.name,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodyLarge),
+                              ),
+                              if (chat.kind == 'companion') ...[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  TIcons.gamepad,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                         Text(formatDDTime(chat.updatedAt ?? ''),
                             style: TextStyle(
