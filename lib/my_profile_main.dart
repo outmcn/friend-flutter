@@ -336,6 +336,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _smartBlock = false;
   bool _matching = false;
   bool _profileRefreshing = false;
+  bool _locationRefreshing = false;
   bool _tabSwitching = false;
   bool _appActive = true;
 
@@ -408,6 +409,8 @@ class _DDProfilePageState extends State<DDProfilePage>
 
 
   Future<void> _refreshCityFromLocation() async {
+    if (_locationRefreshing) return;
+    setState(() => _locationRefreshing = true);
     try {
       final token = await _token();
       final city = await syncCachedLocation(service, token);
@@ -417,6 +420,8 @@ class _DDProfilePageState extends State<DDProfilePage>
       }
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('定位更新失败：$e'));
+    } finally {
+      if (mounted) setState(() => _locationRefreshing = false);
     }
   }
 
@@ -760,7 +765,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         bottom: -9,
                                         child: Center(
                                           child: InkWell(
-                                            onTap: _refreshCityFromLocation,
+                                            onTap: _locationRefreshing
+                                                ? null
+                                                : _refreshCityFromLocation,
                                             borderRadius:
                                                 BorderRadius.circular(999),
                                             child: Container(
@@ -782,13 +789,20 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                       offset: Offset(0, 2)),
                                                 ],
                                               ),
-                                            child: Text(
-                                              '${p?['city'] ?? ''}'.trim().isEmpty
-                                                  ? '添加城市'
-                                                  : '${p?['city']}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelSmall),
+                                              child: _locationRefreshing
+                                                  ? const SizedBox(
+                                                      width: 12,
+                                                      height: 12,
+                                                      child: CircularProgressIndicator(
+                                                          strokeWidth: 1.5),
+                                                    )
+                                                  : Text(
+                                                      '${p?['city'] ?? ''}'.trim().isEmpty
+                                                          ? '添加城市'
+                                                          : '${p?['city']}',
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .labelSmall),
                                           ),
                                         ),
                                       ),
