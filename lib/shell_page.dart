@@ -412,6 +412,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String? loadError;
   final Map<String, String> _avatarPaths = {};
   final Set<String> _pinnedConversationIds = <String>{};
+  final Set<String> _mutedConversationIds = <String>{};
   bool callDialogShowing = false;
   BuildContext? incomingDialogContext;
   bool outgoingCallStarting = false;
@@ -627,6 +628,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         ..addAll(cachedRows
             .where((row) => row['pinned'] == true)
             .map((row) => '${row['conversationId'] ?? ''}'));
+      _mutedConversationIds
+        ..clear()
+        ..addAll(cachedRows
+            .where((row) => row['muted'] == true)
+            .map((row) => '${row['conversationId'] ?? ''}'));
       if (cachedRows.isNotEmpty && mounted) {
         setState(() {
           conversations =
@@ -689,7 +695,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           row.peer?.avatarKey,
           row.peer?.id,
           row.id,
-          row.unreadCount,
+          _mutedConversationIds.contains(row.id) ? 0 : row.unreadCount,
           row.peerReadMessageId,
           row.updatedAt,
           row.kind,
@@ -937,6 +943,33 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         if (ap != bp) return ap ? -1 : 1;
         return 0;
       });
+    });
+    final accountId = ImSession.instance.userId ??
+        (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
+    if (accountId.isNotEmpty) {
+      await ImLocalStore.saveConversations(
+        accountId: accountId,
+        conversations: conversations.map((item) => item.toCache()).toList(),
+      );
+    }
+  }
+
+  Future<void> _toggleMutedConversation(_ChatPreview chat) async {
+    final muted = !_mutedConversationIds.contains(chat.conversationId);
+    setState(() {
+      if (muted) {
+        _mutedConversationIds.add(chat.conversationId);
+      } else {
+        _mutedConversationIds.remove(chat.conversationId);
+      }
+      final index = conversations.indexWhere(
+          (item) => item.conversationId == chat.conversationId);
+      if (index >= 0) {
+        conversations[index] = chat.copyWith(
+          muted: muted,
+          unreadCount: muted ? 0 : chat.unreadCount,
+        );
+      }
     });
     final accountId = ImSession.instance.userId ??
         (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
@@ -1228,7 +1261,7 @@ class _ConversationSwipeButton extends StatelessWidget {
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.peerUserId, this.conversationId, this.unreadCount,
-      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm', this.pinned = false]);
+      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm', this.pinned = false, this.muted = false]);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -1240,6 +1273,7 @@ class _ChatPreview {
   final String? updatedAt;
   final String kind;
   final bool pinned;
+  final bool muted;
 
   factory _ChatPreview.fromCache(Map<String, dynamic> row) => _ChatPreview(
         '${row['name'] ?? '用户'}',
@@ -1253,20 +1287,22 @@ class _ChatPreview {
         row['updatedAt']?.toString(),
         '${row['kind'] ?? 'dm'}',
         row['pinned'] == true,
+        row['muted'] == true,
       );
 
-  _ChatPreview copyWith({bool? pinned}) => _ChatPreview(
+  _ChatPreview copyWith({bool? pinned, bool? muted, int? unreadCount}) => _ChatPreview(
         name,
         preview,
         avatarUrl,
         avatarKey,
         peerUserId,
         conversationId,
-        unreadCount,
+        unreadCount ?? this.unreadCount,
         peerReadMessageId,
         updatedAt,
         kind,
         pinned ?? this.pinned,
+        muted ?? this.muted,
       );
 
   Map<String, dynamic> toCache() => {
@@ -1281,6 +1317,7 @@ class _ChatPreview {
         'updatedAt': updatedAt,
         'kind': kind,
         'pinned': pinned,
+        'muted': muted,
       };
 }
 
@@ -2293,6 +2330,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           peerUserId: widget.chat.peerUserId,
           initiallyBlocked: blockedConversation,
           initiallyPinned: widget.chat.pinned,
+          initiallyMuted: widget.chat.muted,
           onTogglePinned: () async {
             final accountId = currentUserId;
             final prefs = await SharedPreferences.getInstance();
@@ -2306,6 +2344,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             await ImLocalStore.saveConversations(
                 accountId: accountId, conversations: rows);
           },
+          onToggleMuted: () => _toggleMutedConversation(widget.chat),
         ),
       ),
     );
@@ -3448,13 +3487,17 @@ class _ChatSettingsPage extends StatefulWidget {
     required this.peerUserId,
     required this.initiallyBlocked,
     required this.initiallyPinned,
+    required this.initiallyMuted,
     required this.onTogglePinned,
+    required this.onToggleMuted,
   });
   final String chatName;
   final String? peerUserId;
   final bool initiallyBlocked;
   final bool initiallyPinned;
+  final bool initiallyMuted;
   final Future<void> Function() onTogglePinned;
+  final Future<void> Function() onToggleMuted;
 
   @override
   State<_ChatSettingsPage> createState() => _ChatSettingsPageState();
@@ -3462,7 +3505,7 @@ class _ChatSettingsPage extends StatefulWidget {
 
 class _ChatSettingsPageState extends State<_ChatSettingsPage> {
   bool pinned;
-  bool muted = false;
+  bool muted;
   late bool blocked = widget.initiallyBlocked;
   bool changingBlock = false;
 
@@ -3470,6 +3513,7 @@ class _ChatSettingsPageState extends State<_ChatSettingsPage> {
   void initState() {
     super.initState();
     pinned = widget.initiallyPinned;
+    muted = widget.initiallyMuted;
   }
 
   Future<void> _toggleBlock() async {
@@ -3520,7 +3564,10 @@ class _ChatSettingsPageState extends State<_ChatSettingsPage> {
               secondary: const Icon(Icons.notifications_off_outlined),
               title: const Text('消息免打扰'),
               value: muted,
-              onChanged: (value) => setState(() => muted = value),
+              onChanged: (value) async {
+                setState(() => muted = value);
+                await widget.onToggleMuted();
+              },
             ),
             const Divider(height: 1),
             ListTile(
