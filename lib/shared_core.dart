@@ -117,6 +117,7 @@ class _PermanentCachedImage extends StatefulWidget {
 class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   String? localPath;
   bool failed = false;
+  bool loading = true;
 
   @override
   void initState() {
@@ -146,24 +147,37 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
     final cachedProvider = _PermanentImageCache.provider(requestedUrl);
     if (cachedProvider is FileImage) {
       localPath = cachedProvider.file.path;
+      if (mounted) setState(() => loading = false);
       return;
     }
     final memoryPath = _PermanentImageCache.peek(widget.url);
     if (memoryPath != null) {
-      if (mounted) setState(() => localPath = memoryPath);
+      if (mounted) setState(() {
+        localPath = memoryPath;
+        loading = false;
+      });
       return;
     }
     final diskPath = await _PermanentImageCache._diskPath(widget.url);
     if (diskPath != null && mounted && requestedUrl == widget.url) {
-      setState(() => localPath = diskPath);
+      setState(() {
+        localPath = diskPath;
+        loading = false;
+      });
       return;
     }
     final path = await _PermanentImageCache.get(requestedUrl);
     if (!mounted || requestedUrl != widget.url) return;
     if (path != null) {
-      setState(() => localPath = path);
+      setState(() {
+        localPath = path;
+        loading = false;
+      });
     } else {
-      setState(() => failed = localPath == null);
+      setState(() {
+        failed = localPath == null;
+        loading = false;
+      });
     }
   }
 
@@ -191,7 +205,12 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
     return SizedBox(
       width: widget.width,
       height: widget.height,
-      child: widget.placeholder ?? const SizedBox.shrink(),
+      child: loading
+          ? (widget.placeholder ??
+              const Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          : failed
+              ? const Center(child: Icon(Icons.broken_image_outlined))
+              : widget.placeholder ?? const SizedBox.shrink(),
     );
   }
 }
