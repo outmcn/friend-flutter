@@ -360,7 +360,7 @@ class _DiscoverProfileCard extends StatelessWidget {
             : 360.0;
         final width = aspect >= 1 ? maxWidth : maxWidth * aspect;
         final naturalHeight = width / aspect;
-        final height = naturalHeight.clamp(0.0, 400.0).toDouble();
+        final height = naturalHeight.clamp(0.0, 500.0).toDouble();
         final fittedWidth = height < naturalHeight ? height * aspect : width;
         return Align(
           alignment: Alignment.centerLeft,
@@ -392,7 +392,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     if (video != null && video.isNotEmpty) {
       return Stack(
         key: mediaKey,
-        alignment: Alignment.center,
+        alignment: Alignment.topLeft,
         children: [
           post.thumbnailUrl?.isNotEmpty == true
               ? _mediaFrame(url: post.thumbnailUrl!, thumbnail: true)
