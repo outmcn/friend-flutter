@@ -1071,17 +1071,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('收到的礼物',
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700)),
-                                    const SizedBox(height: 4),
-                                    Text('动态魅力值：$dynamicCharmCoins 金币',
-                                        style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary)),
-                                    const SizedBox(height: 8),
                                     Wrap(
                                       spacing: 8,
                                       runSpacing: 8,
@@ -1094,7 +1083,22 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                               ))
                                           .toList(),
                                     ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '发布时间：${formatDDTime(item.createdAt)}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
                                   ],
+                                ),
+                              )
+                            else
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                                child: Text(
+                                  '发布时间：${formatDDTime(item.createdAt)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ),
                             const SizedBox(height: 16),
