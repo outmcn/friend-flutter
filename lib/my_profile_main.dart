@@ -99,6 +99,7 @@ class _WalletPageState extends State<WalletPage> {
   String coinBalance = '0';
   String charmCoins = '0';
   bool loading = true;
+  bool _refreshing = false;
   String? error;
 
   @override
@@ -107,7 +108,9 @@ class _WalletPageState extends State<WalletPage> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool retry = false}) async {
+    if (_refreshing) return;
+    if (retry && mounted) setState(() => _refreshing = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
@@ -118,12 +121,18 @@ class _WalletPageState extends State<WalletPage> {
           diamondFrozenBalance = '${user['diamondFrozenBalance'] ?? '0.00'}';
           coinBalance = _integerAmount(user['coinBalance']);
           charmCoins = _integerAmount(user['charmCoins']);
+          error = null;
         });
       }
     } catch (e) {
       if (mounted) setState(() => error = '$e');
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          _refreshing = false;
+        });
+      }
     }
   }
 
@@ -166,9 +175,19 @@ class _WalletPageState extends State<WalletPage> {
                 label: const Text('充值')),
             if (error != null)
               Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child:
-                      Text(error!, style: const TextStyle(color: Colors.red))),
+                padding: const EdgeInsets.only(top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: _refreshing ? null : () => _load(retry: true),
+                      child: Text(_refreshing ? '重试中…' : '重试'),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 12),
             const Card(
                 child: ListTile(
