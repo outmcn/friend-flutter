@@ -358,21 +358,26 @@ class _DiscoverProfileCard extends StatelessWidget {
         final maxWidth = constraints.maxWidth < 360
             ? constraints.maxWidth
             : 360.0;
-        final width = aspect < 1 && maxWidth / aspect > 400
-            ? 400 * aspect
-            : maxWidth;
-        final height = width / aspect;
-        return SizedBox(
-          key: key,
-          width: width,
-          height: height,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _PermanentCachedImage(
-              url: url,
-              width: width,
-              height: height,
-              fit: BoxFit.contain,
+        final width = aspect > 1 ? maxWidth : maxWidth * aspect;
+        final unclampedHeight = width / aspect;
+        final height = unclampedHeight.clamp(0.0, 400.0).toDouble();
+        final actualWidth = height < unclampedHeight
+            ? height * aspect
+            : width;
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: SizedBox(
+            key: key,
+            width: actualWidth,
+            height: height,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _PermanentCachedImage(
+                url: url,
+                width: actualWidth,
+                height: height,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         );
