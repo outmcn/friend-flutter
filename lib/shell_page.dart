@@ -3015,13 +3015,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                                           .grey),
                                                                 )
                                                               : message['kind'] ==
-                                                                      'location'
-                                                                  ? ImLocationCard(
-                                                                      metadata:
-                                                                          message[
-                                                                              'metadata'])
-                                                                  : message['kind'] ==
-                                                                          'image'
+                                                                      'image'
                                                                       ? _imageMessageBody(
                                                                           message)
                                                                       : message['kind'] ==
