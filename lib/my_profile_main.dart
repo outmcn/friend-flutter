@@ -336,6 +336,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _smartBlock = false;
   bool _matching = false;
   bool _profileRefreshing = false;
+  bool _locationRefreshing = false;
   bool _tabSwitching = false;
   Timer? _presenceTimer;
   bool _appActive = true;
