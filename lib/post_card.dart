@@ -344,7 +344,8 @@ class _DiscoverProfileCard extends StatelessWidget {
     if (image != null && image.isNotEmpty) {
       return ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 400),
-        child: ClipRect(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
           child: _PermanentCachedImage(
             url: image,
             width: double.infinity,
@@ -361,7 +362,8 @@ class _DiscoverProfileCard extends StatelessWidget {
           post.thumbnailUrl?.isNotEmpty == true
               ? ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 400),
-                  child: ClipRect(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
                     child: _PermanentCachedImage(
                       url: post.thumbnailUrl!,
                       width: double.infinity,
