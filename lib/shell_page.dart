@@ -2347,7 +2347,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             await ImLocalStore.saveConversations(
                 accountId: accountId, conversations: rows);
           },
-          onToggleMuted: () => _toggleMutedConversation(widget.chat),
+          onToggleMuted: () async {
+            final accountId = currentUserId;
+            final cached = await ImLocalStore.conversations(accountId);
+            final rows = cached.map((row) {
+              if ('${row['conversationId'] ?? ''}' == widget.chat.conversationId) {
+                return {...row, 'muted': !(row['muted'] == true)};
+              }
+              return row;
+            }).toList();
+            await ImLocalStore.saveConversations(
+                accountId: accountId, conversations: rows);
+          },
         ),
       ),
     );
@@ -3507,8 +3518,8 @@ class _ChatSettingsPage extends StatefulWidget {
 }
 
 class _ChatSettingsPageState extends State<_ChatSettingsPage> {
-  bool pinned;
-  bool muted;
+  bool pinned = false;
+  bool muted = false;
   late bool blocked = widget.initiallyBlocked;
   bool changingBlock = false;
 
