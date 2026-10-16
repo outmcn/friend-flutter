@@ -411,6 +411,9 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (active != _appActive && mounted) {
       setState(() => _appActive = active);
     }
+    if (active) {
+      unawaited(_sendPresenceHeartbeat());
+    }
   }
   @override
   void didChangeDependencies() {
