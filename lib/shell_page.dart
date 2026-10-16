@@ -1033,9 +1033,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
+      child: Container(
           color: _pinnedConversationIds.contains(chat.conversationId)
               ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.28)
               : Theme.of(context).colorScheme.surface,
@@ -1115,22 +1113,22 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        if (_pinnedConversationIds.contains(chat.conversationId))
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4),
-                            child: Icon(
-                              Icons.lock_outline,
-                              size: 13,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        Flexible(
+                        Expanded(
                           child: Text(chat.preview,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   color: Theme.of(context).hintColor)),
                         ),
+                        if (_pinnedConversationIds.contains(chat.conversationId))
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Icon(
+                              Icons.lock_outline,
+                              size: 13,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
                       ],
                     ),
                   ],
@@ -1140,9 +1138,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
           ),
         ),
-      ),
-        ),
-    );
+      );
   }
 
   // ignore: unused_element
