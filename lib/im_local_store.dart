@@ -536,16 +536,15 @@ class ImLocalStore {
     return rows.map((row) => '${row['message_id']}').toSet();
   }
 
-  static Future<bool> isLocalMessageDeleted({
+  static Future<bool> hasConversationClearMarker({
     required String accountId,
     required String conversationId,
-    required String messageId,
   }) async {
     final rows = await (await _db()).query(
       'local_deleted_messages',
       columns: ['message_id'],
-      where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
-      whereArgs: [accountId, conversationId, messageId],
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
       limit: 1,
     );
     return rows.isNotEmpty;

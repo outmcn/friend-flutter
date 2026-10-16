@@ -567,13 +567,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final locallyDeleted = <String>{};
       if (accountId.isNotEmpty) {
         for (final row in rows) {
-          final lastMessageId = row.lastMessage?.id ?? '';
-          if (lastMessageId.isNotEmpty &&
-              await ImLocalStore.isLocalMessageDeleted(
-                accountId: accountId,
-                conversationId: row.id,
-                messageId: lastMessageId,
-              )) {
+          if (await ImLocalStore.hasConversationClearMarker(
+            accountId: accountId,
+            conversationId: row.id,
+          )) {
             locallyDeleted.add(row.id);
           }
         }
