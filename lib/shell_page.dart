@@ -938,22 +938,60 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _hideConversationPreview(_ChatPreview chat) async {
+    setState(() => conversations.removeWhere(
+        (item) => item.conversationId == chat.conversationId));
+    final accountId = ImSession.instance.userId ??
+        (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
+    if (accountId.isNotEmpty) {
+      await ImLocalStore.saveConversations(
+        accountId: accountId,
+        conversations: conversations.map((item) => item.toCache()).toList(),
+      );
+    }
+  }
+
+  Future<void> _deleteConversationPreview(_ChatPreview chat) async {
+    await _hideConversationPreview(chat);
+    final accountId = ImSession.instance.userId ??
+        (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
+    if (accountId.isNotEmpty) {
+      await ImLocalStore.clearConversation(
+        accountId: accountId,
+        conversationId: chat.conversationId,
+      );
+    }
+  }
+
   Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) =>
       Dismissible(
         key: ValueKey('conversation-${chat.conversationId}'),
         direction: DismissDirection.endToStart,
-        confirmDismiss: (_) async {
-          await _togglePinnedConversation(chat);
-          return false;
-        },
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          color: Theme.of(context).colorScheme.primary,
-          child: Text(
-            _pinnedConversationIds.contains(chat.conversationId) ? '取消置顶' : '置顶',
-            style: const TextStyle(color: Colors.white),
-          ),
+        confirmDismiss: (_) async => false,
+        background: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _ConversationSwipeButton(
+              color: Theme.of(context).colorScheme.primary,
+              label: _pinnedConversationIds.contains(chat.conversationId) ? '取消置顶' : '置顶',
+              icon: _pinnedConversationIds.contains(chat.conversationId)
+                  ? Icons.push_pin_outlined
+                  : Icons.push_pin,
+              onTap: () => _togglePinnedConversation(chat),
+            ),
+            _ConversationSwipeButton(
+              color: Colors.orange,
+              label: '不显示',
+              icon: Icons.visibility_off_outlined,
+              onTap: () => _hideConversationPreview(chat),
+            ),
+            _ConversationSwipeButton(
+              color: Colors.red,
+              label: '删除',
+              icon: Icons.delete_outline,
+              onTap: () => _deleteConversationPreview(chat),
+            ),
+          ],
         ),
         child: InkWell(
         onTap: () async {
@@ -1124,6 +1162,39 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
       final text = message.text.trim();
       return text.isEmpty ? null : text;
   }
+}
+
+class _ConversationSwipeButton extends StatelessWidget {
+  const _ConversationSwipeButton({
+    required this.color,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+  final Color color;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 72,
+        height: double.infinity,
+        child: Material(
+          color: color,
+          child: InkWell(
+            onTap: onTap,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 19),
+                const SizedBox(height: 2),
+                Text(label, style: const TextStyle(color: Colors.white, fontSize: 11)),
+              ],
+            ),
+          ),
+        ),
+      );
 }
 
 class _ChatPreview {
