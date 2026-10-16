@@ -1259,9 +1259,13 @@ class _ProfileActionButton extends StatelessWidget {
                   Text(label,
                       style: const TextStyle(fontWeight: FontWeight.w700)),
                   if (subtitle != null)
-                    Text(subtitle!,
-                        style: TextStyle(
-                            fontSize: 10, color: scheme.onSurfaceVariant)),
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 10, color: scheme.onSurfaceVariant),
+                    ),
                 ],
               ),
             ],
