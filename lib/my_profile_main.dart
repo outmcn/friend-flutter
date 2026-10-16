@@ -213,26 +213,6 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
   bool _refreshing = false;
   String? error;
 
-  int get totalQuantity => gifts.fold<int>(
-        0,
-        (sum, gift) => sum + (int.tryParse(
-                '${gift['received_quantity'] ?? gift['quantity'] ?? 0}') ??
-            0),
-      );
-
-  num _giftCharm(Map<String, dynamic> gift) => num.tryParse(
-          '${gift['charm_amount'] ?? gift['charmAmount'] ?? gift['coin_amount'] ?? 0}') ??
-      0;
-
-  num get totalCharm => gifts.fold<num>(
-        0,
-        (sum, gift) => sum +
-            _giftCharm(gift) *
-                (int.tryParse(
-                        '${gift['received_quantity'] ?? gift['quantity'] ?? 0}') ??
-                    0),
-      );
-
   @override
   void initState() {
     super.initState();
@@ -283,36 +263,6 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                   )
                 : Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _ExhibitionSummaryCard(
-                                title: '礼物总数',
-                                value: '$totalQuantity',
-                                suffix: '个',
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _ExhibitionSummaryCard(
-                                title: '礼物种类',
-                                value: '${gifts.length}',
-                                suffix: '种',
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _ExhibitionSummaryCard(
-                                title: '魅力值',
-                                value: totalCharm.toString(),
-                                suffix: '',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       Expanded(
                         child: gifts.isEmpty
                             ? const Center(child: Text('暂无礼物记录'))
@@ -347,13 +297,6 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                                           Text(
                                             '收到 ${gift['received_quantity'] ?? gift['quantity'] ?? 0} 个',
                                           ),
-                                          if (_giftCharm(gift) > 0)
-                                            Text(
-                                              '魅力值 +${(_giftCharm(gift) * (int.tryParse('${gift['received_quantity'] ?? gift['quantity'] ?? 0}') ?? 0)).toString()}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall,
-                                            ),
                                         ],
                                       ),
                                     ),
@@ -366,37 +309,6 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
       );
 }
 
-class _ExhibitionSummaryCard extends StatelessWidget {
-  const _ExhibitionSummaryCard({
-    required this.title,
-    required this.value,
-    required this.suffix,
-  });
-
-  final String title;
-  final String value;
-  final String suffix;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-          child: Column(
-            children: [
-              Text(title, style: Theme.of(context).textTheme.labelSmall),
-              const SizedBox(height: 4),
-              Text(
-                suffix.isEmpty ? value : '$value$suffix',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-        ),
-      );
-}
 class _WalletAssetCard extends StatelessWidget {
   const _WalletAssetCard({
     required this.title,
