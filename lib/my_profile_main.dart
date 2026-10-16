@@ -420,6 +420,16 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (number >= 10000) return '${(number / 10000).toStringAsFixed(1)}万';
     return number.toString();
   }
+  String _formatCount(dynamic value) {
+    final number = int.tryParse('$value') ?? 0;
+    if (number >= 100000000) {
+      return '${(number / 100000000).toStringAsFixed(1)}亿';
+    }
+    if (number >= 10000) {
+      return '${(number / 10000).toStringAsFixed(1)}万';
+    }
+    return number.toString();
+  }
   Future<void> _openEditProfile() async {
     await Navigator.push(
       context,
@@ -1046,7 +1056,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                               child: _ProfileActionButton(
                                 icon: Icons.account_balance_wallet_outlined,
                                 label: '钱包',
-                                subtitle: coinBalance > 0 ? '$coinBalance 金币' : null,
+                                subtitle: coinBalance > 0
+                                    ? _formatCount(coinBalance) + ' 金币'
+                                    : null,
                                 onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -1058,7 +1070,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                               child: _ProfileActionButton(
                                 icon: Icons.auto_awesome_outlined,
                                 label: '展馆',
-                                subtitle: charmCoins > 0 ? '$charmCoins 魅力值' : null,
+                                subtitle: charmCoins > 0
+                                    ? _formatCount(charmCoins) + ' 魅力值'
+                                    : null,
                                 onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
