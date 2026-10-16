@@ -1033,14 +1033,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
-          color: _pinnedConversationIds.contains(chat.conversationId)
+      child: Container(
+        color: _pinnedConversationIds.contains(chat.conversationId)
               ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.28)
               : Theme.of(context).colorScheme.surface,
-          child: InkWell(
-          onTap: () async {
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: InkWell(
+              onTap: () async {
           final prefs = await SharedPreferences.getInstance();
           final currentUserId = prefs.getString('friend.auth.userId') ?? '';
           if (!context.mounted) return;
@@ -1138,10 +1138,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               ),
             ],
           ),
+            ),
           ),
         ),
-        ),
-      ),
     );
   }
 
