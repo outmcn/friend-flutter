@@ -1055,12 +1055,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                 style: TextStyle(
                                     fontSize: 11,
                                     color: Theme.of(context).hintColor)),
-                            if (_pinnedConversationIds.contains(chat.conversationId))
-                              Icon(
-                                Icons.lock_outline,
-                                size: 13,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
                           ],
                         ),
                         if (chat.unreadCount > 0) ...[
@@ -1084,10 +1078,26 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       ],
                     ),
                     const SizedBox(height: 3),
-                    Text(chat.preview,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Theme.of(context).hintColor)),
+                    Row(
+                      children: [
+                        if (_pinnedConversationIds.contains(chat.conversationId))
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Icon(
+                              Icons.lock_outline,
+                              size: 13,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        Flexible(
+                          child: Text(chat.preview,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: Theme.of(context).hintColor)),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
