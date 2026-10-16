@@ -491,8 +491,8 @@ class _DDProfilePageState extends State<DDProfilePage>
     try {
       await showModalBottomSheet<void>(
         context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
+        showDragHandle: true,
+        builder: (sheetContext) => StatefulBuilder(
         builder: (_, setSheetState) => SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -543,6 +543,7 @@ class _DDProfilePageState extends State<DDProfilePage>
           ),
         ),
       ),
+    );
     } finally {
       if (mounted) setState(() => _presenceSheetOpen = false);
     }
