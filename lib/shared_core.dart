@@ -138,6 +138,8 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
         localPath = cached;
       }
       failed = false;
+      loading = true;
+      if (mounted) setState(() {});
       _load();
     }
   }
@@ -181,6 +183,14 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
     }
   }
 
+  Future<void> _reloadMedia() async {
+    if (loading) return;
+    setState(() {
+      failed = false;
+      loading = true;
+    });
+    await _load();
+  }
   @override
   Widget build(BuildContext context) {
     final path = localPath;
@@ -209,7 +219,19 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
           ? (widget.placeholder ??
               const Center(child: CircularProgressIndicator(strokeWidth: 2)))
           : failed
-              ? const Center(child: Icon(Icons.broken_image_outlined))
+              ? GestureDetector(
+                  onTap: _reloadMedia,
+                  child: const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.broken_image_outlined),
+                        SizedBox(height: 4),
+                        Text('点击重试'),
+                      ],
+                    ),
+                  ),
+                )
               : widget.placeholder ?? const SizedBox.shrink(),
     );
   }
