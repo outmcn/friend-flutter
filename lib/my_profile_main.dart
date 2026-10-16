@@ -161,21 +161,14 @@ class _WalletPageState extends State<WalletPage> {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-                onPressed: null,
+                onPressed: () {},
                 icon: const Icon(Icons.add_circle_outline),
-                label: const Text('充值暂未开放')),
+                label: const Text('充值')),
             if (error != null)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(error!, style: const TextStyle(color: Colors.red)),
-                    const SizedBox(height: 8),
-                    OutlinedButton(onPressed: _load, child: const Text('重试')),
-                  ],
-                ),
-              ),
+                  padding: const EdgeInsets.only(top: 12),
+                  child:
+                      Text(error!, style: const TextStyle(color: Colors.red))),
             const SizedBox(height: 12),
             const Card(
                 child: ListTile(
@@ -231,23 +224,8 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(error!, textAlign: TextAlign.center),
-                          const SizedBox(height: 12),
-                          OutlinedButton(
-                              onPressed: _load, child: const Text('重试')),
-                        ],
-                      ),
-                    ),
-                  )
-                : gifts.isEmpty
-                    ? const Center(child: Text('暂无礼物记录'))
-                    : GridView.builder(
+                ? Center(child: Text(error!))
+                : GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
@@ -358,8 +336,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _smartBlock = false;
   bool _matching = false;
   bool _profileRefreshing = false;
-  bool _locationRefreshing = false;
-  bool _presenceSheetOpen = false;
   bool _tabSwitching = false;
   Timer? _presenceTimer;
   bool _appActive = true;
@@ -437,34 +413,13 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
 
-  Future<void> _refreshCityFromLocation() async {
-    if (_locationRefreshing) return;
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      if (mounted) _showTopNotice(context, const Text('请先开启系统定位服务'));
-      return;
-    }
-    final permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.deniedForever) {
-      if (mounted) {
-        _showTopNotice(context, const Text('定位权限已永久拒绝，请到系统设置开启'));
-      }
-      return;
-    }
-    setState(() => _locationRefreshing = true);
-    try {
-      final token = await _token();
-      final city = await syncCachedLocation(service, token);
-      await _refreshProfileOnly();
-      if (mounted && city.isEmpty) {
-        _showTopNotice(context, const Text('暂未获取到城市，请检查定位权限'));
-      }
-    } catch (e) {
-      if (mounted) _showTopNotice(context, Text('定位更新失败：$e'));
-    } finally {
-      if (mounted) setState(() => _locationRefreshing = false);
-    }
+  Future<void> _openCityEditor() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EditProfilePage()),
+    );
+    if (mounted) await _refreshProfileOnly();
   }
-
   String _formatCount(dynamic value) {
     final number = int.tryParse('$value') ?? 0;
     if (number >= 100000000) {
@@ -531,13 +486,10 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   Future<void> _openPresenceControls() async {
-    if (_presenceSheetOpen) return;
-    setState(() => _presenceSheetOpen = true);
-    try {
-      await showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (sheetContext) => StatefulBuilder(
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
         builder: (_, setSheetState) => SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -588,9 +540,6 @@ class _DDProfilePageState extends State<DDProfilePage>
         ),
       ),
     );
-    } finally {
-      if (mounted) setState(() => _presenceSheetOpen = false);
-    }
   }
 
   Future<void> _selectProfileTab(int tab) async {
@@ -826,45 +775,32 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         right: 0,
                                         bottom: -9,
                                         child: Center(
-                                          child: InkWell(
-                                            onTap: _locationRefreshing
-                                                ? null
-                                                : _refreshCityFromLocation,
-                                            borderRadius:
-                                                BorderRadius.circular(999),
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 10, vertical: 3),
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .surface,
-                                                border: Border.all(
-                                                    color: Theme.of(context)
-                                                        .dividerColor),
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                                boxShadow: const [
-                                                  BoxShadow(
-                                                      color: Color(0x19000000),
-                                                      blurRadius: 8,
-                                                      offset: Offset(0, 2)),
-                                                ],
-                                              ),
-                                              child: _locationRefreshing
-                                                  ? const SizedBox(
-                                                      width: 12,
-                                                      height: 12,
-                                                      child: CircularProgressIndicator(
-                                                          strokeWidth: 1.5),
-                                                    )
-                                                  : Text(
-                                                      '${p?['city'] ?? ''}'.trim().isEmpty
-                                                          ? '添加城市'
-                                                          : '${p?['city']}',
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .labelSmall),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .surface,
+                                              border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .dividerColor),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                    color: Color(0x19000000),
+                                                    blurRadius: 8,
+                                                    offset: Offset(0, 2)),
+                                              ],
+                                            ),
+                                            child: Text(
+                                              '${p?['city'] ?? ''}'.trim().isEmpty
+                                                  ? '添加城市'
+                                                  : '${p?['city']}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelSmall),
                                           ),
                                         ),
                                       ),
@@ -931,7 +867,10 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       label: _appActive
                                           ? (_stealth ? '隐身状态设置' : '在线状态设置')
                                           : '离线状态设置',
-                                      child: Container(
+                                      child: InkWell(
+                                        onTap: _openCityEditor,
+                                        borderRadius: BorderRadius.circular(999),
+                                        child: Container(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
@@ -947,7 +886,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             borderRadius:
                                                 BorderRadius.circular(999),
                                           ),
-                                          child: Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Container(
