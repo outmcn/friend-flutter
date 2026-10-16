@@ -931,6 +931,34 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         ),
       );
 
+  Widget _detailPayload(Widget child) {
+    final item = post;
+    if (item == null) return child;
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (item.imageUrl?.isNotEmpty == true)
+            _PostImageHolder(url: item.imageUrl!, unlimitedHeight: true)
+          else if (item.videoUrl?.isNotEmpty == true)
+            _NetworkVideoPreview(
+              url: item.videoUrl!,
+              thumbnailUrl: item.thumbnailUrl,
+              unlimitedHeight: true,
+            ),
+          if (item.content.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Text(item.content,
+                  style: const TextStyle(fontSize: 18, height: 1.5)),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_geometryReady) {
@@ -952,14 +980,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             _startOffset.dy * (1 - t),
           );
           final radius = 14 * (1 - t);
+          // At release, keep only the media/text payload visible. The
+          // payload is then scaled and translated along the source-image line.
+          final payload = t >= 0.999 ? child : _detailPayload(child);
           return Transform.translate(
             offset: offset,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(radius),
-              child: ClipRect(
-                clipper: _DetailChromeClipper(t),
-                child: Transform.scale(scale: scale, child: child),
-              ),
+              child: Transform.scale(scale: scale, child: payload),
             ),
           );
         },
