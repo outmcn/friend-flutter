@@ -2292,6 +2292,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           chatName: widget.chat.name,
           peerUserId: widget.chat.peerUserId,
           initiallyBlocked: blockedConversation,
+          initiallyPinned: widget.chat.pinned,
+          onTogglePinned: () async {
+            final accountId = currentUserId;
+            final prefs = await SharedPreferences.getInstance();
+            final cached = await ImLocalStore.conversations(accountId);
+            final rows = cached.map((row) {
+              if ('${row['conversationId'] ?? ''}' == widget.chat.conversationId) {
+                return {...row, 'pinned': !(row['pinned'] == true)};
+              }
+              return row;
+            }).toList();
+            await ImLocalStore.saveConversations(
+                accountId: accountId, conversations: rows);
+          },
         ),
       ),
     );
@@ -3433,20 +3447,30 @@ class _ChatSettingsPage extends StatefulWidget {
     required this.chatName,
     required this.peerUserId,
     required this.initiallyBlocked,
+    required this.initiallyPinned,
+    required this.onTogglePinned,
   });
   final String chatName;
   final String? peerUserId;
   final bool initiallyBlocked;
+  final bool initiallyPinned;
+  final Future<void> Function() onTogglePinned;
 
   @override
   State<_ChatSettingsPage> createState() => _ChatSettingsPageState();
 }
 
 class _ChatSettingsPageState extends State<_ChatSettingsPage> {
-  bool pinned = false;
+  bool pinned;
   bool muted = false;
   late bool blocked = widget.initiallyBlocked;
   bool changingBlock = false;
+
+  @override
+  void initState() {
+    super.initState();
+    pinned = widget.initiallyPinned;
+  }
 
   Future<void> _toggleBlock() async {
     final peerId = int.tryParse(widget.peerUserId ?? '');
@@ -3487,7 +3511,10 @@ class _ChatSettingsPageState extends State<_ChatSettingsPage> {
               secondary: const Icon(Icons.push_pin_outlined),
               title: const Text('置顶聊天'),
               value: pinned,
-              onChanged: (value) => setState(() => pinned = value),
+              onChanged: (value) async {
+                setState(() => pinned = value);
+                await widget.onTogglePinned();
+              },
             ),
             SwitchListTile(
               secondary: const Icon(Icons.notifications_off_outlined),
