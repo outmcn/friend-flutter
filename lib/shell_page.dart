@@ -2659,6 +2659,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _markLatestRead() async {
+    if (widget.chat.kind == 'companion') return;
     if (messages.isEmpty || currentUserId.isEmpty) return;
     final chatMessages =
         messages.where((item) => !ImCall.isCall(item)).toList();
