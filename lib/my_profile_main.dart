@@ -1057,7 +1057,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                 icon: Icons.account_balance_wallet_outlined,
                                 label: '钱包',
                                 subtitle: coinBalance > 0
-                                    ? _formatCount(coinBalance) + ' 金币'
+                                    ? '$coinBalance 金币'
                                     : null,
                                 onTap: () => Navigator.push(
                                     context,
@@ -1071,7 +1071,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                 icon: Icons.auto_awesome_outlined,
                                 label: '展馆',
                                 subtitle: charmCoins > 0
-                                    ? _formatCount(charmCoins) + ' 魅力值'
+                                    ? '$charmCoins 魅力值'
                                     : null,
                                 onTap: () => Navigator.push(
                                     context,
