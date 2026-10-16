@@ -517,7 +517,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               ListTile(
                 title: const Text('在线 / 隐身'),
                 subtitle: Text(
-                    '${_stealth ? '当前：隐身' : '当前：在线'} · 仅本机显示'),
+                    '${_stealth ? '当前：隐身' : '当前：在线'} · 已同步'),
                 trailing: Switch(
                   value: !_stealth,
                   onChanged: (value) {
@@ -631,6 +631,10 @@ class _DDProfilePageState extends State<DDProfilePage>
           _sonicUrl = DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
           _avatarUrl = avatar;
           _tags = tags;
+          _stealth = '${loaded['presenceMode'] ?? 'online'}' == 'stealth';
+          _antiHarassment = loaded['antiHarassment'] == true;
+          _smartBlock = loaded['smartBlock'] == true;
+          _matching = loaded['matchingEnabled'] == true;
         });
       }
     } catch (e) {
@@ -706,6 +710,10 @@ class _DDProfilePageState extends State<DDProfilePage>
                 int.tryParse('${loadedProfile['charmCoins'] ?? 0}') ?? 0;
             _avatarUrl = avatar;
             _tags = tags;
+            _stealth = '${loadedProfile['presenceMode'] ?? 'online'}' == 'stealth';
+            _antiHarassment = loadedProfile['antiHarassment'] == true;
+            _smartBlock = loadedProfile['smartBlock'] == true;
+            _matching = loadedProfile['matchingEnabled'] == true;
           });
         }
       }
