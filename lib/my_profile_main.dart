@@ -317,7 +317,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   Map<String, dynamic>? profile;
   int coinBalance = 0;
   int charmCoins = 0;
-  bool walletLoading = false;
   List<DDPost> posts = [];
   int selectedTab = 0;
   bool loading = true;
