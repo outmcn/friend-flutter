@@ -338,26 +338,53 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onFavorite;
   final VoidCallback onOpen;
 
+  double _mediaAspect({required bool thumbnail}) {
+    final width = thumbnail ? post.thumbnailWidth : post.imageWidth;
+    final height = thumbnail ? post.thumbnailHeight : post.imageHeight;
+    if (width != null && height != null && width > 0 && height > 0) {
+      return width / height;
+    }
+    return 4 / 3;
+  }
+
+  Widget _mediaFrame({
+    required String url,
+    required bool thumbnail,
+    GlobalKey? key,
+  }) {
+    final aspect = _mediaAspect(thumbnail: thumbnail);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth < 360
+            ? constraints.maxWidth
+            : 360.0;
+        final width = aspect < 1 && maxWidth / aspect > 400
+            ? 400 * aspect
+            : maxWidth;
+        final height = width / aspect;
+        return SizedBox(
+          key: key,
+          width: width,
+          height: height,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _PermanentCachedImage(
+              url: url,
+              width: width,
+              height: height,
+              fit: BoxFit.contain,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _media(BuildContext context) {
     final image = post.imageUrl?.trim();
     final video = post.videoUrl?.trim();
     if (image != null && image.isNotEmpty) {
-      return ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 400),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 360),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _PermanentCachedImage(
-                url: image,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
-      );
+      return _mediaFrame(url: image, thumbnail: false, key: mediaKey);
     }
     if (video != null && video.isNotEmpty) {
       return Stack(
@@ -365,22 +392,7 @@ class _DiscoverProfileCard extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           post.thumbnailUrl?.isNotEmpty == true
-              ? ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 400),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 360),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: _PermanentCachedImage(
-                          url: post.thumbnailUrl!,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                  ),
-                )
+              ? _mediaFrame(url: post.thumbnailUrl!, thumbnail: true)
               : const SizedBox(height: 180),
           const Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
         ],
