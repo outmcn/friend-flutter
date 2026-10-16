@@ -69,14 +69,13 @@ class _CharmSourcesPageState extends State<_CharmSourcesPage> {
                           final coins = source['coinAmount'] ?? 0;
                           final created = _formatCharmSourceTime(
                               '${source['createdAt'] ?? ''}');
-                          final sourceType = '${source['source'] ?? '动态'}';
                           return ListTile(
                             leading: CircleAvatar(
                               child: Text(
                                   gift.isEmpty ? '礼' : gift.characters.first),
                             ),
                             title: Text('$sender送出$gift × $quantity'),
-                            subtitle: Text('$sourceType  ·  $created'),
+                            subtitle: Text('动态  ·  $created'),
                             trailing: Text('+$coins'),
                           );
                         },
@@ -100,7 +99,6 @@ class _WalletPageState extends State<WalletPage> {
   String coinBalance = '0';
   String charmCoins = '0';
   bool loading = true;
-  bool _refreshing = false;
   String? error;
 
   @override
@@ -109,9 +107,7 @@ class _WalletPageState extends State<WalletPage> {
     _load();
   }
 
-  Future<void> _load({bool retry = false}) async {
-    if (_refreshing) return;
-    if (retry && mounted) setState(() => _refreshing = true);
+  Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
@@ -122,18 +118,12 @@ class _WalletPageState extends State<WalletPage> {
           diamondFrozenBalance = '${user['diamondFrozenBalance'] ?? '0.00'}';
           coinBalance = _integerAmount(user['coinBalance']);
           charmCoins = _integerAmount(user['charmCoins']);
-          error = null;
         });
       }
     } catch (e) {
       if (mounted) setState(() => error = '$e');
     } finally {
-      if (mounted) {
-        setState(() {
-          loading = false;
-          _refreshing = false;
-        });
-      }
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -171,24 +161,14 @@ class _WalletPageState extends State<WalletPage> {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-                onPressed: null,
+                onPressed: () {},
                 icon: const Icon(Icons.add_circle_outline),
-                label: const Text('充值暂未开放')),
+                label: const Text('充值')),
             if (error != null)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(error!, style: const TextStyle(color: Colors.red)),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: _refreshing ? null : () => _load(retry: true),
-                      child: Text(_refreshing ? '重试中…' : '重试'),
-                    ),
-                  ],
-                ),
-              ),
+                  padding: const EdgeInsets.only(top: 12),
+                  child:
+                      Text(error!, style: const TextStyle(color: Colors.red))),
             const SizedBox(height: 12),
             const Card(
                 child: ListTile(
@@ -211,7 +191,6 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
   final DDPostService service = DDPostService();
   List<Map<String, dynamic>> gifts = const [];
   bool loading = true;
-  bool _refreshing = false;
   String? error;
 
   @override
@@ -220,28 +199,16 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
     _load();
   }
 
-  Future<void> _load({bool retry = false}) async {
-    if (_refreshing) return;
-    if (retry && mounted) setState(() => _refreshing = true);
+  Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
       final value = await service.fetchMyUserGifts(token);
-      if (mounted) {
-        setState(() {
-          gifts = value;
-          error = null;
-        });
-      }
+      if (mounted) setState(() => gifts = value);
     } catch (e) {
       if (mounted) setState(() => error = '$e');
     } finally {
-      if (mounted) {
-        setState(() {
-          loading = false;
-          _refreshing = false;
-        });
-      }
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -257,55 +224,39 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
-                ? _PageErrorState(
-                    title: '礼物展馆加载失败',
-                    subtitle: error!,
-                    onRetry: () => _load(retry: true),
-                  )
-                : Column(
-                    children: [
-                      Expanded(
-                        child: gifts.isEmpty
-                            ? const Center(child: Text('暂无礼物记录'))
-                            : GridView.builder(
-                                padding: const EdgeInsets.all(16),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 1.2,
-                                ),
-                                itemCount: gifts.length,
-                                itemBuilder: (_, index) {
-                                  final gift = gifts[index];
-                                  return Card(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(14),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text('${gift['icon'] ?? '🎁'}',
-                                              style: const TextStyle(
-                                                  fontSize: 34)),
-                                          const SizedBox(height: 8),
-                                          Text('${gift['name'] ?? '礼物'}',
-                                              style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700)),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            '收到 ${gift['received_quantity'] ?? gift['quantity'] ?? 0} 个',
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
+                ? Center(child: Text(error!))
+                : GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.2,
+                    ),
+                    itemCount: gifts.length,
+                    itemBuilder: (_, index) {
+                      final gift = gifts[index];
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('${gift['icon'] ?? '🎁'}',
+                                  style: const TextStyle(fontSize: 34)),
+                              const SizedBox(height: 8),
+                              Text('${gift['name'] ?? '礼物'}',
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 6),
+                              Text('收到 ${gift['received_quantity'] ?? 0} 个'),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
       );
 }
@@ -435,11 +386,8 @@ class _DDProfilePageState extends State<DDProfilePage>
     final active = state == AppLifecycleState.resumed;
     if (active != _appActive && mounted) {
       setState(() => _appActive = active);
-      if (active) {
-        unawaited(_refreshProfileOnly(showError: false));
-        unawaited(_sendPresenceHeartbeat());
-      }
     }
+    if (active) unawaited(_sendPresenceHeartbeat());
   }
   @override
   void didChangeDependencies() {
@@ -465,6 +413,13 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
 
+  Future<void> _openCityEditor() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EditProfilePage()),
+    );
+    if (mounted) await _refreshProfileOnly();
+  }
   String _formatCount(dynamic value) {
     final number = int.tryParse('$value') ?? 0;
     if (number >= 100000000) {
@@ -596,7 +551,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (mounted) setState(() => _tabSwitching = false);
     }
   }
-  Future<void> _refreshProfileOnly({bool showError = true}) async {
+  Future<void> _refreshProfileOnly() async {
     if (_profileRefreshing) return;
     setState(() => _profileRefreshing = true);
     try {
@@ -624,7 +579,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         });
       }
     } catch (e) {
-      if (showError && mounted) _showTopNotice(context, Text('资料刷新失败：$e'));
+      if (mounted) _showTopNotice(context, Text('资料刷新失败：$e'));
     } finally {
       if (mounted) setState(() => _profileRefreshing = false);
     }
@@ -820,18 +775,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         right: 0,
                                         bottom: -9,
                                         child: Center(
-                                          child: Semantics(
-                                            button: true,
-                                            label: _locationRefreshing
-                                                ? '正在更新城市'
-                                                : '点击定位更新城市',
-                                            child: InkWell(
-                                              onTap: _locationRefreshing
-                                                  ? null
-                                                  : _refreshCityFromLocation,
-                                              borderRadius:
-                                                  BorderRadius.circular(999),
-                                              child: Container(
+                                          child: Container(
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 10, vertical: 3),
                                             decoration: BoxDecoration(
@@ -860,7 +804,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ),
                                       ),
-                                    ),
                                     ],
                                   ),
                                   const SizedBox(width: 16),
@@ -917,18 +860,19 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ],
                                     ),
                                   ),
-                                      child: Semantics(
-                                        button: true,
-                                        label: _appActive
-                                            ? (_stealth ? '隐身状态设置' : '在线状态设置')
-                                            : '离线状态设置',
-                                        child: InkWell(
-                                          onTap: _openPresenceControls,
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                          child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 4),
+                                  GestureDetector(
+                                    onTap: _openPresenceControls,
+                                    child: Semantics(
+                                      button: true,
+                                      label: _appActive
+                                          ? (_stealth ? '隐身状态设置' : '在线状态设置')
+                                          : '离线状态设置',
+                                      child: InkWell(
+                                        onTap: _openCityEditor,
+                                        borderRadius: BorderRadius.circular(999),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: !_appActive
                                                 ? const Color(0xfff3f4f6)
@@ -973,11 +917,11 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ),
                                           ],
                                         ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            ],
+                                ],
                               ),
                               const SizedBox(height: 18),
                               Container(
@@ -1143,6 +1087,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                               child: _ProfileActionButton(
                                 icon: Icons.auto_awesome_outlined,
                                 label: '展馆',
+                                subtitle: charmCoins > 0
+                                    ? '$charmCoins 魅力值'
+                                    : null,
                                 onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -1263,13 +1210,9 @@ class _ProfileActionButton extends StatelessWidget {
                   Text(label,
                       style: const TextStyle(fontWeight: FontWeight.w700)),
                   if (subtitle != null)
-                    Text(
-                      subtitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontSize: 10, color: scheme.onSurfaceVariant),
-                    ),
+                    Text(subtitle!,
+                        style: TextStyle(
+                            fontSize: 10, color: scheme.onSurfaceVariant)),
                 ],
               ),
             ],
