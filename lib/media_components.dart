@@ -34,6 +34,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
   VideoPlayerController? controller;
   bool loading = false;
   bool ended = false;
+  String? error;
 
   void _onVideoChanged() {
     final active = controller;
@@ -74,7 +75,10 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
 
   Future<void> _play() async {
     if (loading) return;
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      error = null;
+    });
     final source = widget.url;
     final next = VideoPlayerController.networkUrl(Uri.parse(source));
     try {
@@ -90,9 +94,14 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
       });
       next.addListener(_onVideoChanged);
       await next.play();
-    } catch (_) {
+    } catch (error) {
       await next.dispose();
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          this.error = '视频加载失败，点击重试';
+        });
+      }
     }
   }
 
@@ -137,7 +146,22 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
             ),
             loading
                 ? const CircularProgressIndicator()
-                : const Icon(
+                : error != null
+                    ? DecoratedBox(
+                        decoration: const BoxDecoration(
+                          color: Color(0xaa000000),
+                          borderRadius:
+                              BorderRadius.all(Radius.circular(8)),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(
+                            error!,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                    : const Icon(
                     Icons.play_circle_outline,
                     size: 64,
                     color: Colors.white,
