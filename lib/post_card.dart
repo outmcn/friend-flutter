@@ -472,7 +472,10 @@ class _DiscoverProfileCard extends StatelessWidget {
                             Text(post.nickname,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.w700)),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                )),
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
@@ -506,7 +509,6 @@ class _DiscoverProfileCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     _media(context),
                   ],
-                  const Divider(height: 1),
                   Row(
                     children: [
                       _action(context: context, icon: TIcons.thumb_up_2,
