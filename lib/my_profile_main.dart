@@ -191,6 +191,7 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
   final DDPostService service = DDPostService();
   List<Map<String, dynamic>> gifts = const [];
   bool loading = true;
+  bool _refreshing = false;
   String? error;
 
   int get totalQuantity => gifts.fold<int>(
@@ -200,13 +201,14 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
             0),
       );
 
+  num _giftCharm(Map<String, dynamic> gift) => num.tryParse(
+          '${gift['charm_amount'] ?? gift['charmAmount'] ?? gift['coin_amount'] ?? 0}') ??
+      0;
+
   num get totalCharm => gifts.fold<num>(
         0,
-        (sum, gift) =>
-            sum +
-            (num.tryParse(
-                    '${gift['charm_amount'] ?? gift['charmAmount'] ?? gift['coin_amount'] ?? 0}') ??
-                0) *
+        (sum, gift) => sum +
+            _giftCharm(gift) *
                 (int.tryParse(
                         '${gift['received_quantity'] ?? gift['quantity'] ?? 0}') ??
                     0),
@@ -218,16 +220,28 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool retry = false}) async {
+    if (_refreshing) return;
+    if (retry && mounted) setState(() => _refreshing = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
       final value = await service.fetchMyUserGifts(token);
-      if (mounted) setState(() => gifts = value);
+      if (mounted) {
+        setState(() {
+          gifts = value;
+          error = null;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => error = '$e');
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          _refreshing = false;
+        });
+      }
     }
   }
 
@@ -243,7 +257,11 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
-                ? Center(child: Text(error!))
+                ? _PageErrorState(
+                    title: '礼物展馆加载失败',
+                    subtitle: error!,
+                    onRetry: () => _load(retry: true),
+                  )
                 : Column(
                     children: [
                       Padding(
@@ -307,7 +325,16 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w700)),
                                           const SizedBox(height: 6),
-                                          Text('收到 ${gift['received_quantity'] ?? 0} 个'),
+                                          Text(
+                                            '收到 ${gift['received_quantity'] ?? gift['quantity'] ?? 0} 个',
+                                          ),
+                                          if (_giftCharm(gift) > 0)
+                                            Text(
+                                              '魅力值 +${(_giftCharm(gift) * (int.tryParse('${gift['received_quantity'] ?? gift['quantity'] ?? 0}') ?? 0)).toString()}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall,
+                                            ),
                                         ],
                                       ),
                                     ),
