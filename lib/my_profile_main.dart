@@ -465,13 +465,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
 
-  Future<void> _openCityEditor() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const EditProfilePage()),
-    );
-    if (mounted) await _refreshProfileOnly();
-  }
   String _formatCount(dynamic value) {
     final number = int.tryParse('$value') ?? 0;
     if (number >= 100000000) {
@@ -827,7 +820,13 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         right: 0,
                                         bottom: -9,
                                         child: Center(
-                                          child: Container(
+                                          child: InkWell(
+                                            onTap: _locationRefreshing
+                                                ? null
+                                                : _refreshCityFromLocation,
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                            child: Container(
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 10, vertical: 3),
                                             decoration: BoxDecoration(
@@ -919,12 +918,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       label: _appActive
                                           ? (_stealth ? '隐身状态设置' : '在线状态设置')
                                           : '离线状态设置',
-                                      child: InkWell(
-                                        onTap: _openCityEditor,
-                                        borderRadius: BorderRadius.circular(999),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 4),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: !_appActive
                                                 ? const Color(0xfff3f4f6)
