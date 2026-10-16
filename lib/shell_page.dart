@@ -2526,56 +2526,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
-  Future<void> _sendLocation() async {
-    if (sendingLocation) return;
-    if (blockedConversation) {
-      _showTopErrorBanner(context, '当前会话不可发送');
-      return;
-    }
-    final confirmed = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('发送位置'),
-        content: const Text('请选择要发送的位置'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, 'current'),
-            child: const Text('当前位置'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, 'pick'),
-            child: const Text('选择其他位置'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == null || !mounted) return;
-    final navigator = Navigator.of(context);
-    sendingLocation = true;
-    try {
-      final location = confirmed == 'pick'
-          ? await navigator.push<ImLocation>(
-              MaterialPageRoute(builder: (_) => const ImLocationPickerPage()),
-            )
-          : await ImLocation.current();
-      if (!mounted) return;
-      if (location == null) return;
-      await _sendMessagePayload(
-        text: location.title,
-        kind: 'location',
-        metadata: location.toMetadata(),
-      );
-    } catch (error) {
-      if (mounted) {
-        _showTopErrorBanner(
-          context,
-          error is ImLocationException ? error.message : '获取位置失败，请稍后重试',
-        );
-      }
-    } finally {
-      sendingLocation = false;
-    }
-  }
 
   Future<void> _sendMessagePayload({
     required String text,
@@ -3387,14 +3337,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                           unawaited(_pickAndSendImage());
                         },
                       ),
-                      _ComposerAction(
-                        icon: Icons.location_on_outlined,
-                        label: '位置',
-                        onPressed: () {
-                          setState(() => moreExpanded = false);
-                          unawaited(_sendLocation());
-                        },
-                      ),
+
                     ],
                   ),
                 ),
