@@ -20,6 +20,16 @@ class DiscoverFeed extends ChangeNotifier {
     postChanges.value = updated;
   }
 
+  void updateFavorite(DDPost post) {
+    final index = posts.indexWhere((item) => item.id == post.id);
+    if (disposed || index < 0) return;
+    final updated = posts[index].copyWith(
+      favorited: post.favorited,
+      favorites: post.favorites,
+    );
+    posts[index] = updated;
+    postChanges.value = updated;
+  }
   void markChanged() {
     if (!disposed) notifyListeners();
   }

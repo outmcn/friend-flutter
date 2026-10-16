@@ -10,6 +10,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final service = DDPostService();
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
+  final pendingFavorites = <int>{};
   final _cardKeys = <String, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
@@ -87,6 +88,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   Future<void> _favorite(DDPost post) async {
+    if (!pendingFavorites.add(post.id)) return;
     try {
       await service.toggleFavorite(await _token(), post.id);
       if (!mounted) return;
@@ -95,11 +97,13 @@ class _DiscoverPageState extends State<DiscoverPage> {
         favorites: post.favorites + (post.favorited ? -1 : 1),
       );
       for (final feed in feeds) {
-        feed.updateLike(updated);
+        feed.updateFavorite(updated);
       }
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
       if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+    } finally {
+      pendingFavorites.remove(post.id);
     }
   }
 
