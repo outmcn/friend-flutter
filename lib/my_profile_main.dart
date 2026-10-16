@@ -782,7 +782,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                   : '${p?['city']}',
                                               style: Theme.of(context)
                                                   .textTheme
-                                            labelSmall),
+                                                  .labelSmall),
                                           ),
                                         ),
                                       ),
