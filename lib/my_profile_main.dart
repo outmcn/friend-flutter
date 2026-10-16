@@ -161,9 +161,9 @@ class _WalletPageState extends State<WalletPage> {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-                onPressed: () {},
+                onPressed: null,
                 icon: const Icon(Icons.add_circle_outline),
-                label: const Text('充值')),
+                label: const Text('充值暂未开放')),
             if (error != null)
               Padding(
                   padding: const EdgeInsets.only(top: 12),
@@ -337,6 +337,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _matching = false;
   bool _profileRefreshing = false;
   bool _locationRefreshing = false;
+  bool _presenceSheetOpen = false;
   bool _tabSwitching = false;
   bool _appActive = true;
 
@@ -410,6 +411,17 @@ class _DDProfilePageState extends State<DDProfilePage>
 
   Future<void> _refreshCityFromLocation() async {
     if (_locationRefreshing) return;
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      if (mounted) _showTopNotice(context, const Text('请先开启系统定位服务'));
+      return;
+    }
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        _showTopNotice(context, const Text('定位权限已永久拒绝，请到系统设置开启'));
+      }
+      return;
+    }
     setState(() => _locationRefreshing = true);
     try {
       final token = await _token();
@@ -474,8 +486,11 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   Future<void> _openPresenceControls() async {
-    await showModalBottomSheet<void>(
-      context: context,
+    if (_presenceSheetOpen) return;
+    setState(() => _presenceSheetOpen = true);
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
       showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (_, setSheetState) => SafeArea(
@@ -528,7 +543,9 @@ class _DDProfilePageState extends State<DDProfilePage>
           ),
         ),
       ),
-    );
+    } finally {
+      if (mounted) setState(() => _presenceSheetOpen = false);
+    }
   }
 
   Future<void> _selectProfileTab(int tab) async {
