@@ -373,13 +373,19 @@ class _DiscoverProfileCard extends StatelessWidget {
               if (image != null && image.isNotEmpty)
                 ClipRRect(
                   key: mediaKey,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
                   child: _stableMedia(url: image, thumbnail: false),
                 )
               else if (video != null && video.isNotEmpty)
                 ClipRRect(
                   key: mediaKey,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
                   child: Stack(
                     alignment: Alignment.topCenter,
                     children: [
@@ -406,7 +412,10 @@ class _DiscoverProfileCard extends StatelessWidget {
                 )
               else
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
                   child: Container(
                     width: double.infinity,
                     constraints: const BoxConstraints(minHeight: 96),
