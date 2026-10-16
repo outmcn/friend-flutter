@@ -194,7 +194,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => _card(feed, index, fullWidth: true),

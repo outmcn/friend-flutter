@@ -501,14 +501,15 @@ class _DiscoverProfileCard extends StatelessWidget {
                   ),
                   if (post.content.trim().isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 4),
+                      padding: const EdgeInsets.only(top: 10, bottom: 8),
                       child: Text(post.content.trim(),
                           style: const TextStyle(fontSize: 16, height: 1.4)),
                     ),
                   if (hasMedia) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     _media(context),
                   ],
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       _action(context: context, icon: TIcons.thumb_up_2,
