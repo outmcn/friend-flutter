@@ -519,7 +519,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 10, bottom: 8),
                       child: Text(post.content.trim(),
-                          style: const TextStyle(fontSize: 16, height: 1.4)),
+                          style: const TextStyle(fontSize: 18, height: 1.4)),
                     ),
                   if (hasMedia) ...[
                     const SizedBox(height: 10),
