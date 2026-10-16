@@ -242,7 +242,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         appBar: AppBar(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           surfaceTintColor: Colors.transparent,
-          toolbarHeight: kToolbarHeight,
+          toolbarHeight: 48,
           titleSpacing: 16,
           title: Row(
             children: ['推荐', _discoverLocalTabLabel, '关注']
@@ -259,7 +259,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       },
                       child: Padding(
                         padding:
-                            const EdgeInsets.only(right: 20, top: 1, bottom: 6),
+                            const EdgeInsets.only(right: 20, top: 1, bottom: 2),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
