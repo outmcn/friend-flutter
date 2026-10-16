@@ -331,7 +331,8 @@ class _DiscoverFeedCard extends StatefulWidget {
   State<_DiscoverFeedCard> createState() => _DiscoverFeedCardState();
 }
 
-class _DiscoverFeedCardState extends State<_DiscoverFeedCard> {
+class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
+    with AutomaticKeepAliveClientMixin<_DiscoverFeedCard> {
   late DDPost post;
 
   @override
@@ -359,7 +360,11 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final card = _DiscoverProfileCard(
       post: post,
       mediaKey: widget.mediaKey,
