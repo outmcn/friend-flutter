@@ -350,9 +350,10 @@ class _DiscoverProfileCard extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 360),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-          child: _PermanentCachedImage(
-            url: image,
-            fit: BoxFit.contain,
+              child: _PermanentCachedImage(
+                url: image,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ),
@@ -373,8 +374,8 @@ class _DiscoverProfileCard extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: _PermanentCachedImage(
-                      url: post.thumbnailUrl!,
-                      fit: BoxFit.contain,
+                          url: post.thumbnailUrl!,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
