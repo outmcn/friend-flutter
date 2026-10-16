@@ -819,7 +819,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   Future<void> _openGiftMenu() async {
     try {
-      final gifts = await service.fetchGiftItems(await token());
+      final gifts = await service.fetchGiftItems(await token(), scope: 'post');
       if (!mounted) return;
       await showModalBottomSheet<void>(
         context: context,

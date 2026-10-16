@@ -99,7 +99,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
-      final gifts = await service.fetchGiftItems(token);
+      final gifts = await service.fetchGiftItems(token, scope: 'user');
       if (!mounted) return;
       await showModalBottomSheet<void>(
         context: context,

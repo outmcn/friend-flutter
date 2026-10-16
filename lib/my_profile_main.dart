@@ -69,13 +69,14 @@ class _CharmSourcesPageState extends State<_CharmSourcesPage> {
                           final coins = source['coinAmount'] ?? 0;
                           final created = _formatCharmSourceTime(
                               '${source['createdAt'] ?? ''}');
+                          final sourceType = '${source['source'] ?? '动态'}';
                           return ListTile(
                             leading: CircleAvatar(
                               child: Text(
                                   gift.isEmpty ? '礼' : gift.characters.first),
                             ),
                             title: Text('$sender送出$gift × $quantity'),
-                            subtitle: Text('动态  ·  $created'),
+                            subtitle: Text('$sourceType  ·  $created'),
                             trailing: Text('+$coins'),
                           );
                         },
