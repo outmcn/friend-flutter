@@ -1138,7 +1138,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
           ),
         ),
-      );
+      ),
+    );
   }
 
   // ignore: unused_element
