@@ -538,7 +538,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                   value: _matching,
                   onChanged: (value) {
                     setSheetState(() => _matching = value);
-                    setState(() {});
+                    unawaited(_savePreferences(matchingEnabled: value));
                   },
                 ),
               ),
@@ -548,6 +548,24 @@ class _DDProfilePageState extends State<DDProfilePage>
         ),
       ),
     );
+  }
+
+  Future<void> _savePreferences({
+    bool? antiHarassment,
+    bool? smartBlock,
+    bool? matchingEnabled,
+  }) async {
+    try {
+      final token = await _token();
+      await service.updatePreferences(
+        token,
+        antiHarassment: antiHarassment,
+        smartBlock: smartBlock,
+        matchingEnabled: matchingEnabled,
+      );
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('设置保存失败：$e'));
+    }
   }
 
   Future<void> _selectProfileTab(int tab) async {

@@ -1013,6 +1013,27 @@ class DDPostService {
     return avatarUrl(token, key);
   }
 
+  Future<Map<String, dynamic>> updatePreferences(
+      String token, {
+      bool? antiHarassment,
+      bool? smartBlock,
+      bool? matchingEnabled,
+      }) async {
+    final response = await _client.patch(
+      _api('/me/preferences'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        if (antiHarassment != null) 'antiHarassment': antiHarassment,
+        if (smartBlock != null) 'smartBlock': smartBlock,
+        if (matchingEnabled != null) 'matchingEnabled': matchingEnabled,
+      }),
+    );
+    return _decodeResponse(response, '设置更新失败');
+  }
+
   Future<Map<String, dynamic>> setPresence(String token, String mode) async {
     final response = await _client.patch(
       _api('/me/presence'),
