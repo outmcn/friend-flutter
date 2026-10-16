@@ -28,8 +28,11 @@ class _DetailChromeClipper extends CustomClipper<Rect> {
 
   @override
   Rect getClip(Size size) {
-    final topInset = kToolbarHeight * (1 - progress);
-    final bottomInset = 80.0 * (1 - progress);
+    // Reverse transition: remove AppBar, bottom composer and comments first;
+    // the media/text content then follows the source-image straight-line scale.
+    final chromeT = (progress * 2.0 - 1.0).clamp(0.0, 1.0);
+    final topInset = kToolbarHeight * chromeT;
+    final bottomInset = 80.0 * chromeT;
     final top = topInset.clamp(0.0, size.height);
     final bottom = (size.height - bottomInset).clamp(top, size.height);
     return Rect.fromLTRB(0, top, size.width, bottom);
