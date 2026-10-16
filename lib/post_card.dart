@@ -491,7 +491,12 @@ class _DiscoverProfileCard extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
                                 formatDDTime(post.createdAt),
-                                style: Theme.of(context).textTheme.bodySmall,
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.55),
+                                ),
                               ),
                             ),
                           ],
