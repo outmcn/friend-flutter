@@ -963,37 +963,41 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-  Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) =>
-      Dismissible(
-        key: ValueKey('conversation-${chat.conversationId}'),
-        direction: DismissDirection.endToStart,
-        confirmDismiss: (_) async => false,
-        background: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            _ConversationSwipeButton(
-              color: Theme.of(context).colorScheme.primary,
-              label: _pinnedConversationIds.contains(chat.conversationId) ? '取消置顶' : '置顶',
-              icon: _pinnedConversationIds.contains(chat.conversationId)
-                  ? Icons.push_pin_outlined
-                  : Icons.push_pin,
-              onTap: () => _togglePinnedConversation(chat),
-            ),
-            _ConversationSwipeButton(
-              color: Colors.orange,
-              label: '不显示',
-              icon: Icons.visibility_off_outlined,
-              onTap: () => _hideConversationPreview(chat),
-            ),
-            _ConversationSwipeButton(
-              color: Colors.red,
-              label: '删除',
-              icon: Icons.delete_outline,
-              onTap: () => _deleteConversationPreview(chat),
-            ),
-          ],
-        ),
-        child: InkWell(
+  Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) {
+    return Slidable(
+      key: ValueKey('conversation-${chat.conversationId}'),
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        extentRatio: 0.75,
+        children: [
+          SlidableAction(
+            onPressed: (_) => _togglePinnedConversation(chat),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
+            icon: _pinnedConversationIds.contains(chat.conversationId)
+                ? Icons.push_pin_outlined
+                : Icons.push_pin,
+            label: _pinnedConversationIds.contains(chat.conversationId)
+                ? '取消置顶'
+                : '置顶',
+          ),
+          SlidableAction(
+            onPressed: (_) => _hideConversationPreview(chat),
+            backgroundColor: Colors.orange,
+            foregroundColor: Colors.white,
+            icon: Icons.visibility_off_outlined,
+            label: '不显示',
+          ),
+          SlidableAction(
+            onPressed: (_) => _deleteConversationPreview(chat),
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: Icons.delete_outline,
+            label: '删除',
+          ),
+        ],
+      ),
+      child: InkWell(
         onTap: () async {
           final prefs = await SharedPreferences.getInstance();
           final currentUserId = prefs.getString('friend.auth.userId') ?? '';
@@ -1010,10 +1014,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: _avatarFor(chat),
-              ),
+              CircleAvatar(radius: 24, backgroundImage: _avatarFor(chat)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1032,11 +1033,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                               ),
                               if (chat.kind == 'companion') ...[
                                 const SizedBox(width: 4),
-                                Icon(
-                                  TIcons.gamepad,
-                                  size: 16,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
+                                Icon(TIcons.gamepad,
+                                    size: 16,
+                                    color: Theme.of(context).colorScheme.primary),
                               ],
                             ],
                           ),
@@ -1056,9 +1055,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              chat.unreadCount > 99
-                                  ? '99+'
-                                  : '${chat.unreadCount}',
+                              chat.unreadCount > 99 ? '99+' : '${chat.unreadCount}',
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                   color: Colors.white, fontSize: 10),
@@ -1078,8 +1075,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             ],
           ),
         ),
-        ),
-      );
+      ),
+    );
+  }
 
   // ignore: unused_element
   Widget _chatDetail(BuildContext context, _ChatPreview chat) => Column(
