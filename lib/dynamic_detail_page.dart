@@ -982,7 +982,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           final radius = 14 * (1 - t);
           // At release, keep only the media/text payload visible. The
           // payload is then scaled and translated along the source-image line.
-          final payload = t >= 0.999 ? child : _detailPayload(child);
+          final payload =
+              t >= 0.999 ? (child ?? const SizedBox.shrink()) : _detailPayload(child ?? const SizedBox.shrink());
           return Transform.translate(
             offset: offset,
             child: ClipRRect(
