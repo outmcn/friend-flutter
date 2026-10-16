@@ -35,6 +35,35 @@ class _DynamicPostCard extends StatelessWidget {
       (post.imageUrl == null || post.imageUrl!.trim().isEmpty) &&
       (post.videoUrl == null || post.videoUrl!.trim().isEmpty);
 
+  void _showDiscoverMore(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(TIcons.share_1),
+              title: const Text('分享动态'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                onOpen();
+              },
+            ),
+            ListTile(
+              leading: const Icon(TIcons.chevron_right),
+              title: const Text('查看详情'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                onOpen();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final content = Column(
@@ -456,7 +485,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       ),
                       IconButton(
                         tooltip: '更多',
-                        onPressed: onOpen,
+                        onPressed: () => _showDiscoverMore(context),
                         icon: const Icon(TIcons.more),
                         iconSize: 20,
                         padding: EdgeInsets.zero,
