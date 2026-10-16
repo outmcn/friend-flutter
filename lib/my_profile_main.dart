@@ -413,13 +413,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
 
-  Future<void> _openCityEditor() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const EditProfilePage()),
-    );
-    if (mounted) await _refreshProfileOnly();
-  }
   String _formatCount(dynamic value) {
     final number = int.tryParse('$value') ?? 0;
     if (number >= 100000000) {
@@ -868,7 +861,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ? (_stealth ? '隐身状态设置' : '在线状态设置')
                                           : '离线状态设置',
                                       child: InkWell(
-                                        onTap: _openCityEditor,
+                                        onTap: _refreshCityFromLocation,
                                         borderRadius: BorderRadius.circular(999),
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
@@ -1087,9 +1080,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                               child: _ProfileActionButton(
                                 icon: Icons.auto_awesome_outlined,
                                 label: '展馆',
-                                subtitle: charmCoins > 0
-                                    ? '$charmCoins 魅力值'
-                                    : null,
                                 onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
