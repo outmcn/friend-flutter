@@ -161,9 +161,9 @@ class _WalletPageState extends State<WalletPage> {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-                onPressed: () {},
+                onPressed: null,
                 icon: const Icon(Icons.add_circle_outline),
-                label: const Text('充值')),
+                label: const Text('充值暂未开放')),
             if (error != null)
               Padding(
                   padding: const EdgeInsets.only(top: 12),
