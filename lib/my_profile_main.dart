@@ -917,14 +917,16 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ],
                                     ),
                                   ),
-                                  GestureDetector(
-                                    onTap: _openPresenceControls,
-                                    child: Semantics(
-                                      button: true,
-                                      label: _appActive
-                                          ? (_stealth ? '隐身状态设置' : '在线状态设置')
-                                          : '离线状态设置',
-                                      child: Container(
+                                      child: Semantics(
+                                        button: true,
+                                        label: _appActive
+                                            ? (_stealth ? '隐身状态设置' : '在线状态设置')
+                                            : '离线状态设置',
+                                        child: InkWell(
+                                          onTap: _openPresenceControls,
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                          child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
@@ -971,11 +973,11 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ),
                                           ],
                                         ),
-                                      ),
-                                    ),
                                   ),
                                 ),
-                                ],
+                              ),
+                            ),
+                            ],
                               ),
                               const SizedBox(height: 18),
                               Container(
