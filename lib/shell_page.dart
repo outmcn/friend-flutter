@@ -2711,6 +2711,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           ),
           actions: [
             IconButton(
+              tooltip: '语音通话',
+              onPressed: _startAudioCall,
+              icon: const Icon(Icons.phone_in_talk_outlined),
+            ),
+            IconButton(
               tooltip: '聊天设置',
               onPressed: _openChatSettings,
               icon: const Icon(Icons.more_horiz),
@@ -3331,6 +3336,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                   ),
                           ),
                           IconButton(
+                            tooltip: '语音通话',
+                            onPressed: _startAudioCall,
+                            icon: const Icon(Icons.phone_in_talk_outlined),
+                          ),
+                          IconButton(
                             tooltip: '更多',
                             onPressed: () => setState(() {
                               moreExpanded = !moreExpanded;
@@ -3375,14 +3385,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                         onPressed: () {
                           setState(() => moreExpanded = false);
                           unawaited(_pickAndSendImage());
-                        },
-                      ),
-                      _ComposerAction(
-                        icon: Icons.phone_in_talk_outlined,
-                        label: '语音通话',
-                        onPressed: () {
-                          setState(() => moreExpanded = false);
-                          unawaited(_startAudioCall());
                         },
                       ),
                       _ComposerAction(
