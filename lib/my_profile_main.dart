@@ -311,7 +311,8 @@ class DDProfilePage extends StatefulWidget {
   State<DDProfilePage> createState() => _DDProfilePageState();
 }
 
-class _DDProfilePageState extends State<DDProfilePage> {
+class _DDProfilePageState extends State<DDProfilePage>
+    with WidgetsBindingObserver {
   final DDPostService service = DDPostService();
   Map<String, dynamic>? profile;
   int coinBalance = 0;
@@ -337,10 +338,12 @@ class _DDProfilePageState extends State<DDProfilePage> {
   bool _matching = false;
   bool _profileRefreshing = false;
   bool _tabSwitching = false;
+  bool _appActive = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _profileScrollController.addListener(_handleProfileScroll);
     _sonicPlayer.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _sonicPlaying = false);
@@ -376,7 +379,24 @@ class _DDProfilePageState extends State<DDProfilePage> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final active = state == AppLifecycleState.resumed;
+    if (active != _appActive && mounted) {
+      setState(() => _appActive = active);
+    }
+  }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final active = ModalRoute.of(context)?.isCurrent ?? true;
+    if (active != _appActive && mounted) {
+      setState(() => _appActive = active);
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _profileScrollController.removeListener(_handleProfileScroll);
     _profileScrollController.dispose();
     for (final feed in feeds) {
@@ -806,14 +826,18 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                     onTap: _openPresenceControls,
                                     child: Semantics(
                                       button: true,
-                                      label: _stealth ? '隐身状态设置' : '在线状态设置',
+                                      label: _appActive
+                                          ? (_stealth ? '隐身状态设置' : '在线状态设置')
+                                          : '离线状态设置',
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: _stealth
+                                          color: !_appActive
                                               ? const Color(0xfff3f4f6)
-                                              : const Color(0xfff0fdf4),
+                                              : _stealth
+                                                  ? const Color(0xfff3f4f6)
+                                                  : const Color(0xfff0fdf4),
                                           border: Border.all(
                                               color: _stealth
                                                   ? const Color(0xffd1d5db)
@@ -828,19 +852,25 @@ class _DDProfilePageState extends State<DDProfilePage> {
                                               width: 6,
                                               height: 6,
                                               decoration: BoxDecoration(
-                                                color: _stealth
+                                                color: !_appActive
                                                     ? const Color(0xff9ca3af)
-                                                    : const Color(0xff22c55e),
+                                                    : _stealth
+                                                        ? const Color(0xff9ca3af)
+                                                        : const Color(0xff22c55e),
                                                 shape: BoxShape.circle,
                                               ),
                                             ),
                                             const SizedBox(width: 5),
                                             Text(
-                                              _stealth ? '隐身' : '在线',
+                                              _appActive
+                                                  ? (_stealth ? '隐身' : '在线')
+                                                  : '离线',
                                               style: TextStyle(
-                                                color: _stealth
-                                                    ? const Color(0xff6b7280)
-                                                    : const Color(0xff16a34a),
+                                                color: !_appActive
+                                                    ? const Color(0xff9ca3af)
+                                                    : _stealth
+                                                        ? const Color(0xff6b7280)
+                                                        : const Color(0xff16a34a),
                                                 fontSize: 11,
                                               ),
                                             ),
