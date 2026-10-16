@@ -233,6 +233,29 @@ class _MyProfilePostCard extends StatelessWidget {
   final VoidCallback onTap;
   final GlobalKey? mediaKey;
 
+  Future<void> _openDetail(BuildContext context) async {
+    final box = mediaKey?.currentContext?.findRenderObject() as RenderBox?;
+    final topLeft = box?.localToGlobal(Offset.zero);
+    final initialRect =
+        box == null || topLeft == null ? null : topLeft & box.size;
+    await Navigator.push<bool>(
+      context,
+      PageRouteBuilder<bool>(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => DynamicDetailPage(
+          postId: post.id,
+          initialPost: post,
+          initialRect: initialRect,
+          mediaKey: mediaKey,
+        ),
+        transitionsBuilder: (_, __, ___, child) => child,
+      ),
+    );
+  }
+
   Widget _profileMedia({required String url, required bool thumbnail}) {
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: thumbnail ? 400 : 300),
@@ -256,7 +279,7 @@ class _MyProfilePostCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: () => _openDetail(context),
         borderRadius: BorderRadius.circular(14),
         child: Card(
           margin: EdgeInsets.zero,
@@ -283,13 +306,14 @@ class _MyProfilePostCard extends StatelessWidget {
                 )
               else if (video != null && video.isNotEmpty)
                 InkWell(
-                  onTap: onTap,
+                  onTap: () => _openDetail(context),
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       if (post.thumbnailUrl != null &&
                           post.thumbnailUrl!.isNotEmpty)
                         SizedBox(
+                          key: mediaKey,
                           width: double.infinity,
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxHeight: 400),
