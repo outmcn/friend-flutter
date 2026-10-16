@@ -1141,6 +1141,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             ),
           ),
         ),
+      ),
     );
   }
 
