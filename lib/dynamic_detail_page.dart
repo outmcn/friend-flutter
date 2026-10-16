@@ -979,7 +979,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 child: IconButton(
                   tooltip: '返回',
                   onPressed: _closeWithTransition,
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(TIcons.chevron_left),
                 ),
               ),
               title: item == null
