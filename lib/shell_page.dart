@@ -990,8 +990,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
         ],
       ),
-      child: InkWell(
-        onTap: () async {
+      child: Container(
+        color: _pinnedConversationIds.contains(chat.conversationId)
+            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.28)
+            : Theme.of(context).colorScheme.surface,
+        child: InkWell(
+          onTap: () async {
           final prefs = await SharedPreferences.getInstance();
           final currentUserId = prefs.getString('friend.auth.userId') ?? '';
           if (!context.mounted) return;
@@ -1033,10 +1037,22 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                             ],
                           ),
                         ),
-                        Text(formatDDTime(chat.updatedAt ?? ''),
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: Theme.of(context).hintColor)),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(formatDDTime(chat.updatedAt ?? ''),
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: Theme.of(context).hintColor)),
+                            if (_pinnedConversationIds.contains(chat.conversationId))
+                              Icon(
+                                Icons.lock_outline,
+                                size: 13,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                          ],
+                        ),
                         if (chat.unreadCount > 0) ...[
                           const SizedBox(width: 6),
                           Container(
@@ -1066,6 +1082,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
