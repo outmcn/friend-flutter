@@ -1223,6 +1223,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                   ),
                 ],
               ),
+              ),
               if (_profileRefreshing)
                 const Positioned(
                   top: 0,
