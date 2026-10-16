@@ -1,5 +1,16 @@
 part of 'main.dart';
 
+String _formatVideoDuration(dynamic raw) {
+  final seconds = raw is num
+      ? raw.toInt()
+      : int.tryParse('$raw') ??
+          ((double.tryParse('$raw') ?? 0) / 1000).round();
+  final safe = seconds < 0 ? 0 : seconds;
+  final minutes = safe ~/ 60;
+  final remainder = safe % 60;
+  return '$minutes:${remainder.toString().padLeft(2, '0')}';
+}
+
 class _SonicProfileButton extends StatelessWidget {
   const _SonicProfileButton({
     required this.playing,
@@ -252,6 +263,8 @@ class _MyProfilePostCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final image = post.imageUrl?.trim();
     final video = post.videoUrl?.trim();
+    final videoDuration = post.metadata?['duration'] ??
+        post.metadata?['durationSeconds'] ?? post.metadata?['videoDuration'];
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -308,6 +321,26 @@ class _MyProfilePostCard extends StatelessWidget {
                         size: 56,
                         color: Colors.white,
                       ),
+                      if (videoDuration != null)
+                        Positioned(
+                          right: 8,
+                          bottom: 8,
+                          child: DecoratedBox(
+                            decoration: const BoxDecoration(
+                              color: Color(0xaa000000),
+                              borderRadius: BorderRadius.all(Radius.circular(6)),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 3),
+                              child: Text(
+                                _formatVideoDuration(videoDuration),
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 11),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 )
