@@ -398,64 +398,69 @@ class _DiscoverProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasMedia = (post.imageUrl?.trim().isNotEmpty == true) ||
         (post.videoUrl?.trim().isNotEmpty == true);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Theme.of(context).cardColor,
-        child: InkWell(
-          onTap: onOpen,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                child: Row(
-                  children: [
-                    ClipOval(
-                      child: SizedBox(
-                        width: 38,
-                        height: 38,
-                        child: post.avatar.trim().isEmpty
-                            ? const Icon(Icons.person_outline)
-                            : _PermanentCachedImage(
-                                url: post.avatar,
-                                fit: BoxFit.cover,
-                                placeholder: const Icon(Icons.person_outline),
-                              ),
+    return InkWell(
+      onTap: onOpen,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipOval(
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: post.avatar.trim().isEmpty
+                    ? const Icon(Icons.person_outline)
+                    : _PermanentCachedImage(
+                        url: post.avatar,
+                        fit: BoxFit.cover,
+                        placeholder: const Icon(Icons.person_outline),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(post.nickname,
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                    Text(formatDDTime(post.createdAt),
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ],
-                ),
               ),
-              if (hasMedia) _media(context),
-              if (post.content.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-                  child: Text(post.content.trim(),
-                      style: const TextStyle(fontSize: 16, height: 1.4)),
-                ),
-              const Divider(height: 1),
-              Row(
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _action(context: context, icon: TIcons.thumb_up_2,
-                      label: '${post.likes}', onTap: onLike, active: post.liked),
-                  _action(context: context, icon: TIcons.bookmark,
-                      label: '${post.favorites}', onTap: onFavorite,
-                      active: post.favorited),
-                  _action(context: context, icon: TIcons.chat_bubble_1,
-                      label: '${post.comments}', onTap: onOpen),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(post.nickname,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                      Text(formatDDTime(post.createdAt),
+                          style: Theme.of(context).textTheme.bodySmall),
+                    ],
+                  ),
+                  if (hasMedia) ...[
+                    const SizedBox(height: 8),
+                    _media(context),
+                  ],
+                  if (post.content.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 4),
+                      child: Text(post.content.trim(),
+                          style: const TextStyle(fontSize: 16, height: 1.4)),
+                    ),
+                  const Divider(height: 1),
+                  Row(
+                    children: [
+                      _action(context: context, icon: TIcons.thumb_up_2,
+                          label: '${post.likes}', onTap: onLike, active: post.liked),
+                      _action(context: context, icon: TIcons.bookmark,
+                          label: '${post.favorites}', onTap: onFavorite,
+                          active: post.favorited),
+                      _action(context: context, icon: TIcons.chat_bubble_1,
+                          label: '${post.comments}', onTap: onOpen),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
