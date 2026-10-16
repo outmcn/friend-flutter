@@ -753,10 +753,14 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         right: 0,
                                         bottom: -9,
                                         child: Center(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 3),
-                                            decoration: BoxDecoration(
+                                          child: InkWell(
+                                            onTap: _openCityEditor,
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 10, vertical: 3),
+                                              decoration: BoxDecoration(
                                               color: Theme.of(context)
                                                   .colorScheme
                                                   .surface,
