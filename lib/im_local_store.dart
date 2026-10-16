@@ -207,7 +207,7 @@ class ImLocalStore {
         final existing = await txn.query('messages',
             where:
                 'account_id = ? AND conversation_id = ? AND (message_id = ? OR (client_id = ? AND client_id IS NOT NULL))',
-            whereArgs: [accountId, conversationId, id, message['clientId']]);
+            whereArgs: [accountId, conversationId, id, clientId.isEmpty ? '' : clientId]);
         final localState =
             message['status'] == 'pending' || message['status'] == 'failed';
         if (localState &&
