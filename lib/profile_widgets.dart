@@ -138,6 +138,8 @@ class _MyProfileGrid extends StatefulWidget {
     required this.posts,
     this.onChanged,
     this.emptyLabel = '暂无内容',
+    this.onEmptyAction,
+    this.emptyActionLabel,
   });
   final List<DDPost> posts;
   final VoidCallback? onChanged;
