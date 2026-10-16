@@ -11,7 +11,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
   final _cardKeys = <String, GlobalKey>{};
-  final _mediaKeys = <String, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
 
@@ -110,29 +109,14 @@ class _DiscoverPageState extends State<DiscoverPage> {
       GlobalKey.new,
     );
     if (!mounted) return;
-    final mediaKey = _mediaKeys.putIfAbsent(
-      '$selectedTab:${post.id}',
-      GlobalKey.new,
-    );
-    final box = mediaKey.currentContext?.findRenderObject() as RenderBox?;
-    final topLeft = box?.localToGlobal(Offset.zero);
-    final initialRect =
-        box == null || topLeft == null ? null : topLeft & box.size;
     final routeFuture = Navigator.push<bool>(
       context,
-      PageRouteBuilder<bool>(
-        opaque: false,
-        barrierColor: Colors.transparent,
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-        pageBuilder: (_, __, ___) => DynamicDetailPage(
+      MaterialPageRoute<bool>(
+        builder: (_) => DynamicDetailPage(
           postId: post.id,
           initialPost: post,
-          initialRect: initialRect,
-          mediaKey: mediaKey,
           cardKey: key,
         ),
-        transitionsBuilder: (_, __, ___, child) => child,
       ),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -192,10 +176,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
       feed: feed,
       post: post,
       fullWidth: fullWidth,
-      mediaKey: _mediaKeys.putIfAbsent(
-        '$feedIndex:${post.id}',
-        GlobalKey.new,
-      ),
       onLike: _like,
       onFavorite: _favorite,
       onOpen: _open,

@@ -68,12 +68,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   bool _geometryReady = false;
 
   void _onDragStart(DragStartDetails details) {
-    if (loading || _closing) return;
-    _dragging = true;
+    _dragging = false;
   }
 
   void _onDragUpdate(DragUpdateDetails details) {
-    if (!_dragging || _closing) return;
+    return;
     final width = MediaQuery.sizeOf(context).width;
     setState(() {
       final value =
@@ -83,7 +82,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   }
 
   Future<void> _onDragEnd(DragEndDetails details) async {
-    if (!_dragging || _closing) return;
+    return;
     _dragging = false;
     final velocity = details.velocity.pixelsPerSecond.dx;
     final shouldClose = _rectController.value < .65 || velocity > 500;
@@ -117,25 +116,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   }
 
   Future<void> _closeWithTransition() async {
-    if (_closing) return;
-    _closing = true;
-    final liveBox =
-        widget.mediaKey?.currentContext?.findRenderObject() as RenderBox?;
-    final liveTopLeft = liveBox?.localToGlobal(Offset.zero);
-    final liveRect = liveBox == null || liveTopLeft == null
-        ? null
-        : liveTopLeft & liveBox.size;
-    if (liveRect != null && liveRect.width > 0) {
-      final screen = MediaQuery.sizeOf(context);
-      _startScale = (liveRect.width / screen.width).clamp(0.05, 1.0).toDouble();
-      _startOffset =
-          liveRect.center - Offset(screen.width / 2, screen.height / 2);
-    }
-    await _rectController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 140),
-      curve: Curves.linear,
-    );
     if (mounted) Navigator.pop(context);
   }
 
@@ -153,7 +133,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     _rectController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 180),
-      value: 0,
+      value: 1,
     );
     post = widget.initialPost;
     final screen = MediaQuery.sizeOf(context);
@@ -170,9 +150,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       _startOffset = Offset.zero;
     }
     _geometryReady = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _rectController.forward();
-    });
     load();
     if (widget.focusComment) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -965,34 +942,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       return const SizedBox.expand();
     }
     final item = post;
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onHorizontalDragStart: _onDragStart,
-      onHorizontalDragUpdate: _onDragUpdate,
-      onHorizontalDragEnd: _onDragEnd,
-      child: AnimatedBuilder(
-        animation: _rectController,
-        builder: (context, child) {
-          final t = _rectController.value;
-          final scale = _startScale + (1 - _startScale) * t;
-          final offset = Offset(
-            _startOffset.dx * (1 - t),
-            _startOffset.dy * (1 - t),
-          );
-          final radius = 14 * (1 - t);
-          // At release, keep only the media/text payload visible. The
-          // payload is then scaled and translated along the source-image line.
-          final payload =
-              t >= 0.999 ? (child ?? const SizedBox.shrink()) : _detailPayload(child ?? const SizedBox.shrink());
-          return Transform.translate(
-            offset: offset,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(radius),
-              child: Transform.scale(scale: scale, child: payload),
-            ),
-          );
-        },
-        child: Material(
+    return Material(
           color: Theme.of(context).scaffoldBackgroundColor,
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -1170,7 +1120,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             bottomNavigationBar: item == null ? null : _composer(item),
           ),
         ),
-      ),
     );
   }
 }
