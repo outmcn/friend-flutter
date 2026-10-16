@@ -424,16 +424,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
     return number.toString();
   }
-  String _formatCount(dynamic value) {
-    final number = int.tryParse('$value') ?? 0;
-    if (number >= 100000000) {
-      return '${(number / 100000000).toStringAsFixed(1)}亿';
-    }
-    if (number >= 10000) {
-      return '${(number / 10000).toStringAsFixed(1)}万';
-    }
-    return number.toString();
-  }
+
   Future<void> _openEditProfile() async {
     await Navigator.push(
       context,
