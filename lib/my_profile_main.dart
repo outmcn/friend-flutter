@@ -414,6 +414,12 @@ class _DDProfilePageState extends State<DDProfilePage>
     );
     if (mounted) await _refreshProfileOnly();
   }
+  String _formatCount(dynamic value) {
+    final number = int.tryParse('$value') ?? 0;
+    if (number >= 100000000) return '${(number / 100000000).toStringAsFixed(1)}亿';
+    if (number >= 10000) return '${(number / 10000).toStringAsFixed(1)}万';
+    return number.toString();
+  }
   Future<void> _openEditProfile() async {
     await Navigator.push(
       context,
@@ -905,7 +911,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     Expanded(
                                         child: _InlineProfileStat(
                                             label: '粉丝',
-                                            value: '${p?['followers'] ?? 0}',
+                                            value: _formatCount(p?['followers']),
                                             onTap: () => Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -917,7 +923,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     Expanded(
                                         child: _InlineProfileStat(
                                             label: '关注',
-                                            value: '${p?['following'] ?? 0}',
+                                            value: _formatCount(p?['following']),
                                             onTap: () => Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -929,8 +935,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     Expanded(
                                         child: _InlineProfileStat(
                                             label: '获赞',
-                                            value:
-                                                '${p?['receivedLikes'] ?? p?['likes'] ?? 0}',
+                                            value: _formatCount(
+                                                p?['receivedLikes'] ?? p?['likes']),
                                             onTap: () => Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -941,7 +947,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     Expanded(
                                         child: _InlineProfileStat(
                                       label: '魅力',
-                                      value: '$charmCoins',
+                                      value: _formatCount(charmCoins),
                                       onTap: () => Navigator.push(
                                         context,
                                         MaterialPageRoute(
