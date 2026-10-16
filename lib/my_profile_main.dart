@@ -340,6 +340,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _tabSwitching = false;
   Timer? _presenceTimer;
   bool _appActive = true;
+  bool _presenceUpdating = false;
 
   @override
   void initState() {
@@ -385,10 +386,14 @@ class _DDProfilePageState extends State<DDProfilePage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final active = state == AppLifecycleState.resumed;
-    if (active != _appActive && mounted) {
+    final wasActive = _appActive;
+    if (active != wasActive && mounted) {
       setState(() => _appActive = active);
     }
-    if (active) unawaited(_sendPresenceHeartbeat());
+    if (active && !wasActive) {
+      unawaited(_sendPresenceHeartbeat());
+      unawaited(_refreshProfileOnly());
+    }
   }
   @override
   void didChangeDependencies() {
@@ -480,10 +485,14 @@ class _DDProfilePageState extends State<DDProfilePage>
     String mode,
     void Function(void Function())? setSheetState,
   ) async {
+    if (_presenceUpdating) return;
     final previous = _stealth;
     final nextStealth = mode == 'stealth';
     if (mounted) {
-      setState(() => _stealth = nextStealth);
+      setState(() {
+        _presenceUpdating = true;
+        _stealth = nextStealth;
+      });
       setSheetState?.call(() {});
     }
     try {
@@ -494,6 +503,11 @@ class _DDProfilePageState extends State<DDProfilePage>
         setState(() => _stealth = previous);
         setSheetState?.call(() {});
         _showTopNotice(context, Text('在线状态更新失败：$e'));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _presenceUpdating = false);
+        setSheetState?.call(() {});
       }
     }
   }
@@ -520,12 +534,14 @@ class _DDProfilePageState extends State<DDProfilePage>
                     '${_stealth ? '当前：隐身' : '当前：在线'} · 已同步'),
                 trailing: Switch(
                   value: !_stealth,
-                  onChanged: (value) {
-                    unawaited(_setPresenceMode(
-                      value ? 'online' : 'stealth',
-                      setSheetState,
-                    ));
-                  },
+                  onChanged: _presenceUpdating
+                      ? null
+                      : (value) {
+                          unawaited(_setPresenceMode(
+                            value ? 'online' : 'stealth',
+                            setSheetState,
+                          ));
+                        },
                 ),
               ),
               SwitchListTile(
