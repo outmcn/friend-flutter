@@ -903,7 +903,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Widget _conversationList(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: const EdgeInsets.only(bottom: 12),
         child: ListView.separated(
           itemCount: conversations.length,
           separatorBuilder: (_, __) => const SizedBox(height: 2),
@@ -1033,7 +1033,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
         ],
       ),
-      child: Container(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Container(
           color: _pinnedConversationIds.contains(chat.conversationId)
               ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.28)
               : Theme.of(context).colorScheme.surface,
@@ -1137,6 +1139,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             ],
           ),
           ),
+        ),
         ),
       ),
     );
