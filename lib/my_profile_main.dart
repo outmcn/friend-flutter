@@ -407,8 +407,14 @@ class _DDProfilePageState extends State<DDProfilePage>
     super.dispose();
   }
 
-  bool get _hasProfileData => profile != null;
 
+  Future<void> _openCityEditor() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EditProfilePage()),
+    );
+    if (mounted) await _refreshProfileOnly();
+  }
   Future<void> _openEditProfile() async {
     await Navigator.push(
       context,
@@ -829,22 +835,25 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       label: _appActive
                                           ? (_stealth ? '隐身状态设置' : '在线状态设置')
                                           : '离线状态设置',
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: !_appActive
-                                              ? const Color(0xfff3f4f6)
-                                              : _stealth
-                                                  ? const Color(0xfff3f4f6)
-                                                  : const Color(0xfff0fdf4),
-                                          border: Border.all(
-                                              color: _stealth
-                                                  ? const Color(0xffd1d5db)
-                                                  : const Color(0xffbbf7d0)),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
+                                      child: InkWell(
+                                        onTap: _openCityEditor,
+                                        borderRadius: BorderRadius.circular(999),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: !_appActive
+                                                ? const Color(0xfff3f4f6)
+                                                : _stealth
+                                                    ? const Color(0xfff3f4f6)
+                                                    : const Color(0xfff0fdf4),
+                                            border: Border.all(
+                                                color: _stealth
+                                                    ? const Color(0xffd1d5db)
+                                                    : const Color(0xffbbf7d0)),
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
@@ -879,6 +888,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ),
                                   ),
+                                ),
                                 ],
                               ),
                               const SizedBox(height: 18),
