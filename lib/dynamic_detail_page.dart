@@ -1119,7 +1119,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             ),
             bottomNavigationBar: item == null ? null : _composer(item),
           ),
-        ),
     );
   }
 }
