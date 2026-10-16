@@ -1087,9 +1087,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                               child: _ProfileActionButton(
                                 icon: Icons.auto_awesome_outlined,
                                 label: '展馆',
-                                subtitle: charmCoins > 0
-                                    ? '$charmCoins 魅力值'
-                                    : null,
                                 onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
