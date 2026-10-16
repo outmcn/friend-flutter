@@ -290,11 +290,9 @@ class _MyProfilePostCard extends StatelessWidget {
                   ),
                 )
               else if (video != null && video.isNotEmpty)
-                InkWell(
-                  onTap: onTap,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
                       if (post.thumbnailUrl != null &&
                           post.thumbnailUrl!.isNotEmpty)
                         SizedBox(
@@ -318,8 +316,7 @@ class _MyProfilePostCard extends StatelessWidget {
                         size: 56,
                         color: Colors.white,
                       ),
-                    ],
-                  ),
+                  ],
                 )
               else
                 ConstrainedBox(
