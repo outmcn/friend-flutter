@@ -3280,11 +3280,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                   ),
                           ),
                           IconButton(
-                            tooltip: '语音通话',
-                            onPressed: _startAudioCall,
-                            icon: const Icon(Icons.phone_in_talk_outlined),
-                          ),
-                          IconButton(
                             tooltip: '更多',
                             onPressed: () => setState(() {
                               moreExpanded = !moreExpanded;
