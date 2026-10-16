@@ -43,7 +43,8 @@ Future<void> openCompanionChat(
     final me = await service.fetchMe(token);
     final currentUserId = '${me['id'] ?? ''}';
     final chat =
-        _ChatPreview(name, '开始一段新的聊天', null, null, peerId, conversationId, 0);
+        _ChatPreview(name, '开始一段新的聊天', null, null, peerId, conversationId, 0,
+          null, null, 'companion');
     if (!context.mounted) return;
     await Navigator.push(
         context,
@@ -406,7 +407,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           chat.conversationId,
           chat.unreadCount,
           chat.peerReadMessageId,
-          chat.updatedAt);
+          chat.updatedAt,
+          chat.kind);
     });
     await ImLocalStore.saveConversations(
         accountId: accountId,
@@ -586,6 +588,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           row.unreadCount,
           row.peerReadMessageId,
           row.updatedAt,
+          row.kind,
         ));
       }
       if (mounted) {
@@ -750,21 +753,32 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _pushChatDetail(_ChatPreview chat, String currentUserId) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => chat.kind == 'companion'
+            ? _CompanionChatPage(
+                chat: chat,
+                currentUserId: currentUserId,
+                peerId: chat.peerUserId ?? '',
+                peerName: chat.name,
+              )
+            : _ChatDetailPage(
+                chat: chat,
+                currentUserId: currentUserId,
+              ),
+      ),
+    );
+  }
+
   Future<void> _openConversation(_ChatPreview chat) async {
     final prefs = await SharedPreferences.getInstance();
     final currentUserId = prefs.getString('friend.auth.userId') ?? '';
     if (!mounted) return;
     await _stopListSocket();
     if (!mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => _ChatDetailPage(
-          chat: chat,
-          currentUserId: currentUserId,
-        ),
-      ),
-    );
+    await _pushChatDetail(chat, currentUserId);
     if (mounted) {
       unawaited(_loadConversations(showLoading: false));
       unawaited(_restartListSocket());
@@ -801,15 +815,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           if (!context.mounted) return;
           await _stopListSocket();
           if (!context.mounted) return;
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => _ChatDetailPage(
-                chat: chat,
-                currentUserId: currentUserId,
-              ),
-            ),
-          );
+          await _pushChatDetail(chat, currentUserId);
           if (mounted) {
             unawaited(_loadConversations(showLoading: false));
             unawaited(_restartListSocket());
@@ -959,7 +965,7 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.peerUserId, this.conversationId, this.unreadCount,
-      [this.peerReadMessageId, this.updatedAt]);
+      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm']);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -969,6 +975,7 @@ class _ChatPreview {
   final int unreadCount;
   final String? peerReadMessageId;
   final String? updatedAt;
+  final String kind;
 
   factory _ChatPreview.fromCache(Map<String, dynamic> row) => _ChatPreview(
         '${row['name'] ?? '用户'}',
@@ -980,6 +987,7 @@ class _ChatPreview {
         (row['unreadCount'] as num?)?.toInt() ?? 0,
         row['peerReadMessageId']?.toString(),
         row['updatedAt']?.toString(),
+        '${row['kind'] ?? 'dm'}',
       );
 
   Map<String, dynamic> toCache() => {
@@ -992,6 +1000,7 @@ class _ChatPreview {
         'unreadCount': unreadCount,
         'peerReadMessageId': peerReadMessageId,
         'updatedAt': updatedAt,
+        'kind': kind,
       };
 }
 
