@@ -193,6 +193,25 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
   bool loading = true;
   String? error;
 
+  int get totalQuantity => gifts.fold<int>(
+        0,
+        (sum, gift) => sum + (int.tryParse(
+                '${gift['received_quantity'] ?? gift['quantity'] ?? 0}') ??
+            0),
+      );
+
+  num get totalCharm => gifts.fold<num>(
+        0,
+        (sum, gift) =>
+            sum +
+            (num.tryParse(
+                    '${gift['charm_amount'] ?? gift['charmAmount'] ?? gift['coin_amount'] ?? 0}') ??
+                0) *
+                (int.tryParse(
+                        '${gift['received_quantity'] ?? gift['quantity'] ?? 0}') ??
+                    0),
+      );
+
   @override
   void initState() {
     super.initState();
@@ -225,42 +244,113 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
             ? const Center(child: CircularProgressIndicator())
             : error != null
                 ? Center(child: Text(error!))
-                : GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.2,
-                    ),
-                    itemCount: gifts.length,
-                    itemBuilder: (_, index) {
-                      final gift = gifts[index];
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('${gift['icon'] ?? '🎁'}',
-                                  style: const TextStyle(fontSize: 34)),
-                              const SizedBox(height: 8),
-                              Text('${gift['name'] ?? '礼物'}',
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 6),
-                              Text('收到 ${gift['received_quantity'] ?? 0} 个'),
-                            ],
-                          ),
+                : Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _ExhibitionSummaryCard(
+                                title: '礼物总数',
+                                value: '$totalQuantity',
+                                suffix: '个',
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _ExhibitionSummaryCard(
+                                title: '礼物种类',
+                                value: '${gifts.length}',
+                                suffix: '种',
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _ExhibitionSummaryCard(
+                                title: '魅力值',
+                                value: totalCharm.toString(),
+                                suffix: '',
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                      Expanded(
+                        child: gifts.isEmpty
+                            ? const Center(child: Text('暂无礼物记录'))
+                            : GridView.builder(
+                                padding: const EdgeInsets.all(16),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 1.2,
+                                ),
+                                itemCount: gifts.length,
+                                itemBuilder: (_, index) {
+                                  final gift = gifts[index];
+                                  return Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(14),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text('${gift['icon'] ?? '🎁'}',
+                                              style: const TextStyle(
+                                                  fontSize: 34)),
+                                          const SizedBox(height: 8),
+                                          Text('${gift['name'] ?? '礼物'}',
+                                              style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700)),
+                                          const SizedBox(height: 6),
+                                          Text('收到 ${gift['received_quantity'] ?? 0} 个'),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   ),
       );
 }
 
+class _ExhibitionSummaryCard extends StatelessWidget {
+  const _ExhibitionSummaryCard({
+    required this.title,
+    required this.value,
+    required this.suffix,
+  });
+
+  final String title;
+  final String value;
+  final String suffix;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          child: Column(
+            children: [
+              Text(title, style: Theme.of(context).textTheme.labelSmall),
+              const SizedBox(height: 4),
+              Text(
+                suffix.isEmpty ? value : '$value$suffix',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      );
+}
 class _WalletAssetCard extends StatelessWidget {
   const _WalletAssetCard({
     required this.title,
