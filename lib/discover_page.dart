@@ -197,19 +197,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.all(8),
-              sliver: SliverToBoxAdapter(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: MasonryGridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    itemCount: feed.posts.length,
-                    itemBuilder: (context, index) => _card(feed, index),
-                  ),
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => _card(feed, index, fullWidth: true),
+                  childCount: feed.posts.length,
                 ),
               ),
             ),
