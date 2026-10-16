@@ -306,11 +306,12 @@ Future<String> syncCachedLocation(DDPostService service, String token) async {
     } catch (_) {
       // Reverse geocoding is optional; coordinates remain usable if unavailable.
     }
-    } catch (_) {
-      // Location is optional; feeds remain available without it.
-      return prefs.getString('dd.location.city')?.trim() ?? '';
-    }
+    return prefs.getString('dd.location.city')?.trim() ?? '';
+  } catch (_) {
+    // Location is optional; feeds remain available without it.
+    return '';
   }
+}
 
 Future<String> cachedCityLabel(DDPostService service, String token) async {
   final prefs = await SharedPreferences.getInstance();
