@@ -401,6 +401,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   bool conversationCacheLoaded = false;
   String? loadError;
   final Map<String, String> _avatarPaths = {};
+  final Set<String> _pinnedConversationIds = <String>{};
   bool callDialogShowing = false;
   BuildContext? incomingDialogContext;
   bool outgoingCallStarting = false;
@@ -611,6 +612,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final accountId = prefs.getString('friend.auth.userId') ?? '';
     if (accountId.isNotEmpty) {
       final cachedRows = await ImLocalStore.conversations(accountId);
+      _pinnedConversationIds
+        ..clear()
+        ..addAll(cachedRows
+            .where((row) => row['pinned'] == true)
+            .map((row) => '${row['conversationId'] ?? ''}'));
       if (cachedRows.isNotEmpty && mounted) {
         setState(() {
           conversations =
@@ -677,8 +683,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           row.peerReadMessageId,
           row.updatedAt,
           row.kind,
+          _pinnedConversationIds.contains(row.id),
         ));
       }
+      mapped.sort((a, b) {
+        final ap = _pinnedConversationIds.contains(a.conversationId);
+        final bp = _pinnedConversationIds.contains(b.conversationId);
+        if (ap != bp) return ap ? -1 : 1;
+        return 0;
+      });
       if (mounted) {
         setState(() {
           conversations = mapped;
@@ -895,8 +908,54 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return _cachedAvatarProvider(url);
   }
 
+  Future<void> _togglePinnedConversation(_ChatPreview chat) async {
+    final pinned = !_pinnedConversationIds.contains(chat.conversationId);
+    setState(() {
+      if (pinned) {
+        _pinnedConversationIds.add(chat.conversationId);
+      } else {
+        _pinnedConversationIds.remove(chat.conversationId);
+      }
+      final index = conversations.indexWhere(
+          (item) => item.conversationId == chat.conversationId);
+      if (index >= 0) {
+        conversations[index] = chat.copyWith(pinned: pinned);
+      }
+      conversations.sort((a, b) {
+        final ap = _pinnedConversationIds.contains(a.conversationId);
+        final bp = _pinnedConversationIds.contains(b.conversationId);
+        if (ap != bp) return ap ? -1 : 1;
+        return 0;
+      });
+    });
+    final accountId = ImSession.instance.userId ??
+        (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
+    if (accountId.isNotEmpty) {
+      await ImLocalStore.saveConversations(
+        accountId: accountId,
+        conversations: conversations.map((item) => item.toCache()).toList(),
+      );
+    }
+  }
+
   Widget _chatPreviewTile(BuildContext context, _ChatPreview chat, int index) =>
-      InkWell(
+      Dismissible(
+        key: ValueKey('conversation-${chat.conversationId}'),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          await _togglePinnedConversation(chat);
+          return false;
+        },
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          color: Theme.of(context).colorScheme.primary,
+          child: Text(
+            _pinnedConversationIds.contains(chat.conversationId) ? '取消置顶' : '置顶',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+        child: InkWell(
         onTap: () async {
           final prefs = await SharedPreferences.getInstance();
           final currentUserId = prefs.getString('friend.auth.userId') ?? '';
@@ -980,6 +1039,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               ),
             ],
           ),
+        ),
         ),
       );
 
@@ -1069,7 +1129,7 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.peerUserId, this.conversationId, this.unreadCount,
-      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm']);
+      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm', this.pinned = false]);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -1080,6 +1140,7 @@ class _ChatPreview {
   final String? peerReadMessageId;
   final String? updatedAt;
   final String kind;
+  final bool pinned;
 
   factory _ChatPreview.fromCache(Map<String, dynamic> row) => _ChatPreview(
         '${row['name'] ?? '用户'}',
@@ -1092,6 +1153,21 @@ class _ChatPreview {
         row['peerReadMessageId']?.toString(),
         row['updatedAt']?.toString(),
         '${row['kind'] ?? 'dm'}',
+        row['pinned'] == true,
+      );
+
+  _ChatPreview copyWith({bool? pinned}) => _ChatPreview(
+        name,
+        preview,
+        avatarUrl,
+        avatarKey,
+        peerUserId,
+        conversationId,
+        unreadCount,
+        peerReadMessageId,
+        updatedAt,
+        kind,
+        pinned ?? this.pinned,
       );
 
   Map<String, dynamic> toCache() => {
@@ -1105,6 +1181,7 @@ class _ChatPreview {
         'peerReadMessageId': peerReadMessageId,
         'updatedAt': updatedAt,
         'kind': kind,
+        'pinned': pinned,
       };
 }
 
