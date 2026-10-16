@@ -363,7 +363,8 @@ class _DiscoverProfileCard extends StatelessWidget {
         final height = naturalHeight.clamp(0.0, 500.0).toDouble();
         final fittedWidth = height < naturalHeight ? height * aspect : width;
         return Align(
-          alignment: Alignment.centerLeft,
+          alignment: Alignment.topLeft,
+          widthFactor: 1,
           child: SizedBox(
             key: key,
             width: fittedWidth,
@@ -397,7 +398,11 @@ class _DiscoverProfileCard extends StatelessWidget {
           post.thumbnailUrl?.isNotEmpty == true
               ? _mediaFrame(url: post.thumbnailUrl!, thumbnail: true)
               : const SizedBox(height: 180),
-          const Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
+          const Positioned(
+            left: 24,
+            top: 24,
+            child: Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
+          ),
         ],
       );
     }
