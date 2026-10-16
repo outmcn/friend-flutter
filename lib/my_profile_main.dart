@@ -413,6 +413,20 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
 
+  Future<void> _refreshCityFromLocation() async {
+    if (_locationRefreshing) return;
+    setState(() => _locationRefreshing = true);
+    try {
+      final token = await _token();
+      await syncCachedLocation(service, token);
+      await _refreshProfileOnly();
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('定位更新失败：$e'));
+    } finally {
+      if (mounted) setState(() => _locationRefreshing = false);
+    }
+  }
+
   String _formatCount(dynamic value) {
     final number = int.tryParse('$value') ?? 0;
     if (number >= 100000000) {
