@@ -968,7 +968,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       key: ValueKey('conversation-${chat.conversationId}'),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
-        extentRatio: 0.75,
+        extentRatio: 2 / 3,
         children: [
           SlidableAction(
             onPressed: (_) => _togglePinnedConversation(chat),
