@@ -515,30 +515,42 @@ class _DDProfilePageState extends State<DDProfilePage>
               ),
               SwitchListTile(
                 title: const Text('全站防骚扰'),
-                subtitle: const Text('仅本机显示，暂未同步服务器'),
+                subtitle: const Text('服务端同步'),
                 value: _antiHarassment,
                 onChanged: (value) {
+                  final before = _antiHarassment;
                   setSheetState(() => _antiHarassment = value);
-                  setState(() {});
+                  unawaited(_savePreferences(
+                    antiHarassment: value,
+                    onFailure: () => setSheetState(() => _antiHarassment = before),
+                  ));
                 },
               ),
               SwitchListTile(
                 title: const Text('智能屏蔽'),
-                subtitle: const Text('仅本机显示，暂未同步服务器'),
+                subtitle: const Text('服务端同步'),
                 value: _smartBlock,
                 onChanged: (value) {
+                  final before = _smartBlock;
                   setSheetState(() => _smartBlock = value);
-                  setState(() {});
+                  unawaited(_savePreferences(
+                    smartBlock: value,
+                    onFailure: () => setSheetState(() => _smartBlock = before),
+                  ));
                 },
               ),
               ListTile(
                 title: const Text('开启匹配'),
-                subtitle: const Text('仅本机显示，暂未同步服务器'),
+                subtitle: const Text('服务端同步'),
                 trailing: Switch(
                   value: _matching,
                   onChanged: (value) {
+                    final before = _matching;
                     setSheetState(() => _matching = value);
-                    unawaited(_savePreferences(matchingEnabled: value));
+                    unawaited(_savePreferences(
+                      matchingEnabled: value,
+                      onFailure: () => setSheetState(() => _matching = before),
+                    ));
                   },
                 ),
               ),
@@ -554,6 +566,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     bool? antiHarassment,
     bool? smartBlock,
     bool? matchingEnabled,
+    VoidCallback? onFailure,
   }) async {
     try {
       final token = await _token();
@@ -564,6 +577,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         matchingEnabled: matchingEnabled,
       );
     } catch (e) {
+      onFailure?.call();
       if (mounted) _showTopNotice(context, Text('设置保存失败：$e'));
     }
   }
