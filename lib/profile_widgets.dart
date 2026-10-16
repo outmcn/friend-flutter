@@ -1,13 +1,12 @@
 part of 'main.dart';
 
 
-String _formatProfilePostTime(String raw) {
+String _formatProfilePostDate(String raw) {
   final parsed = DateTime.tryParse(raw);
-  if (parsed == null || raw.trim().isEmpty) return '发布时间未知';
+  if (parsed == null || raw.trim().isEmpty) return '2026.01.01';
   final local = parsed.toLocal();
   String two(int value) => value.toString().padLeft(2, '0');
-  return '${local.year}-${two(local.month)}-${two(local.day)} '
-      '${two(local.hour)}:${two(local.minute)}';
+  return '${local.year}.${two(local.month)}.${two(local.day)}';
 }
 
 class _SonicProfileButton extends StatelessWidget {
@@ -381,22 +380,17 @@ class _MyProfilePostCard extends StatelessWidget {
                     post.content.trim(),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 15, height: 1.4),
+                    style: const TextStyle(fontSize: 18, height: 1.35),
                   ),
                 ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
                 child: Row(
                   children: [
-                    Icon(Icons.schedule_outlined,
-                        size: 16, color: scheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        _formatProfilePostTime(post.createdAt),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    Text(
+                      _formatProfilePostDate(post.createdAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const Spacer(),
                     Icon(Icons.visibility_outlined,
