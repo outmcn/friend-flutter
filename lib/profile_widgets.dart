@@ -1,6 +1,15 @@
 part of 'main.dart';
 
 
+String _formatProfilePostTime(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null || raw.trim().isEmpty) return '发布时间未知';
+  final local = parsed.toLocal();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${local.year}-${two(local.month)}-${two(local.day)} '
+      '${two(local.hour)}:${two(local.minute)}';
+}
+
 class _SonicProfileButton extends StatelessWidget {
   const _SonicProfileButton({
     required this.playing,
@@ -379,32 +388,21 @@ class _MyProfilePostCard extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
                 child: Row(
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(TIcons.thumb_up_1,
-                            size: 16,
-                            color: post.liked
-                                ? Colors.red
-                                : scheme.onSurfaceVariant),
-                        const SizedBox(width: 2),
-                        Text('${post.likes}'),
-                      ],
+                    Icon(Icons.schedule_outlined,
+                        size: 16, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        _formatProfilePostTime(post.createdAt),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    if (post.favorites > 0) ...[
-                      Icon(Icons.bookmark_border,
-                          size: 16, color: scheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Text('${post.favorites}'),
-                    ],
                     const Spacer(),
-                    if (post.views > 0) ...[
-                      Icon(Icons.visibility_outlined,
-                          size: 16, color: scheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Text('${post.views}'),
-                    ],
+                    Icon(Icons.visibility_outlined,
+                        size: 16, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('${post.views}'),
                   ],
                 ),
               ),
