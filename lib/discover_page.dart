@@ -87,6 +87,22 @@ class _DiscoverPageState extends State<DiscoverPage> {
     }
   }
 
+  Future<void> _favorite(DDPost post) async {
+    try {
+      await service.toggleFavorite(await _token(), post.id);
+      if (!mounted) return;
+      final updated = post.copyWith(
+        favorited: !post.favorited,
+        favorites: post.favorites + (post.favorited ? -1 : 1),
+      );
+      for (final feed in feeds) {
+        feed.updateLike(updated);
+      }
+    } catch (e) {
+      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+    }
+  }
+
   Future<void> _open(DDPost post) async {
     final feed = feeds[selectedTab];
     final key = _cardKeys.putIfAbsent(
@@ -181,6 +197,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         GlobalKey.new,
       ),
       onLike: _like,
+      onFavorite: _favorite,
       onOpen: _open,
     );
   }
@@ -325,6 +342,7 @@ class _DiscoverFeedCard extends StatefulWidget {
     required this.fullWidth,
     this.mediaKey,
     required this.onLike,
+    required this.onFavorite,
     required this.onOpen,
   });
 
@@ -333,6 +351,7 @@ class _DiscoverFeedCard extends StatefulWidget {
   final GlobalKey? mediaKey;
   final bool fullWidth;
   final ValueChanged<DDPost> onLike;
+  final ValueChanged<DDPost> onFavorite;
   final ValueChanged<DDPost> onOpen;
 
   @override
@@ -372,6 +391,7 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard> {
       post: post,
       mediaKey: widget.mediaKey,
       onLike: () => widget.onLike(post),
+      onFavorite: () => widget.onFavorite(post),
       onOpen: () => widget.onOpen(post),
     );
     return widget.fullWidth
