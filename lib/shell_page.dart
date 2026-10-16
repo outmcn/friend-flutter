@@ -982,13 +982,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 : '置顶',
           ),
           SlidableAction(
-            onPressed: (_) => _hideConversationPreview(chat),
-            backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
-            icon: Icons.visibility_off_outlined,
-            label: '不显示',
-          ),
-          SlidableAction(
             onPressed: (_) => _deleteConversationPreview(chat),
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
