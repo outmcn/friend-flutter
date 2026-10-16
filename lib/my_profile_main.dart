@@ -820,13 +820,18 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         right: 0,
                                         bottom: -9,
                                         child: Center(
-                                          child: InkWell(
-                                            onTap: _locationRefreshing
-                                                ? null
-                                                : _refreshCityFromLocation,
-                                            borderRadius:
-                                                BorderRadius.circular(999),
-                                            child: Container(
+                                          child: Semantics(
+                                            button: true,
+                                            label: _locationRefreshing
+                                                ? '正在更新城市'
+                                                : '点击定位更新城市',
+                                            child: InkWell(
+                                              onTap: _locationRefreshing
+                                                  ? null
+                                                  : _refreshCityFromLocation,
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              child: Container(
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 10, vertical: 3),
                                             decoration: BoxDecoration(
