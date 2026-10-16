@@ -590,7 +590,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     local['localDurationSeconds'],
               });
         final preview = locallyDeleted.contains(row.id)
-            ? '开始一段新的聊天'
+            ? '聊天记录已清空'
             : _conversationLastMessagePreview(row.lastMessage) ??
                 localPreview ??
                 '开始一段新的聊天';
