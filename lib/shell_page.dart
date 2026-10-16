@@ -73,11 +73,21 @@ class _CompanionChatNotice extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('聊天记录可能作为订单售后依据！'),
-                  Text('引导您脱离平台交易的都是诈骗行为！'),
+                  Text(
+                    '聊天记录可能作为订单售后依据！',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  Text(
+                    '引导您脱离平台交易的都是诈骗行为！',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ],
               ),
             ),
