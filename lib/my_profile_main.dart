@@ -435,8 +435,11 @@ class _DDProfilePageState extends State<DDProfilePage>
     final active = state == AppLifecycleState.resumed;
     if (active != _appActive && mounted) {
       setState(() => _appActive = active);
+      if (active) {
+        unawaited(_refreshProfileOnly(showError: false));
+        unawaited(_sendPresenceHeartbeat());
+      }
     }
-    if (active) unawaited(_sendPresenceHeartbeat());
   }
   @override
   void didChangeDependencies() {
@@ -600,7 +603,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (mounted) setState(() => _tabSwitching = false);
     }
   }
-  Future<void> _refreshProfileOnly() async {
+  Future<void> _refreshProfileOnly({bool showError = true}) async {
     if (_profileRefreshing) return;
     setState(() => _profileRefreshing = true);
     try {
@@ -628,7 +631,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         });
       }
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('资料刷新失败：$e'));
+      if (showError && mounted) _showTopNotice(context, Text('资料刷新失败：$e'));
     } finally {
       if (mounted) setState(() => _profileRefreshing = false);
     }
