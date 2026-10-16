@@ -520,6 +520,21 @@ class ImLocalStore {
     return rows.map((row) => '${row['message_id']}').toSet();
   }
 
+  static Future<bool> isLocalMessageDeleted({
+    required String accountId,
+    required String conversationId,
+    required String messageId,
+  }) async {
+    final rows = await (await _db()).query(
+      'local_deleted_messages',
+      columns: ['message_id'],
+      where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
+      whereArgs: [accountId, conversationId, messageId],
+      limit: 1,
+    );
+    return rows.isNotEmpty;
+  }
+
   static Future<List<Map<String, dynamic>>> pendingMessages(
       String accountId) async {
     final rows = await (await _db()).query(

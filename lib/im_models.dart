@@ -68,6 +68,7 @@ class DDImLastMessage {
   });
   final String text;
   final String kind;
+  final String? id;
   final String createdAt;
   final String? recalledAt;
   final String? deletedAt;
@@ -78,6 +79,7 @@ class DDImLastMessage {
       DDImLastMessage(
         text: '${json['text'] ?? ''}',
         kind: '${json['kind'] ?? 'text'}',
+        id: json['id']?.toString(),
         createdAt: '${json['createdAt'] ?? ''}',
         recalledAt: json['recalledAt']?.toString(),
         deletedAt: json['deletedAt']?.toString(),

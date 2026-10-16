@@ -564,6 +564,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final latest = accountId.isEmpty
           ? <String, Map<String, dynamic>>{}
           : await ImLocalStore.latestMessages(accountId);
+      final locallyDeleted = <String>{};
+      if (accountId.isNotEmpty) {
+        for (final row in rows) {
+          final lastMessageId = row.lastMessage?.id ?? '';
+          if (lastMessageId.isNotEmpty &&
+              await ImLocalStore.isLocalMessageDeleted(
+                accountId: accountId,
+                conversationId: row.id,
+                messageId: lastMessageId,
+              )) {
+            locallyDeleted.add(row.id);
+          }
+        }
+      }
       for (final row in rows) {
         final local = latest[row.id];
         final localPreview = local == null
@@ -575,9 +589,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 'localDurationSeconds': local['local_duration_seconds'] ??
                     local['localDurationSeconds'],
               });
-        final preview = _conversationLastMessagePreview(row.lastMessage) ??
-            localPreview ??
-            '开始一段新的聊天';
+        final preview = locallyDeleted.contains(row.id)
+            ? '开始一段新的聊天'
+            : _conversationLastMessagePreview(row.lastMessage) ??
+                localPreview ??
+                '开始一段新的聊天';
         mapped.add(_ChatPreview(
           row.peer?.nickname ?? '会话 ${row.id}',
           preview,
