@@ -166,9 +166,16 @@ class _WalletPageState extends State<WalletPage> {
                 label: const Text('充值暂未开放')),
             if (error != null)
               Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child:
-                      Text(error!, style: const TextStyle(color: Colors.red))),
+                padding: const EdgeInsets.only(top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 8),
+                    OutlinedButton(onPressed: _load, child: const Text('重试')),
+                  ],
+                ),
+              ),
             const SizedBox(height: 12),
             const Card(
                 child: ListTile(
@@ -224,8 +231,23 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
-                ? Center(child: Text(error!))
-                : GridView.builder(
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(error!, textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                              onPressed: _load, child: const Text('重试')),
+                        ],
+                      ),
+                    ),
+                  )
+                : gifts.isEmpty
+                    ? const Center(child: Text('暂无礼物记录'))
+                    : GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
