@@ -473,32 +473,16 @@ class ImLocalStore {
     required String conversationId,
   }) async {
     final db = await _db();
-    final rows = await db.query(
-      'messages',
-      columns: ['message_id'],
-      where: 'account_id = ? AND conversation_id = ?',
-      whereArgs: [accountId, conversationId],
-    );
     await db.delete(
       'messages',
       where: 'account_id = ? AND conversation_id = ?',
       whereArgs: [accountId, conversationId],
     );
-    if (rows.isNotEmpty) {
-      final batch = db.batch();
-      for (final row in rows) {
-        batch.insert(
-          'local_deleted_messages',
-          {
-            'account_id': accountId,
-            'conversation_id': conversationId,
-            'message_id': '${row['message_id'] ?? ''}',
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-      await batch.commit(noResult: true);
-    }
+    await db.delete(
+      'local_deleted_messages',
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+    );
   }
 
   static Future<void> deleteLocalMessage({
@@ -536,15 +520,16 @@ class ImLocalStore {
     return rows.map((row) => '${row['message_id']}').toSet();
   }
 
-  static Future<bool> hasConversationClearMarker({
+  static Future<bool> isLocalMessageDeleted({
     required String accountId,
     required String conversationId,
+    required String messageId,
   }) async {
     final rows = await (await _db()).query(
       'local_deleted_messages',
       columns: ['message_id'],
-      where: 'account_id = ? AND conversation_id = ?',
-      whereArgs: [accountId, conversationId],
+      where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
+      whereArgs: [accountId, conversationId, messageId],
       limit: 1,
     );
     return rows.isNotEmpty;
