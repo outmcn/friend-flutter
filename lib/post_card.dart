@@ -344,12 +344,16 @@ class _DiscoverProfileCard extends StatelessWidget {
     if (image != null && image.isNotEmpty) {
       return ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 400),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
           child: _PermanentCachedImage(
             url: image,
-            width: double.infinity,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
+            ),
           ),
         ),
       );
@@ -362,12 +366,17 @@ class _DiscoverProfileCard extends StatelessWidget {
           post.thumbnailUrl?.isNotEmpty == true
               ? ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 400),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _PermanentCachedImage(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 360),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _PermanentCachedImage(
                       url: post.thumbnailUrl!,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
                   ),
                 )
@@ -481,7 +490,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
-                                '发布时间：${formatDDTime(post.createdAt)}',
+                                formatDDTime(post.createdAt),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),

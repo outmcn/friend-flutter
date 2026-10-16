@@ -97,6 +97,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       for (final feed in feeds) {
         feed.updateLike(updated);
       }
+      await DDPostService.clearProfileTabCaches();
     } catch (e) {
       if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
     }
