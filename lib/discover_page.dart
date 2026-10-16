@@ -259,7 +259,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       },
                       child: Padding(
                         padding:
-                            const EdgeInsets.only(right: 20, top: 9, bottom: 6),
+                            const EdgeInsets.only(right: 20, top: 1, bottom: 6),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
