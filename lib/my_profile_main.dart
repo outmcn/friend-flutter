@@ -847,7 +847,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           : '离线状态设置',
                                       child: InkWell(
                                         onTap: _openCityEditor,
-                                        borderRadius: BorderRadius.circular(999),
+                                        borderRadius:
+                                            BorderRadius.circular(999),
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 10, vertical: 4),
@@ -864,7 +865,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             borderRadius:
                                                 BorderRadius.circular(999),
                                           ),
-                                        child: Row(
+                                          child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Container(
