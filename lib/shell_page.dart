@@ -77,7 +77,6 @@ class _CompanionChatNotice extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('陪玩系统聊天记录可能作为订单售后依据！'),
-                  SizedBox(height: 3),
                   Text('请不要私下与对方联系！'),
                 ],
               ),
