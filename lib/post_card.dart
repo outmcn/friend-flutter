@@ -431,20 +431,25 @@ class _DiscoverProfileCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.w700)),
                       ),
-                      Text(formatDDTime(post.createdAt),
-                          style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
-                  if (hasMedia) ...[
-                    const SizedBox(height: 8),
-                    _media(context),
-                  ],
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '发布时间：${formatDDTime(post.createdAt)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
                   if (post.content.trim().isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8, bottom: 4),
                       child: Text(post.content.trim(),
                           style: const TextStyle(fontSize: 16, height: 1.4)),
                     ),
+                  if (hasMedia) ...[
+                    const SizedBox(height: 8),
+                    _media(context),
+                  ],
                   const Divider(height: 1),
                   Row(
                     children: [
