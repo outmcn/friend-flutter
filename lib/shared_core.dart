@@ -256,7 +256,7 @@ String formatDDTime(String raw) {
   return '${value.year}年${value.month}月${value.day}日';
 }
 
-Future<void> syncCachedLocation(DDPostService service, String token) async {
+Future<String> syncCachedLocation(DDPostService service, String token) async {
   const cacheAge = Duration(hours: 1);
   try {
     final prefs = await SharedPreferences.getInstance();
@@ -269,14 +269,14 @@ Future<void> syncCachedLocation(DDPostService service, String token) async {
         latitude != null &&
         longitude != null;
     if (!cacheValid) {
-      if (!await Geolocator.isLocationServiceEnabled()) return;
+      if (!await Geolocator.isLocationServiceEnabled()) return '';
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        return;
+        return '';
       }
       final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.medium);
@@ -301,20 +301,16 @@ Future<void> syncCachedLocation(DDPostService service, String token) async {
           .trim();
       if (resolvedCity.isNotEmpty) {
         await prefs.setString('dd.location.city', resolvedCity);
-        await service.updateLocation(
-          token: token,
-          latitude: latitude,
-          longitude: longitude,
-          city: resolvedCity,
-        );
+        return resolvedCity;
       }
     } catch (_) {
       // Reverse geocoding is optional; coordinates remain usable if unavailable.
     }
-  } catch (_) {
-    // Location is optional; feeds remain available without it.
+    } catch (_) {
+      // Location is optional; feeds remain available without it.
+      return prefs.getString('dd.location.city')?.trim() ?? '';
+    }
   }
-}
 
 Future<String> cachedCityLabel(DDPostService service, String token) async {
   final prefs = await SharedPreferences.getInstance();

@@ -410,8 +410,11 @@ class _DDProfilePageState extends State<DDProfilePage>
   Future<void> _refreshCityFromLocation() async {
     try {
       final token = await _token();
-      await syncCachedLocation(service, token);
+      final city = await syncCachedLocation(service, token);
       await _refreshProfileOnly();
+      if (mounted && city.isEmpty) {
+        _showTopNotice(context, const Text('暂未获取到城市，请检查定位权限'));
+      }
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('定位更新失败：$e'));
     }
