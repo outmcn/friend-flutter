@@ -343,7 +343,6 @@ class _DiscoverProfileCard extends StatelessWidget {
     final video = post.videoUrl?.trim();
     if (image != null && image.isNotEmpty) {
       return _PermanentCachedImage(
-        key: mediaKey,
         url: image,
         width: double.infinity,
         fit: BoxFit.contain,
