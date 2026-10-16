@@ -788,7 +788,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     : () => load(
                                         tab: selectedTab, forceRefresh: true),
                               ),
-                        Align(
+                            Align(
                           alignment: Alignment.centerLeft,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -983,10 +983,10 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ),
                                   ),
-                                ),
                                 ],
                               ),
-                              const SizedBox(height: 18),
+                            ),
+                            const SizedBox(height: 18),
                               Container(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 14),
