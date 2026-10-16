@@ -281,13 +281,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
           ),
           actions: [
             IconButton(
-                tooltip: '通知中心',
-                icon: const Icon(TIcons.notification),
-                onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const NotificationsPage()))),
-            IconButton(
                 tooltip: '创建动态',
                 icon: const Icon(TIcons.logo_instagram),
                 onPressed: () async {
