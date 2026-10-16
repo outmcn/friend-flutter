@@ -60,6 +60,7 @@ class DDImLastMessage {
   const DDImLastMessage({
     required this.text,
     this.kind = 'text',
+    this.id,
     required this.createdAt,
     this.recalledAt,
     this.deletedAt,
