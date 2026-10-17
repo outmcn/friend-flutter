@@ -12,11 +12,16 @@ class _DiscoverPostContent extends StatefulWidget {
 class _DiscoverPostContentState extends State<_DiscoverPostContent> {
   bool expanded = false;
 
-  static const bodyStyle = TextStyle(fontSize: 16, height: 1.4);
+  static const bodyStyle = TextStyle(
+    fontSize: 16,
+    height: 1.4,
+    textBaseline: TextBaseline.alphabetic,
+  );
   static const actionStyle = TextStyle(
     color: Color(0xFF1677FF),
     fontSize: 16,
     height: 1.4,
+    textBaseline: TextBaseline.alphabetic,
   );
 
   @override
@@ -73,9 +78,9 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
           overflow: TextOverflow.clip,
           text: TextSpan(children: [
             TextSpan(text: '$prefix… ', style: bodyStyle),
-            TextSpan(
-              text: '展开全部',
-              style: actionStyle,
+                TextSpan(
+                  text: '展开全部',
+                  style: actionStyle.copyWith(fontSize: bodyStyle.fontSize),
               recognizer: TapGestureRecognizer()
                 ..onTap = () => setState(() => expanded = true),
             ),
