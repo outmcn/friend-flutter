@@ -7,84 +7,80 @@ class _DiscoverMediaPreview extends StatelessWidget {
   final int? height;
 
   @override
-  Widget build(BuildContext context) {
-    return _DiscoverImageWithIntrinsicLayout(
-      url: url,
-      sourceWidth: width,
-      sourceHeight: height,
-    );
-  }
+  Widget build(BuildContext context) =>
+      _DiscoverMediaImage(url: url, width: width, height: height);
 }
 
-class _DiscoverImageWithIntrinsicLayout extends StatefulWidget {
-  const _DiscoverImageWithIntrinsicLayout({
-    required this.url,
-    this.sourceWidth,
-    this.sourceHeight,
-  });
+class _DiscoverMediaImage extends StatefulWidget {
+  const _DiscoverMediaImage({required this.url, this.width, this.height});
   final String url;
-  final int? sourceWidth;
-  final int? sourceHeight;
+  final int? width;
+  final int? height;
 
   @override
-  State<_DiscoverImageWithIntrinsicLayout> createState() =>
-      _DiscoverImageWithIntrinsicLayoutState();
+  State<_DiscoverMediaImage> createState() => _DiscoverMediaImageState();
 }
 
-class _DiscoverImageWithIntrinsicLayoutState
-    extends State<_DiscoverImageWithIntrinsicLayout> {
-  double? ratio;
+class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
+  double? _ratio;
 
   @override
   void initState() {
     super.initState();
-    _setSourceRatio();
+    _ratio = _sourceRatio;
   }
+
+  double? get _sourceRatio =>
+      widget.width != null && widget.height != null &&
+              widget.width! > 0 && widget.height! > 0
+          ? widget.width! / widget.height!
+          : null;
 
   @override
-  void didUpdateWidget(covariant _DiscoverImageWithIntrinsicLayout oldWidget) {
+  void didUpdateWidget(covariant _DiscoverMediaImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.url != widget.url ||
-        oldWidget.sourceWidth != widget.sourceWidth ||
-        oldWidget.sourceHeight != widget.sourceHeight) {
-      _setSourceRatio();
-    }
-  }
-
-  void _setSourceRatio() {
-    if (widget.sourceWidth != null &&
-        widget.sourceHeight != null &&
-        widget.sourceWidth! > 0 &&
-        widget.sourceHeight! > 0) {
-      ratio = widget.sourceWidth! / widget.sourceHeight!;
+        oldWidget.width != widget.width ||
+        oldWidget.height != widget.height) {
+      _ratio = _sourceRatio;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final fallbackRatio = ratio ?? 1.0;
     return LayoutBuilder(
       builder: (context, constraints) {
+        final ratio = _ratio ?? 1.0;
         final width = constraints.maxWidth;
-        final naturalHeight = width / fallbackRatio;
-        final height = naturalHeight > 500 ? 500.0 : naturalHeight;
-        final displayWidth = naturalHeight > 500 ? height * fallbackRatio : width;
+        final naturalHeight = width / ratio;
+        final limited = naturalHeight > 500;
+        final height = limited ? 500.0 : naturalHeight;
+        final displayWidth = limited ? height * ratio : width;
         return Align(
-          alignment: Alignment.centerLeft,
+          alignment: Alignment.topLeft,
           child: SizedBox(
             width: displayWidth,
             height: height,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: _PermanentCachedImage(
-                url: widget.url,
+              child: Image.network(
+                widget.url,
                 width: displayWidth,
                 height: height,
                 fit: BoxFit.contain,
-                placeholder: const ColoredBox(
+                alignment: Alignment.topLeft,
+                errorBuilder: (_, __, ___) => const ColoredBox(
                   color: Color(0x22111111),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  child: Center(child: Icon(Icons.broken_image_outlined)),
                 ),
+                loadingBuilder: (context, child, progress) =>
+                    progress == null
+                        ? child
+                        : const ColoredBox(
+                            color: Color(0x22111111),
+                            child: Center(
+                                child: CircularProgressIndicator(strokeWidth: 2)),
+                          ),
               ),
             ),
           ),
