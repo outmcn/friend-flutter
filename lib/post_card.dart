@@ -8,7 +8,7 @@ class _DiscoverMediaPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      _DiscoverMediaImage(url: url, width: width, height: height);
+      _DiscoverMediaImage(url: url);
 }
 
 class _DiscoverMediaImage extends StatefulWidget {
@@ -82,7 +82,7 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image(
-              image: _imageInfo!.image,
+              image: _stream!.key,
               width: displayWidth,
               height: displayHeight,
               fit: BoxFit.fill,
