@@ -394,12 +394,8 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
   }
 
   void _update() {
-    final updatedId = widget.feed.postChanges.value;
-    if (updatedId != null && updatedId == post.id) {
-      final updated = widget.feed.posts.firstWhere(
-        (item) => item.id == post.id,
-        orElse: () => post,
-      );
+    final updated = widget.feed.postChanges.value;
+    if (updated != null && updated.id == post.id) {
       setState(() => post = updated);
     }
   }

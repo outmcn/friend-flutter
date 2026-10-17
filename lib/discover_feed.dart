@@ -10,14 +10,14 @@ class DiscoverFeed extends ChangeNotifier {
   final String? cacheKey;
   final scroll = ScrollController();
   final posts = <DDPost>[];
-  final postChanges = ValueNotifier<int?>(null);
+  final postChanges = ValueNotifier<DDPost?>(null);
 
   void updateLike(DDPost post) {
     final index = posts.indexWhere((item) => item.id == post.id);
     if (disposed || index < 0) return;
     final updated = posts[index].copyWith(liked: post.liked, likes: post.likes);
     posts[index] = updated;
-    postChanges.value = post.id;
+    postChanges.value = updated;
   }
 
   void updateFavorite(DDPost post) {
@@ -28,7 +28,7 @@ class DiscoverFeed extends ChangeNotifier {
       favorites: post.favorites,
     );
     posts[index] = updated;
-    postChanges.value = post.id;
+    postChanges.value = updated;
   }
   void markChanged() {
     if (!disposed) notifyListeners();
