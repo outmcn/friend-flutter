@@ -29,11 +29,9 @@ class _FloatingNoticeState extends State<_FloatingNotice>
     duration: const Duration(milliseconds: 220),
   )..forward();
   Timer? timer;
-
   @override
   void initState() {
     super.initState();
-    timer = Timer(const Duration(seconds: 3), widget.onClose);
   }
 
   @override
