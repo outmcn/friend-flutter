@@ -21,41 +21,39 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onOpen;
 
   Widget _media({required String url, required bool thumbnail}) {
-    final imageWidth = thumbnail ? post.thumbnailWidth : post.imageWidth;
-    final imageHeight = thumbnail ? post.thumbnailHeight : post.imageHeight;
-    final ratio = imageWidth != null && imageHeight != null &&
-            imageWidth > 0 && imageHeight > 0
-        ? imageWidth / imageHeight
+    final sourceWidth = thumbnail ? post.thumbnailWidth : post.imageWidth;
+    final sourceHeight = thumbnail ? post.thumbnailHeight : post.imageHeight;
+    final ratio = sourceWidth != null && sourceHeight != null &&
+            sourceWidth > 0 && sourceHeight > 0
+        ? sourceWidth / sourceHeight
         : 1.0;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth;
-        final naturalHeight = availableWidth / ratio;
-        final limited = naturalHeight > 500;
-        final boxHeight = limited ? 500.0 : naturalHeight;
-        final boxWidth = limited ? boxHeight * ratio : availableWidth;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: boxWidth,
-              height: boxHeight,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: _PermanentCachedImage(
-                  url: url,
-                  width: boxWidth,
-                  height: boxHeight,
-                  fit: BoxFit.contain,
-                  placeholder: const ColoredBox(
-                    color: Color(0x22111111),
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                  ),
+        final displayWidth = constraints.maxWidth;
+        final naturalHeight = displayWidth / ratio;
+        final displayHeight = naturalHeight <= 500 ? naturalHeight : 500.0;
+        final actualWidth = naturalHeight <= 500
+            ? displayWidth
+            : displayHeight * ratio;
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: actualWidth,
+              height: displayHeight,
+              child: _PermanentCachedImage(
+                url: url,
+                width: actualWidth,
+                height: displayHeight,
+                fit: BoxFit.contain,
+                placeholder: const ColoredBox(
+                  color: Color(0x22111111),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 ),
               ),
             ),
-          ],
+          ),
         );
       },
     );
