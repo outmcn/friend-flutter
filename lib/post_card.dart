@@ -35,17 +35,28 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
         )..layout(maxWidth: constraints.maxWidth);
         final metrics = full.computeLineMetrics();
         final truncated = metrics.length > widget.maxLines;
-        if (!truncated) return Text(widget.text, style: bodyStyle);
+        if (!truncated) {
+          return RichText(
+            textAlign: TextAlign.left,
+            softWrap: true,
+            text: TextSpan(text: widget.text, style: bodyStyle),
+          );
+        }
         if (expanded) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.text, style: bodyStyle),
-              GestureDetector(
-                onTap: () => setState(() => expanded = false),
-                child: const Text('收起', style: actionStyle),
-              ),
-            ],
+          return RichText(
+            textAlign: TextAlign.left,
+            softWrap: true,
+            text: TextSpan(
+              children: [
+                TextSpan(text: widget.text, style: bodyStyle),
+                TextSpan(
+                  text: '  收起',
+                  style: actionStyle,
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () => setState(() => expanded = false),
+                ),
+              ],
+            ),
           );
         }
         final action = TextPainter(
