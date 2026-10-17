@@ -30,25 +30,24 @@ class _DiscoverProfileCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final naturalHeight = width / aspect;
-        final height = 500.0;
-        final fittedWidth = naturalHeight > 500 ? height * aspect : width;
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: fittedWidth,
-            height: height,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _PermanentCachedImage(
-                url: url,
-                width: fittedWidth,
-                height: height,
-                fit: BoxFit.contain,
-                placeholder: const ColoredBox(
-                  color: Color(0x22111111),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
+        final calculatedHeight = width / aspect;
+        final previewHeight = calculatedHeight > 500 ? 500.0 : calculatedHeight;
+        final previewWidth = calculatedHeight > 500
+            ? previewHeight * aspect
+            : width;
+        return SizedBox(
+          width: previewWidth,
+          height: previewHeight,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _PermanentCachedImage(
+              url: url,
+              width: previewWidth,
+              height: previewHeight,
+              fit: calculatedHeight > 500 ? BoxFit.cover : BoxFit.contain,
+              placeholder: const ColoredBox(
+                color: Color(0x22111111),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
               ),
             ),
           ),
