@@ -11,80 +11,53 @@ class _DiscoverMediaPreview extends StatelessWidget {
       _DiscoverMediaImage(url: url, width: width, height: height);
 }
 
-class _DiscoverMediaImage extends StatefulWidget {
+class _DiscoverMediaImage extends StatelessWidget {
   const _DiscoverMediaImage({required this.url, this.width, this.height});
   final String url;
   final int? width;
   final int? height;
 
   @override
-  State<_DiscoverMediaImage> createState() => _DiscoverMediaImageState();
-}
-
-class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
-  double? _ratio;
-
-  @override
-  void initState() {
-    super.initState();
-    _ratio = _sourceRatio;
-  }
-
-  double? get _sourceRatio =>
-      widget.width != null && widget.height != null &&
-              widget.width! > 0 && widget.height! > 0
-          ? widget.width! / widget.height!
-          : null;
-
-  @override
-  void didUpdateWidget(covariant _DiscoverMediaImage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url ||
-        oldWidget.width != widget.width ||
-        oldWidget.height != widget.height) {
-      _ratio = _sourceRatio;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final sourceRatio = width != null && height != null &&
+            width! > 0 && height! > 0
+        ? width! / height!
+        : 1.0;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final ratio = _ratio ?? 1.0;
-        final width = constraints.maxWidth;
-        final naturalHeight = width / ratio;
-        final limited = naturalHeight > 500;
-        const maxPreviewHeight = 500.0;
-        final height = naturalHeight > maxPreviewHeight
-            ? maxPreviewHeight
-            : naturalHeight;
-        final displayWidth = limited ? height * ratio : width;
+        final availableWidth = constraints.maxWidth;
+        final naturalHeight = availableWidth / sourceRatio;
+        final isLimited = naturalHeight > 500.0;
+        final displayHeight = isLimited ? 500.0 : naturalHeight;
+        final displayWidth = isLimited
+            ? displayHeight * sourceRatio
+            : availableWidth;
         return Align(
           alignment: Alignment.topLeft,
-          child: SizedBox(
-            width: displayWidth,
-            height: height,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                widget.url,
-                width: displayWidth,
-                height: height,
-                fit: BoxFit.contain,
-                alignment: Alignment.topLeft,
-                errorBuilder: (_, __, ___) => const ColoredBox(
-                  color: Color(0x22111111),
-                  child: Center(child: Icon(Icons.broken_image_outlined)),
-                ),
-                loadingBuilder: (context, child, progress) =>
-                    progress == null
-                        ? child
-                        : const ColoredBox(
-                            color: Color(0x22111111),
-                            child: Center(
-                                child: CircularProgressIndicator(strokeWidth: 2)),
-                          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              url,
+              width: displayWidth,
+              height: displayHeight,
+              fit: BoxFit.fill,
+              alignment: Alignment.topLeft,
+              errorBuilder: (_, __, ___) => const ColoredBox(
+                color: Color(0x22111111),
+                child: Center(child: Icon(Icons.broken_image_outlined)),
               ),
+              loadingBuilder: (context, child, progress) => progress == null
+                  ? child
+                  : SizedBox(
+                      width: displayWidth,
+                      height: displayHeight,
+                      child: const ColoredBox(
+                        color: Color(0x22111111),
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
             ),
           ),
         );
