@@ -36,6 +36,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   void initState() {
     super.initState();
+    unawaited(SharedPreferences.getInstance().then((prefs) async {
+      for (var tab = 0; tab < 3; tab++) {
+        await prefs.remove('dd.discover.feed.$tab');
+      }
+    }));
     feeds = List.generate(3, (tab) {
       final feed = DiscoverFeed((offset) async {
         final token = await _token();
