@@ -37,19 +37,22 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
         final truncated = metrics.length > widget.maxLines;
         if (!truncated) return Text(widget.text, style: bodyStyle);
         if (expanded) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.text, style: bodyStyle),
-              GestureDetector(
-                onTap: () => setState(() => expanded = false),
-                child: const Text('收起', style: actionStyle),
+          return RichText(
+            textAlign: TextAlign.left,
+            softWrap: true,
+            text: TextSpan(children: [
+              TextSpan(text: widget.text, style: bodyStyle),
+              TextSpan(
+                text: '  收起',
+                style: actionStyle,
+                recognizer: TapGestureRecognizer()
+                  ..onTap = () => setState(() => expanded = false),
               ),
-            ],
+            ]),
           );
         }
         final action = TextPainter(
-          text: const TextSpan(text: '展开全部', style: actionStyle),
+          text: TextSpan(text: '展开全部', style: bodyStyle),
           textDirection: direction,
         )..layout();
         var low = 0;
@@ -80,7 +83,7 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
             TextSpan(text: '$prefix… ', style: bodyStyle),
                 TextSpan(
                   text: '展开全部',
-                  style: actionStyle.copyWith(fontSize: bodyStyle.fontSize),
+                  style: actionStyle,
               recognizer: TapGestureRecognizer()
                 ..onTap = () => setState(() => expanded = true),
             ),
