@@ -18,77 +18,60 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
     height: 1.4,
   );
 
-  bool _exceedsThreeLines(String text, TextDirection direction, double width) {
-    final painter = TextPainter(
-      text: TextSpan(text: text, style: bodyStyle),
-      textDirection: direction,
-      maxLines: 3,
-    )..layout(maxWidth: width);
-    return painter.didExceedMaxLines;
-  }
-
-  String _visiblePrefix(
-    String text,
-    TextDirection direction,
-    double width,
-  ) {
-    const actionText = '展开全部';
-    var low = 0;
-    var high = text.length;
-    while (low < high) {
-      final mid = (low + high + 1) ~/ 2;
-      final candidate = TextPainter(
-        text: TextSpan(
-          text: '${text.substring(0, mid)}… $actionText',
-          style: bodyStyle,
-        ),
-        textDirection: direction,
-        maxLines: 3,
-      )..layout(maxWidth: width);
-      if (!candidate.didExceedMaxLines) {
-        low = mid;
-      } else {
-        high = mid - 1;
-      }
-    }
-    return text.substring(0, low).trimRight();
-  }
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final direction = Directionality.of(context);
-        final truncated = _exceedsThreeLines(
-          widget.text,
-          direction,
-          constraints.maxWidth,
-        );
-        if (!truncated) {
-          return Text(widget.text, style: bodyStyle);
-        }
+        final full = TextPainter(
+          text: TextSpan(text: widget.text, style: bodyStyle),
+          textDirection: direction,
+        )..layout(maxWidth: constraints.maxWidth);
+        final metrics = full.computeLineMetrics();
+        final truncated = metrics.length > 3;
+        if (!truncated) return Text(widget.text, style: bodyStyle);
         if (expanded) {
-          return Text.rich(
-            TextSpan(children: [
-              TextSpan(text: widget.text, style: bodyStyle),
-              WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: GestureDetector(
-                  onTap: () => setState(() => expanded = false),
-                  child: const Text(' 收起', style: actionStyle),
-                ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.text, style: bodyStyle),
+              GestureDetector(
+                onTap: () => setState(() => expanded = false),
+                child: const Text('收起', style: actionStyle),
               ),
-            ]),
+            ],
           );
         }
-        final visible = _visiblePrefix(
-          widget.text,
-          direction,
-          constraints.maxWidth,
-        );
-        return Text.rich(
-          TextSpan(children: [
-            TextSpan(text: '$visible… ', style: bodyStyle),
+        final action = TextPainter(
+          text: const TextSpan(text: '展开全部', style: actionStyle),
+          textDirection: direction,
+        )..layout();
+        var low = 0;
+        var high = widget.text.length;
+        while (low < high) {
+          final mid = (low + high + 1) ~/ 2;
+          final probe = TextPainter(
+            text: TextSpan(
+              text: '${widget.text.substring(0, mid)}… 展开全部',
+              style: bodyStyle,
+            ),
+            textDirection: direction,
+            maxLines: 3,
+          )..layout(maxWidth: constraints.maxWidth);
+          if (!probe.didExceedMaxLines) {
+            low = mid;
+          } else {
+            high = mid - 1;
+          }
+        }
+        final prefix = widget.text.substring(0, low).trimRight();
+        return RichText(
+          textAlign: TextAlign.left,
+          softWrap: true,
+          maxLines: 3,
+          overflow: TextOverflow.clip,
+          text: TextSpan(children: [
+            TextSpan(text: '$prefix… ', style: bodyStyle),
             TextSpan(
               text: '展开全部',
               style: actionStyle,
@@ -96,8 +79,6 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
                 ..onTap = () => setState(() => expanded = true),
             ),
           ]),
-          maxLines: 3,
-          overflow: TextOverflow.clip,
         );
       },
     );
