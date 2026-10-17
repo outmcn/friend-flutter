@@ -5,8 +5,6 @@ class _DynamicPostCard extends StatelessWidget {
     required this.post,
     required this.onLike,
     required this.onFavorite,
-    required this.onShare,
-    required this.onReport,
     required this.onOpen,
     this.onComment,
     // ignore: unused_element_parameter
@@ -21,8 +19,6 @@ class _DynamicPostCard extends StatelessWidget {
   final DDPost post;
   final VoidCallback onLike;
   final VoidCallback onFavorite;
-  final VoidCallback onShare;
-  final VoidCallback onReport;
   final VoidCallback onOpen;
   final VoidCallback? onComment;
   final VoidCallback? onFollow;
@@ -333,6 +329,8 @@ class _DiscoverProfileCard extends StatelessWidget {
     this.mediaKey,
     required this.onLike,
     required this.onFavorite,
+    required this.onShare,
+    required this.onReport,
     required this.onOpen,
   });
 
@@ -340,6 +338,8 @@ class _DiscoverProfileCard extends StatelessWidget {
   final GlobalKey? mediaKey;
   final VoidCallback onLike;
   final VoidCallback onFavorite;
+  final VoidCallback onShare;
+  final VoidCallback onReport;
   final VoidCallback onOpen;
 
   double _mediaAspect({required bool thumbnail}) {
