@@ -348,33 +348,21 @@ class _DiscoverProfileCard extends StatelessWidget {
   }
 
   Widget _media({required String url, required bool thumbnail}) {
-    final aspect = _mediaAspect(thumbnail: thumbnail);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth < 360
-            ? constraints.maxWidth
-            : 360.0;
-        final naturalWidth = maxWidth;
-        final naturalHeight = naturalWidth / aspect;
-        final height = naturalHeight > 500 ? 500.0 : naturalHeight;
-        final width = height < naturalHeight ? height * aspect : naturalWidth;
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: width,
-            height: height,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _PermanentCachedImage(
-                url: url,
-                width: width,
-                height: height,
-                fit: BoxFit.cover,
-              ),
-            ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 360,
+          maxHeight: 500,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: _PermanentCachedImage(
+            url: url,
+            fit: BoxFit.contain,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
