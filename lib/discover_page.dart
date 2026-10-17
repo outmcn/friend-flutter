@@ -36,11 +36,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(SharedPreferences.getInstance().then((prefs) async {
-      for (var tab = 0; tab < 3; tab++) {
-        await prefs.remove('dd.discover.feed.$tab');
-      }
-    }));
     feeds = List.generate(3, (tab) {
       final feed = DiscoverFeed((offset) async {
         final token = await _token();
@@ -63,12 +58,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
       });
       return feed;
     });
-    for (final feed in feeds) {
-      unawaited(feed.restoreCache().then((_) {
-        if (!feed.initialized) return feed.load();
-        return Future<void>.value();
-      }));
-    }
+    final firstFeed = feeds.first;
+    unawaited(firstFeed.restoreCache().then((_) {
+      if (!firstFeed.initialized) return firstFeed.load();
+      return Future<void>.value();
+    }));
     unawaited(_loadDiscoverCity());
   }
 
@@ -293,8 +287,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       onTap: () {
                         HapticFeedback.selectionClick();
                         setState(() => selectedTab = entry.key);
-                        if (!feeds[entry.key].initialized) {
-                          feeds[entry.key].load();
+                        final feed = feeds[entry.key];
+                        if (!feed.initialized) {
+                          unawaited(feed.restoreCache().then((_) {
+                            if (!feed.initialized) return feed.load();
+                            return Future<void>.value();
+                          }));
                         }
                       },
                       child: Padding(

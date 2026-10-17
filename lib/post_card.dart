@@ -20,6 +20,8 @@ class _DiscoverMediaImage extends StatefulWidget {
 }
 
 class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
+  ImageStream? _stream;
+  ImageStreamListener? _streamListener;
   ImageInfo? _imageInfo;
   ImageProvider<Object>? _provider;
   bool _loading = true;
@@ -56,7 +58,7 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
     final provider = FileImage(File(path));
     _PermanentImageCache.rememberProvider(widget.url, provider);
     final stream = provider.resolve(createLocalImageConfiguration(context));
-    stream.addListener(ImageStreamListener((info, _) {
+    _streamListener = ImageStreamListener((info, _) {
       if (!mounted) return;
       setState(() {
         _provider = provider;
@@ -66,7 +68,19 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
       });
     }, onError: (_, __) {
       if (mounted) setState(() { _loading = false; _failed = true; });
-    }));
+    });
+    _stream = stream;
+    stream.addListener(_streamListener!);
+  }
+
+  @override
+  void dispose() {
+    final stream = _stream;
+    final listener = _streamListener;
+    if (stream != null && listener != null) {
+      stream.removeListener(listener);
+    }
+    super.dispose();
   }
 
   @override
@@ -83,10 +97,13 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
                 borderRadius: BorderRadius.circular(12),
                 child: ColoredBox(
                   color: const Color(0x22111111),
-                  child: Center(
-                    child: _loading
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.broken_image_outlined),
+                  child: GestureDetector(
+                    onTap: _failed ? _loadAuthenticatedImage : null,
+                    child: Center(
+                      child: _loading
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.refresh),
+                    ),
                   ),
                 ),
               ),
