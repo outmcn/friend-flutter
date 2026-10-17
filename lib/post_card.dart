@@ -13,19 +13,19 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
 
   @override
   Widget build(BuildContext context) {
-    final style = const TextStyle(fontSize: 18, height: 1.4);
+    const style = TextStyle(fontSize: 18, height: 1.4);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final painter = TextPainter(
+        final direction = Directionality.of(context);
+        final fullPainter = TextPainter(
           text: TextSpan(text: widget.text, style: style),
-          textDirection: Directionality.of(context),
-          maxLines: 3,
+          textDirection: direction,
         )..layout(maxWidth: constraints.maxWidth);
-        final truncated = painter.didExceedMaxLines;
-        if (expanded) {
+        final truncated = fullPainter.computeLineMetrics().length > 3;
+        if (expanded || !truncated) {
           return Text.rich(TextSpan(children: [
             TextSpan(text: widget.text, style: style),
-            if (truncated)
+            if (expanded && truncated)
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: GestureDetector(
@@ -35,20 +35,35 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
               ),
           ]));
         }
+        var visible = widget.text;
+        while (visible.isNotEmpty) {
+          final candidate = TextPainter(
+            text: TextSpan(text: '$visible…', style: style),
+            textDirection: direction,
+            maxLines: 3,
+          )..layout(maxWidth: constraints.maxWidth);
+          final morePainter = TextPainter(
+            text: const TextSpan(text: '展开全部', style: TextStyle(color: Color(0xFF1677FF), fontSize: 15)),
+            textDirection: direction,
+          )..layout(maxWidth: constraints.maxWidth);
+          if (candidate.computeLineMetrics().length <= 3 &&
+              candidate.width + morePainter.width <= constraints.maxWidth) {
+            break;
+          }
+          visible = visible.substring(0, visible.length - 1);
+        }
         return Text.rich(
           TextSpan(children: [
-            TextSpan(text: widget.text, style: style),
-            if (truncated)
-              WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: GestureDetector(
-                  onTap: () => setState(() => expanded = true),
-                  child: const Text(' 更多', style: TextStyle(color: Color(0xFF1677FF), fontSize: 15)),
-                ),
+            TextSpan(text: '$visible…', style: style),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: GestureDetector(
+                onTap: () => setState(() => expanded = true),
+                child: const Text(' 展开全部', style: TextStyle(color: Color(0xFF1677FF), fontSize: 15)),
               ),
+            ),
           ]),
           maxLines: 3,
-          overflow: TextOverflow.ellipsis,
         );
       },
     );
