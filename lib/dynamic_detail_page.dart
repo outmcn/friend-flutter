@@ -1,5 +1,13 @@
 part of 'main.dart';
 
+class _AvatarRetryPlaceholder extends StatelessWidget {
+  const _AvatarRetryPlaceholder();
+  @override
+  Widget build(BuildContext context) => const Center(
+        child: Icon(Icons.refresh, size: 18),
+      );
+}
+
 class DynamicDetailPage extends StatefulWidget {
   const DynamicDetailPage({
     super.key,
@@ -563,7 +571,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 width: 40,
                 height: 40,
                 fit: BoxFit.cover,
-                placeholder: const Icon(Icons.person_outline),
+                placeholder: const _AvatarRetryPlaceholder(),
               ),
             ),
             const SizedBox(width: 10),
@@ -1004,7 +1012,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                               child: _PermanentCachedImage(
                                 url: item.avatar,
                                 fit: BoxFit.cover,
-                                placeholder: const Icon(Icons.person_outline),
+                                placeholder: const _AvatarRetryPlaceholder(),
                               ),
                             ),
                           ),
