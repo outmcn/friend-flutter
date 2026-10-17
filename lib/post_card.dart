@@ -21,38 +21,19 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onOpen;
 
   Widget _media({required String url, required bool thumbnail}) {
-    final sourceWidth = thumbnail ? post.thumbnailWidth : post.imageWidth;
-    final sourceHeight = thumbnail ? post.thumbnailHeight : post.imageHeight;
-    final placeholderAspect = sourceWidth != null && sourceHeight != null &&
-            sourceWidth > 0 && sourceHeight > 0
-        ? sourceWidth / sourceHeight
-        : 4 / 3;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final placeholderHeight =
-            (width / placeholderAspect).clamp(1.0, 500.0).toDouble();
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: width,
-            height: placeholderHeight,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _PermanentCachedImage(
-                url: url,
-                width: width,
-                height: placeholderHeight,
-                fit: BoxFit.contain,
-                placeholder: const ColoredBox(
-                  color: Color(0x22111111),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
-              ),
-            ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: _PermanentCachedImage(
+          url: url,
+          fit: BoxFit.cover,
+          placeholder: const ColoredBox(
+            color: Color(0x22111111),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
