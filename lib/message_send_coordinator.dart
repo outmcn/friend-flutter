@@ -160,6 +160,9 @@ class MessageSendCoordinator {
     await _cache(account, message);
     var attempt = 0;
     var reconcile = recover || retry;
+    if (retry && _states[key]?['status'] == 'sent') {
+      return _states[key]!;
+    }
     Object failure = TimeoutException('发送超时');
     while (_states[key]?['status'] != 'sent' &&
         DateTime.now().isBefore(operationDeadline)) {
