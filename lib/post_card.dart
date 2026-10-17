@@ -257,6 +257,16 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
 }
 
 
+String _formatDiscoverDate(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final value = parsed.toUtc().add(const Duration(hours: 8));
+  final now = DateTime.now().toUtc().add(const Duration(hours: 8));
+  return value.year == now.year
+      ? '${value.month}月${value.day}日'
+      : '${value.year}年${value.month}月${value.day}日';
+}
+
 class _DiscoverProfileCard extends StatelessWidget {
   const _DiscoverProfileCard({
     super.key,
@@ -410,7 +420,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
-                                '${formatDDTime(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
+                                '${_formatDiscoverDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
                                 style: TextStyle(
                                   color: Theme.of(context)
                                       .colorScheme
