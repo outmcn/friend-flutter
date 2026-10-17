@@ -11,53 +11,82 @@ class _DiscoverMediaPreview extends StatelessWidget {
       _DiscoverMediaImage(url: url, width: width, height: height);
 }
 
-class _DiscoverMediaImage extends StatelessWidget {
-  const _DiscoverMediaImage({required this.url, this.width, this.height});
+class _DiscoverMediaImage extends StatefulWidget {
+  const _DiscoverMediaImage({required this.url});
   final String url;
-  final int? width;
-  final int? height;
+
+  @override
+  State<_DiscoverMediaImage> createState() => _DiscoverMediaImageState();
+}
+
+class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
+  ImageStream? _stream;
+  ImageInfo? _imageInfo;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _resolveImage();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DiscoverMediaImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) _resolveImage();
+  }
+
+  void _resolveImage() {
+    final provider = NetworkImage(widget.url);
+    final stream = provider.resolve(createLocalImageConfiguration(context));
+    _stream?.removeListener(ImageStreamListener(_onImage));
+    _stream = stream;
+    stream.addListener(ImageStreamListener(_onImage));
+  }
+
+  void _onImage(ImageInfo info, bool _) {
+    if (!mounted) return;
+    setState(() => _imageInfo = info);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final sourceRatio = width != null && height != null &&
-            width! > 0 && height! > 0
-        ? width! / height!
-        : 1.0;
     return LayoutBuilder(
       builder: (context, constraints) {
+        if (_imageInfo == null) {
+          return Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: constraints.maxWidth,
+              height: 120,
+              child: const ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+                child: ColoredBox(
+                  color: Color(0x22111111),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+              ),
+            ),
+          );
+        }
+        final sourceWidth = _imageInfo!.image.width.toDouble();
+        final sourceHeight = _imageInfo!.image.height.toDouble();
+        final ratio = sourceWidth / sourceHeight;
         final availableWidth = constraints.maxWidth;
-        final naturalHeight = availableWidth / sourceRatio;
-        final isLimited = naturalHeight > 500.0;
-        final displayHeight = isLimited ? 500.0 : naturalHeight;
-        final displayWidth = isLimited
-            ? displayHeight * sourceRatio
+        final naturalHeight = availableWidth / ratio;
+        final displayHeight = naturalHeight > 500 ? 500.0 : naturalHeight;
+        final displayWidth = naturalHeight > 500
+            ? displayHeight * ratio
             : availableWidth;
         return Align(
           alignment: Alignment.topLeft,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              url,
+            child: Image(
+              image: _imageInfo!.image,
               width: displayWidth,
               height: displayHeight,
               fit: BoxFit.fill,
               alignment: Alignment.topLeft,
-              errorBuilder: (_, __, ___) => const ColoredBox(
-                color: Color(0x22111111),
-                child: Center(child: Icon(Icons.broken_image_outlined)),
-              ),
-              loadingBuilder: (context, child, progress) => progress == null
-                  ? child
-                  : SizedBox(
-                      width: displayWidth,
-                      height: displayHeight,
-                      child: const ColoredBox(
-                        color: Color(0x22111111),
-                        child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                    ),
             ),
           ),
         );
@@ -88,11 +117,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onOpen;
 
   Widget _media({required String url, required bool thumbnail}) {
-    return _DiscoverMediaPreview(
-      url: url,
-      width: thumbnail ? post.thumbnailWidth : post.imageWidth,
-      height: thumbnail ? post.thumbnailHeight : post.imageHeight,
-    );
+    return _DiscoverMediaImage(url: url);
   }
 
   Widget _action({
