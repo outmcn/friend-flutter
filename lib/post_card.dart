@@ -1,8 +1,9 @@
 part of 'main.dart';
 
 class _DiscoverPostContent extends StatefulWidget {
-  const _DiscoverPostContent({required this.text});
+  const _DiscoverPostContent({required this.text, required this.maxLines});
   final String text;
+  final int maxLines;
 
   @override
   State<_DiscoverPostContent> createState() => _DiscoverPostContentState();
@@ -28,7 +29,7 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
           textDirection: direction,
         )..layout(maxWidth: constraints.maxWidth);
         final metrics = full.computeLineMetrics();
-        final truncated = metrics.length > 3;
+        final truncated = metrics.length > widget.maxLines;
         if (!truncated) return Text(widget.text, style: bodyStyle);
         if (expanded) {
           return Column(
@@ -56,7 +57,7 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
               style: bodyStyle,
             ),
             textDirection: direction,
-            maxLines: 3,
+            maxLines: widget.maxLines,
           )..layout(maxWidth: constraints.maxWidth);
           if (!probe.didExceedMaxLines) {
             low = mid;
@@ -68,7 +69,7 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
         return RichText(
           textAlign: TextAlign.left,
           softWrap: true,
-          maxLines: 3,
+          maxLines: widget.maxLines,
           overflow: TextOverflow.clip,
           text: TextSpan(children: [
             TextSpan(text: '$prefix… ', style: bodyStyle),
@@ -421,7 +422,10 @@ class _DiscoverProfileCard extends StatelessWidget {
                   if (post.content.trim().isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 5, bottom: 5),
-                      child: _DiscoverPostContent(text: post.content.trim()),
+                      child: _DiscoverPostContent(
+                        text: post.content.trim(),
+                        maxLines: hasMedia ? 3 : 10,
+                      ),
                     ),
                   if (post.imageUrl?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 10),
