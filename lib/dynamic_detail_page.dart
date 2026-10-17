@@ -566,12 +566,18 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                         ),
                       ),
               borderRadius: BorderRadius.circular(20),
-              child: _PermanentCachedImage(
-                url: comment.avatar.trim(),
-                width: 40,
-                height: 40,
-                fit: BoxFit.cover,
-                placeholder: const _AvatarRetryPlaceholder(),
+              child: ClipOval(
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: _PermanentCachedImage(
+                    url: comment.avatar.trim(),
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    placeholder: const _AvatarRetryPlaceholder(),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 10),
