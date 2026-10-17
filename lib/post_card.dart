@@ -353,7 +353,7 @@ class _DiscoverProfileCard extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           maxWidth: 360,
-          maxHeight: 500,
+          maxHeight: 400,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
