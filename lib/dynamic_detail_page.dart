@@ -1086,8 +1086,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                               )
                             else
                               Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1117,20 +1116,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                       ),
                                     ),
                                   ],
-                                ),
-                              )
-                            else
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                                child: Text(
-                                  formatDDTime(item.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.55),
-                                  ),
                                 ),
                               ),
                             const SizedBox(height: 1),
