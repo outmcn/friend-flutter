@@ -190,7 +190,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     );
   }
 
-  Widget _card(DiscoverFeed feed, int index, {bool fullWidth = false}) {
+  Widget _card(DiscoverFeed feed, int index) {
     final post = feed.posts[index];
     final feedIndex = feeds.indexOf(feed);
     if (index + 1 < feed.posts.length) {
@@ -209,7 +209,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
       ),
       feed: feed,
       post: post,
-      fullWidth: fullWidth,
       onLike: _like,
       onFavorite: _favorite,
       onShare: _share,
@@ -233,7 +232,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) => _card(feed, index, fullWidth: true),
+                  (context, index) => _card(feed, index),
                   childCount: feed.posts.length,
                 ),
               ),
@@ -361,7 +360,6 @@ class _DiscoverFeedCard extends StatefulWidget {
     super.key,
     required this.feed,
     required this.post,
-    required this.fullWidth,
     this.mediaKey,
     required this.onLike,
     required this.onFavorite,
@@ -373,7 +371,6 @@ class _DiscoverFeedCard extends StatefulWidget {
   final DiscoverFeed feed;
   final DDPost post;
   final GlobalKey? mediaKey;
-  final bool fullWidth;
   final ValueChanged<DDPost> onLike;
   final ValueChanged<DDPost> onFavorite;
   final ValueChanged<DDPost> onShare;
@@ -396,8 +393,12 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
   }
 
   void _update() {
-    final updated = widget.feed.postChanges.value;
-    if (updated != null && updated.id == post.id) {
+    final updatedId = widget.feed.postChanges.value;
+    if (updatedId != null && updatedId == post.id) {
+      final updated = widget.feed.posts.firstWhere(
+        (item) => item.id == post.id,
+        orElse: () => post,
+      );
       setState(() => post = updated);
     }
   }
@@ -427,9 +428,10 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       onReport: () => widget.onReport(post),
       onOpen: () => widget.onOpen(post),
     );
-    return widget.fullWidth
-        ? Padding(padding: const EdgeInsets.only(bottom: 8), child: card)
-        : card;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: card,
+    );
   }
 
   @override
