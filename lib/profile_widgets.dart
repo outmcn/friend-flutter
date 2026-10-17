@@ -249,7 +249,7 @@ class _MyProfilePostCard extends StatelessWidget {
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
         final naturalHeight = maxWidth / aspect;
-        final actualHeight = naturalHeight.clamp(0.0, 400.0).toDouble();
+        final actualHeight = naturalHeight.clamp(180.0, 400.0).toDouble();
         final actualWidth = naturalHeight > 400
             ? actualHeight * aspect
             : maxWidth;
