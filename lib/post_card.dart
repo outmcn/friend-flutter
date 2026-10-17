@@ -506,10 +506,10 @@ class _DiscoverProfileCard extends StatelessWidget {
                   ] else if (post.videoUrl?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 10),
                     Stack(
-                      alignment: Alignment.topLeft,
+                      alignment: Alignment.center,
                       children: [
                         _media(url: post.thumbnailUrl?.trim().isNotEmpty == true ? post.thumbnailUrl!.trim() : post.videoUrl!.trim(), thumbnail: post.thumbnailUrl?.trim().isNotEmpty == true),
-                        const Positioned(left: 24, top: 24, child: Icon(Icons.play_circle_outline, size: 48, color: Colors.white)),
+                        const Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
                       ],
                     ),
                   ],
