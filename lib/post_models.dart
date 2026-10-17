@@ -39,6 +39,7 @@ class DDPost {
     required this.following,
     this.followedByViewer = false,
     this.distanceKm,
+    this.authorCity,
     required this.liked,
     required this.favorited,
     this.imageUrl,
@@ -63,6 +64,7 @@ class DDPost {
   final bool following;
   final bool followedByViewer;
   final double? distanceKm;
+  final String? authorCity;
   final bool liked;
   final bool favorited;
   final String? imageUrl;
@@ -96,6 +98,7 @@ class DDPost {
         following: following ?? this.following,
         followedByViewer: followedByViewer,
         distanceKm: distanceKm,
+        authorCity: authorCity,
         liked: liked ?? this.liked,
         favorited: favorited ?? this.favorited,
         imageUrl: imageUrl,
@@ -121,6 +124,7 @@ class DDPost {
         'following': following,
         'followedByViewer': followedByViewer,
         'distanceKm': distanceKm,
+        'authorCity': authorCity,
         'liked': liked,
         'favorited': favorited,
         'imageUrl': imageUrl,
@@ -150,6 +154,7 @@ class DDPost {
         following: json['following'] == true,
         followedByViewer: json['followedByViewer'] == true,
         distanceKm: _doubleValue(json['distanceKm']),
+        authorCity: '${json['authorCity'] ?? json['author_city'] ?? ''}',
         liked: json['liked'] == true,
         favorited: json['favorited'] == true,
         imageUrl: _nullableMediaValue(json['imageUrl'], preserveMediaKeys),

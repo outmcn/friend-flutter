@@ -410,7 +410,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
-                                formatDDTime(post.createdAt),
+                                '${formatDDTime(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
                                 style: TextStyle(
                                   color: Theme.of(context)
                                       .colorScheme
