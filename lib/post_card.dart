@@ -268,13 +268,43 @@ class _DiscoverProfileCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(post.nickname,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                )),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(post.nickname,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      )),
+                                ),
+                                if (post.distanceKm != null &&
+                                    post.distanceKm! <= 30)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 6),
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x2234C759),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 2),
+                                        child: Text(
+                                          '${post.distanceKm!.toStringAsFixed(2)}km',
+                                          style: const TextStyle(
+                                            color: Color(0xFF34C759),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
