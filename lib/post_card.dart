@@ -20,49 +20,60 @@ class _DiscoverMediaImage extends StatefulWidget {
 }
 
 class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
-  ImageStream? _stream;
-  ImageProvider<Object>? _provider;
   ImageInfo? _imageInfo;
+  ImageProvider<Object>? _provider;
   bool _loading = true;
   bool _failed = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _resolveImage();
+  void initState() {
+    super.initState();
+    _loadAuthenticatedImage();
   }
 
   @override
   void didUpdateWidget(covariant _DiscoverMediaImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url) _resolveImage();
+    if (oldWidget.url != widget.url) _loadAuthenticatedImage();
   }
 
-  void _resolveImage() {
-    _imageInfo = null;
-    _loading = true;
-    _failed = false;
-    final ImageProvider<Object> provider = NetworkImage(widget.url);
-    final stream = provider.resolve(createLocalImageConfiguration(context));
-    _stream?.removeListener(ImageStreamListener(_onImage));
-    _stream = stream;
-    stream.addListener(ImageStreamListener(_onImage));
-  }
-
-  void _onImage(ImageInfo info, bool _) {
-    if (!mounted) return;
+  Future<void> _loadAuthenticatedImage() async {
     setState(() {
-      _imageInfo = info;
-      _loading = false;
+      _imageInfo = null;
+      _provider = null;
+      _loading = true;
       _failed = false;
     });
+    final path = await _PermanentImageCache.get(widget.url);
+    if (!mounted) return;
+    if (path == null) {
+      setState(() {
+        _loading = false;
+        _failed = true;
+      });
+      return;
+    }
+    final provider = FileImage(File(path));
+    _PermanentImageCache.rememberProvider(widget.url, provider);
+    final stream = provider.resolve(createLocalImageConfiguration(context));
+    stream.addListener(ImageStreamListener((info, _) {
+      if (!mounted) return;
+      setState(() {
+        _provider = provider;
+        _imageInfo = info;
+        _loading = false;
+        _failed = false;
+      });
+    }, onError: (_, __) {
+      if (mounted) setState(() { _loading = false; _failed = true; });
+    }));
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (_imageInfo == null) {
+        if (_imageInfo == null || _provider == null) {
           return Align(
             alignment: Alignment.topLeft,
             child: SizedBox(
@@ -74,11 +85,7 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
                   color: const Color(0x22111111),
                   child: Center(
                     child: _loading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.broken_image_outlined),
                   ),
                 ),
@@ -86,15 +93,11 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
             ),
           );
         }
-        final sourceWidth = _imageInfo!.image.width.toDouble();
-        final sourceHeight = _imageInfo!.image.height.toDouble();
-        final ratio = sourceWidth / sourceHeight;
+        final ratio = _imageInfo!.image.width / _imageInfo!.image.height;
         final availableWidth = constraints.maxWidth;
         final naturalHeight = availableWidth / ratio;
         final displayHeight = naturalHeight > 500 ? 500.0 : naturalHeight;
-        final displayWidth = naturalHeight > 500
-            ? displayHeight * ratio
-            : availableWidth;
+        final displayWidth = naturalHeight > 500 ? displayHeight * ratio : availableWidth;
         return Align(
           alignment: Alignment.topLeft,
           child: ClipRRect(
