@@ -216,14 +216,23 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       subtitle: feed.error!,
                       onRetry: () => feed.load(refresh: !feed.hasMore))
                   : (feed.restoring || (feed.busy && feed.posts.isEmpty))
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
                       : feed.posts.isEmpty
-                          ? const Center(child: Text('暂无动态'))
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(child: Text('暂无动态')),
+                            )
                           : feed.hasMore
                               ? TextButton(
-                                  onPressed: () => feed.load(),
-                                  child: const Text('加载更多'))
-                              : const Center(child: Text('没有更多动态了')),
+                                  onPressed: feed.busy ? null : () => feed.load(),
+                                  child: Text(feed.busy ? '加载中…' : '加载更多'))
+                              : const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  child: Center(child: Text('没有更多动态了')),
+                                ),
             )),
           ],
         ),
