@@ -806,6 +806,42 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     }
   }
 
+  Future<void> _sendSelectedGift(Map<String, dynamic> gift) async {
+    if (giftSubmitting) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认送礼'),
+        content: Text('确定送出 ${gift['name'] ?? '这份礼物'} 吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('送出'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      setState(() => giftSubmitting = true);
+      await service.sendPostGift(
+        token: await token(),
+        postId: widget.postId,
+        giftId: int.parse('${gift['id']}'),
+      );
+      await _loadReceivedGifts(await token());
+      if (mounted) _showTopNotice(context, const Text('送礼成功'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    } finally {
+      if (mounted) setState(() => giftSubmitting = false);
+    }
+  }
+
   Future<void> _openGiftMenu() async {
     try {
       final gifts = await service.fetchGiftItems(await token(), scope: 'post');
@@ -818,49 +854,23 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             children: [
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: const Text(
-                  '动态礼物',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
+                child: Text('动态礼物', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               ),
               ...gifts.map((gift) => ListTile(
-                    leading: Text('${gift['icon'] ?? '🎁'}',
-                        style: const TextStyle(fontSize: 24)),
+                    leading: Text('${gift['icon'] ?? '🎁'}', style: const TextStyle(fontSize: 24)),
                     title: Text('${gift['name'] ?? '礼物'}'),
                     subtitle: Text('${gift['coin_price'] ?? 0} 金币'),
-                    onTap: giftSubmitting
-                        ? null
-                        : () async {
-                            Navigator.pop(sheetContext);
-                            try {
-                              if (mounted) {
-                                setState(() => giftSubmitting = true);
-                              }
-                              await service.sendPostGift(
-                                  token: await token(),
-                                  postId: widget.postId,
-                                  giftId: int.parse('${gift['id']}'));
-                              if (!mounted) return;
-                              await _loadReceivedGifts(await token());
-                              if (!mounted) return;
-                              _showTopNotice(context, const Text('送礼成功'));
-                            } catch (e) {
-                              if (mounted) {
-                                _showTopNotice(context, Text('$e'));
-                              }
-                            } finally {
-                              if (mounted) {
-                                setState(() => giftSubmitting = false);
-                              }
-                            }
-                          },
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(_sendSelectedGift(gift));
+                    },
                   )),
             ],
           ),
         ),
       );
     } catch (e) {
-      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
@@ -1053,7 +1063,28 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                     style: const TextStyle(
                                         fontSize: 18, height: 1.5)),
                               ),
-                            if (receivedGifts.isNotEmpty)
+                            if (receivedGifts.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                                child: InkWell(
+                                  onTap: _openGiftMenu,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 18),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Theme.of(context).dividerColor,
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: Text('送出第一份礼物'),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
                               Padding(
                                 padding:
                                     const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -1064,11 +1095,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                       spacing: 8,
                                       runSpacing: 8,
                                       children: receivedGifts
-                                          .map((gift) => Chip(
-                                                avatar: Text(
-                                                    '${gift['icon'] ?? '🎁'}'),
-                                                label: Text(
-                                                    '${gift['name'] ?? '礼物'} ×${gift['quantity'] ?? 1}'),
+                                          .map((gift) => InkWell(
+                                                onTap: () => _sendSelectedGift(gift),
+                                                borderRadius: BorderRadius.circular(16),
+                                                child: Chip(
+                                                  avatar: Text('${gift['icon'] ?? '🎁'}'),
+                                                  label: Text('${gift['name'] ?? '礼物'} ×${gift['quantity'] ?? 1}'),
+                                                ),
                                               ))
                                           .toList(),
                                     ),
