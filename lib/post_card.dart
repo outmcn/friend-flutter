@@ -369,7 +369,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                 url: url,
                 width: width,
                 height: height,
-                fit: BoxFit.fill,
+                fit: BoxFit.cover,
               ),
             ),
           ),
