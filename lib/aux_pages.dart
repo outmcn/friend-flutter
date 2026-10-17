@@ -130,47 +130,15 @@ class _MyPostsPageState extends State<MyPostsPage> {
                       ...posts.map(
                         (post) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: _DynamicPostCard(
+                          child: _MyProfilePostCard(
                             post: post,
-                            authorNavigation: false,
-                            onDelete: () => _deletePost(post),
-                            onLike: () async {
-                              final token =
-                                  (await SharedPreferences.getInstance())
-                                          .getString('friend.auth.token') ??
-                                      '';
-                              if (token.isNotEmpty) {
-                                await service.toggleLike(token, post.id);
-                                await load();
-                              }
-                            },
-                            onFavorite: () async {
-                              final token =
-                                  (await SharedPreferences.getInstance())
-                                          .getString('friend.auth.token') ??
-                                      '';
-                              if (token.isNotEmpty) {
-                                await service.toggleFavorite(token, post.id);
-                                await load();
-                              }
-                            },
-                            onOpen: () => Navigator.push(
+                            onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    DynamicDetailPage(postId: post.id),
+                                builder: (_) => DynamicDetailPage(postId: post.id),
                               ),
                             ),
-                            onComment: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DynamicDetailPage(
-                                  postId: post.id,
-                                  focusComment: true,
-                                ),
-                              ),
-                            ),
-                          ),
+                          )
                         ),
                       ),
                   ],
