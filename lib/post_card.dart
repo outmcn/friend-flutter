@@ -20,35 +20,33 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onReport;
   final VoidCallback onOpen;
 
-  double _mediaAspect({required bool thumbnail}) {
-    final width = thumbnail ? post.thumbnailWidth : post.imageWidth;
-    final height = thumbnail ? post.thumbnailHeight : post.imageHeight;
-    if (width != null && height != null && width > 0 && height > 0) {
-      return width / height;
-    }
-    return 4 / 3;
-  }
-
   Widget _media({required String url, required bool thumbnail}) {
-    final aspect = _mediaAspect(thumbnail: thumbnail);
+    final sourceWidth = thumbnail ? post.thumbnailWidth : post.imageWidth;
+    final sourceHeight = thumbnail ? post.thumbnailHeight : post.imageHeight;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth < 360
-            ? constraints.maxWidth
-            : 360.0;
-        final naturalHeight = maxWidth / aspect;
-        final height = naturalHeight > 500 ? 500.0 : naturalHeight;
-        final width = naturalHeight > 500 ? height * aspect : maxWidth;
+        final maxWidth = constraints.maxWidth;
+        final aspect = sourceWidth != null && sourceHeight != null &&
+                sourceWidth > 0 && sourceHeight > 0
+            ? sourceWidth / sourceHeight
+            : null;
+        final width = aspect == null ? maxWidth : maxWidth;
+        final height = aspect == null
+            ? 220.0
+            : (width / aspect).clamp(1.0, 500.0).toDouble();
+        final fittedWidth = aspect == null || width / aspect <= 500
+            ? width
+            : height * aspect;
         return Align(
           alignment: Alignment.centerLeft,
           child: SizedBox(
-            width: width,
+            width: fittedWidth,
             height: height,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: _PermanentCachedImage(
                 url: url,
-                width: width,
+                width: fittedWidth,
                 height: height,
                 fit: BoxFit.cover,
                 placeholder: const ColoredBox(
