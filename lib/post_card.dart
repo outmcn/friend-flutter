@@ -23,6 +23,8 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
   ImageStream? _stream;
   ImageProvider<Object>? _provider;
   ImageInfo? _imageInfo;
+  bool _loading = true;
+  bool _failed = false;
 
   @override
   void didChangeDependencies() {
@@ -37,6 +39,9 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
   }
 
   void _resolveImage() {
+    _imageInfo = null;
+    _loading = true;
+    _failed = false;
     final ImageProvider<Object> provider = NetworkImage(widget.url);
     final stream = provider.resolve(createLocalImageConfiguration(context));
     _stream?.removeListener(ImageStreamListener(_onImage));
@@ -46,7 +51,11 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
 
   void _onImage(ImageInfo info, bool _) {
     if (!mounted) return;
-    setState(() => _imageInfo = info);
+    setState(() {
+      _imageInfo = info;
+      _loading = false;
+      _failed = false;
+    });
   }
 
   @override
@@ -58,12 +67,20 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
             alignment: Alignment.topLeft,
             child: SizedBox(
               width: constraints.maxWidth,
-              height: 120,
-              child: const ClipRRect(
-                borderRadius: BorderRadius.all(Radius.circular(12)),
+              height: 48,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
                 child: ColoredBox(
-                  color: Color(0x22111111),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  color: const Color(0x22111111),
+                  child: Center(
+                    child: _loading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.broken_image_outlined),
+                  ),
                 ),
               ),
             ),
