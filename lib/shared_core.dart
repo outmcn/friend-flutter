@@ -1,13 +1,13 @@
 part of 'main.dart';
 
 class _PermanentImageCache {
+  static const int _maxMemoryProviders = 80;
   static final Map<String, String> _localPaths = <String, String>{};
   static final Map<String, Future<String?>> _pending =
       <String, Future<String?>>{};
-  // 内存层直接保存已解码的 ImageProvider，列表项回收后首帧可复用。
   static final Map<String, ImageProvider<Object>> _providers =
       <String, ImageProvider<Object>>{};
-  static final Map<String, Size> _sizes = <String, Size>{};
+  static final Map<String, DateTime> _providerUsedAt = <String, DateTime>{};
 
   static String identity(String url) {
     final normalized = url.trim();
@@ -30,8 +30,12 @@ class _PermanentImageCache {
     return await file.exists() && await file.length() > 0 ? file.path : null;
   }
 
-  static ImageProvider<Object>? provider(String url) =>
-      _providers[identity(url)];
+  static ImageProvider<Object>? provider(String url) {
+    final key = identity(url);
+    final provider = _providers[key];
+    if (provider != null) _providerUsedAt[key] = DateTime.now();
+    return provider;
+  }
 
   static Future<String?> localPath(String url) async {
     final cached = _localPaths[identity(url)];
@@ -41,7 +45,16 @@ class _PermanentImageCache {
 
   static void rememberProvider(String url, ImageProvider<Object> provider) {
     final key = identity(url);
-    if (key.isNotEmpty) _providers[key] = provider;
+    if (key.isEmpty) return;
+    _providers[key] = provider;
+    _providerUsedAt[key] = DateTime.now();
+    while (_providers.length > _maxMemoryProviders) {
+      final oldest = _providerUsedAt.entries
+          .reduce((a, b) => a.value.isBefore(b.value) ? a : b)
+          .key;
+      _providers.remove(oldest);
+      _providerUsedAt.remove(oldest);
+    }
   }
 
   static Future<void> prefetch(String url) async {
@@ -52,8 +65,7 @@ class _PermanentImageCache {
   }
 
   static void rememberSize(String url, Size size) {
-    final key = identity(url);
-    if (key.isNotEmpty && size.width > 0 && size.height > 0) _sizes[key] = size;
+    // 图片尺寸只在加载组件内部根据 ImageInfo 使用，不再做全局缓存。
   }
 
   static String? peek(String url) => _localPaths[identity(url)];
@@ -122,8 +134,7 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
   @override
   void initState() {
     super.initState();
-    final provider = _PermanentImageCache
-        ._providers[_PermanentImageCache.identity(widget.url)];
+    final provider = _PermanentImageCache.provider(widget.url);
     if (provider is FileImage) localPath = provider.file.path;
     _load();
   }
