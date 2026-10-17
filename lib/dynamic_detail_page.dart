@@ -1063,32 +1063,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                             if (receivedGifts.isEmpty)
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                                child: InkWell(
-                                  onTap: _openGiftMenu,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(vertical: 18),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Theme.of(context).dividerColor,
-                                      ),
-                                    ),
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      height: 180,
-                                      child: Center(
-                                        child: Text(
-                                          '送出第一份礼物',
-                                          style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: ActionChip(
+                                    avatar: const Text('🎁'),
+                                    label: const Text('送出第一份礼物'),
+                                    onPressed: _openGiftMenu,
                                   ),
                                 ),
                               )
