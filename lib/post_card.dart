@@ -54,8 +54,13 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
         final width = constraints.maxWidth;
         final naturalHeight = width / ratio;
         final limited = naturalHeight > 500;
-        final height = limited ? 500.0 : naturalHeight;
-        final displayWidth = limited ? height * ratio : width;
+        const maxPreviewHeight = 500.0;
+        final height = naturalHeight > maxPreviewHeight
+            ? maxPreviewHeight
+            : naturalHeight;
+        final displayWidth = naturalHeight > maxPreviewHeight
+            ? height * ratio
+            : width;
         return Align(
           alignment: Alignment.topLeft,
           child: SizedBox(
@@ -67,7 +72,9 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
                 widget.url,
                 width: displayWidth,
                 height: height,
-                fit: BoxFit.contain,
+                fit: naturalHeight > maxPreviewHeight
+                    ? BoxFit.cover
+                    : BoxFit.contain,
                 alignment: Alignment.topLeft,
                 errorBuilder: (_, __, ___) => const ColoredBox(
                   color: Color(0x22111111),
