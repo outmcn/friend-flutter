@@ -1,5 +1,60 @@
 part of 'main.dart';
 
+class _DiscoverPostContent extends StatefulWidget {
+  const _DiscoverPostContent({required this.text});
+  final String text;
+
+  @override
+  State<_DiscoverPostContent> createState() => _DiscoverPostContentState();
+}
+
+class _DiscoverPostContentState extends State<_DiscoverPostContent> {
+  bool expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = const TextStyle(fontSize: 18, height: 1.4);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          textDirection: Directionality.of(context),
+          maxLines: 3,
+        )..layout(maxWidth: constraints.maxWidth);
+        final truncated = painter.didExceedMaxLines;
+        if (expanded) {
+          return Text.rich(TextSpan(children: [
+            TextSpan(text: widget.text, style: style),
+            if (truncated)
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: GestureDetector(
+                  onTap: () => setState(() => expanded = false),
+                  child: const Text(' 收起', style: TextStyle(color: Color(0xFF1677FF), fontSize: 15)),
+                ),
+              ),
+          ]));
+        }
+        return Text.rich(
+          TextSpan(children: [
+            TextSpan(text: widget.text, style: style),
+            if (truncated)
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: GestureDetector(
+                  onTap: () => setState(() => expanded = true),
+                  child: const Text(' 更多', style: TextStyle(color: Color(0xFF1677FF), fontSize: 15)),
+                ),
+              ),
+          ]),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        );
+      },
+    );
+  }
+}
+
 class _DiscoverMediaImage extends StatefulWidget {
   const _DiscoverMediaImage({required this.url});
   final String url;
@@ -336,8 +391,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   if (post.content.trim().isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 5, bottom: 5),
-                      child: Text(post.content.trim(),
-                          style: const TextStyle(fontSize: 18, height: 1.4)),
+                      child: _DiscoverPostContent(text: post.content.trim()),
                     ),
                   if (post.imageUrl?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 10),
