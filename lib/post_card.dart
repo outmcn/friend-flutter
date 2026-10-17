@@ -11,59 +11,104 @@ class _DiscoverPostContent extends StatefulWidget {
 class _DiscoverPostContentState extends State<_DiscoverPostContent> {
   bool expanded = false;
 
+  static const bodyStyle = TextStyle(fontSize: 18, height: 1.4);
+  static const actionStyle = TextStyle(
+    color: Color(0xFF1677FF),
+    fontSize: 15,
+    height: 1.4,
+  );
+
+  bool _exceedsThreeLines(String text, TextDirection direction, double width) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: bodyStyle),
+      textDirection: direction,
+      maxLines: 3,
+    )..layout(maxWidth: width);
+    return painter.didExceedMaxLines;
+  }
+
+  String _visiblePrefix(
+    String text,
+    TextDirection direction,
+    double width,
+  ) {
+    final actionPainter = TextPainter(
+      text: const TextSpan(text: '…展开全部', style: actionStyle),
+      textDirection: direction,
+    )..layout();
+    var low = 0;
+    var high = text.length;
+    while (low < high) {
+      final mid = (low + high + 1) ~/ 2;
+      final candidate = TextPainter(
+        text: TextSpan(
+          children: [
+            TextSpan(text: text.substring(0, mid), style: bodyStyle),
+            const TextSpan(text: '…', style: bodyStyle),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: SizedBox(width: 0, height: 18),
+            ),
+          ],
+        ),
+        textDirection: direction,
+        maxLines: 3,
+      )..layout(maxWidth: width - actionPainter.width);
+      if (!candidate.didExceedMaxLines) {
+        low = mid;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return text.substring(0, low).trimRight();
+  }
+
   @override
   Widget build(BuildContext context) {
-    const style = TextStyle(fontSize: 18, height: 1.4);
     return LayoutBuilder(
       builder: (context, constraints) {
         final direction = Directionality.of(context);
-        final fullPainter = TextPainter(
-          text: TextSpan(text: widget.text, style: style),
-          textDirection: direction,
-        )..layout(maxWidth: constraints.maxWidth);
-        final truncated = fullPainter.computeLineMetrics().length > 3;
-        if (expanded || !truncated) {
-          return Text.rich(TextSpan(children: [
-            TextSpan(text: widget.text, style: style),
-            if (expanded && truncated)
+        final truncated = _exceedsThreeLines(
+          widget.text,
+          direction,
+          constraints.maxWidth,
+        );
+        if (!truncated) {
+          return Text(widget.text, style: bodyStyle);
+        }
+        if (expanded) {
+          return Text.rich(
+            TextSpan(children: [
+              TextSpan(text: widget.text, style: bodyStyle),
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: GestureDetector(
                   onTap: () => setState(() => expanded = false),
-                  child: const Text(' 收起', style: TextStyle(color: Color(0xFF1677FF), fontSize: 15)),
+                  child: const Text(' 收起', style: actionStyle),
                 ),
               ),
-          ]));
+            ]),
+          );
         }
-        var visible = widget.text;
-        while (visible.isNotEmpty) {
-          final candidate = TextPainter(
-            text: TextSpan(text: '$visible…', style: style),
-            textDirection: direction,
-            maxLines: 3,
-          )..layout(maxWidth: constraints.maxWidth);
-          final morePainter = TextPainter(
-            text: const TextSpan(text: '展开全部', style: TextStyle(color: Color(0xFF1677FF), fontSize: 15)),
-            textDirection: direction,
-          )..layout(maxWidth: constraints.maxWidth);
-          if (candidate.computeLineMetrics().length <= 3 &&
-              candidate.width + morePainter.width <= constraints.maxWidth) {
-            break;
-          }
-          visible = visible.substring(0, visible.length - 1);
-        }
+        final visible = _visiblePrefix(
+          widget.text,
+          direction,
+          constraints.maxWidth,
+        );
         return Text.rich(
           TextSpan(children: [
-            TextSpan(text: '$visible…', style: style),
+            TextSpan(text: visible, style: bodyStyle),
+            const TextSpan(text: '…', style: bodyStyle),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: GestureDetector(
                 onTap: () => setState(() => expanded = true),
-                child: const Text(' 展开全部', style: TextStyle(color: Color(0xFF1677FF), fontSize: 15)),
+                child: const Text('展开全部', style: actionStyle),
               ),
             ),
           ]),
           maxLines: 3,
+          overflow: TextOverflow.clip,
         );
       },
     );
