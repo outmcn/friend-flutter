@@ -2,6 +2,7 @@ part of 'main.dart';
 
 class _PermanentImageCache {
   static const int _maxMemoryProviders = 80;
+  static const int _maxDiskFiles = 300;
   static final Map<String, String> _localPaths = <String, String>{};
   static final Map<String, Future<String?>> _pending =
       <String, Future<String?>>{};
@@ -82,6 +83,17 @@ class _PermanentImageCache {
         final cacheDirectory =
             Directory('${directory.path}/friend_media_cache');
         await cacheDirectory.create(recursive: true);
+        final cachedFiles = await cacheDirectory
+            .list()
+            .where((entity) => entity is File && !entity.path.endsWith('.part'))
+            .cast<File>()
+            .toList();
+        if (cachedFiles.length >= _maxDiskFiles) {
+          cachedFiles.sort((a, b) => a.statSync().modified.compareTo(b.statSync().modified));
+          for (final oldFile in cachedFiles.take(cachedFiles.length - _maxDiskFiles + 1)) {
+            await oldFile.delete().catchError((_) async {});
+          }
+        }
         final fileName = base64Url.encode(utf8.encode(key)).replaceAll('=', '');
         final file = File('${cacheDirectory.path}/$fileName');
         if (await file.exists() && await file.length() > 0) {
@@ -89,7 +101,9 @@ class _PermanentImageCache {
           return file.path;
         }
         if (await file.exists()) await file.delete();
-        final response = await http.get(Uri.parse(normalized));
+        final response = await http
+            .get(Uri.parse(normalized))
+            .timeout(const Duration(seconds: 25));
         if (response.statusCode < 200 || response.statusCode >= 300) {
           return null;
         }

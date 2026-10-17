@@ -63,7 +63,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       if (!firstFeed.initialized) return firstFeed.load();
       return Future<void>.value();
     }));
-    unawaited(_loadDiscoverCity());
+    // 城市标签首次切换时再获取，避免首屏额外请求。
   }
 
   Future<void> _like(DDPost post) async {
@@ -159,9 +159,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     final deleted = await routeFuture;
     if (!mounted) return;
     if (deleted != true) return;
-    for (final feed in feeds) {
-      feed.posts.removeWhere((item) => item.id == post.id);
-    }
+    feed.posts.removeWhere((item) => item.id == post.id);
     feed.markChanged();
   }
 
@@ -287,6 +285,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         HapticFeedback.selectionClick();
                         setState(() => selectedTab = entry.key);
                         final feed = feeds[entry.key];
+                        if (entry.key == 1 && _discoverLocalTabLabel == '本地') {
+                          unawaited(_loadDiscoverCity());
+                        }
                         if (!feed.initialized) {
                           unawaited(feed.restoreCache().then((_) {
                             if (!feed.initialized) return feed.load();
