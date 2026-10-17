@@ -29,6 +29,12 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final direction = Directionality.of(context);
+        final bodyStyle = TextStyle(
+          fontSize: 16,
+          height: 1.4,
+          textBaseline: TextBaseline.alphabetic,
+          color: Theme.of(context).colorScheme.onSurface,
+        );
         final full = TextPainter(
           text: TextSpan(text: widget.text, style: bodyStyle),
           textDirection: direction,
