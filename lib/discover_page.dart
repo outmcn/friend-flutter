@@ -122,25 +122,18 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   Future<void> _report(DDPost post) async {
-    final reason = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: const Text('举报动态'),
-        children: [
-          for (final item in ['色情低俗', '广告诈骗', '侵权或盗用', '其他'])
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(dialogContext, item),
-              child: Text(item),
-            ),
-        ],
+    final submitted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReportPostPage(
+          postId: post.id,
+          service: service,
+          token: _token,
+        ),
       ),
     );
-    if (reason == null || !mounted) return;
-    try {
-      await service.reportPost(token: await _token(), postId: post.id, reason: reason);
-      if (mounted) _showTopNotice(context, const SnackBar(content: Text('举报已提交')));
-    } catch (e) {
-      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+    if (submitted == true && mounted) {
+      _showTopNotice(context, const Text('举报已提交'));
     }
   }
 
