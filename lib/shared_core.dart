@@ -15,8 +15,13 @@ class _PermanentImageCache {
     if (normalized.isEmpty) return '';
     try {
       final uri = Uri.parse(normalized);
-      final path = uri.path;
-      if (path.isNotEmpty) return path.startsWith('/') ? path : '/$path';
+      final identityUri = Uri(
+        scheme: uri.scheme,
+        host: uri.host,
+        port: uri.hasPort ? uri.port : null,
+        path: uri.path,
+      );
+      return identityUri.toString();
     } catch (_) {}
     return normalized.split('?').first;
   }
@@ -58,6 +63,30 @@ class _PermanentImageCache {
     }
   }
 
+  static Future<void> _trimDiskCache(Directory cacheDirectory) async {
+    try {
+      final files = await cacheDirectory
+          .list()
+          .where((entity) => entity is File && !entity.path.endsWith('.part'))
+          .cast<File>()
+          .toList();
+      final entries = <MapEntry<File, DateTime>>[];
+      for (final file in files) {
+        try {
+          entries.add(MapEntry(file, (await file.stat()).modified));
+        } catch (_) {}
+      }
+      if (entries.length < _maxDiskFiles) return;
+      entries.sort((a, b) => a.value.compareTo(b.value));
+      final removeCount = entries.length - _maxDiskFiles + 1;
+      for (final entry in entries.take(removeCount)) {
+        try {
+          await entry.key.delete();
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
   static Future<void> prefetch(String url) async {
     final path = await get(url);
     if (path == null) return;
@@ -83,17 +112,7 @@ class _PermanentImageCache {
         final cacheDirectory =
             Directory('${directory.path}/friend_media_cache');
         await cacheDirectory.create(recursive: true);
-        final cachedFiles = await cacheDirectory
-            .list()
-            .where((entity) => entity is File && !entity.path.endsWith('.part'))
-            .cast<File>()
-            .toList();
-        if (cachedFiles.length >= _maxDiskFiles) {
-          cachedFiles.sort((a, b) => a.statSync().modified.compareTo(b.statSync().modified));
-          for (final oldFile in cachedFiles.take(cachedFiles.length - _maxDiskFiles + 1)) {
-            await oldFile.delete().catchError((_) async {});
-          }
-        }
+        await _trimDiskCache(cacheDirectory);
         final fileName = base64Url.encode(utf8.encode(key)).replaceAll('=', '');
         final file = File('${cacheDirectory.path}/$fileName');
         if (await file.exists() && await file.length() > 0) {
