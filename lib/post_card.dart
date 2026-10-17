@@ -8,28 +8,78 @@ class _DiscoverMediaPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _DiscoverImageWithIntrinsicLayout(
+      url: url,
+      sourceWidth: width,
+      sourceHeight: height,
+    );
+  }
+}
+
+class _DiscoverImageWithIntrinsicLayout extends StatefulWidget {
+  const _DiscoverImageWithIntrinsicLayout({
+    required this.url,
+    this.sourceWidth,
+    this.sourceHeight,
+  });
+  final String url;
+  final int? sourceWidth;
+  final int? sourceHeight;
+
+  @override
+  State<_DiscoverImageWithIntrinsicLayout> createState() =>
+      _DiscoverImageWithIntrinsicLayoutState();
+}
+
+class _DiscoverImageWithIntrinsicLayoutState
+    extends State<_DiscoverImageWithIntrinsicLayout> {
+  double? ratio;
+
+  @override
+  void initState() {
+    super.initState();
+    _setSourceRatio();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DiscoverImageWithIntrinsicLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url ||
+        oldWidget.sourceWidth != widget.sourceWidth ||
+        oldWidget.sourceHeight != widget.sourceHeight) {
+      _setSourceRatio();
+    }
+  }
+
+  void _setSourceRatio() {
+    if (widget.sourceWidth != null &&
+        widget.sourceHeight != null &&
+        widget.sourceWidth! > 0 &&
+        widget.sourceHeight! > 0) {
+      ratio = widget.sourceWidth! / widget.sourceHeight!;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fallbackRatio = ratio ?? 1.0;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth;
-        final ratio = width != null && height != null && width! > 0 && height! > 0
-            ? width! / height!
-            : 1.0;
-        final naturalHeight = availableWidth / ratio;
-        final displayHeight = naturalHeight > 500 ? 500.0 : naturalHeight;
-        final displayWidth = naturalHeight > 500
-            ? displayHeight * ratio
-            : availableWidth;
+        final width = constraints.maxWidth;
+        final naturalHeight = width / fallbackRatio;
+        final height = naturalHeight > 500 ? 500.0 : naturalHeight;
+        final displayWidth = naturalHeight > 500 ? height * fallbackRatio : width;
         return Align(
           alignment: Alignment.centerLeft,
           child: SizedBox(
             width: displayWidth,
-            height: displayHeight,
+            height: height,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: _PermanentCachedImage(
-                url: url,
+                url: widget.url,
                 width: displayWidth,
-                height: displayHeight,
+                height: height,
                 fit: BoxFit.contain,
                 placeholder: const ColoredBox(
                   color: Color(0x22111111),
@@ -43,6 +93,7 @@ class _DiscoverMediaPreview extends StatelessWidget {
     );
   }
 }
+
 
 class _DiscoverProfileCard extends StatelessWidget {
   const _DiscoverProfileCard({
