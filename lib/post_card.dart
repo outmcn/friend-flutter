@@ -32,28 +32,19 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
     TextDirection direction,
     double width,
   ) {
-    final actionPainter = TextPainter(
-      text: const TextSpan(text: '…展开全部', style: actionStyle),
-      textDirection: direction,
-    )..layout();
+    const actionText = '展开全部';
     var low = 0;
     var high = text.length;
     while (low < high) {
       final mid = (low + high + 1) ~/ 2;
       final candidate = TextPainter(
         text: TextSpan(
-          children: [
-            TextSpan(text: text.substring(0, mid), style: bodyStyle),
-            const TextSpan(text: '…', style: bodyStyle),
-            WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
-              child: SizedBox(width: 0, height: 18),
-            ),
-          ],
+          text: '${text.substring(0, mid)}… $actionText',
+          style: bodyStyle,
         ),
         textDirection: direction,
         maxLines: 3,
-      )..layout(maxWidth: width - actionPainter.width);
+      )..layout(maxWidth: width);
       if (!candidate.didExceedMaxLines) {
         low = mid;
       } else {
@@ -97,8 +88,7 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
         );
         return Text.rich(
           TextSpan(children: [
-            TextSpan(text: visible, style: bodyStyle),
-            const TextSpan(text: '…', style: bodyStyle),
+            TextSpan(text: '$visible… ', style: bodyStyle),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: GestureDetector(
