@@ -1102,7 +1102,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                   ),
                                 ),
                               ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 1),
                             const Divider(height: 32),
                             Padding(
                               padding:
