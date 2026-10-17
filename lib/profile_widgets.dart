@@ -187,12 +187,9 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
         ),
       );
     }
-    return MasonryGridView.count(
+    return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 6,
-      mainAxisSpacing: 6,
       itemCount: posts.length,
       itemBuilder: (context, index) {
         final post = posts[index];
@@ -241,141 +238,73 @@ class _MyProfilePostCard extends StatelessWidget {
   final VoidCallback onTap;
   final GlobalKey? mediaKey;
 
-  Widget _profileMedia({required String url, required bool thumbnail}) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: thumbnail ? 400 : 300),
-      child: _PermanentCachedImage(
-        url: url,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        placeholder: const SizedBox(
-          height: 180,
-          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+  Widget _media(String url, {bool video = false}) => Align(
+        alignment: Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360, maxHeight: 400),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _PermanentCachedImage(
+              url: url,
+              fit: BoxFit.contain,
+              placeholder: const ColoredBox(
+                color: Color(0x22111111),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+            ),
+          ),
         ),
-      ),
-    );
-  }
+      );
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final image = post.imageUrl?.trim();
     final video = post.videoUrl?.trim();
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Card(
-          margin: EdgeInsets.zero,
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (image != null && image.isNotEmpty)
-                LayoutBuilder(
-                  builder: (context, constraints) => ConstrainedBox(
-                    key: mediaKey,
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: _PermanentCachedImage(
-                      url: image,
-                      width: double.infinity,
-                      fit: BoxFit.contain,
-                      placeholder: const SizedBox(
-                        height: 180,
-                        child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2)),
-                      ),
-                    ),
-                  ),
-                )
-              else if (video != null && video.isNotEmpty)
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                      if (post.thumbnailUrl != null &&
-                          post.thumbnailUrl!.isNotEmpty)
-                        SizedBox(
-                          key: mediaKey,
-                          width: double.infinity,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 400),
-                            child: _profileMedia(
-                              url: post.thumbnailUrl!,
-                              thumbnail: true,
-                            ),
-                          ),
-                        )
-                      else
-                        const SizedBox(
-                          height: 225,
-                          child: ColoredBox(color: Colors.transparent),
-                        ),
-                      const Icon(
-                        Icons.play_circle_outline,
-                        size: 56,
-                        color: Colors.white,
-                      ),
-                  ],
-                )
-              else
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: 120,
-                    maxHeight: 240,
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    color: scheme.surfaceContainerHighest,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      post.content.trim().isEmpty
-                          ? '暂无动态内容'
-                          : post.content.trim(),
-                      maxLines: 10,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: scheme.onSurface,
-                        fontSize: 16,
-                        height: 1.45,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                if (post.content.trim().isNotEmpty &&
-                    ((image != null && image.isNotEmpty) ||
-                        (video != null && video.isNotEmpty)))
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
                   child: Text(
-                    post.content.trim(),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 18, height: 1.35),
+                    _formatProfilePostDate(post.createdAt),
+                    style: TextStyle(color: scheme.onSurfaceVariant),
                   ),
                 ),
+                Icon(Icons.visibility_outlined,
+                    size: 16, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Text('${post.views}',
+                    style: TextStyle(color: scheme.onSurfaceVariant)),
+                const SizedBox(width: 8),
+                const Icon(TIcons.more, size: 20),
+              ],
+            ),
+            if (post.content.trim().isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-                child: Row(
-                  children: [
-                    Text(
-                      _formatProfilePostDate(post.createdAt),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    Icon(Icons.visibility_outlined,
-                        size: 16, color: scheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('${post.views}'),
-                  ],
-                ),
+                padding: const EdgeInsets.only(top: 5, bottom: 5),
+                child: Text(post.content.trim(),
+                    style: const TextStyle(fontSize: 18, height: 1.4)),
               ),
-            ],
-          ),
+            if (image != null && image.isNotEmpty)
+              _media(image)
+            else if (video != null && video.isNotEmpty)
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  _media(post.thumbnailUrl?.trim().isNotEmpty == true
+                      ? post.thumbnailUrl!.trim()
+                      : video),
+                  const Icon(Icons.play_circle_outline,
+                      size: 48, color: Colors.white),
+                ],
+              ),
+          ],
         ),
       ),
     );
