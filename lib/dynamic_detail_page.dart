@@ -938,12 +938,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (item.imageUrl?.isNotEmpty == true)
-            _PostImageHolder(url: item.imageUrl!, unlimitedHeight: true)
+            _PostImageHolder(url: item.imageUrl!)
           else if (item.videoUrl?.isNotEmpty == true)
             _NetworkVideoPreview(
               url: item.videoUrl!,
               thumbnailUrl: item.thumbnailUrl,
-              unlimitedHeight: true,
             ),
           if (item.content.isNotEmpty)
             Padding(
@@ -1045,14 +1044,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                             if (item.imageUrl?.isNotEmpty == true) ...[
                               _PostImageHolder(
                                 url: item.imageUrl!,
-                                unlimitedHeight: true,
                               ),
                             ],
                             if (item.videoUrl?.isNotEmpty == true) ...[
                               _NetworkVideoPreview(
                                 url: item.videoUrl!,
                                 thumbnailUrl: item.thumbnailUrl,
-                                unlimitedHeight: true,
                               ),
                             ],
                             if (item.content.isNotEmpty)
@@ -1078,8 +1075,19 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                         color: Theme.of(context).dividerColor,
                                       ),
                                     ),
-                                    child: const Center(
-                                      child: Text('送出第一份礼物'),
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      height: 180,
+                                      child: Center(
+                                        child: Text(
+                                          '送出第一份礼物',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
