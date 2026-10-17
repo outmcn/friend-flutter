@@ -712,10 +712,33 @@ class DDPostService {
     if (response.body.trim().isEmpty) return const [];
     final decoded = jsonDecode(response.body);
     if (decoded is! List) throw Exception('评论数据格式错误');
-    return decoded
+    final comments = decoded
         .whereType<Map<String, dynamic>>()
         .map(DDComment.fromJson)
         .toList();
+    await Future.wait(comments.map((comment) async {
+      final raw = comment.avatar.trim();
+      if (raw.isEmpty || raw.startsWith('https://')) return;
+      try {
+        final signed = await avatarUrl(token, mediaKey(raw));
+        final index = comments.indexOf(comment);
+        if (index >= 0) {
+          comments[index] = DDComment(
+            id: comment.id,
+            userId: comment.userId,
+            parentId: comment.parentId,
+            nickname: comment.nickname,
+            content: comment.content,
+            createdAt: comment.createdAt,
+            likes: comment.likes,
+            liked: comment.liked,
+            city: comment.city,
+            avatar: signed,
+          );
+        }
+      } catch (_) {}
+    }));
+    return comments;
   }
 
   Future<void> createComment(

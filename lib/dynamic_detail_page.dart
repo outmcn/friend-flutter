@@ -558,14 +558,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                         ),
                       ),
               borderRadius: BorderRadius.circular(20),
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: comment.avatar.trim().isEmpty
-                    ? null
-                    : NetworkImage(comment.avatar.trim()),
-                child: comment.avatar.trim().isEmpty
-                    ? const Icon(Icons.person_outline, size: 18)
-                    : null,
+              child: _PermanentCachedImage(
+                url: comment.avatar.trim(),
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+                placeholder: const Icon(Icons.person_outline),
               ),
             ),
             const SizedBox(width: 10),
