@@ -871,6 +871,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           padding: EdgeInsets.fromLTRB(
               8, 8, 8, 8 + MediaQuery.of(context).viewInsets.bottom),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _DetailAction(
                 icon: item.liked ? TIcons.heart_filled : TIcons.heart,
