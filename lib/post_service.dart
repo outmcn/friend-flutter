@@ -61,6 +61,18 @@ class DDPostService {
     return false;
   }
 
+  static bool isLikelyExpired(String source) {
+    final uri = Uri.tryParse(source);
+    if (uri == null) return true;
+    final query = {
+      for (final entry in uri.queryParameters.entries)
+        entry.key.toLowerCase(): entry.value,
+    };
+    final expires = int.tryParse(query['expires'] ?? '');
+    return expires != null &&
+        DateTime.now().millisecondsSinceEpoch >= expires * 1000;
+  }
+
   Future<DDPost> resolvePostMedia(String token, DDPost post) async {
     final data = post.toJson();
     await Future.wait(

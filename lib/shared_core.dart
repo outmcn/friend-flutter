@@ -104,6 +104,10 @@ class _PermanentImageCache {
         final response = await http
             .get(Uri.parse(normalized))
             .timeout(const Duration(seconds: 25));
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          if (await file.exists()) await file.delete();
+          return null;
+        }
         if (response.statusCode < 200 || response.statusCode >= 300) {
           return null;
         }

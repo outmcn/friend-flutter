@@ -93,17 +93,25 @@ class DiscoverFeed extends ChangeNotifier {
     try {
       final batch = await fetch(refresh ? 0 : offset);
       if (disposed) return;
-      if (refresh) {
-        posts.clear();
-        offset = 0;
-      }
+      final nextPosts = refresh
+          ? <DDPost>[]
+          : List<DDPost>.from(posts);
+      final nextOffset = refresh ? 0 : offset;
       // 分页游标按服务端返回数量推进，去重不能影响游标。
-      offset += batch.length;
-      final ids = posts.map((post) => post.id).toSet();
-      posts.addAll(batch.where((post) => ids.add(post.id)));
-      hasMore = batch.length == 30;
+      final ids = nextPosts.map((post) => post.id).toSet();
+      nextPosts.addAll(batch.where((post) => ids.add(post.id)));
+      final resolvedHasMore = batch.length == 30;
+      posts
+        ..clear()
+        ..addAll(nextPosts);
+      offset = nextOffset + batch.length;
+      hasMore = resolvedHasMore;
       initialized = true;
-      await _saveCache();
+      try {
+        await _saveCache();
+      } catch (_) {
+        // 缓存写入失败不影响已经成功加载的动态。
+      }
     } catch (e) {
       if (!disposed) error = e.toString().replaceFirst('Exception: ', '');
     } finally {
