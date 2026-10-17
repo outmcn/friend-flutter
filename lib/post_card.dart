@@ -21,6 +21,7 @@ class _DiscoverMediaImage extends StatefulWidget {
 
 class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
   ImageStream? _stream;
+  ImageProvider<Object>? _provider;
   ImageInfo? _imageInfo;
 
   @override
@@ -36,7 +37,7 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
   }
 
   void _resolveImage() {
-    final provider = NetworkImage(widget.url);
+    final ImageProvider<Object> provider = NetworkImage(widget.url);
     final stream = provider.resolve(createLocalImageConfiguration(context));
     _stream?.removeListener(ImageStreamListener(_onImage));
     _stream = stream;
@@ -82,7 +83,7 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image(
-              image: _stream!.key,
+              image: _provider!,
               width: displayWidth,
               height: displayHeight,
               fit: BoxFit.fill,
