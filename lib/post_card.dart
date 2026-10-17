@@ -37,8 +37,8 @@ class _DiscoverProfileCard extends StatelessWidget {
             ? constraints.maxWidth
             : 360.0;
         final naturalHeight = maxWidth / aspect;
-        final height = naturalHeight.clamp(0.0, 400.0).toDouble();
-        final width = naturalHeight > 400 ? height * aspect : maxWidth;
+        final height = naturalHeight.clamp(0.0, 500.0).toDouble();
+        final width = naturalHeight > 500 ? height * aspect : maxWidth;
         return Align(
           alignment: Alignment.centerLeft,
           child: SizedBox(
