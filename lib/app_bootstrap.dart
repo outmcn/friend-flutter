@@ -1,19 +1,82 @@
 part of 'main.dart';
 
 void _showTopNotice(BuildContext context, Widget content) {
-  final messenger = ScaffoldMessenger.of(context);
-  messenger.hideCurrentMaterialBanner();
-  messenger.showMaterialBanner(
-    MaterialBanner(
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return;
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (context) => _FloatingNotice(
       content: content,
-      actions: [
-        TextButton(
-          onPressed: messenger.hideCurrentMaterialBanner,
-          child: const Text('关闭'),
-        ),
-      ],
+      onClose: () => entry.remove(),
     ),
   );
+  overlay.insert(entry);
+}
+
+class _FloatingNotice extends StatefulWidget {
+  const _FloatingNotice({required this.content, required this.onClose});
+  final Widget content;
+  final VoidCallback onClose;
+
+  @override
+  State<_FloatingNotice> createState() => _FloatingNoticeState();
+}
+
+class _FloatingNoticeState extends State<_FloatingNotice>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  )..forward();
+  Timer? timer;
+
+  @override
+  void initState() {
+    super.initState();
+    timer = Timer(const Duration(seconds: 3), widget.onClose);
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top + 8;
+    return Positioned(
+      top: top,
+      left: 16,
+      right: 16,
+      child: SafeArea(
+        bottom: false,
+        child: SlideTransition(
+          position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
+              .animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic)),
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+              child: Row(
+                children: [
+                  Expanded(child: widget.content),
+                  IconButton(
+                    tooltip: '关闭',
+                    onPressed: widget.onClose,
+                    icon: const Icon(Icons.close, size: 18),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class DDApp extends StatelessWidget {
