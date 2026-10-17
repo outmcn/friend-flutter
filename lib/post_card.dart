@@ -89,13 +89,11 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
         return Text.rich(
           TextSpan(children: [
             TextSpan(text: '$visible… ', style: bodyStyle),
-            WidgetSpan(
-              alignment: PlaceholderAlignment.baseline,
-              baseline: TextBaseline.alphabetic,
-              child: GestureDetector(
-                onTap: () => setState(() => expanded = true),
-                child: const Text('展开全部', style: actionStyle),
-              ),
+            TextSpan(
+              text: '展开全部',
+              style: actionStyle,
+              recognizer: TapGestureRecognizer()
+                ..onTap = () => setState(() => expanded = true),
             ),
           ]),
           maxLines: 3,
