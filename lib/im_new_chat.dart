@@ -41,7 +41,7 @@ class _NewChatSheetState extends State<_NewChatSheet> {
                   hintText: '搜索用户',
                   suffixIcon: IconButton(
                     onPressed: search,
-                    icon: const Icon(Icons.search),
+                    icon: const Icon(TIcons.ai_search),
                   ),
                 ),
               ),

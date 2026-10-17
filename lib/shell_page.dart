@@ -1154,7 +1154,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               children: [
                 IconButton(
                     onPressed: () => setState(() => selectedChat = null),
-                    icon: const Icon(Icons.arrow_back)),
+                    icon: const Icon(TIcons.rollback)),
                 CircleAvatar(radius: 20, backgroundImage: _neutralAvatar()),
                 const SizedBox(width: 8),
                 Text(chat.name, style: Theme.of(context).textTheme.bodyLarge),
@@ -3496,7 +3496,7 @@ class _ChatSettingsPageState extends State<_ChatSettingsPage> {
         body: ListView(
           children: [
             ListTile(
-              leading: const Icon(Icons.search),
+              leading: const Icon(TIcons.ai_search),
               title: const Text('查找聊天记录'),
               onTap: () => Navigator.pop(context, 'search'),
             ),
@@ -3559,7 +3559,7 @@ class _ChatSearchDelegate extends SearchDelegate<String?> {
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
         onPressed: () => close(context, null),
-        icon: const Icon(Icons.arrow_back),
+        icon: const Icon(TIcons.rollback),
       );
 
   @override

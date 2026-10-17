@@ -432,7 +432,7 @@ Widget _tdIcon(String name, {double size = 22, Color? color}) {
     'share': TIcons.share,
     'link': TIcons.link,
     'more': TIcons.more,
-    'back': TIcons.chevron_left,
+    'back': TIcons.rollback,
     'video': TIcons.video,
     'video-filled': TIcons.video_filled,
   };

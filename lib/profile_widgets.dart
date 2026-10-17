@@ -297,7 +297,7 @@ class _MyProfilePostCard extends StatelessWidget {
                     style: TextStyle(color: scheme.onSurfaceVariant),
                   ),
                 ),
-                Icon(Icons.visibility_outlined,
+                Icon(TIcons.browse,
                     size: 16, color: scheme.onSurfaceVariant),
                 const SizedBox(width: 4),
                 Text('${post.views}',

@@ -27,7 +27,7 @@ class CompanionProfilePage extends StatelessWidget {
                     IconButton(
                         onPressed: () => Navigator.pop(context),
                         icon:
-                            const Icon(Icons.arrow_back, color: Colors.white)),
+                            const Icon(TIcons.rollback, color: Colors.white)),
                     Stack(
                       clipBehavior: Clip.none,
                       children: [

@@ -908,9 +908,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             IconButton(
                                               tooltip: '编辑资料',
                                               onPressed: _openEditProfile,
-                                              icon: const Icon(
-                                                  Icons.edit_outlined,
-                                                  size: 22),
+                                              icon: const Icon(TIcons.ai_edit_1, size: 22),
                                             ),
                                           ],
                                         ),
@@ -930,9 +928,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               onPressed: _editSonic,
                                               visualDensity:
                                                   VisualDensity.compact,
-                                              icon: const Icon(
-                                                  Icons.edit_outlined,
-                                                  size: 18),
+                                              icon: const Icon(TIcons.ai_edit_1, size: 18),
                                             ),
                                           ],
                                         ),
