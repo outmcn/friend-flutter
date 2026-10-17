@@ -23,34 +23,28 @@ class _DiscoverProfileCard extends StatelessWidget {
   Widget _media({required String url, required bool thumbnail}) {
     final sourceWidth = thumbnail ? post.thumbnailWidth : post.imageWidth;
     final sourceHeight = thumbnail ? post.thumbnailHeight : post.imageHeight;
-    final aspect = sourceWidth != null && sourceHeight != null &&
+    final placeholderAspect = sourceWidth != null && sourceHeight != null &&
             sourceWidth > 0 && sourceHeight > 0
         ? sourceWidth / sourceHeight
-        : null;
+        : 4 / 3;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        // Existing posts may not contain server-side dimensions. Keep a
-        // stable, visible preview instead of collapsing into one default ratio.
-        final height = aspect == null
-            ? 320.0
-            : (maxWidth / aspect).clamp(180.0, 500.0).toDouble();
-        final width = aspect == null || maxWidth / aspect <= 500
-            ? maxWidth
-            : height * aspect;
+        final width = constraints.maxWidth;
+        final placeholderHeight =
+            (width / placeholderAspect).clamp(1.0, 500.0).toDouble();
         return Align(
           alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: width,
-            height: height,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _PermanentCachedImage(
-                url: url,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _PermanentCachedImage(
+              url: url,
+              width: width,
+              height: placeholderHeight,
+              fit: BoxFit.contain,
+              placeholder: SizedBox(
                 width: width,
-                height: height,
-                fit: BoxFit.cover,
-                placeholder: const ColoredBox(
+                height: placeholderHeight,
+                child: const ColoredBox(
                   color: Color(0x22111111),
                   child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 ),
