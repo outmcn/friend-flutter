@@ -239,23 +239,43 @@ class _MyProfilePostCard extends StatelessWidget {
   final VoidCallback onTap;
   final GlobalKey? mediaKey;
 
-  Widget _media(String url, {bool video = false}) => ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SizedBox(
-          width: double.infinity,
-          height: 400,
-          child: _PermanentCachedImage(
-            url: url,
-            width: double.infinity,
-            height: 400,
-            fit: BoxFit.cover,
-            placeholder: const ColoredBox(
-              color: Color(0x22111111),
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+  Widget _media(String url, {bool video = false}) {
+    final width = video ? post.thumbnailWidth : post.imageWidth;
+    final height = video ? post.thumbnailHeight : post.imageHeight;
+    final aspect = width != null && height != null && width > 0 && height > 0
+        ? width / height
+        : 4 / 3;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        final naturalHeight = maxWidth / aspect;
+        final actualHeight = naturalHeight.clamp(0.0, 400.0).toDouble();
+        final actualWidth = naturalHeight > 400
+            ? actualHeight * aspect
+            : maxWidth;
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: actualWidth,
+              height: actualHeight,
+              child: _PermanentCachedImage(
+                url: url,
+                width: actualWidth,
+                height: actualHeight,
+                fit: BoxFit.cover,
+                placeholder: const ColoredBox(
+                  color: Color(0x22111111),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+              ),
             ),
           ),
-        ),
-      );
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
