@@ -6,7 +6,8 @@ String _formatProfilePostDate(String raw) {
   if (parsed == null || raw.trim().isEmpty) return '2026.01.01';
   final local = parsed.toLocal();
   String two(int value) => value.toString().padLeft(2, '0');
-  return '${local.year}.${two(local.month)}.${two(local.day)}';
+  return '${local.year}.${two(local.month)}.${two(local.day)} '
+      '${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
 }
 
 class _SonicProfileButton extends StatelessWidget {
