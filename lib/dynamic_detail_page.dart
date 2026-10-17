@@ -301,7 +301,17 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           }
           final fresh = await service.fetchPost(t, widget.postId);
           final resolved = await service.resolvePostMedia(t, fresh);
-          _publish(resolved);
+          final current = post;
+          _publish(current == null
+              ? resolved
+              : resolved.copyWith(
+                  nickname: resolved.nickname.trim().isEmpty
+                      ? current.nickname
+                      : resolved.nickname,
+                  avatar: resolved.avatar.trim().isEmpty
+                      ? current.avatar
+                      : resolved.avatar,
+                ));
           await _saveDetailCache(fresh);
         }(),
       ]);

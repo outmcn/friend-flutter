@@ -80,14 +80,16 @@ class DDPost {
     int? likes,
     bool? favorited,
     int? favorites,
+    String? nickname,
+    String? avatar,
   }) =>
       DDPost(
         id: id,
         userId: userId,
         content: content,
         createdAt: createdAt,
-        nickname: nickname,
-        avatar: avatar,
+        nickname: nickname ?? this.nickname,
+        avatar: avatar ?? this.avatar,
         likes: likes ?? this.likes,
         favorites: favorites ?? this.favorites,
         comments: comments,
