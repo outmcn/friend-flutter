@@ -90,7 +90,8 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
           TextSpan(children: [
             TextSpan(text: '$visible… ', style: bodyStyle),
             WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
+              alignment: PlaceholderAlignment.baseline,
+              baseline: TextBaseline.alphabetic,
               child: GestureDetector(
                 onTap: () => setState(() => expanded = true),
                 child: const Text('展开全部', style: actionStyle),
