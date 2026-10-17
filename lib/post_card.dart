@@ -5,6 +5,8 @@ class _DynamicPostCard extends StatelessWidget {
     required this.post,
     required this.onLike,
     required this.onFavorite,
+    required this.onShare,
+    required this.onReport,
     required this.onOpen,
     this.onComment,
     // ignore: unused_element_parameter
@@ -19,6 +21,8 @@ class _DynamicPostCard extends StatelessWidget {
   final DDPost post;
   final VoidCallback onLike;
   final VoidCallback onFavorite;
+  final VoidCallback onShare;
+  final VoidCallback onReport;
   final VoidCallback onOpen;
   final VoidCallback? onComment;
   final VoidCallback? onFollow;
@@ -398,23 +402,22 @@ class _DiscoverProfileCard extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Wrap(
           children: [
             ListTile(
               leading: const Icon(TIcons.share_1),
               title: const Text('分享动态'),
               onTap: () {
                 Navigator.pop(sheetContext);
-                onOpen();
+                onShare();
               },
             ),
             ListTile(
-              leading: const Icon(TIcons.chevron_right),
-              title: const Text('查看详情'),
+              leading: const Icon(Icons.report_outlined),
+              title: const Text('举报动态'),
               onTap: () {
                 Navigator.pop(sheetContext);
-                onOpen();
+                onReport();
               },
             ),
           ],

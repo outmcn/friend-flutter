@@ -107,6 +107,36 @@ class _DiscoverPageState extends State<DiscoverPage> {
     }
   }
 
+  Future<void> _share(DDPost post) async {
+    await Clipboard.setData(
+      ClipboardData(text: '动态 ${post.id}：${post.content}'),
+    );
+    if (mounted) _showTopNotice(context, const SnackBar(content: Text('动态内容已复制，可粘贴分享')));
+  }
+
+  Future<void> _report(DDPost post) async {
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('举报动态'),
+        children: [
+          for (final item in ['色情低俗', '广告诈骗', '侵权或盗用', '其他'])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, item),
+              child: Text(item),
+            ),
+        ],
+      ),
+    );
+    if (reason == null || !mounted) return;
+    try {
+      await service.reportPost(token: await _token(), postId: post.id, reason: reason);
+      if (mounted) _showTopNotice(context, const SnackBar(content: Text('举报已提交')));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+    }
+  }
+
   Future<void> _open(DDPost post) async {
     final feed = feeds[selectedTab];
     final key = _cardKeys.putIfAbsent(
@@ -183,6 +213,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
       fullWidth: fullWidth,
       onLike: _like,
       onFavorite: _favorite,
+      onShare: _share,
+      onReport: _report,
       onOpen: _open,
     );
   }
@@ -330,6 +362,8 @@ class _DiscoverFeedCard extends StatefulWidget {
     this.mediaKey,
     required this.onLike,
     required this.onFavorite,
+    required this.onShare,
+    required this.onReport,
     required this.onOpen,
   });
 
@@ -339,6 +373,8 @@ class _DiscoverFeedCard extends StatefulWidget {
   final bool fullWidth;
   final ValueChanged<DDPost> onLike;
   final ValueChanged<DDPost> onFavorite;
+  final ValueChanged<DDPost> onShare;
+  final ValueChanged<DDPost> onReport;
   final ValueChanged<DDPost> onOpen;
 
   @override
@@ -384,6 +420,8 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       mediaKey: widget.mediaKey,
       onLike: () => widget.onLike(post),
       onFavorite: () => widget.onFavorite(post),
+      onShare: () => widget.onShare(post),
+      onReport: () => widget.onReport(post),
       onOpen: () => widget.onOpen(post),
     );
     return widget.fullWidth
