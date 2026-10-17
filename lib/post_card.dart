@@ -490,7 +490,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                         active: post.favorited,
                       ),
                       _action(context: context, icon: TIcons.chat_bubble_1,
-                          label: '${post.comments}', onTap: onOpen),
+                          label: '${post.comments}条', onTap: onOpen),
                     ],
                   ),
                 ],

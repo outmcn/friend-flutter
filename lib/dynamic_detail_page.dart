@@ -1115,7 +1115,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                           .titleLarge),
                                   const SizedBox(width: 6),
                                   Text(
-                                    '${item.comments}',
+                                    '${item.comments}条',
                                     style:
                                         Theme.of(context).textTheme.titleMedium,
                                   ),
