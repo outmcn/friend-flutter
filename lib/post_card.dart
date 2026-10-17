@@ -1,16 +1,5 @@
 part of 'main.dart';
 
-class _DiscoverMediaPreview extends StatelessWidget {
-  const _DiscoverMediaPreview({required this.url, this.width, this.height});
-  final String url;
-  final int? width;
-  final int? height;
-
-  @override
-  Widget build(BuildContext context) =>
-      _DiscoverMediaImage(url: url);
-}
-
 class _DiscoverMediaImage extends StatefulWidget {
   const _DiscoverMediaImage({required this.url});
   final String url;
@@ -170,7 +159,6 @@ class _DiscoverProfileCard extends StatelessWidget {
   const _DiscoverProfileCard({
     super.key,
     required this.post,
-    this.mediaKey,
     required this.onLike,
     required this.onFavorite,
     required this.onShare,
@@ -179,7 +167,6 @@ class _DiscoverProfileCard extends StatelessWidget {
   });
 
   final DDPost post;
-  final GlobalKey? mediaKey;
   final VoidCallback onLike;
   final VoidCallback onFavorite;
   final VoidCallback onShare;

@@ -361,7 +361,6 @@ class _DiscoverFeedCard extends StatefulWidget {
     super.key,
     required this.feed,
     required this.post,
-    this.mediaKey,
     required this.onLike,
     required this.onFavorite,
     required this.onShare,
@@ -371,7 +370,6 @@ class _DiscoverFeedCard extends StatefulWidget {
 
   final DiscoverFeed feed;
   final DDPost post;
-  final GlobalKey? mediaKey;
   final ValueChanged<DDPost> onLike;
   final ValueChanged<DDPost> onFavorite;
   final ValueChanged<DDPost> onShare;
@@ -418,7 +416,6 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
     super.build(context);
     final card = _DiscoverProfileCard(
       post: post,
-      mediaKey: widget.mediaKey,
       onLike: () => widget.onLike(post),
       onFavorite: () => widget.onFavorite(post),
       onShare: () => widget.onShare(post),

@@ -108,10 +108,6 @@ class _PermanentImageCache {
     rememberProvider(url, provider);
   }
 
-  static void rememberSize(String url, Size size) {
-    // 图片尺寸只在加载组件内部根据 ImageInfo 使用，不再做全局缓存。
-  }
-
   static String? peek(String url) => _localPaths[identity(url)];
 
   static Future<String?> get(String url) async {
@@ -267,9 +263,7 @@ class _PermanentCachedImageState extends State<_PermanentCachedImage> {
         gaplessPlayback: true,
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (frame != null || wasSynchronouslyLoaded) {
-            final size = MediaQuery.sizeOf(context);
-            _PermanentImageCache.rememberSize(widget.url, size);
-          }
+            }
           return child;
         },
       );
