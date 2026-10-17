@@ -1129,8 +1129,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                               )
                             else
                               Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                                 child: Column(
                                   children: _buildCommentTree(comments),
                                 ),
