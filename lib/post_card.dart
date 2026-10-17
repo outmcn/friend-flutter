@@ -347,66 +347,24 @@ class _DiscoverProfileCard extends StatelessWidget {
     return 4 / 3;
   }
 
-  Widget _mediaFrame({
-    required String url,
-    required bool thumbnail,
-    GlobalKey? key,
-  }) {
+  Widget _media({required String url, required bool thumbnail}) {
     final aspect = _mediaAspect(thumbnail: thumbnail);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth < 360
-            ? constraints.maxWidth
-            : 360.0;
-        final width = aspect >= 1 ? maxWidth : maxWidth * aspect;
-        final naturalHeight = width / aspect;
-        final height = naturalHeight.clamp(0.0, 500.0).toDouble();
-        final fittedWidth = height < naturalHeight ? height * aspect : width;
-        return Align(
-          alignment: Alignment.topLeft,
-          widthFactor: 1,
-          child: SizedBox(
-            key: key,
-            width: fittedWidth,
-            height: height,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _PermanentCachedImage(
-                url: url,
-                width: fittedWidth,
-                height: height,
-                fit: BoxFit.contain,
-              ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360, maxHeight: 500),
+        child: AspectRatio(
+          aspectRatio: aspect,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _PermanentCachedImage(
+              url: url,
+              fit: BoxFit.contain,
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
-  }
-
-  Widget _media(BuildContext context) {
-    final image = post.imageUrl?.trim();
-    final video = post.videoUrl?.trim();
-    if (image != null && image.isNotEmpty) {
-      return _mediaFrame(url: image, thumbnail: false, key: mediaKey);
-    }
-    if (video != null && video.isNotEmpty) {
-      return Stack(
-        key: mediaKey,
-        alignment: Alignment.topLeft,
-        children: [
-          post.thumbnailUrl?.isNotEmpty == true
-              ? _mediaFrame(url: post.thumbnailUrl!, thumbnail: true)
-              : const SizedBox(height: 180),
-          const Positioned(
-            left: 24,
-            top: 24,
-            child: Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
-          ),
-        ],
-      );
-    }
-    return const SizedBox.shrink();
   }
 
   Widget _action({
@@ -542,9 +500,18 @@ class _DiscoverProfileCard extends StatelessWidget {
                       child: Text(post.content.trim(),
                           style: const TextStyle(fontSize: 18, height: 1.4)),
                     ),
-                  if (hasMedia) ...[
+                  if (post.imageUrl?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 10),
-                    _media(context),
+                    _media(url: post.imageUrl!.trim(), thumbnail: false),
+                  ] else if (post.videoUrl?.trim().isNotEmpty == true) ...[
+                    const SizedBox(height: 10),
+                    Stack(
+                      alignment: Alignment.topLeft,
+                      children: [
+                        _media(url: post.thumbnailUrl?.trim().isNotEmpty == true ? post.thumbnailUrl!.trim() : post.videoUrl!.trim(), thumbnail: post.thumbnailUrl?.trim().isNotEmpty == true),
+                        const Positioned(left: 24, top: 24, child: Icon(Icons.play_circle_outline, size: 48, color: Colors.white)),
+                      ],
+                    ),
                   ],
                   const SizedBox(height: 12),
                   Row(
