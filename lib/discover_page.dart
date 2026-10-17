@@ -215,6 +215,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
     );
   }
 
+  void _scrollCurrentTabToTop() {
+    final scroll = feeds[selectedTab].scroll;
+    if (!scroll.hasClients || scroll.offset <= 0) return;
+    unawaited(scroll.animateTo(
+      0,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    ));
+  }
   Widget _list(int tab) {
     final feed = feeds[tab];
     return AnimatedBuilder(
@@ -283,6 +292,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
                         HapticFeedback.selectionClick();
+                        if (selectedTab == entry.key) {
+                          _scrollCurrentTabToTop();
+                          return;
+                        }
                         setState(() => selectedTab = entry.key);
                         final feed = feeds[entry.key];
                         if (entry.key == 1 && _discoverLocalTabLabel == '本地') {
