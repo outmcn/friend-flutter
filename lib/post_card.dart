@@ -12,10 +12,10 @@ class _DiscoverPostContent extends StatefulWidget {
 class _DiscoverPostContentState extends State<_DiscoverPostContent> {
   bool expanded = false;
 
-  static const bodyStyle = TextStyle(fontSize: 18, height: 1.4);
+  static const bodyStyle = TextStyle(fontSize: 16, height: 1.4);
   static const actionStyle = TextStyle(
     color: Color(0xFF1677FF),
-    fontSize: 15,
+    fontSize: 16,
     height: 1.4,
   );
 
