@@ -386,9 +386,9 @@ class _CreatePostPageState extends State<CreatePostPage> {
               ),
             const SizedBox(height: 8),
             ListTile(
-              leading: _iconFor(Icons.public),
+              leading: const Icon(TIcons.earth),
               title: Text(visibility),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(TIcons.chevron_right),
               onTap: () => showModalBottomSheet<void>(
                 context: context,
                 builder: (_) => SafeArea(

@@ -59,14 +59,14 @@ class _ContentPreviewCard extends StatelessWidget {
             vertical: 3,
           ),
           leading: imageAsset == null
-              ? _iconFor(icon)
+              ? Icon(icon)
               : CircleAvatar(backgroundImage: AssetImage(imageAsset!)),
           title: Text(
             title,
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           subtitle: Text(subtitle),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const Icon(TIcons.chevron_right),
         ),
       ),
     );
@@ -83,7 +83,7 @@ class _RecommendationRow extends StatelessWidget {
         leading: CircleAvatar(child: Icon(Icons.person)),
         title: Text('推荐用户'),
         subtitle: Text('分享了新的生活动态'),
-        trailing: Icon(Icons.chevron_right),
+        trailing: const Icon(TIcons.chevron_right),
       );
 }
 
