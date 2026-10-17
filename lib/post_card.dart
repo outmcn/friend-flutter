@@ -37,18 +37,15 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
         final truncated = metrics.length > widget.maxLines;
         if (!truncated) return Text(widget.text, style: bodyStyle);
         if (expanded) {
-          return RichText(
-            textAlign: TextAlign.left,
-            softWrap: true,
-            text: TextSpan(children: [
-              TextSpan(text: widget.text, style: bodyStyle),
-              TextSpan(
-                text: '  收起',
-                style: actionStyle,
-                recognizer: TapGestureRecognizer()
-                  ..onTap = () => setState(() => expanded = false),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.text, style: bodyStyle),
+              GestureDetector(
+                onTap: () => setState(() => expanded = false),
+                child: const Text('收起', style: actionStyle),
               ),
-            ]),
+            ],
           );
         }
         final action = TextPainter(
