@@ -26,6 +26,8 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
   ImageProvider<Object>? _provider;
   bool _loading = true;
   bool _failed = false;
+  String? _failureMessage;
+  DateTime? _loadStartedAt;
 
   @override
   void initState() {
@@ -40,11 +42,14 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
   }
 
   Future<void> _loadAuthenticatedImage() async {
+    _loadStartedAt = DateTime.now();
+    await _DiscoverMetrics.record('image.attempt');
     setState(() {
       _imageInfo = null;
       _provider = null;
       _loading = true;
       _failed = false;
+      _failureMessage = null;
     });
     final path = await _PermanentImageCache.get(widget.url);
     if (!mounted) return;
@@ -52,23 +57,40 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
       setState(() {
         _loading = false;
         _failed = true;
+        _failureMessage = '图片下载失败，请检查网络后点击重试';
+        unawaited(_DiscoverMetrics.record('image.failure', _loadStartedAt == null ? null : DateTime.now().difference(_loadStartedAt!).inMilliseconds));
       });
       return;
     }
     final provider = FileImage(File(path));
     _PermanentImageCache.rememberProvider(widget.url, provider);
     final stream = provider.resolve(createLocalImageConfiguration(context));
-    _streamListener = ImageStreamListener((info, _) {
-      if (!mounted) return;
-      setState(() {
-        _provider = provider;
-        _imageInfo = info;
-        _loading = false;
-        _failed = false;
-      });
-    }, onError: (_, __) {
-      if (mounted) setState(() { _loading = false; _failed = true; });
-    });
+    _streamListener = ImageStreamListener(
+      (info, _) {
+        if (!mounted) return;
+        setState(() {
+          _provider = provider;
+          _imageInfo = info;
+          _loading = false;
+          _failed = false;
+        });
+        unawaited(_DiscoverMetrics.record(
+          'image.success',
+          _loadStartedAt == null
+              ? null
+              : DateTime.now().difference(_loadStartedAt!).inMilliseconds,
+        ));
+      },
+      onError: (_, __) {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _failed = true;
+            _failureMessage = '图片解码失败，请点击重试';
+          });
+        }
+      },
+    );
     _stream = stream;
     stream.addListener(_streamListener!);
   }
@@ -102,7 +124,17 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
                     child: Center(
                       child: _loading
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.refresh),
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.refresh),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _failureMessage ?? '图片加载失败，点击重试',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ),

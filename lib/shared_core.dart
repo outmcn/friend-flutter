@@ -1,5 +1,19 @@
 part of 'main.dart';
 
+class _DiscoverMetrics {
+  static Future<void> record(String key, [int? durationMs]) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final countKey = 'discover.metric.$key.count';
+      await prefs.setInt(countKey, (prefs.getInt(countKey) ?? 0) + 1);
+      if (durationMs != null) {
+        final totalKey = 'discover.metric.$key.totalMs';
+        await prefs.setInt(totalKey, (prefs.getInt(totalKey) ?? 0) + durationMs);
+      }
+    } catch (_) {}
+  }
+}
+
 class _PermanentImageCache {
   static const int _maxMemoryProviders = 80;
   static const int _maxDiskFiles = 300;
