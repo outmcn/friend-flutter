@@ -34,17 +34,17 @@ class _DiscoverProfileCard extends StatelessWidget {
             (width / placeholderAspect).clamp(1.0, 500.0).toDouble();
         return Align(
           alignment: Alignment.centerLeft,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _PermanentCachedImage(
-              url: url,
-              width: width,
-              height: placeholderHeight,
-              fit: BoxFit.contain,
-              placeholder: SizedBox(
+          child: SizedBox(
+            width: width,
+            height: placeholderHeight,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _PermanentCachedImage(
+                url: url,
                 width: width,
                 height: placeholderHeight,
-                child: const ColoredBox(
+                fit: BoxFit.contain,
+                placeholder: const ColoredBox(
                   color: Color(0x22111111),
                   child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 ),
