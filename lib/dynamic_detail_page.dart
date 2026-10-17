@@ -302,7 +302,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           final fresh = await service.fetchPost(t, widget.postId);
           final resolved = await service.resolvePostMedia(t, fresh);
           final current = post;
-          _publish(current == null
+          final merged = current == null
               ? resolved
               : resolved.copyWith(
                   nickname: resolved.nickname.trim().isEmpty
@@ -311,8 +311,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                   avatar: resolved.avatar.trim().isEmpty
                       ? current.avatar
                       : resolved.avatar,
-                ));
-          await _saveDetailCache(fresh);
+                );
+          _publish(merged);
+          await _saveDetailCache(merged);
         }(),
       ]);
       if (mounted) setState(() => error = null);
@@ -872,13 +873,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           child: Row(
             children: [
               _DetailAction(
-                icon: TIcons.thumb_up_2,
+                icon: item.liked ? TIcons.heart_filled : TIcons.heart,
                 label: '${item.likes}',
                 active: item.liked,
                 onTap: _toggleLike,
               ),
               _DetailAction(
-                icon: TIcons.bookmark,
+                icon: item.favorited ? TIcons.star_1_filled : TIcons.star_1,
                 label: '${item.favorites}',
                 active: item.favorited,
                 onTap: _toggleFavorite,
