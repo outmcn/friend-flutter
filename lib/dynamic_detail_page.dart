@@ -1,5 +1,13 @@
 part of 'main.dart';
 
+Widget _detailPublishTime(DDPost item) => Text(
+      '${formatDDTime(item.createdAt)}${(item.authorCity ?? '').trim().isNotEmpty ? ' · ${item.authorCity!.trim()}' : ''}',
+      style: TextStyle(
+        fontSize: 14,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+      ),
+    );
+
 class _AvatarRetryPlaceholder extends StatelessWidget {
   const _AvatarRetryPlaceholder();
   @override
@@ -1077,13 +1085,20 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                             if (receivedGifts.isEmpty)
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: ActionChip(
-                                    avatar: const Text('🎁'),
-                                    label: const Text('送出第一份礼物'),
-                                    onPressed: _openGiftMenu,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: ActionChip(
+                                        avatar: const Text('🎁'),
+                                        label: const Text('送出第一份礼物'),
+                                        onPressed: _openGiftMenu,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _detailPublishTime(item),
+                                  ],
                                 ),
                               )
                             else
@@ -1107,16 +1122,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                           .toList(),
                                     ),
                                     const SizedBox(height: 8),
-                                    Text(
-                                      formatDDTime(item.createdAt),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.55),
-                                      ),
-                                    ),
+                                    _detailPublishTime(item),
                                   ],
                                 ),
                               ),
