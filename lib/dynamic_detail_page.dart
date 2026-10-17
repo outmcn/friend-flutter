@@ -4,7 +4,7 @@ class _AvatarRetryPlaceholder extends StatelessWidget {
   const _AvatarRetryPlaceholder();
   @override
   Widget build(BuildContext context) => const Center(
-        child: Icon(Icons.refresh, size: 18),
+        child: Icon(Icons.person_outline, size: 18),
       );
 }
 
