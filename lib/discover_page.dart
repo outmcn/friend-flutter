@@ -22,6 +22,13 @@ class _DiscoverPageState extends State<DiscoverPage> {
     return token;
   }
 
+  Future<void> _restoreDiscoverCityLabel() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = (prefs.getString('dd.location.city') ?? '').trim();
+    if (!mounted || cached.isEmpty) return;
+    setState(() => _discoverLocalTabLabel = cached);
+  }
+
   Future<void> _loadDiscoverCity() async {
     try {
       final token = await _token();
@@ -36,6 +43,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   void initState() {
     super.initState();
+    _restoreDiscoverCityLabel();
     feeds = List.generate(3, (tab) {
       final feed = DiscoverFeed((offset) async {
         final token = await _token();
