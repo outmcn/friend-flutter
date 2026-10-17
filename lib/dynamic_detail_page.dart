@@ -1076,10 +1076,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      '发布时间：${formatDDTime(item.createdAt)}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall,
+                                      formatDDTime(item.createdAt),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.55),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1088,8 +1092,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                                 child: Text(
-                                  '发布时间：${formatDDTime(item.createdAt)}',
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                  formatDDTime(item.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.55),
+                                  ),
                                 ),
                               ),
                             const SizedBox(height: 16),
