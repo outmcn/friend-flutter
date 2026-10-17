@@ -30,9 +30,11 @@ class _DiscoverProfileCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
+        // Existing posts may not contain server-side dimensions. Keep a
+        // stable, visible preview instead of collapsing into one default ratio.
         final height = aspect == null
-            ? 220.0
-            : (maxWidth / aspect).clamp(1.0, 500.0).toDouble();
+            ? 320.0
+            : (maxWidth / aspect).clamp(180.0, 500.0).toDouble();
         final width = aspect == null || maxWidth / aspect <= 500
             ? maxWidth
             : height * aspect;
