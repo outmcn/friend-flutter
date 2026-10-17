@@ -238,19 +238,19 @@ class _MyProfilePostCard extends StatelessWidget {
   final VoidCallback onTap;
   final GlobalKey? mediaKey;
 
-  Widget _media(String url, {bool video = false}) => Align(
-        alignment: Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360, maxHeight: 400),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _PermanentCachedImage(
-              url: url,
-              fit: BoxFit.contain,
-              placeholder: const ColoredBox(
-                color: Color(0x22111111),
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
+  Widget _media(String url, {bool video = false}) => ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: double.infinity,
+          height: 400,
+          child: _PermanentCachedImage(
+            url: url,
+            width: double.infinity,
+            height: 400,
+            fit: BoxFit.cover,
+            placeholder: const ColoredBox(
+              color: Color(0x22111111),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             ),
           ),
         ),
