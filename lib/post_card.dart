@@ -448,7 +448,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _action(context: context, icon: TIcons.thumb_up_2,
+                      _action(context: context, icon: TIcons.heart,
                           label: '${post.likes}', onTap: onLike, active: post.liked),
                       _action(context: context, icon: TIcons.bookmark,
                           label: '${post.favorites}', onTap: onFavorite,
