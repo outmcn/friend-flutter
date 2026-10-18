@@ -281,16 +281,46 @@ class _MyProfilePostCard extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => _DiscoverShareSheet(
-        post: post,
-        onShare: onShare ?? () {},
-        onSendToFriend: onSendToFriend,
-        onReport: onReport ?? () {},
-        onDirectChat: onDirectChat,
-        onFollow: onFollow,
-        onGift: onGift,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Center(
+                child: Text('更多操作', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _ShareAction(label: '置顶', icon: Icons.push_pin_outlined, onTap: () => Navigator.pop(sheetContext)),
+                  _ShareAction(label: '权限', icon: TIcons.browse, onTap: () => _showVisibility(sheetContext)),
+                  _ShareAction(label: '私密', icon: Icons.lock_outline, onTap: () => _setPrivate(sheetContext)),
+                  _ShareAction(label: '删除', icon: Icons.delete_outline, onTap: () => _deleteOwnPost(sheetContext)),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  void _showVisibility(BuildContext context) {
+    Navigator.pop(context);
+    _showTopNotice(context, const Text('当前权限：所有人可见'));
+  }
+
+  void _setPrivate(BuildContext context) {
+    Navigator.pop(context);
+    _showTopNotice(context, const Text('已设为仅自己可见'));
+  }
+
+  void _deleteOwnPost(BuildContext context) {
+    Navigator.pop(context);
+    onOpen?.call();
   }
 
   @override
