@@ -808,46 +808,60 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   Future<void> _openShareMenu(DDPost item) async {
     final action = await showModalBottomSheet<String>(
       context: context,
-      builder: (_) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.share_outlined),
-              title: const Text('分享动态'),
-              onTap: () => Navigator.pop(context, 'share'),
-            ),
-            if (!isOwner)
-              ListTile(
-                leading: const Icon(Icons.report_outlined),
-                title: const Text('举报动态'),
-                onTap: () => Navigator.pop(context, 'report'),
-              ),
-            if (isOwner)
-              ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: const Text('删除动态'),
-                onTap: () => Navigator.pop(context, 'delete'),
-              ),
-          ],
-        ),
+      isScrollControlled: true,
+      builder: (_) => _DiscoverShareSheet(
+        post: item,
+        onSendToFriend: _sendPostToFriend,
+        onShare: () => _shareToSystem(item),
+        onReport: _openReportPage,
+        onDirectChat: () => _openDirectChat(item),
+        onFollow: () => _toggleFollow(item),
+        onGift: _openGiftMenu,
       ),
     );
     if (!mounted) return;
-    if (action == 'report') {
-      await _openReportPage();
-    } else if (action == 'delete') {
-      await _delete();
-    } else if (action == 'share') {
-      await Clipboard.setData(
-        ClipboardData(text: '动态 ${item.id}：${item.content}'),
-      );
-      if (mounted) {
-        _showTopNotice(
-          context,
-          const SnackBar(content: Text('动态内容已复制，可粘贴分享')),
-        );
-      }
-    }
+    if (action == 'report') await _openReportPage();
+    if (action == 'delete') await _delete();
+  }
+
+  Future<void> _shareToSystem(DDPost item) async {
+    await Share.share('动态 ${item.id}：${item.content}');
+    if (mounted) _showTopNotice(context, const Text('已打开系统分享面板'));
+  }
+
+  Future<void> _sendPostToFriend(String peerId) async {
+    final conversationId = await service.createDirectConversation(await token(), peerId);
+    await service.sendImMessage(
+      await token(),
+      conversationId,
+      text: post?.content.trim().isEmpty == true ? '分享了一条动态' : post!.content.trim(),
+      clientId: 'share-${itemId}-${DateTime.now().microsecondsSinceEpoch}',
+      metadata: {
+        'postId': itemId,
+        'type': 'post_share',
+        'author': post?.nickname ?? '',
+        'content': post?.content ?? '',
+        'thumbnailUrl': post?.thumbnailUrl ?? post?.imageUrl ?? '',
+      },
+    );
+    if (mounted) _showTopNotice(context, const Text('已发送给好友'));
+  }
+
+  int get itemId => widget.postId;
+
+  Future<void> _openDirectChat(DDPost item) async {
+    if (item.userId == null) return;
+    final conversationId = await service.createDirectConversation(await token(), '${item.userId}');
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => _ChatDetailPage(
+      chat: _ChatPreview(item.nickname, '开始聊天', item.avatar, null, '${item.userId}', conversationId, 0, null, null, 'dm', false, false),
+    )));
+  }
+
+  Future<void> _toggleFollow(DDPost item) async {
+    if (item.userId == null) return;
+    final followed = await service.toggleFollow(await token(), item.userId!);
+    if (mounted) _showTopNotice(context, Text(followed ? '已关注' : '已取消关注'));
   }
 
   Future<void> _sendSelectedGift(Map<String, dynamic> gift) async {
