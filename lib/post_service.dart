@@ -917,6 +917,22 @@ class DDPostService {
     return rows.whereType<Map<String, dynamic>>().toList();
   }
 
+  Future<List<Map<String, dynamic>>> fetchMutualFriends(String token) async {
+    final response = await _client.get(
+      _api('/users/mutual'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map || data['users'] is! List) {
+      throw Exception('互关好友加载失败');
+    }
+    return (data['users'] as List)
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList();
+  }
+
+
   Future<List<Map<String, dynamic>>> searchUsers(
       String token, String query) async {
     final uri = _api('/users/search').replace(queryParameters: {

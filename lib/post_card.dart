@@ -289,6 +289,7 @@ class _DiscoverShareSheet extends StatefulWidget {
 
 class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
   List<DDConversation> conversations = const [];
+  List<Map<String, dynamic>> mutualFriends = const [];
   bool loading = true;
   String? error;
   bool sending = false;
@@ -298,6 +299,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
   void initState() {
     super.initState();
     unawaited(_loadConversations());
+    unawaited(_loadMutualFriends());
   }
 
   @override
@@ -327,6 +329,13 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
         error = '$e';
       });
     }
+  }
+
+  Future<void> _loadMutualFriends() async {
+    try {
+      final values = await service.fetchMutualFriends(await _token());
+      if (mounted) setState(() => mutualFriends = values);
+    } catch (_) {}
   }
 
   Future<void> _sendTo(DDConversation conversation) async {
@@ -416,8 +425,29 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => const SafeArea(
-        child: Center(child: Text('互关好友列表接口尚未提供')),
+      builder: (sheetContext) => SafeArea(
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: mutualFriends.length,
+          itemBuilder: (_, index) {
+            final friend = mutualFriends[index];
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: (friend['avatar'] ?? '').toString().isNotEmpty
+                    ? NetworkImage('${friend['avatar']}')
+                    : null,
+                child: (friend['avatar'] ?? '').toString().isEmpty
+                    ? const Icon(Icons.person_outline)
+                    : null,
+              ),
+              title: Text('${friend['nickname'] ?? '好友'}'),
+              trailing: FilledButton(
+                onPressed: () => Navigator.pop(sheetContext),
+                child: const Text('发送'),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
