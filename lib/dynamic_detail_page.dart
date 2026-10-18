@@ -824,6 +824,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         onDirectChat: () => _openDirectChat(item),
         onFollow: () => _toggleFollow(item),
         onGift: _openGiftMenu,
+        onDelete: isOwner ? _delete : null,
       ),
     );
     if (!mounted) return;
