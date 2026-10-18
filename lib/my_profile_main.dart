@@ -799,7 +799,7 @@ class _DDProfilePageState extends State<DDProfilePage>
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            sliver: SliverList(
+              sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   if (index >= feed.posts.length) return const SizedBox.shrink();
