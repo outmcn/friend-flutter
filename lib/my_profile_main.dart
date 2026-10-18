@@ -786,6 +786,42 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
   }
 
+  Widget _profileList(int tab) {
+    final feed = feeds[tab];
+    return AnimatedBuilder(
+      animation: feed,
+      builder: (context, _) => RefreshIndicator(
+        onRefresh: () => feed.load(refresh: true),
+        child: CustomScrollView(
+          key: PageStorageKey('profile.$tab'),
+          controller: feed.scroll,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => _MyProfileGrid(posts: feed.posts, emptyLabel: selectedTab == 0 ? '还没有发布动态' : selectedTab == 1 ? '还没有收藏内容' : '还没有点赞内容', onChanged: _invalidateProfileCacheAndReload),
+                  childCount: index == 0 ? 1 : 0,
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: feed.error != null
+                    ? _PageErrorState(title: '动态加载失败', subtitle: feed.error!, onRetry: () => feed.load(refresh: true))
+                    : (feed.restoring || (feed.busy && feed.posts.isEmpty))
+                        ? const Center(child: CircularProgressIndicator())
+                        : (feed.posts.isEmpty ? const Center(child: Text('暂无动态')) : (feed.hasMore ? TextButton(onPressed: feed.busy ? null : () => feed.load(), child: Text(feed.busy ? '加载中…' : '加载更多')) : const Center(child: Text('没有更多动态了')))),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -1209,54 +1245,17 @@ class _DDProfilePageState extends State<DDProfilePage>
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          _MyProfileIconTabs(
-                            selectedTab: selectedTab,
-                            onSelect: _selectProfileTab,
-                          ),
+                          _MyProfileIconTabs(selectedTab: selectedTab, onSelect: _selectProfileTab),
                           if (tabLoading || _tabSwitching)
-                            const Positioned(
-                              bottom: 0,
-                              left: 24,
-                              right: 24,
-                              child: LinearProgressIndicator(minHeight: 2),
-                            ),
+                            const Positioned(bottom: 0, left: 24, right: 24, child: LinearProgressIndicator(minHeight: 2)),
                         ],
                       ),
                     ),
                   ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(6, 12, 6, 28),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        _MyProfileGrid(
-                          posts: posts,
-                          emptyLabel: selectedTab == 0
-                              ? '还没有发布动态'
-                              : selectedTab == 1
-                                  ? '还没有收藏内容'
-                                  : '还没有点赞内容',
-                          emptyActionLabel: selectedTab == 0
-                              ? '去发布动态'
-                              : '去发现内容',
-                          onEmptyAction: selectedTab == 0
-                              ? () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const CreatePostPage(),
-                                    ),
-                                  );
-                                  if (mounted) await load(forceRefresh: true);
-                                }
-                              : () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const DiscoverPage(),
-                                  ),
-                                ),
-                          onChanged: _invalidateProfileCacheAndReload,
-                        ),
-                      ]),
+                  SliverToBoxAdapter(
+                    child: IndexedStack(
+                      index: selectedTab,
+                      children: List.generate(3, _profileList),
                     ),
                   ),
                 ],
