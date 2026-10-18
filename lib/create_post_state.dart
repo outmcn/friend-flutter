@@ -288,7 +288,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 Expanded(
                   flex: 2,
                   child: SizedBox(
-                    height: 14 * 24.0,
+                    height: 180,
                     child: TextField(
                       controller: _content,
                       autofocus: true,
@@ -319,7 +319,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           borderRadius: BorderRadius.circular(12),
                           child: SizedBox(
                             width: double.infinity,
-                            height: 14 * 24.0,
+                            height: 180,
                             child: selectedImage != null
                               ? Image.file(File(selectedImage!.path), fit: BoxFit.cover)
                               : selectedVideo != null
