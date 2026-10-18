@@ -873,7 +873,6 @@ class _DDProfilePageState extends State<DDProfilePage>
               return _ProfileDiscoverCard(
                 key: ValueKey('${tab}:${post.id}'),
                 feed: feed,
-                feed: feed,
                 post: post,
                 onLike: () => _profileLike(post),
                 onFavorite: () => _profileFavorite(post),
@@ -954,6 +953,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                 RefreshIndicator(
                   onRefresh: () => load(forceRefresh: true),
                   child: CustomScrollView(
+                    key: PageStorageKey('profile.$selectedTab'),
                     controller: feeds[selectedTab].scroll,
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
