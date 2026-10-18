@@ -403,7 +403,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                                   onSend: () => _sendTo(conversation),
                                 ),
                               _ShareFriendTile(
-                                label: '更多好友',
+                                label: '更多',
                                 icon: TIcons.ellipsis,
                                 onTap: () => _showAllMutualFriends(context),
                               ),
