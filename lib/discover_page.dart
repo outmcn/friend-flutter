@@ -121,6 +121,31 @@ class _DiscoverPageState extends State<DiscoverPage> {
     if (mounted) _showTopNotice(context, const SnackBar(content: Text('动态内容已复制，可粘贴分享')));
   }
 
+  Future<void> _openPostDirectChat(DDPost post) async {
+    if (post.userId == null) return;
+    try {
+      final id = await service.createDirectConversation(await _token(), '${post.userId}');
+      if (mounted) _showTopNotice(context, Text('私聊已创建：$id'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  Future<void> _followPostAuthor(DDPost post) async {
+    if (post.userId == null) return;
+    try {
+      final followed = await service.toggleFollow(await _token(), post.userId!);
+      if (mounted) _showTopNotice(context, Text(followed ? '已关注' : '已取消关注'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  void _openPostGift(DDPost post) {
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => DynamicDetailPage(postId: post.id, initialPost: post)));
+  }
+
   Future<void> _report(DDPost post) async {
     final submitted = await Navigator.push<bool>(
       context,
@@ -434,6 +459,9 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       onFavorite: () => widget.onFavorite(post),
       onShare: () => widget.onShare(post),
       onReport: () => widget.onReport(post),
+      onDirectChat: () => _openPostDirectChat(post),
+      onFollow: () => _followPostAuthor(post),
+      onGift: () => _openPostGift(post),
       onOpen: () => widget.onOpen(post),
     );
     return Padding(

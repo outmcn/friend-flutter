@@ -278,10 +278,16 @@ class _DiscoverShareSheet extends StatefulWidget {
     required this.post,
     required this.onShare,
     required this.onReport,
+    this.onDirectChat,
+    this.onFollow,
+    this.onGift,
   });
   final DDPost post;
   final VoidCallback onShare;
   final VoidCallback onReport;
+  final VoidCallback? onDirectChat;
+  final VoidCallback? onFollow;
+  final VoidCallback? onGift;
 
   @override
   State<_DiscoverShareSheet> createState() => _DiscoverShareSheetState();
@@ -410,9 +416,9 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
               Wrap(
                 spacing: 8,
                 children: [
-                  _ShareAction(label: '私聊', icon: TIcons.chat, onTap: () => _openDirectChat(context)),
-                  _ShareAction(label: '关注', icon: TIcons.user_add, onTap: () => _toggleFollow(context)),
-                  _ShareAction(label: '送礼', icon: TIcons.gift, onTap: () => _openGift(context)),
+                  _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onDirectChat ?? () => _openDirectChat(context)),
+                  _ShareAction(label: '关注', icon: TIcons.user_add, onTap: widget.onFollow ?? () => _toggleFollow(context)),
+                  _ShareAction(label: '送礼', icon: TIcons.gift, onTap: widget.onGift ?? () => _openGift(context)),
                   _ShareAction(label: '举报', icon: TIcons.report, onTap: widget.onReport),
                 ],
               ),
