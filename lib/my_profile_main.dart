@@ -317,10 +317,8 @@ class _DDProfilePageState extends State<DDProfilePage>
   Map<String, dynamic>? profile;
   int coinBalance = 0;
   int charmCoins = 0;
-  List<DDPost> posts = [];
   int selectedTab = 0;
   bool loading = true;
-  bool tabLoading = false;
   late final List<FeedShellTab> profileFeedTabs;
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
@@ -632,7 +630,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   Future<void> _selectProfileTab(int tab) async {
-    if (_tabSwitching) return;
     if (tab == selectedTab) {
       final scroll = feeds[selectedTab].scroll;
       if (scroll.hasClients) {
@@ -645,29 +642,10 @@ class _DDProfilePageState extends State<DDProfilePage>
       return;
     }
     final feed = feeds[tab];
-    if (mounted) {
-      setState(() {
-        _tabSwitching = true;
-        selectedTab = tab;
-        posts = feed.posts;
-        tabLoading = !feed.initialized;
-      });
-    }
-    try {
-      if (!feed.initialized) {
-        await feed.restoreCache();
-        if (!feed.initialized) await feed.load();
-      }
-    } catch (error) {
-      if (mounted) _showTopNotice(context, Text('动态加载失败：$error'));
-    } finally {
-      if (mounted) {
-        setState(() {
-          posts = feed.posts;
-          tabLoading = false;
-          _tabSwitching = false;
-        });
-      }
+    if (mounted) setState(() => selectedTab = tab);
+    if (!feed.initialized) {
+      await feed.restoreCache();
+      if (!feed.initialized) await feed.load();
     }
   }
 
@@ -728,8 +706,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         if (isTabSwitch) {
           selectedTab = targetTab;
           tabLoading = true;
-          posts = feeds[targetTab].posts;
-        } else {
+          } else {
           loading = true;
         }
       });
@@ -789,7 +766,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (!mounted) return;
       setState(() {
         selectedTab = targetTab;
-        posts = feed.posts;
         error = feed.error;
       });
     } catch (e) {
@@ -800,7 +776,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (mounted) {
         setState(() {
           loading = false;
-          tabLoading = false;
         });
       }
     }
