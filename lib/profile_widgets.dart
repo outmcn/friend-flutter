@@ -191,7 +191,6 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
           post: post,
           onLike: () {},
           onFavorite: () {},
-          onShare: () {},
           onReport: () {},
           onOpen: () {},
           onTap: () async {
