@@ -175,13 +175,9 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(widget.emptyLabel),
-              if (widget.onEmptyAction != null &&
-                  widget.emptyActionLabel != null) ...[
+              if (widget.onEmptyAction != null && widget.emptyActionLabel != null) ...[
                 const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: widget.onEmptyAction,
-                  child: Text(widget.emptyActionLabel!),
-                ),
+                OutlinedButton(onPressed: widget.onEmptyAction, child: Text(widget.emptyActionLabel!)),
               ],
             ],
           ),
@@ -199,11 +195,9 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
           post: post,
           mediaKey: mediaKey,
           onTap: () async {
-            final box =
-                mediaKey.currentContext?.findRenderObject() as RenderBox?;
+            final box = mediaKey.currentContext?.findRenderObject() as RenderBox?;
             final topLeft = box?.localToGlobal(Offset.zero);
-            final initialRect =
-                box == null || topLeft == null ? null : topLeft & box.size;
+            final initialRect = box == null || topLeft == null ? null : topLeft & box.size;
             final changed = await Navigator.push<bool>(
               context,
               PageRouteBuilder<bool>(
@@ -217,7 +211,6 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
                   initialRect: initialRect,
                   mediaKey: mediaKey,
                 ),
-                transitionsBuilder: (_, __, ___, child) => child,
               ),
             );
             if (changed == true) widget.onChanged?.call();
@@ -229,106 +222,34 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
 }
 
 class _MyProfilePostCard extends StatelessWidget {
-  const _MyProfilePostCard({
-    super.key,
-    required this.post,
-    required this.onTap,
-    this.mediaKey,
-  });
+  const _MyProfilePostCard({super.key, required this.post, required this.onTap, this.mediaKey});
   final DDPost post;
   final VoidCallback onTap;
   final GlobalKey? mediaKey;
 
-  Widget _media(String url, {bool video = false}) {
-    final width = video ? post.thumbnailWidth : post.imageWidth;
-    final height = video ? post.thumbnailHeight : post.imageHeight;
-    final aspect = width != null && height != null && width > 0 && height > 0
-        ? width / height
-        : 4 / 3;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        final naturalHeight = maxWidth / aspect;
-        final actualHeight = naturalHeight.clamp(180.0, 400.0).toDouble();
-        final actualWidth = naturalHeight > 400
-            ? actualHeight * aspect
-            : maxWidth;
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: actualWidth,
-              height: actualHeight,
-              child: _PermanentCachedImage(
-                url: url,
-                width: actualWidth,
-                height: actualHeight,
-                fit: BoxFit.cover,
-                placeholder: const ColoredBox(
-                  color: Color(0x22111111),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  Widget _media(BuildContext context, String url, {bool video = false}) => LayoutBuilder(
+    builder: (context, constraints) {
+      final width = video ? post.thumbnailWidth : post.imageWidth;
+      final height = video ? post.thumbnailHeight : post.imageHeight;
+      final ratio = width != null && height != null && width > 0 && height > 0 ? width / height : 4 / 3;
+      final naturalHeight = constraints.maxWidth / ratio;
+      final displayHeight = naturalHeight > 400 ? 400.0 : naturalHeight;
+      final displayWidth = naturalHeight > 400 ? displayHeight * ratio : constraints.maxWidth;
+      return Align(alignment: Alignment.centerLeft, child: ClipRRect(borderRadius: BorderRadius.circular(12), child: SizedBox(width: displayWidth, height: displayHeight, child: _PermanentCachedImage(url: url, width: displayWidth, height: displayHeight, fit: BoxFit.cover, placeholder: const ColoredBox(color: Color(0x22111111), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))))));
+    });
 
   @override
   Widget build(BuildContext context) {
     final image = post.imageUrl?.trim();
     final video = post.videoUrl?.trim();
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _formatProfilePostDate(post.createdAt),
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
-                ),
-                Icon(TIcons.browse,
-                    size: 16, color: scheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text('${post.views}',
-                    style: TextStyle(color: scheme.onSurfaceVariant)),
-                const SizedBox(width: 8),
-                const Icon(TIcons.more, size: 20),
-              ],
-            ),
-            if (post.content.trim().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 5, bottom: 5),
-                child: Text(post.content.trim(),
-                    style: const TextStyle(fontSize: 18, height: 1.4)),
-              ),
-            if (image != null && image.isNotEmpty)
-              _media(image)
-            else if (video != null && video.isNotEmpty)
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  _media(post.thumbnailUrl?.trim().isNotEmpty == true
-                      ? post.thumbnailUrl!.trim()
-                      : video),
-                  const Icon(Icons.play_circle_outline,
-                      size: 48, color: Colors.white),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
+    return InkWell(onTap: onTap, child: Padding(padding: const EdgeInsets.only(bottom: 12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [Expanded(child: Text('${_formatProfilePostDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}', style: TextStyle(color: scheme.onSurfaceVariant))), Icon(TIcons.browse, size: 16, color: scheme.onSurfaceVariant), const SizedBox(width: 4), Text('${post.views}', style: TextStyle(color: scheme.onSurfaceVariant)), const SizedBox(width: 8), const Icon(TIcons.share_1, size: 20)]),
+      if (post.content.trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5, bottom: 5), child: Text(post.content.trim(), style: const TextStyle(fontSize: 16, height: 1.4))),
+      if (image != null && image.isNotEmpty) _media(context, image) else if (video != null && video.isNotEmpty) Stack(alignment: Alignment.center, children: [_media(context, post.thumbnailUrl?.trim().isNotEmpty == true ? post.thumbnailUrl!.trim() : video), const Icon(Icons.play_circle_outline, size: 48, color: Colors.white)]),
+      const SizedBox(height: 8),
+      Row(children: [Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(post.liked ? TIcons.heart_filled : TIcons.heart, size: 20), const SizedBox(width: 4), Text('${post.likes}')])), Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(post.favorited ? TIcons.star_1_filled : TIcons.star_1, size: 20), const SizedBox(width: 4), Text('${post.favorites}')])), Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(TIcons.chat_bubble_1, size: 20), const SizedBox(width: 4), Text('${post.comments}')])),]),
+    ])));
   }
 }
 
