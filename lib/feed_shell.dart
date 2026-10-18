@@ -288,8 +288,7 @@ class _FeedShellState extends State<FeedShell> {
               ),
             ),
           ],
-        ),
-      );
+        );
 
   @override
   Widget build(BuildContext context) => widget.embedded
