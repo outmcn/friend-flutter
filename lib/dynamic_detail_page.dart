@@ -8,6 +8,17 @@ Widget _detailPublishTime(BuildContext context, DDPost item) => Text(
       ),
     );
 
+String _formatCommentTime(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final value = parsed.toUtc().add(const Duration(hours: 8));
+  final now = DateTime.now().toUtc().add(const Duration(hours: 8));
+  if (value.year == now.year) {
+    return '${value.month}月${value.day}日 ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+  }
+  return '${value.year}年${value.month}月${value.day}日 ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+}
+
 String _formatDetailDate(String raw) {
   final parsed = DateTime.tryParse(raw);
   if (parsed == null) return raw;
@@ -630,7 +641,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                   Row(
                     children: [
                       Text(
-                        formatDDTime(comment.createdAt),
+                        _formatCommentTime(comment.createdAt),
                         style: TextStyle(
                           fontSize: 11,
                           color: Theme.of(context)
