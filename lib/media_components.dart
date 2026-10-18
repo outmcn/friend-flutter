@@ -182,7 +182,15 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
             return SizedBox(
               width: width,
               height: height,
-              child: VideoPlayer(active),
+              child: FittedBox(
+                fit: BoxFit.contain,
+                clipBehavior: Clip.hardEdge,
+                child: SizedBox(
+                  width: active.value.size.width,
+                  height: active.value.size.height,
+                  child: VideoPlayer(active),
+                ),
+              ),
             );
           },
         ),
