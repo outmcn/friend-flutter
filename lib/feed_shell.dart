@@ -249,7 +249,6 @@ class _FeedShellState extends State<FeedShell> {
     );
   }
 
-  @override
   Widget _content(BuildContext context) => Column(
           children: [
             if (widget.showTabs) SizedBox(
