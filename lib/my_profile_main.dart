@@ -694,26 +694,21 @@ class _DDProfilePageState extends State<DDProfilePage>
       feed.offset = 0;
       feed.hasMore = true;
     }
-    await load(tab: selectedTab, forceRefresh: true);
+    await feeds[selectedTab].load(refresh: true);
   }
 
   Future<void> load({int? tab, bool forceRefresh = false}) async {
     final targetTab = tab ?? selectedTab;
-    final isTabSwitch = tab != null && !loading && !forceRefresh;
     if (mounted) {
       setState(() {
         error = null;
-        if (isTabSwitch) {
-          selectedTab = targetTab;
-          tabLoading = true;
-          } else {
-          loading = true;
-        }
+        if (tab != null) selectedTab = targetTab;
+        loading = true;
       });
     }
     try {
       final t = await _token();
-      if (profile == null || !isTabSwitch) {
+      if (profile == null || tab == null || forceRefresh) {
         final loadedProfile = await service.fetchMe(t);
         _sonicUrl =
             DDPostService.mediaUrl(loadedProfile['voiceUrl']?.toString());
