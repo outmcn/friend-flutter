@@ -430,7 +430,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
       );
 
   Future<void> _copyPostLink(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: '动态 ${post.id}'));
+    await Clipboard.setData(ClipboardData(text: '动态 ${widget.post.id}'));
     if (context.mounted) {
       Navigator.pop(context);
       _showTopNotice(context, const Text('链接已复制'));
@@ -612,7 +612,11 @@ class _DiscoverProfileCard extends StatelessWidget {
       builder: (sheetContext) => _DiscoverShareSheet(
         post: post,
         onShare: onShare,
+        onSendToFriend: onSendToFriend,
         onReport: onReport,
+        onDirectChat: onDirectChat,
+        onFollow: onFollow,
+        onGift: onGift,
       ),
     );
   }
