@@ -278,7 +278,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       onFavorite: _favorite,
       onShare: _share,
       onReport: _report,
-      onSendToFriend: (peerId) => _sendPostToFriend(peerId, post),
+      onSendToFriend: (peerId, _) => _sendPostToFriend(peerId, post),
       onDirectChat: _openPostDirectChat,
       onOpen: _open,
     );
