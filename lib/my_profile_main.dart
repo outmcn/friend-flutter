@@ -323,8 +323,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool tabLoading = false;
   late final List<DiscoverFeed> feeds;
   final AudioPlayer _sonicPlayer = AudioPlayer();
-  final ScrollController _profileScrollController = ScrollController();
-  final Map<int, double> _profileTabOffsets = <int, double>{};
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
   bool _tagSaving = false;
@@ -347,7 +345,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _profileScrollController.addListener(_handleProfileScroll);
     _presenceTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_appActive) _sendPresenceHeartbeat();
     });
@@ -377,11 +374,8 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   void _handleProfileScroll() {
-    if (_profileScrollController.hasClients) {
-      _profileTabOffsets[selectedTab] = _profileScrollController.offset;
-    }
-    final shouldShow = _profileScrollController.hasClients &&
-        _profileScrollController.offset >= 58;
+    final shouldShow = feeds[selectedTab].scroll.hasClients &&
+        feeds[selectedTab].scroll.offset >= 58;
     if (shouldShow != _showStickyNickname && mounted) {
       setState(() => _showStickyNickname = shouldShow);
     }
@@ -412,8 +406,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _presenceTimer?.cancel();
-    _profileScrollController.removeListener(_handleProfileScroll);
-    _profileScrollController.dispose();
     for (final feed in feeds) {
       feed.dispose();
     }
@@ -620,8 +612,9 @@ class _DDProfilePageState extends State<DDProfilePage>
   Future<void> _selectProfileTab(int tab) async {
     if (_tabSwitching) return;
     if (tab == selectedTab) {
-      if (_profileScrollController.hasClients) {
-        unawaited(_profileScrollController.animateTo(
+      final scroll = feeds[selectedTab].scroll;
+      if (scroll.hasClients) {
+        unawaited(scroll.animateTo(
           0,
           duration: const Duration(milliseconds: 280),
           curve: Curves.easeOutCubic,
@@ -630,9 +623,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       return;
     }
     final feed = feeds[tab];
-    if (_profileScrollController.hasClients) {
-      _profileTabOffsets[selectedTab] = _profileScrollController.offset;
-    }
     if (mounted) {
       setState(() {
         _tabSwitching = true;
@@ -655,21 +645,8 @@ class _DDProfilePageState extends State<DDProfilePage>
           tabLoading = false;
           _tabSwitching = false;
         });
-        _restoreProfileTabOffset(targetTab);
       }
     }
-  }
-
-  void _restoreProfileTabOffset(int tab) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_profileScrollController.hasClients) return;
-      final position = _profileScrollController.position;
-      final offset = (_profileTabOffsets[tab] ?? 0.0).clamp(
-        position.minScrollExtent,
-        position.maxScrollExtent,
-      );
-      _profileScrollController.jumpTo(offset);
-    });
   }
 
   Future<void> _refreshProfileOnly() async {
@@ -1028,7 +1005,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                 RefreshIndicator(
                   onRefresh: () => load(forceRefresh: true),
                   child: CustomScrollView(
-                    controller: _profileScrollController,
+                    controller: feeds[selectedTab].scroll,
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverPadding(
