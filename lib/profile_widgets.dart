@@ -75,18 +75,8 @@ class _MyProfileIconTabs extends StatelessWidget {
                   icon,
                   size: 24,
                   color: selectedTab == index
-                      ? Theme.of(context).colorScheme.onSurface
+                      ? Theme.of(context).colorScheme.primary
                       : Theme.of(context).hintColor,
-                ),
-                const SizedBox(height: 7),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  width: selectedTab == index ? 28 : 0,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
                 ),
               ],
             ),
