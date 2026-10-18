@@ -651,7 +651,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                         ),
                       ),
                       if (comment.city.trim().isNotEmpty) ...[
-                        const SizedBox(width: 8),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6),
+                          child: Text('·', style: TextStyle(fontSize: 11)),
+                        ),
                         Text(
                           comment.city.trim(),
                           maxLines: 1,
@@ -665,14 +668,6 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                         ),
                         ),
                       ],
-                      const SizedBox(width: 8),
-                      Text(
-                        '回复',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Theme.of(context).hintColor,
-                        ),
-                      ),
                       const Spacer(),
                       InkWell(
                         onTap: () => _toggleCommentLike(comment),
