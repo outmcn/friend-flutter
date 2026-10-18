@@ -452,6 +452,7 @@ class _DiscoverFeedCard extends StatefulWidget {
     this.onDirectChat,
     this.onFollow,
     this.onGift,
+    this.onDelete,
   });
 
   final DiscoverFeed feed;
@@ -463,6 +464,7 @@ class _DiscoverFeedCard extends StatefulWidget {
   final ValueChanged<DDPost>? onDirectChat;
   final ValueChanged<DDPost>? onFollow;
   final ValueChanged<DDPost>? onGift;
+  final ValueChanged<DDPost>? onDelete;
   final ValueChanged<DDPost> onReport;
   final ValueChanged<DDPost> onOpen;
 
@@ -513,11 +515,12 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
           ? null
           : (peerId) => widget.onSendToFriend!(peerId, post),
       onReport: () => widget.onReport(post),
+      onDelete: widget.onDelete == null ? null : () => widget.onDelete!(post),
       onDirectChat: widget.onDirectChat == null
           ? null
           : () => widget.onDirectChat!(post),
-      onFollow: null,
-      onGift: null,
+      onFollow: widget.onFollow == null ? null : () => widget.onFollow!(post),
+      onGift: widget.onGift == null ? null : () => widget.onGift!(post),
       onOpen: () => widget.onOpen(post),
     );
     return Padding(

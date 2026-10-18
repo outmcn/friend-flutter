@@ -931,26 +931,26 @@ class _DDProfilePageState extends State<DDProfilePage>
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final post = feed.posts[index];
-              return _ProfileDiscoverCard(
+              return _DiscoverFeedCard(
                 key: ValueKey('${tab}:${post.id}'),
                 feed: feed,
                 post: post,
-                onLike: () => _profileLike(post),
-                onFavorite: () => _profileFavorite(post),
-                onShare: () => _profileShare(post),
-                onSendToFriend: (peerId) => _profileSendToFriend(peerId, post),
-                onDirectChat: () => _profileDirectChat(post),
-                onFollow: () => _profileFollow(post),
-                onGift: () => _profileGift(post),
-                onDelete: tab == 0 ? () => _deleteMyPost(post) : null,
-                onReport: () => _profileReport(post),
-                onOpen: () async {
+                onLike: (value) => _profileLike(value),
+                onFavorite: (value) => _profileFavorite(value),
+                onShare: (value) => _profileShare(value),
+                onSendToFriend: (peerId, value) => _profileSendToFriend(peerId, value),
+                onDirectChat: (value) => _profileDirectChat(value),
+                onFollow: (value) => _profileFollow(value),
+                onGift: (value) => _profileGift(value),
+                onReport: (value) => _profileReport(value),
+                onDelete: tab == 0 ? (value) => _deleteMyPost(value) : null,
+                onOpen: (value) async {
                   final changed = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute<bool>(
                       builder: (_) => DynamicDetailPage(
-                        postId: post.id,
-                        initialPost: post,
+                        postId: value.id,
+                        initialPost: value,
                       ),
                     ),
                   );
@@ -1418,33 +1418,6 @@ class _DDProfilePageState extends State<DDProfilePage>
           ),
     );
   }
-}
-
-class _ProfileDiscoverCard extends StatefulWidget {
-  const _ProfileDiscoverCard({super.key, required this.feed, required this.post, required this.onLike, required this.onFavorite, required this.onShare, required this.onSendToFriend, required this.onDirectChat, required this.onFollow, required this.onGift, required this.onDelete, required this.onReport, required this.onOpen});
-  final DiscoverFeed feed;
-  final DDPost post;
-  final VoidCallback onLike;
-  final VoidCallback onFavorite;
-  final VoidCallback onShare;
-  final Future<void> Function(String)? onSendToFriend;
-  final VoidCallback? onDirectChat;
-  final VoidCallback? onFollow;
-  final VoidCallback? onGift;
-  final VoidCallback? onDelete;
-  final VoidCallback onReport;
-  final VoidCallback onOpen;
-  @override State<_ProfileDiscoverCard> createState() => _ProfileDiscoverCardState();
-}
-
-class _ProfileDiscoverCardState extends State<_ProfileDiscoverCard> with AutomaticKeepAliveClientMixin<_ProfileDiscoverCard> {
-  late DDPost post;
-  @override void initState() { super.initState(); post = widget.post; widget.feed.postChanges.addListener(_update); }
-  void _update() { final updated = widget.feed.postChanges.value; if (updated != null && updated.id == post.id && mounted) setState(() => post = updated); }
-  @override void didUpdateWidget(covariant _ProfileDiscoverCard oldWidget) { super.didUpdateWidget(oldWidget); if (oldWidget.feed != widget.feed) { oldWidget.feed.postChanges.removeListener(_update); widget.feed.postChanges.addListener(_update); } post = widget.post; }
-  @override bool get wantKeepAlive => true;
-  @override Widget build(BuildContext context) { super.build(context); return _DiscoverProfileCard(post: post, onLike: widget.onLike, onFavorite: widget.onFavorite, onShare: widget.onShare, onSendToFriend: widget.onSendToFriend, onDirectChat: widget.onDirectChat, onFollow: widget.onFollow, onGift: widget.onGift, onDelete: widget.onDelete, onReport: widget.onReport, onOpen: widget.onOpen); }
-  @override void dispose() { widget.feed.postChanges.removeListener(_update); super.dispose(); }
 }
 
 
