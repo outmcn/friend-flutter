@@ -4,7 +4,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
   String? mediaType;
   XFile? selectedImage;
   XFile? selectedVideo;
-  String visibility = '所有人可见';
+  String visibility = '全部可见';
   bool publishing = false;
   final TextEditingController _content = TextEditingController();
   final DDPostService _service = DDPostService();
@@ -249,15 +249,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           thumbnailUrl: thumbnailKey,
                           imageWidth: imageWidth,
                           imageHeight: imageHeight,
-                          visibility: visibility == '仅好友可见'
+                          visibility: visibility == '好友可见'
                               ? 'friends'
-                              : visibility == '仅自己可见'
+                              : visibility == '私密发布'
                                   ? 'private'
-                                  : visibility == '仅主页可见'
+                                  : visibility == '主页可见'
                                       ? 'profile'
-                                      : visibility == '仅陌生人可见'
-                                          ? 'strangers'
-                                          : 'public',
+                                      : 'public',
                           latitude: location?.latitude,
                           longitude: location?.longitude,
                         );
@@ -375,7 +373,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 builder: (_) => SafeArea(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: ['所有人可见', '仅好友可见', '仅主页可见', '仅陌生人可见', '仅自己可见']
+                    children: ['全部可见', '好友可见', '主页可见', '私密发布']
                         .map(
                           (item) => ListTile(
                             title: Text(item),
