@@ -208,7 +208,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
           ),
           title: const Text('发布动态'),
           actions: [
-            TextButton(
+            IconButton(
+              tooltip: '发布',
               onPressed: publishing
                   ? null
                   : () async {
@@ -275,7 +276,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                         if (mounted) setState(() => publishing = false);
                       }
                     },
-              child: Text(publishing ? '发布中…' : '发布'),
+              icon: const Icon(TIcons.send),
             ),
           ],
         ),
