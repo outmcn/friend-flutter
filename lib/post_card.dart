@@ -286,7 +286,6 @@ class _DiscoverShareSheet extends StatefulWidget {
   final DDPost post;
   final Future<void> Function(String peerId)? onSendToFriend;
   final VoidCallback onShare;
-  final Future<void> Function(String peerId)? onSendToFriend;
   final VoidCallback onReport;
   final VoidCallback? onDirectChat;
   final VoidCallback? onFollow;
@@ -570,6 +569,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onFavorite;
   final VoidCallback onShare;
+  final Future<void> Function(String peerId)? onSendToFriend;
   final VoidCallback onReport;
   final VoidCallback onOpen;
 
