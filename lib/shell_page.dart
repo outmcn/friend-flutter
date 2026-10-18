@@ -882,7 +882,7 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
   final metadata = row['metadata'];
   if (metadata is Map && '${metadata['type'] ?? ''}' == 'post_share') {
     final author = '${metadata['author'] ?? ''}'.trim();
-    return author.isEmpty ? '动态' : '动态：$author 的动态';
+    return author.isEmpty ? '分享' : '分享：$author 的动态';
   }
   final kind = '${row['kind'] ?? 'text'}';
   if (kind == 'call') {
@@ -899,7 +899,7 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
   if (message.deletedAt != null) return '消息已删除';
   if (message.metadata?['type'] == 'post_share') {
     final author = '${message.metadata?['author'] ?? ''}'.trim();
-    return author.isEmpty ? '动态' : '动态：$author 的动态';
+    return author.isEmpty ? '分享' : '分享：$author 的动态';
   }
   switch (message.kind) {
     case 'audio':
@@ -912,7 +912,7 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
       return '[语音通话]';
     default:
       final text = message.text.trim();
-      if (text.startsWith('动态：')) return text;
+      if (text.startsWith('分享：')) return text;
       return text.isEmpty ? null : text;
   }
 }
