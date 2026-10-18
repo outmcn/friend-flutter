@@ -1,12 +1,22 @@
 part of 'main.dart';
 
 Widget _detailPublishTime(BuildContext context, DDPost item) => Text(
-      '${formatDDTime(item.createdAt)}${(item.authorCity ?? '').trim().isNotEmpty ? ' · ${item.authorCity!.trim()}' : ''}',
+      '${_formatDetailDate(item.createdAt)}${(item.authorCity ?? '').trim().isNotEmpty ? ' · ${item.authorCity!.trim()}' : ''}',
       style: TextStyle(
         fontSize: 14,
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
       ),
     );
+
+String _formatDetailDate(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final value = parsed.toUtc().add(const Duration(hours: 8));
+  final now = DateTime.now().toUtc().add(const Duration(hours: 8));
+  return value.year == now.year
+      ? '${value.month}月${value.day}日'
+      : '${value.year}年${value.month}月${value.day}日';
+}
 
 class _AvatarRetryPlaceholder extends StatelessWidget {
   const _AvatarRetryPlaceholder();
