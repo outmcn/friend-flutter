@@ -103,7 +103,7 @@ class _ProfilePostFeed extends StatefulWidget {
   });
   final List<DDPost> posts;
   final VoidCallback onChanged;
-  final ValueChanged<DDPost> onOpen;
+  final ValueChanged<DDPost>? onOpen;
   @override
   State<_ProfilePostFeed> createState() => _ProfilePostFeedState();
 }
@@ -137,7 +137,7 @@ class _ProfilePostFeedState extends State<_ProfilePostFeed> {
           return _MyProfilePostCard(
             key: ValueKey(post.id),
             post: post,
-            onTap: () => widget.onOpen(post),
+            onTap: widget.onOpen == null ? () {} : () => widget.onOpen!(post),
           );
         },
       );
