@@ -321,6 +321,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   int selectedTab = 0;
   bool loading = true;
   bool tabLoading = false;
+  late final List<FeedShellTab> profileFeedTabs;
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
   final pendingFavorites = <int>{};
@@ -354,18 +355,26 @@ class _DDProfilePageState extends State<DDProfilePage>
     _sonicPlayer.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _sonicPlaying = false);
     });
-    feeds = List.generate(
-        3,
-        (tab) => DiscoverFeed((offset) async {
-              final token = await _token();
-              final loaded = tab == 0
-                  ? await service.fetchMyPosts(token, offset: offset)
-                  : tab == 1
-                      ? await service.fetchFavoritedPosts(token, offset: offset)
-                      : await service.fetchLikedPosts(token, offset: offset);
-              return Future.wait(
-                  loaded.map((post) => service.resolvePostMedia(token, post)));
-            }, cacheKey: 'dd.profile.my.tab.$tab'));
+    profileFeedTabs = List.generate(
+      3,
+      (tab) => FeedShellTab(
+        title: tab == 0 ? '我的动态' : tab == 1 ? '收藏' : '点赞',
+        cacheKey: 'dd.profile.my.tab.$tab',
+        fetch: (offset) async {
+          final token = await _token();
+          final loaded = tab == 0
+              ? await service.fetchMyPosts(token, offset: offset)
+              : tab == 1
+                  ? await service.fetchFavoritedPosts(token, offset: offset)
+                  : await service.fetchLikedPosts(token, offset: offset);
+          return Future.wait(
+              loaded.map((post) => service.resolvePostMedia(token, post)));
+        },
+      ),
+    );
+    feeds = profileFeedTabs
+        .map((tab) => DiscoverFeed(tab.fetch, cacheKey: tab.cacheKey))
+        .toList();
     for (final feed in feeds) {
       feed.scroll.addListener(() {
         if (feed.scroll.hasClients &&
@@ -923,7 +932,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (submitted == true && mounted) _showTopNotice(context, const Text('举报已提交'));
   }
 
-  List<Widget> _profileContentSlivers(int tab) {
+  List<Widget> _profileFeedShellSlivers(int tab) {
     final shell = FeedShellController(
       feeds: feeds,
       cardKeys: _profileCardKeys,
@@ -1385,7 +1394,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ),
                     ),
                   ),
-                  ..._profileContentSlivers(selectedTab),
+                  ..._profileFeedShellSlivers(selectedTab),
                 ],
               ),
               ),
