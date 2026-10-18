@@ -510,6 +510,89 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
 
 }
 
+class _ConversationShareTile extends StatelessWidget {
+  const _ConversationShareTile({required this.conversation, required this.sending, required this.onSend});
+  final DDConversation conversation;
+  final bool sending;
+  final VoidCallback onSend;
+
+  Future<void> _confirmSend(BuildContext context) async {
+    if (sending) return;
+    final peerName = conversation.peer?.nickname ?? '好友';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认分享'),
+        content: Text('确定把这条动态发送给 $peerName 吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('发送'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) onSend();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final peer = conversation.peer;
+    final avatar = peer?.avatarUrl ?? peer?.avatarKey ?? '';
+    return SizedBox(
+      width: 86,
+      child: InkWell(
+        onTap: () => _confirmSend(context),
+        borderRadius: BorderRadius.circular(10),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 38,
+              height: 38,
+              child: ClipOval(
+                child: _PermanentCachedImage(
+                  url: avatar,
+                  fit: BoxFit.cover,
+                  placeholder: const Icon(Icons.person_outline, size: 18),
+                ),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(peer?.nickname ?? '好友', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareFriendTile extends StatelessWidget {
+  const _ShareFriendTile({required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: SizedBox(
+          width: 72,
+          child: Column(children: [Icon(icon, size: 32), const SizedBox(height: 4), Text(label, overflow: TextOverflow.ellipsis)],),
+        ),
+      );
+}
+
+Future<void> _openApp(BuildContext context, String scheme) async {
+  final uri = Uri.parse(scheme);
+  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!launched && context.mounted) {
+    _showTopNotice(context, const Text('未安装对应应用'));
+  }
+}
+
 class _PostGiftSheet extends StatefulWidget {
   const _PostGiftSheet({required this.post, required this.onSent});
   final DDPost post;
