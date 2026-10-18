@@ -410,9 +410,9 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
               Wrap(
                 spacing: 8,
                 children: [
-                  _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onShare),
-                  _ShareAction(label: '关注', icon: TIcons.user_add, onTap: widget.onShare),
-                  _ShareAction(label: '送礼', icon: TIcons.gift, onTap: widget.onShare),
+                  _ShareAction(label: '私聊', icon: TIcons.chat, onTap: () => _openDirectChat(context)),
+                  _ShareAction(label: '关注', icon: TIcons.user_add, onTap: () => _toggleFollow(context)),
+                  _ShareAction(label: '送礼', icon: TIcons.gift, onTap: () => _openGift(context)),
                   _ShareAction(label: '举报', icon: TIcons.report, onTap: widget.onReport),
                 ],
               ),
@@ -420,6 +420,21 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
           ),
         ),
       );
+
+  void _openDirectChat(BuildContext context) {
+    Navigator.pop(context);
+    _showTopNotice(context, const Text('请点击上方好友发送私聊'));
+  }
+
+  void _toggleFollow(BuildContext context) {
+    Navigator.pop(context);
+    _showTopNotice(context, const Text('请从用户主页关注作者'));
+  }
+
+  void _openGift(BuildContext context) {
+    Navigator.pop(context);
+    _showTopNotice(context, const Text('请打开动态详情送礼'));
+  }
 
   void _showAllMutualFriends(BuildContext context) {
     showModalBottomSheet<void>(
