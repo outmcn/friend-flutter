@@ -87,6 +87,7 @@ part 'detail_widgets.dart';
 part 'create_post_state.dart';
 part 'qr_code_page.dart';
 part 'discover_page.dart';
+part 'feed_shell.dart';
 part 'dynamic_detail_page.dart';
 
 void main() => runApp(const DDApp());
