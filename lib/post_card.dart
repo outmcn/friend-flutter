@@ -437,17 +437,17 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     }
   }
 
-  void _openDirectChat(BuildContext context) {
+  Future<void> _openDirectChat(BuildContext context) async {
     Navigator.pop(context);
     _showTopNotice(context, const Text('请点击上方好友发送私聊'));
   }
 
-  void _toggleFollow(BuildContext context) {
+  Future<void> _toggleFollow(BuildContext context) async {
     Navigator.pop(context);
     _showTopNotice(context, const Text('请从用户主页关注作者'));
   }
 
-  void _openGift(BuildContext context) {
+  Future<void> _openGift(BuildContext context) async {
     Navigator.pop(context);
     _showTopNotice(context, const Text('请打开动态详情送礼'));
   }
@@ -463,13 +463,16 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
           itemBuilder: (_, index) {
             final friend = mutualFriends[index];
             return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: (friend['avatar'] ?? '').toString().isNotEmpty
-                    ? NetworkImage('${friend['avatar']}')
-                    : null,
-                child: (friend['avatar'] ?? '').toString().isEmpty
-                    ? const Icon(Icons.person_outline)
-                    : null,
+              leading: SizedBox(
+                width: 40,
+                height: 40,
+                child: ClipOval(
+                  child: _PermanentCachedImage(
+                    url: '${friend['avatar'] ?? ''}',
+                    fit: BoxFit.cover,
+                    placeholder: const Icon(Icons.person_outline, size: 18),
+                  ),
+                ),
               ),
               title: Text('${friend['nickname'] ?? '好友'}'),
               trailing: FilledButton(
