@@ -274,7 +274,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
       onFavorite: _favorite,
       onShare: _share,
       onReport: _report,
-      onSendToFriend: (post) => _sendPostToFriend('', post),
+      onSendToFriend: (peerId) => _sendPostToFriend(peerId, post),
+      onDirectChat: _openPostDirectChat,
       onOpen: _open,
     );
   }
@@ -454,7 +455,7 @@ class _DiscoverFeedCard extends StatefulWidget {
   final ValueChanged<DDPost> onLike;
   final ValueChanged<DDPost> onFavorite;
   final ValueChanged<DDPost> onShare;
-  final ValueChanged<DDPost>? onSendToFriend;
+  final Future<void> Function(String, DDPost)? onSendToFriend;
   final ValueChanged<DDPost>? onDirectChat;
   final ValueChanged<DDPost>? onFollow;
   final ValueChanged<DDPost>? onGift;
@@ -504,9 +505,13 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       onLike: () => widget.onLike(post),
       onFavorite: () => widget.onFavorite(post),
       onShare: () => widget.onShare(post),
-      onSendToFriend: null,
+      onSendToFriend: widget.onSendToFriend == null
+          ? null
+          : (peerId) => widget.onSendToFriend!(peerId, post),
       onReport: () => widget.onReport(post),
-      onDirectChat: null,
+      onDirectChat: widget.onDirectChat == null
+          ? null
+          : () => widget.onDirectChat!(post),
       onFollow: null,
       onGift: null,
       onOpen: () => widget.onOpen(post),
