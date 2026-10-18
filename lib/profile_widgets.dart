@@ -193,6 +193,11 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
         final mediaKey = mediaKeys.putIfAbsent(post.id, GlobalKey.new);
         return _MyProfilePostCard(
           post: post,
+          onLike: () {},
+          onFavorite: () {},
+          onShare: () {},
+          onReport: () {},
+          onOpen: () {},
           mediaKey: mediaKey,
           onTap: () async {
             final box = mediaKey.currentContext?.findRenderObject() as RenderBox?;
@@ -222,37 +227,233 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
 }
 
 class _MyProfilePostCard extends StatelessWidget {
-  const _MyProfilePostCard({super.key, required this.post, required this.onTap, this.mediaKey});
-  final DDPost post;
-  final VoidCallback onTap;
-  final GlobalKey? mediaKey;
+  const _MyProfilePostCard({
+    super.key,
+    required this.post,
+    required this.onLike,
+    required this.onFavorite,
+    this.onSendToFriend,
+    required this.onShare,
+    this.onDirectChat,
+    this.onFollow,
+    this.onGift,
+    required this.onReport,
+    required this.onOpen,
+    this.onTap,
+  });
 
-  Widget _media(BuildContext context, String url, {bool video = false}) => LayoutBuilder(
-    builder: (context, constraints) {
-      final width = video ? post.thumbnailWidth : post.imageWidth;
-      final height = video ? post.thumbnailHeight : post.imageHeight;
-      final ratio = width != null && height != null && width > 0 && height > 0 ? width / height : 4 / 3;
-      final naturalHeight = constraints.maxWidth / ratio;
-      final displayHeight = naturalHeight > 400 ? 400.0 : naturalHeight;
-      final displayWidth = naturalHeight > 400 ? displayHeight * ratio : constraints.maxWidth;
-      return Align(alignment: Alignment.centerLeft, child: ClipRRect(borderRadius: BorderRadius.circular(12), child: SizedBox(width: displayWidth, height: displayHeight, child: _PermanentCachedImage(url: url, width: displayWidth, height: displayHeight, fit: BoxFit.cover, placeholder: const ColoredBox(color: Color(0x22111111), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))))));
-    });
+  final DDPost post;
+  final VoidCallback onLike;
+  final VoidCallback onFavorite;
+  final VoidCallback onShare;
+  final Future<void> Function(String peerId)? onSendToFriend;
+  final VoidCallback? onDirectChat;
+  final VoidCallback? onFollow;
+  final VoidCallback? onGift;
+  final VoidCallback onReport;
+  final VoidCallback onOpen;
+  final VoidCallback? onTap;
+
+  Widget _media({required String url, required bool thumbnail}) {
+    return _DiscoverMediaImage(url: url);
+  }
+
+  Widget _action({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+    bool active = false,
+  }) => Expanded(
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 20,
+                    color: active
+                        ? Theme.of(context).colorScheme.primary
+                        : null),
+                const SizedBox(width: 4),
+                Text(label),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  void _showDiscoverMore(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => _DiscoverShareSheet(
+        post: post,
+        onShare: onShare,
+        onSendToFriend: onSendToFriend,
+        onReport: onReport,
+        onDirectChat: onDirectChat,
+        onFollow: onFollow,
+        onGift: onGift,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final image = post.imageUrl?.trim();
-    final video = post.videoUrl?.trim();
-    final scheme = Theme.of(context).colorScheme;
-    return InkWell(onTap: onTap, child: Padding(padding: const EdgeInsets.only(bottom: 12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [Expanded(child: Text('${_formatProfilePostDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}', style: TextStyle(color: scheme.onSurfaceVariant))), Icon(TIcons.browse, size: 16, color: scheme.onSurfaceVariant), const SizedBox(width: 4), Text('${post.views}', style: TextStyle(color: scheme.onSurfaceVariant)), const SizedBox(width: 8), const Icon(TIcons.share_1, size: 20)]),
-      if (post.content.trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5, bottom: 5), child: Text(post.content.trim(), style: const TextStyle(fontSize: 16, height: 1.4))),
-      if (image != null && image.isNotEmpty) _media(context, image) else if (video != null && video.isNotEmpty) Stack(alignment: Alignment.center, children: [_media(context, post.thumbnailUrl?.trim().isNotEmpty == true ? post.thumbnailUrl!.trim() : video), const Icon(Icons.play_circle_outline, size: 48, color: Colors.white)]),
-      const SizedBox(height: 8),
-      Row(children: [Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(post.liked ? TIcons.heart_filled : TIcons.heart, size: 20), const SizedBox(width: 4), Text('${post.likes}')])), Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(post.favorited ? TIcons.star_1_filled : TIcons.star_1, size: 20), const SizedBox(width: 4), Text('${post.favorites}')])), Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(TIcons.chat_bubble_1, size: 20), const SizedBox(width: 4), Text('${post.comments}')])),]),
-    ])));
+    final hasMedia = (post.imageUrl?.trim().isNotEmpty == true) ||
+        (post.videoUrl?.trim().isNotEmpty == true);
+    return InkWell(
+      onTap: onTap ?? onOpen,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipOval(
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: post.avatar.trim().isEmpty
+                    ? const Icon(Icons.person_outline)
+                    : _PermanentCachedImage(
+                        url: post.avatar,
+                        fit: BoxFit.cover,
+                        placeholder: const Icon(Icons.person_outline),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(post.nickname,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                      )),
+                                ),
+                                if (post.distanceKm != null &&
+                                    post.distanceKm! <= 30)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 6),
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x2234C759),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 2),
+                                        child: Text(
+                                          '${post.distanceKm!.toStringAsFixed(2)}km',
+                                          style: const TextStyle(
+                                            color: Color(0xFF34C759),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                '${_formatDiscoverDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.55),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: '分享',
+                        onPressed: () => _showDiscoverMore(context),
+                        icon: const Icon(TIcons.share_1),
+                        iconSize: 20,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 32,
+                          height: 32,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (post.content.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 5, bottom: 5),
+                      child: _DiscoverPostContent(
+                        text: post.content.trim(),
+                        maxLines: hasMedia ? 3 : 10,
+                      ),
+                    ),
+                  if (post.imageUrl?.trim().isNotEmpty == true) ...[
+                    const SizedBox(height: 10),
+                    _media(url: post.imageUrl!.trim(), thumbnail: false),
+                  ] else if (post.videoUrl?.trim().isNotEmpty == true) ...[
+                    const SizedBox(height: 10),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        _media(url: post.thumbnailUrl?.trim().isNotEmpty == true ? post.thumbnailUrl!.trim() : post.videoUrl!.trim(), thumbnail: post.thumbnailUrl?.trim().isNotEmpty == true),
+                        const Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _action(
+                        context: context,
+                        icon: post.liked ? TIcons.heart_filled : TIcons.heart,
+                        label: '${post.likes}',
+                        onTap: onLike,
+                        active: post.liked,
+                      ),
+                      _action(
+                        context: context,
+                        icon: post.favorited ? TIcons.star_1_filled : TIcons.star_1,
+                        label: '${post.favorites}',
+                        onTap: onFavorite,
+                        active: post.favorited,
+                      ),
+                      _action(context: context, icon: TIcons.chat_bubble_1,
+                          label: '${post.comments}', onTap: onOpen),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
-
 class _ProfileLikePill extends StatelessWidget {
   const _ProfileLikePill({
     required this.liked,
