@@ -322,6 +322,8 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool loading = true;
   bool tabLoading = false;
   late final List<DiscoverFeed> feeds;
+  final pendingLikes = <int>{};
+  final pendingFavorites = <int>{};
   final AudioPlayer _sonicPlayer = AudioPlayer();
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
@@ -363,6 +365,16 @@ class _DDProfilePageState extends State<DDProfilePage>
               return Future.wait(
                   loaded.map((post) => service.resolvePostMedia(token, post)));
             }, cacheKey: 'dd.profile.my.tab.$tab'));
+    for (final feed in feeds) {
+      feed.scroll.addListener(() {
+        if (feed.scroll.hasClients &&
+            feed.scroll.position.extentAfter < 500 &&
+            feed.initialized &&
+            feed.error == null) {
+          feed.load();
+        }
+      });
+    }
     load();
   }
 
@@ -810,31 +822,44 @@ class _DDProfilePageState extends State<DDProfilePage>
   final _profilePendingFavorites = <int>{};
 
   Future<void> _profileLike(DDPost post) async {
-    if (!_profilePendingLikes.add(post.id)) return;
+    if (!pendingLikes.add(post.id)) return;
     try {
       await service.toggleLike(await _token(), post.id);
-      final updated = post.copyWith(liked: !post.liked, likes: post.likes + (post.liked ? -1 : 1));
-      for (final feed in feeds) feed.updateLike(updated);
+      if (!mounted) return;
+      final updated = post.copyWith(
+        liked: !post.liked,
+        likes: post.likes + (post.liked ? -1 : 1),
+      );
+      for (final feed in feeds) {
+        feed.updateLike(updated);
+      }
+      await DDPostService.clearProfileTabCaches();
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('$e'));
+      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
     } finally {
-      _profilePendingLikes.remove(post.id);
+      pendingLikes.remove(post.id);
     }
   }
 
   Future<void> _profileFavorite(DDPost post) async {
-    if (!_profilePendingFavorites.add(post.id)) return;
+    if (!pendingFavorites.add(post.id)) return;
     try {
       await service.toggleFavorite(await _token(), post.id);
-      final updated = post.copyWith(favorited: !post.favorited, favorites: post.favorites + (post.favorited ? -1 : 1));
-      for (final feed in feeds) feed.updateFavorite(updated);
+      if (!mounted) return;
+      final updated = post.copyWith(
+        favorited: !post.favorited,
+        favorites: post.favorites + (post.favorited ? -1 : 1),
+      );
+      for (final feed in feeds) {
+        feed.updateFavorite(updated);
+      }
+      await DDPostService.clearProfileTabCaches();
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('$e'));
+      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
     } finally {
-      _profilePendingFavorites.remove(post.id);
+      pendingFavorites.remove(post.id);
     }
   }
-
 
   List<Widget> _profileContentSlivers(int tab) {
     final feed = feeds[tab];
@@ -847,6 +872,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               final post = feed.posts[index];
               return _ProfileDiscoverCard(
                 key: ValueKey('${tab}:${post.id}'),
+                feed: feed,
                 feed: feed,
                 post: post,
                 onLike: () => _profileLike(post),
@@ -1346,104 +1372,6 @@ class _ProfileDiscoverCardState extends State<_ProfileDiscoverCard> with Automat
   @override bool get wantKeepAlive => true;
   @override Widget build(BuildContext context) { super.build(context); return _DiscoverProfileCard(post: post, onLike: widget.onLike, onFavorite: widget.onFavorite, onShare: widget.onOpen, onDelete: widget.onDelete, onReport: () {}, onOpen: widget.onOpen); }
   @override void dispose() { widget.feed.postChanges.removeListener(_update); super.dispose(); }
-}
-
-class _ProfileFeedTabView extends StatefulWidget {
-  const _ProfileFeedTabView({
-    super.key,
-    required this.feed,
-    required this.tab,
-    required this.onLike,
-    required this.onFavorite,
-    required this.onDelete,
-    required this.onOpen,
-  });
-
-  final DiscoverFeed feed;
-  final int tab;
-  final ValueChanged<DDPost> onLike;
-  final ValueChanged<DDPost> onFavorite;
-  final ValueChanged<DDPost> onDelete;
-  final Future<void> Function(DDPost) onOpen;
-
-  @override
-  State<_ProfileFeedTabView> createState() => _ProfileFeedTabViewState();
-}
-
-class _ProfileFeedTabViewState extends State<_ProfileFeedTabView>
-    with AutomaticKeepAliveClientMixin<_ProfileFeedTabView> {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    final feed = widget.feed;
-    return AnimatedBuilder(
-      animation: feed,
-      builder: (context, _) => RefreshIndicator(
-        onRefresh: () => feed.load(refresh: true),
-        child: CustomScrollView(
-          key: PageStorageKey('profile.scroll.${widget.tab}'),
-          controller: feed.scroll,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final post = feed.posts[index];
-                    return _DiscoverProfileCard(
-                      key: ValueKey('${widget.tab}:${post.id}'),
-                      post: post,
-                      onLike: () => widget.onLike(post),
-                      onFavorite: () => widget.onFavorite(post),
-                      onShare: () {},
-                      onDelete: widget.tab == 0 ? () => widget.onDelete(post) : null,
-                      onReport: () {},
-                      onOpen: () => widget.onOpen(post),
-                    );
-                  },
-                  childCount: feed.posts.length,
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: feed.error != null
-                    ? _PageErrorState(
-                        title: '动态加载失败',
-                        subtitle: feed.error!,
-                        onRetry: () => feed.load(refresh: true),
-                      )
-                    : (feed.restoring || (feed.busy && feed.posts.isEmpty))
-                        ? const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
-                          )
-                        : feed.posts.isEmpty
-                            ? const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 48),
-                                child: Center(child: Text('暂无动态')),
-                              )
-                            : feed.hasMore
-                                ? TextButton(
-                                    onPressed: feed.busy ? null : () => feed.load(),
-                                    child: Text(feed.busy ? '加载中…' : '加载更多'),
-                                  )
-                                : const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 16),
-                                    child: Center(child: Text('没有更多动态了')),
-                                  ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 
