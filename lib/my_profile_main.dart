@@ -1274,8 +1274,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                         alignment: Alignment.center,
                         children: [
                           _MyProfileIconTabs(selectedTab: selectedTab, onSelect: _selectProfileTab),
-                          if (tabLoading || _tabSwitching)
-                            const Positioned(bottom: 0, left: 24, right: 24, child: LinearProgressIndicator(minHeight: 2)),
+
                         ],
                       ),
                     ),
@@ -1289,13 +1288,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                 ],
               ),
               ),
-              if (_profileRefreshing)
-                const Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: LinearProgressIndicator(minHeight: 2),
-                ),
+
             ],
           ),
     );
