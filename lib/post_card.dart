@@ -383,7 +383,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Center(
-                child: Text('分享动态',
+                child: Text('更多操作',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 20),
