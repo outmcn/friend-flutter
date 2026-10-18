@@ -199,21 +199,13 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
           onReport: () {},
           onOpen: () {},
           onTap: () async {
-            final box = mediaKey.currentContext?.findRenderObject() as RenderBox?;
-            final topLeft = box?.localToGlobal(Offset.zero);
-            final initialRect = box == null || topLeft == null ? null : topLeft & box.size;
             final changed = await Navigator.push<bool>(
               context,
-              PageRouteBuilder<bool>(
-                opaque: false,
-                barrierColor: Colors.transparent,
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-                pageBuilder: (_, __, ___) => DynamicDetailPage(
+              MaterialPageRoute<bool>(
+                builder: (_) => DynamicDetailPage(
                   postId: post.id,
                   initialPost: post,
-                  initialRect: initialRect,
-                  mediaKey: mediaKey,
+                  cardKey: mediaKey,
                 ),
               ),
             );
