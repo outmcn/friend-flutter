@@ -809,6 +809,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final action = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       builder: (_) => _DiscoverShareSheet(
         post: item,
         onSendToFriend: _sendPostToFriend,
