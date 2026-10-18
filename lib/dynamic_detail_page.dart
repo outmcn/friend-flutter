@@ -1,6 +1,6 @@
 part of 'main.dart';
 
-Widget _detailPublishTime(DDPost item) => Text(
+Widget _detailPublishTime(BuildContext context, DDPost item) => Text(
       '${formatDDTime(item.createdAt)}${(item.authorCity ?? '').trim().isNotEmpty ? ' · ${item.authorCity!.trim()}' : ''}',
       style: TextStyle(
         fontSize: 14,
@@ -1097,7 +1097,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    _detailPublishTime(item),
+                                    _detailPublishTime(context, item),
                                   ],
                                 ),
                               )
@@ -1122,7 +1122,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                           .toList(),
                                     ),
                                     const SizedBox(height: 8),
-                                    _detailPublishTime(item),
+                                    _detailPublishTime(context, item),
                                   ],
                                 ),
                               ),
