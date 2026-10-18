@@ -182,14 +182,6 @@ class CompanionProfilePage extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: () =>
-                            openCompanionChat(context, data.userId, data.name),
-                        child: const Text('⚡ 聊一聊'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
                       child: FilledButton(
                         onPressed: () => _openOrder(context, data),
                         child: const Text('立即下单'),

@@ -161,26 +161,6 @@ class DDPostService {
     return value.cast<String, dynamic>();
   }
 
-  Future<String> createCompanionConversation(
-      String token, String peerId) async {
-    final response = await _client.post(
-      _api('/im/conversations/companion'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'peerId': peerId}),
-    );
-    final data = jsonDecode(response.body);
-    if ((response.statusCode != 200 && response.statusCode != 201) ||
-        data is! Map ||
-        data['conversationId'] == null) {
-      throw Exception(
-          data is Map ? '${data['error'] ?? '陪玩会话创建失败'}' : '陪玩会话创建失败');
-    }
-    return '${data['conversationId']}';
-  }
-
   Future<String> createDirectConversation(String token, String peerId) async {
     final response = await _client.post(
       _api('/im/conversations/direct'),
