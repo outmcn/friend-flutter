@@ -951,22 +951,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 active: item.favorited,
                 onTap: _toggleFavorite,
               ),
-              _DetailAction(
-                icon: TIcons.chat_bubble_1,
-                label: '${comments.length}',
-                onTap: () {
-                  commentFocusNode.requestFocus();
-                },
-              ),
               IconButton(
                 tooltip: '送礼',
                 onPressed: _openGiftMenu,
                 icon: const Icon(Icons.card_giftcard_outlined),
-              ),
-              IconButton(
-                tooltip: '分享',
-                onPressed: () => _openShareMenu(item),
-                icon: const Icon(TIcons.share_1),
               ),
               const SizedBox(width: 4),
               Expanded(
