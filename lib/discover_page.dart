@@ -172,6 +172,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
     if (post.userId == null) return;
     try {
       final followed = await service.toggleFollow(await _token(), post.userId!);
+      final updated = post.copyWith(following: followed);
+      for (final feed in feeds) {
+        feed.updateFollowing(updated);
+      }
       if (mounted) _showTopNotice(context, Text(followed ? '已关注' : '已取消关注'));
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));

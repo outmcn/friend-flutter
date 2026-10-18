@@ -424,7 +424,11 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                 runSpacing: 12,
                 children: [
                   _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onDirectChat ?? () => _openDirectChat(context)),
-                  _ShareAction(label: '关注', icon: TIcons.user_add, onTap: widget.onFollow ?? () => _toggleFollow(context)),
+                  _ShareAction(
+                    label: widget.post.following ? '已关注' : '关注',
+                    icon: widget.post.following ? TIcons.user_checked : TIcons.user_add,
+                    onTap: widget.onFollow ?? () => _toggleFollow(context),
+                  ),
                   _ShareAction(label: '送礼', icon: TIcons.gift, onTap: widget.onGift ?? () => _openGift(context)),
                   _ShareAction(label: '举报', icon: TIcons.bug_report, onTap: widget.onReport),
                 ],

@@ -30,6 +30,14 @@ class DiscoverFeed extends ChangeNotifier {
     posts[index] = updated;
     postChanges.value = updated;
   }
+  void updateFollowing(DDPost post) {
+    final index = posts.indexWhere((item) => item.id == post.id);
+    if (disposed || index < 0) return;
+    final updated = posts[index].copyWith(following: post.following);
+    posts[index] = updated;
+    postChanges.value = updated;
+  }
+
   void markChanged() {
     if (!disposed) notifyListeners();
   }
