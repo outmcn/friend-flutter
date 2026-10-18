@@ -101,6 +101,64 @@ class _FeedShellState extends State<FeedShell> {
     super.dispose();
   }
 
+  List<Widget> feedSlivers(int index) {
+    final feed = feeds[index];
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, itemIndex) {
+              final post = feed.posts[itemIndex];
+              if (itemIndex + 1 < feed.posts.length) {
+                final next = feed.posts[itemIndex + 1];
+                if (next.imageUrl?.isNotEmpty == true) {
+                  unawaited(_PermanentImageCache.prefetch(next.imageUrl!));
+                }
+                if (next.thumbnailUrl?.isNotEmpty == true) {
+                  unawaited(_PermanentImageCache.prefetch(next.thumbnailUrl!));
+                }
+              }
+              return _DiscoverFeedCard(
+                key: cardKeys.putIfAbsent('$index:${post.id}', GlobalKey.new),
+                feed: feed,
+                post: post,
+                onLike: widget.onLike,
+                onFavorite: widget.onFavorite,
+                onShare: widget.onShare,
+                onSendToFriend: widget.onSendToFriend,
+                onDirectChat: widget.onDirectChat,
+                onFollow: widget.onFollow,
+                onGift: widget.onGift,
+                onDelete: widget.onDelete,
+                onReport: widget.onReport,
+                onOpen: widget.onOpen,
+              );
+            },
+            childCount: feed.posts.length,
+          ),
+        ),
+      ),
+      SliverToBoxAdapter(child: _footer(index)),
+    ];
+  }
+
+  Widget _footer(int index) {
+    final feed = feeds[index];
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: feed.error != null
+          ? _PageErrorState(title: '动态加载失败', subtitle: feed.error!, onRetry: () => feed.load(refresh: true))
+          : (feed.restoring || (feed.busy && feed.posts.isEmpty))
+              ? const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()))
+              : feed.posts.isEmpty
+                  ? const Padding(padding: EdgeInsets.symmetric(vertical: 48), child: Center(child: Text('暂无动态')))
+                  : feed.hasMore
+                      ? TextButton(onPressed: feed.busy ? null : () => feed.load(), child: Text(feed.busy ? '加载中…' : '加载更多'))
+                      : const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: Text('没有更多动态了'))),
+    );
+  }
+
   Widget _tab(int index) {
     final feed = feeds[index];
     return AnimatedBuilder(
