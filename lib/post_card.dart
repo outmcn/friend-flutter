@@ -472,110 +472,42 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
   }
 
   Future<void> _showAllMutualFriends(BuildContext context) async {
-    await Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => _ContactsPage(
-          conversations: conversations,
-          avatarFor: (conversation) {
-            final avatar = conversation.peer?.avatarUrl ??
-                conversation.peer?.avatarKey ?? '';
-            return avatar.isEmpty
-                ? const AssetImage('assets/figma/avatar-placeholder.png')
-                : _PermanentImageCache.provider(avatar);
-          },
-          onOpen: (_) async {},
-          post: widget.post,
-          onSendToFriend: (peerId) async {
-            await widget.onSendToFriend?.call(peerId);
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _ConversationShareTile extends StatelessWidget {
-  const _ConversationShareTile({required this.conversation, required this.sending, required this.onSend});
-  final DDConversation conversation;
-  final bool sending;
-  final VoidCallback onSend;
-
-  Future<void> _confirmSend(BuildContext context) async {
-    if (sending) return;
-    final peerName = conversation.peer?.nickname ?? '好友';
-    final confirmed = await showDialog<bool>(
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('确认分享'),
-        content: Text('确定把这条动态发送给 $peerName 吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('发送'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) onSend();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final peer = conversation.peer;
-    final avatar = peer?.avatarUrl ?? peer?.avatarKey ?? '';
-    return SizedBox(
-      width: 86,
-      child: InkWell(
-        onTap: () => _confirmSend(context),
-        borderRadius: BorderRadius.circular(10),
-        child: Column(
-          children: [
-            SizedBox(
-              width: 38,
-              height: 38,
-              child: ClipOval(
-                child: _PermanentCachedImage(
-                  url: avatar,
-                  fit: BoxFit.cover,
-                  placeholder: const Icon(Icons.person_outline, size: 18),
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: mutualFriends.length,
+          itemBuilder: (_, index) {
+            final friend = mutualFriends[index];
+            return ListTile(
+              leading: SizedBox(
+                width: 40,
+                height: 40,
+                child: ClipOval(
+                  child: _PermanentCachedImage(
+                    url: '${friend['avatar'] ?? ''}',
+                    fit: BoxFit.cover,
+                    placeholder: const Icon(Icons.person_outline, size: 18),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 3),
-            Text(peer?.nickname ?? '好友', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
-          ],
+              title: Text('${friend['nickname'] ?? '好友'}'),
+              trailing: FilledButton(
+                onPressed: () async {
+                  await widget.onSendToFriend?.call('${friend['id'] ?? ''}');
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                },
+                child: const Text('发送'),
+              ),
+            );
+          },
         ),
       ),
     );
   }
-}
 
-class _ShareFriendTile extends StatelessWidget {
-  const _ShareFriendTile({required this.label, required this.icon, required this.onTap});
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: SizedBox(
-          width: 72,
-          child: Column(children: [Icon(icon, size: 32), const SizedBox(height: 4), Text(label, overflow: TextOverflow.ellipsis)],),
-        ),
-      );
-}
-
-Future<void> _openApp(BuildContext context, String scheme) async {
-  final uri = Uri.parse(scheme);
-  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-  if (!launched && context.mounted) {
-    _showTopNotice(context, const Text('未安装对应应用'));
-  }
 }
 
 class _PostGiftSheet extends StatefulWidget {
@@ -584,6 +516,95 @@ class _PostGiftSheet extends StatefulWidget {
   final VoidCallback onSent;
   @override
   State<_PostGiftSheet> createState() => _PostGiftSheetState();
+}
+
+class _PostGiftSheetState extends State<_PostGiftSheet> {
+  final service = DDPostService();
+  List<Map<String, dynamic>> gifts = const [];
+  bool loading = true;
+  bool sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<String> _token() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('friend.auth.token') ?? '';
+    if (value.isEmpty) throw Exception('请先登录');
+    return value;
+  }
+
+  Future<void> _load() async {
+    try {
+      final value = await service.fetchGiftItems(await _token(), scope: 'post');
+      if (mounted) setState(() => gifts = value);
+    } catch (error) {
+      if (mounted) _showTopNotice(context, Text('$error'));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _send(Map<String, dynamic> gift) async {
+    if (sending) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认送礼'),
+        content: Text('确定送出 ${gift['name'] ?? '这份礼物'} 吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('送出')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      setState(() => sending = true);
+      await service.sendPostGift(
+        token: await _token(),
+        postId: widget.post.id,
+        giftId: int.parse('${gift['id']}'),
+      );
+      if (mounted) {
+        _showTopNotice(context, const Text('礼物已送出'));
+        widget.onSent();
+      }
+    } catch (error) {
+      if (mounted) _showTopNotice(context, Text('$error'));
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          child: loading
+              ? const SizedBox(height: 140, child: Center(child: CircularProgressIndicator()))
+              : gifts.isEmpty
+                  ? const SizedBox(height: 120, child: Center(child: Text('暂无可送出的礼物')))
+                  : Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: gifts.map((gift) => ActionChip(
+                            avatar: Text('${gift['icon'] ?? '🎁'}'),
+                            label: Text('${gift['name'] ?? '礼物'} · ${gift['coin_price'] ?? 0}金币'),
+                            onPressed: sending ? null : () => _send(gift),
+                          )).toList(),
+                    ),
+        ),
+      );
 }
 
 class _ShareAction extends StatelessWidget {
