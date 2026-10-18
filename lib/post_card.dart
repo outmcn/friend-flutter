@@ -415,17 +415,6 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _ShareAction(label: '微信', icon: TIcons.logo_wechat_stroke, onTap: () => _openApp(context, 'weixin://')),
-                  _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: () => _openApp(context, 'mqq://')),
-                  _ShareAction(label: '复制链接', icon: TIcons.link, onTap: () => _copyPostLink(context)),
-                  _ShareAction(label: '更多', icon: TIcons.ellipsis, onTap: widget.onShare),
-                ],
-              ),
-              const Divider(height: 24),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
                   _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onDirectChat ?? () => _openDirectChat(context)),
                   _ShareAction(
                     label: widget.post.following ? '已关注' : '关注',
