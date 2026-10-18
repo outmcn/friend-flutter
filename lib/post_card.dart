@@ -471,37 +471,23 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     );
   }
 
-  void _showAllMutualFriends(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: mutualFriends.length,
-          itemBuilder: (_, index) {
-            final friend = mutualFriends[index];
-            return ListTile(
-              leading: SizedBox(
-                width: 40,
-                height: 40,
-                child: ClipOval(
-                  child: _PermanentCachedImage(
-                    url: '${friend['avatar'] ?? ''}',
-                    fit: BoxFit.cover,
-                    placeholder: const Icon(Icons.person_outline, size: 18),
-                  ),
-                ),
-              ),
-              title: Text('${friend['nickname'] ?? '好友'}'),
-              trailing: FilledButton(
-                onPressed: () async {
-                  await widget.onSendToFriend?.call('${friend['id'] ?? ''}');
-                  if (sheetContext.mounted) Navigator.pop(sheetContext);
-                },
-                child: const Text('发送'),
-              ),
-            );
+  Future<void> _showAllMutualFriends(BuildContext context) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _ContactsPage(
+          conversations: conversations,
+          avatarFor: (conversation) {
+            final avatar = conversation.peer?.avatarUrl ??
+                conversation.peer?.avatarKey ?? '';
+            return avatar.isEmpty
+                ? const AssetImage('assets/figma/avatar-placeholder.png')
+                : _PermanentImageCache.provider(avatar);
+          },
+          onOpen: (_) async {},
+          post: widget.post,
+          onSendToFriend: (peerId) async {
+            await widget.onSendToFriend?.call(peerId);
           },
         ),
       ),

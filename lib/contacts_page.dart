@@ -5,11 +5,15 @@ class _ContactsPage extends StatefulWidget {
     required this.conversations,
     required this.avatarFor,
     required this.onOpen,
+    this.post,
+    this.onSendToFriend,
   });
 
   final List<_ChatPreview> conversations;
   final ImageProvider Function(_ChatPreview) avatarFor;
   final Future<void> Function(_ChatPreview) onOpen;
+  final DDPost? post;
+  final Future<void> Function(String peerId)? onSendToFriend;
 
   @override
   State<_ContactsPage> createState() => _ContactsPageState();
@@ -96,6 +100,15 @@ class _ContactsPageState extends State<_ContactsPage>
                       ),
                     ],
                   ),
+                  trailing: widget.post == null || widget.onSendToFriend == null
+                      ? null
+                      : FilledButton(
+                          onPressed: () async {
+                            await widget.onSendToFriend!(contact.peerUserId ?? '');
+                            if (context.mounted) Navigator.pop(context);
+                          },
+                          child: const Text('发送'),
+                        ),
                   onTap: () => widget.onOpen(contact),
                 );
               },
