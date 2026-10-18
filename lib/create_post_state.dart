@@ -304,17 +304,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: _pickMedia,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: selectedImage != null
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _pickMedia,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 14 * 24.0,
+                            child: selectedImage != null
                               ? Image.file(File(selectedImage!.path), fit: BoxFit.cover)
                               : selectedVideo != null
                                   ? FutureBuilder<Uint8List?>(
@@ -328,27 +329,28 @@ class _CreatePostPageState extends State<CreatePostPage> {
                                           ? const ColoredBox(color: Colors.transparent)
                                           : Image.memory(snapshot.data!, fit: BoxFit.cover),
                                     )
-                                  : DecoratedBox(
+                                    : DecoratedBox(
                                       decoration: BoxDecoration(
                                         border: Border.all(color: Theme.of(context).colorScheme.outline),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: const Icon(Icons.add, size: 28),
                                     ),
-                        ),
-                      ),
-                      if (selectedImage != null || selectedVideo != null)
-                        Positioned(
-                          top: -8,
-                          right: -8,
-                          child: IconButton.filled(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints.tightFor(width: 24, height: 24),
-                            onPressed: _clearImage,
-                            icon: const Icon(Icons.close, size: 16),
                           ),
                         ),
-                    ],
+                        if (selectedImage != null || selectedVideo != null)
+                          Positioned(
+                            top: -8,
+                            right: -8,
+                            child: IconButton.filled(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints.tightFor(width: 24, height: 24),
+                              onPressed: _clearImage,
+                              icon: const Icon(Icons.close, size: 16),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ],
