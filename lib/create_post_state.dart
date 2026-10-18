@@ -390,7 +390,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               ),
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(TIcons.earth),
+              leading: const Icon(TIcons.browse),
               title: Text(visibility),
               trailing: const Icon(TIcons.chevron_right),
               onTap: () => showModalBottomSheet<void>(
