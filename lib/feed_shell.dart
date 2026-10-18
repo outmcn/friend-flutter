@@ -14,6 +14,71 @@ class FeedShellTab {
   final Future<List<DDPost>> Function(int offset) fetch;
 }
 
+
+class FeedShellController {
+  FeedShellController({required this.feeds, required this.cardKeys});
+  final List<DiscoverFeed> feeds;
+  final Map<String, GlobalKey> cardKeys;
+
+  List<Widget> slivers({
+    required int index,
+    required ValueChanged<DDPost> onLike,
+    required ValueChanged<DDPost> onFavorite,
+    required ValueChanged<DDPost> onShare,
+    required ValueChanged<DDPost> onReport,
+    required ValueChanged<DDPost> onOpen,
+    Future<void> Function(String, DDPost)? onSendToFriend,
+    ValueChanged<DDPost>? onDirectChat,
+    ValueChanged<DDPost>? onFollow,
+    ValueChanged<DDPost>? onGift,
+    ValueChanged<DDPost>? onDelete,
+  }) {
+    final feed = feeds[index];
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, itemIndex) {
+              final post = feed.posts[itemIndex];
+              return _DiscoverFeedCard(
+                key: cardKeys.putIfAbsent('$index:${post.id}', GlobalKey.new),
+                feed: feed,
+                post: post,
+                onLike: onLike,
+                onFavorite: onFavorite,
+                onShare: onShare,
+                onSendToFriend: onSendToFriend,
+                onDirectChat: onDirectChat,
+                onFollow: onFollow,
+                onGift: onGift,
+                onDelete: onDelete,
+                onReport: onReport,
+                onOpen: onOpen,
+              );
+            },
+            childCount: feed.posts.length,
+          ),
+        ),
+      ),
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: feed.error != null
+              ? _PageErrorState(title: '动态加载失败', subtitle: feed.error!, onRetry: () => feed.load(refresh: true))
+              : (feed.restoring || (feed.busy && feed.posts.isEmpty))
+                  ? const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()))
+                  : feed.posts.isEmpty
+                      ? const Padding(padding: EdgeInsets.symmetric(vertical: 48), child: Center(child: Text('暂无动态')))
+                      : feed.hasMore
+                          ? TextButton(onPressed: feed.busy ? null : () => feed.load(), child: Text(feed.busy ? '加载中…' : '加载更多'))
+                          : const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: Text('没有更多动态了'))),
+        ),
+      ),
+    ];
+  }
+}
+
 class FeedShell extends StatefulWidget {
   const FeedShell({
     super.key,
@@ -283,6 +348,8 @@ class _FeedShellState extends State<FeedShell> {
           ],
         ),
       );
+
+  FeedShellController get controller => FeedShellController(feeds: feeds, cardKeys: cardKeys);
 
   @override
   Widget build(BuildContext context) => widget.embedded

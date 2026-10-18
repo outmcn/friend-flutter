@@ -924,70 +924,35 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   List<Widget> _profileContentSlivers(int tab) {
-    final feed = feeds[tab];
-    return [
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final post = feed.posts[index];
-              if (index + 1 < feed.posts.length) {
-                final next = feed.posts[index + 1];
-                if (next.imageUrl?.isNotEmpty == true) {
-                  unawaited(_PermanentImageCache.prefetch(next.imageUrl!));
-                }
-                if (next.thumbnailUrl?.isNotEmpty == true) {
-                  unawaited(_PermanentImageCache.prefetch(next.thumbnailUrl!));
-                }
-              }
-              return _DiscoverFeedCard(
-                key: _profileCardKeys.putIfAbsent('${tab}:${post.id}', GlobalKey.new),
-                feed: feed,
-                post: post,
-                onLike: (value) => _profileLike(value),
-                onFavorite: (value) => _profileFavorite(value),
-                onShare: (value) => _profileShare(value),
-                onSendToFriend: (peerId, value) => _profileSendToFriend(peerId, value),
-                onDirectChat: (value) => _profileDirectChat(value),
-                onFollow: (value) => _profileFollow(value),
-                onGift: (value) => _profileGift(value),
-                onReport: (value) => _profileReport(value),
-                onDelete: tab == 0 ? (value) => _deleteMyPost(value) : null,
-                onOpen: (value) async {
-                  final changed = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute<bool>(
-                      builder: (_) => DynamicDetailPage(
-                        postId: value.id,
-                        initialPost: value,
-                        cardKey: _profileCardKeys['${tab}:${value.id}'],
-                      ),
-                    ),
-                  );
-                  if (changed == true) await _invalidateProfileCacheAndReload();
-                },
-              );
-            },
-            childCount: feed.posts.length,
+    final shell = FeedShellController(
+      feeds: feeds,
+      cardKeys: _profileCardKeys,
+    );
+    return shell.slivers(
+      index: tab,
+      onLike: _profileLike,
+      onFavorite: _profileFavorite,
+      onShare: _profileShare,
+      onSendToFriend: _profileSendToFriend,
+      onDirectChat: _profileDirectChat,
+      onFollow: _profileFollow,
+      onGift: _profileGift,
+      onDelete: tab == 0 ? _deleteMyPost : null,
+      onReport: _profileReport,
+      onOpen: (post) async {
+        final changed = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute<bool>(
+            builder: (_) => DynamicDetailPage(
+              postId: post.id,
+              initialPost: post,
+              cardKey: _profileCardKeys['$tab:${post.id}'],
+            ),
           ),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: feed.error != null
-              ? _PageErrorState(title: '动态加载失败', subtitle: feed.error!, onRetry: () => feed.load(refresh: true))
-              : (feed.restoring || (feed.busy && feed.posts.isEmpty))
-                  ? const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()))
-                  : feed.posts.isEmpty
-                      ? const Padding(padding: EdgeInsets.symmetric(vertical: 48), child: Center(child: Text('暂无动态')))
-                      : feed.hasMore
-                          ? TextButton(onPressed: feed.busy ? null : () => feed.load(), child: Text(feed.busy ? '加载中…' : '加载更多'))
-                          : const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: Text('没有更多动态了'))),
-        ),
-      ),
-    ];
+        );
+        if (changed == true) await _invalidateProfileCacheAndReload();
+      },
+    );
   }
 
   @override
