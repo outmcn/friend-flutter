@@ -286,6 +286,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
+                  flex: 2,
                   child: TextField(
                     controller: _content,
                     autofocus: true,
@@ -305,6 +306,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
+                  flex: 1,
                   child: GestureDetector(
                     onTap: _pickMedia,
                     child: Stack(
