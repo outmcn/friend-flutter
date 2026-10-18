@@ -294,7 +294,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
                       autofocus: true,
                       maxLines: 14,
                       maxLength: 300,
-                      buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
                         hintText: '发一条动态吧～',
