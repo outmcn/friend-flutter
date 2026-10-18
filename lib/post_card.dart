@@ -561,6 +561,9 @@ class _DiscoverProfileCard extends StatelessWidget {
     required this.onFavorite,
     this.onSendToFriend,
     required this.onShare,
+    this.onDirectChat,
+    this.onFollow,
+    this.onGift,
     required this.onReport,
     required this.onOpen,
   });
