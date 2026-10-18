@@ -2527,6 +2527,105 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
 
+  bool _isSharedPost(Map<String, dynamic> message) {
+    final metadata = message['metadata'];
+    if (metadata is! Map) return false;
+    final type = '${metadata['type'] ?? ''}';
+    final postId = int.tryParse('${metadata['postId'] ?? metadata['post_id'] ?? ''}');
+    return type == 'post_share' && postId != null && postId > 0;
+  }
+
+  Widget _sharedPostBody(Map<String, dynamic> message) {
+    final metadata = Map<String, dynamic>.from(message['metadata'] as Map);
+    final postId = '${metadata['postId'] ?? metadata['post_id'] ?? ''}';
+    final text = '${metadata['content'] ?? message['text'] ?? '分享了一条动态'}'.trim();
+    final author = '${metadata['author'] ?? ''}'.trim();
+    final thumbnailUrl = '${metadata['thumbnailUrl'] ?? ''}'.trim();
+    return InkWell(
+      onTap: () => _openSharedPost(message),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 230,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withOpacity(0.55),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: thumbnailUrl.isEmpty
+                  ? Container(
+                      width: 52,
+                      height: 52,
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      child: Icon(TIcons.browse,
+                          size: 28,
+                          color: Theme.of(context).colorScheme.primary),
+                    )
+                  : _PermanentCachedImage(
+                      url: thumbnailUrl,
+                      width: 52,
+                      height: 52,
+                      fit: BoxFit.cover,
+                      placeholder: Container(
+                        width: 52,
+                        height: 52,
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        child: Icon(TIcons.browse,
+                            size: 28,
+                            color: Theme.of(context).colorScheme.primary),
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(author.isEmpty ? '动态分享' : '$author 的动态',
+                      style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 3),
+                  Text(text.isEmpty ? '分享了一条动态' : text,
+                      maxLines: 2, overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(height: 3),
+                  Text('点击查看动态 #$postId',
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSharedPost(Map<String, dynamic> message) async {
+    final metadata = message['metadata'];
+    if (metadata is! Map) return;
+    final postId = int.tryParse('${metadata['postId'] ?? metadata['post_id'] ?? ''}');
+    if (postId == null || postId <= 0 || !mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final post = await service.fetchPost(token, postId);
+      if (!mounted) return;
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => DynamicDetailPage(postId: postId, initialPost: post),
+      ));
+    } catch (error) {
+      if (mounted) _showTopErrorBanner(context, '动态加载失败：$error');
+    } finally {
+      service.dispose();
+    }
+  }
+
   Future<void> _sendMessagePayload({
     required String text,
     String kind = 'text',
@@ -3014,7 +3113,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                                       color: Colors
                                                                           .grey),
                                                                 )
-                                                              : message['kind'] ==
+                                                              : _isSharedPost(message)
+                                                                  ? _sharedPostBody(message)
+                                                                  : message['kind'] ==
                                                                       'image'
                                                                       ? _imageMessageBody(
                                                                           message)

@@ -128,7 +128,13 @@ class _DiscoverPageState extends State<DiscoverPage> {
         conversationId,
         text: post.content.trim().isEmpty ? '分享了一条动态' : post.content.trim(),
         clientId: 'share-${post.id}-${DateTime.now().microsecondsSinceEpoch}',
-        metadata: {'postId': post.id, 'type': 'post_share'},
+        metadata: {
+          'postId': post.id,
+          'type': 'post_share',
+          'author': post.nickname,
+          'content': post.content,
+          'thumbnailUrl': post.thumbnailUrl ?? post.imageUrl ?? '',
+        },
       );
       if (mounted) _showTopNotice(context, const Text('已发送给好友'));
     } catch (e) {

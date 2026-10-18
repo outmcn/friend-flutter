@@ -362,7 +362,13 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
             ? '分享了一条动态'
             : widget.post.content.trim(),
         clientId: 'share-${widget.post.id}-${DateTime.now().microsecondsSinceEpoch}',
-        metadata: {'postId': widget.post.id, 'type': 'post_share'},
+        metadata: {
+          'postId': widget.post.id,
+          'type': 'post_share',
+          'author': widget.post.nickname,
+          'content': widget.post.content,
+          'thumbnailUrl': widget.post.thumbnailUrl ?? widget.post.imageUrl ?? '',
+        },
       );
       if (mounted) {
         Navigator.pop(context);
