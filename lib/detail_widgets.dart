@@ -43,10 +43,12 @@ class _PostImageHolder extends StatelessWidget {
       builder: (_) => GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => Navigator.of(context).pop(),
-        child: Center(
-          child: InteractiveViewer(
-            minScale: 1,
-            maxScale: 5,
+        child: InteractiveViewer(
+          minScale: 1,
+          maxScale: 5,
+          panEnabled: true,
+          boundaryMargin: const EdgeInsets.all(double.infinity),
+          child: SizedBox.expand(
             child: _PermanentCachedImage(
               url: url,
               fit: BoxFit.contain,
