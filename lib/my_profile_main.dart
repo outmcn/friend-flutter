@@ -790,34 +790,34 @@ class _DDProfilePageState extends State<DDProfilePage>
     final feed = feeds[tab];
     return AnimatedBuilder(
       animation: feed,
-      builder: (context, _) => RefreshIndicator(
-        onRefresh: () => feed.load(refresh: true),
-        child: CustomScrollView(
-          key: PageStorageKey('profile.$tab'),
-          controller: feed.scroll,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _MyProfileGrid(posts: feed.posts, emptyLabel: selectedTab == 0 ? '还没有发布动态' : selectedTab == 1 ? '还没有收藏内容' : '还没有点赞内容', onChanged: _invalidateProfileCacheAndReload),
-                  childCount: 1,
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: feed.error != null
-                    ? _PageErrorState(title: '动态加载失败', subtitle: feed.error!, onRetry: () => feed.load(refresh: true))
-                    : (feed.restoring || (feed.busy && feed.posts.isEmpty))
-                        ? const Center(child: CircularProgressIndicator())
-                        : (feed.posts.isEmpty ? const Center(child: Text('暂无动态')) : (feed.hasMore ? TextButton(onPressed: feed.busy ? null : () => feed.load(), child: Text(feed.busy ? '加载中…' : '加载更多')) : const Center(child: Text('没有更多动态了')))),
-              ),
-            ),
-          ],
-        ),
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _MyProfileGrid(
+            posts: feed.posts,
+            emptyLabel: tab == 0 ? '还没有发布动态' : tab == 1 ? '还没有收藏内容' : '还没有点赞内容',
+            onChanged: _invalidateProfileCacheAndReload,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: feed.error != null
+                ? _PageErrorState(
+                    title: '动态加载失败',
+                    subtitle: feed.error!,
+                    onRetry: () => feed.load(refresh: true),
+                  )
+                : (feed.restoring || (feed.busy && feed.posts.isEmpty))
+                    ? const Center(child: CircularProgressIndicator())
+                    : feed.posts.isEmpty
+                        ? const Center(child: Text('暂无动态'))
+                        : feed.hasMore
+                            ? TextButton(
+                                onPressed: feed.busy ? null : () => feed.load(),
+                                child: Text(feed.busy ? '加载中…' : '加载更多'),
+                              )
+                            : const Center(child: Text('没有更多动态了')),
+          ),
+        ],
       ),
     );
   }
