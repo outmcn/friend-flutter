@@ -287,20 +287,23 @@ class _CreatePostPageState extends State<CreatePostPage> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: TextField(
-                    controller: _content,
-                    autofocus: true,
-                    maxLines: 14,
-                    maxLength: 300,
-                    onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      hintText: '发一条动态吧～',
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      filled: false,
-                      alignLabelWithHint: true,
-                      contentPadding: EdgeInsets.zero,
+                  child: SizedBox(
+                    height: 14 * 24.0,
+                    child: TextField(
+                      controller: _content,
+                      autofocus: true,
+                      maxLines: 14,
+                      maxLength: 300,
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        hintText: '发一条动态吧～',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
+                        alignLabelWithHint: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
                   ),
                 ),
