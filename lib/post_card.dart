@@ -346,6 +346,10 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     } catch (_) {}
   }
 
+  Future<void> _sendToFriend(String peerId) async {
+    await widget.onSendToFriend?.call(peerId);
+  }
+
   Future<void> _sendTo(DDConversation conversation) async {
     final peer = conversation.peer;
     if (peer == null || sending) return;
@@ -477,7 +481,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
               title: Text('${friend['nickname'] ?? '好友'}'),
               trailing: FilledButton(
                 onPressed: () async {
-                  await onSendToFriend?.call('${friend['id'] ?? ''}');
+                  await widget.onSendToFriend?.call('${friend['id'] ?? ''}');
                   if (sheetContext.mounted) Navigator.pop(sheetContext);
                 },
                 child: const Text('发送'),

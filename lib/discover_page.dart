@@ -273,6 +273,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       onFavorite: _favorite,
       onShare: _share,
       onReport: _report,
+      onSendToFriend: (post) => _sendPostToFriend('', post),
       onOpen: _open,
     );
   }
@@ -441,6 +442,10 @@ class _DiscoverFeedCard extends StatefulWidget {
     required this.onShare,
     required this.onReport,
     required this.onOpen,
+    this.onSendToFriend,
+    this.onDirectChat,
+    this.onFollow,
+    this.onGift,
   });
 
   final DiscoverFeed feed;
@@ -448,6 +453,10 @@ class _DiscoverFeedCard extends StatefulWidget {
   final ValueChanged<DDPost> onLike;
   final ValueChanged<DDPost> onFavorite;
   final ValueChanged<DDPost> onShare;
+  final ValueChanged<DDPost>? onSendToFriend;
+  final ValueChanged<DDPost>? onDirectChat;
+  final ValueChanged<DDPost>? onFollow;
+  final ValueChanged<DDPost>? onGift;
   final ValueChanged<DDPost> onReport;
   final ValueChanged<DDPost> onOpen;
 
@@ -494,11 +503,11 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       onLike: () => widget.onLike(post),
       onFavorite: () => widget.onFavorite(post),
       onShare: () => widget.onShare(post),
-      onSendToFriend: (peerId) => _sendPostToFriend(peerId, post),
+      onSendToFriend: null,
       onReport: () => widget.onReport(post),
-      onDirectChat: () => _openPostDirectChat(post),
-      onFollow: () => _followPostAuthor(post),
-      onGift: () => _openPostGift(post),
+      onDirectChat: null,
+      onFollow: null,
+      onGift: null,
       onOpen: () => widget.onOpen(post),
     );
     return Padding(
