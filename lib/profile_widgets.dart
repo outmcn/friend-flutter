@@ -55,10 +55,10 @@ class _MyProfileIconTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
         children: [
-          _tab(context, 0, Icons.blur_on),
+          _tab(context, 0, TIcons.animation_1),
           if (!postsOnly) ...[
-            _tab(context, 1, Icons.bookmark_border),
-            _tab(context, 2, Icons.star_border),
+            _tab(context, 1, TIcons.bookmark),
+            _tab(context, 2, TIcons.star_1),
           ],
         ],
       );
@@ -72,10 +72,16 @@ class _MyProfileIconTabs extends StatelessWidget {
             child: Column(
               children: [
                 Icon(
-                  icon,
+                  selectedTab == index
+                      ? (index == 0
+                          ? TIcons.animation_1_filled
+                          : index == 1
+                              ? TIcons.bookmark_filled
+                              : TIcons.star_1_filled)
+                      : icon,
                   size: 24,
                   color: selectedTab == index
-                      ? Theme.of(context).colorScheme.primary
+                      ? const Color(0xFF1677FF)
                       : Theme.of(context).hintColor,
                 ),
               ],
