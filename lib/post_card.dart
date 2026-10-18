@@ -382,8 +382,11 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('分享动态', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 12),
+              const Center(
+                child: Text('分享动态',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 20),
               SizedBox(
                 height: 88,
                 child: loading
