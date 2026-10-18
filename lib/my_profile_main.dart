@@ -324,6 +324,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   late final List<DiscoverFeed> feeds;
   final AudioPlayer _sonicPlayer = AudioPlayer();
   final ScrollController _profileScrollController = ScrollController();
+  final Map<int, double> _profileTabOffsets = <int, double>{};
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
   bool _tagSaving = false;
@@ -376,6 +377,9 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   void _handleProfileScroll() {
+    if (_profileScrollController.hasClients) {
+      _profileTabOffsets[selectedTab] = _profileScrollController.offset;
+    }
     final shouldShow = _profileScrollController.hasClients &&
         _profileScrollController.offset >= 58;
     if (shouldShow != _showStickyNickname && mounted) {
@@ -626,6 +630,9 @@ class _DDProfilePageState extends State<DDProfilePage>
       return;
     }
     final feed = feeds[tab];
+    if (_profileScrollController.hasClients) {
+      _profileTabOffsets[selectedTab] = _profileScrollController.offset;
+    }
     if (mounted) {
       setState(() {
         _tabSwitching = true;
@@ -648,9 +655,23 @@ class _DDProfilePageState extends State<DDProfilePage>
           tabLoading = false;
           _tabSwitching = false;
         });
+        _restoreProfileTabOffset(targetTab);
       }
     }
   }
+
+  void _restoreProfileTabOffset(int tab) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_profileScrollController.hasClients) return;
+      final position = _profileScrollController.position;
+      final offset = (_profileTabOffsets[tab] ?? 0.0).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      _profileScrollController.jumpTo(offset);
+    });
+  }
+
   Future<void> _refreshProfileOnly() async {
     if (_profileRefreshing) return;
     setState(() => _profileRefreshing = true);
