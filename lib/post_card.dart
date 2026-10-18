@@ -273,7 +273,7 @@ String _formatDiscoverDate(String raw) {
       : '${value.year}年${value.month}月${value.day}日';
 }
 
-class _DiscoverShareSheet extends StatelessWidget {
+class _DiscoverShareSheet extends StatefulWidget {
   const _DiscoverShareSheet({
     required this.post,
     required this.onShare,
@@ -282,6 +282,77 @@ class _DiscoverShareSheet extends StatelessWidget {
   final DDPost post;
   final VoidCallback onShare;
   final VoidCallback onReport;
+
+  @override
+  State<_DiscoverShareSheet> createState() => _DiscoverShareSheetState();
+}
+
+class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
+  List<DDConversation> conversations = const [];
+  bool loading = true;
+  String? error;
+  bool sending = false;
+  final service = DDPostService();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadConversations());
+  }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<String> _token() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) throw Exception('请先登录');
+    return token;
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      final values = await service.fetchImConversations(await _token());
+      if (!mounted) return;
+      setState(() {
+        conversations = values.take(10).toList();
+        loading = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() {
+        loading = false;
+        error = '$e';
+      });
+    }
+  }
+
+  Future<void> _sendTo(DDConversation conversation) async {
+    final peer = conversation.peer;
+    if (peer == null || sending) return;
+    try {
+      setState(() => sending = true);
+      await service.sendImMessage(
+        await _token(),
+        conversation.id,
+        text: widget.post.content.trim().isEmpty
+            ? '分享了一条动态'
+            : widget.post.content.trim(),
+        clientId: 'share-${widget.post.id}-${DateTime.now().microsecondsSinceEpoch}',
+        metadata: {'postId': widget.post.id, 'type': 'post_share'},
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        _showTopNotice(context, const Text('已发送给好友'));
+      }
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -294,36 +365,46 @@ class _DiscoverShareSheet extends StatelessWidget {
               const Text('分享动态', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
               SizedBox(
-                height: 72,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _ShareFriendTile(
-                      label: '更多好友',
-                      icon: TIcons.more,
-                      onTap: () => _showAllMutualFriends(context),
-                    ),
-                  ],
-                ),
+                height: 88,
+                child: loading
+                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                    : error != null
+                        ? Center(child: Text(error!))
+                        : ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              for (final conversation in conversations)
+                                _ConversationShareTile(
+                                  conversation: conversation,
+                                  sending: sending,
+                                  onSend: () => _sendTo(conversation),
+                                ),
+                              _ShareFriendTile(
+                                label: '更多好友',
+                                icon: TIcons.more,
+                                onTap: () => _showAllMutualFriends(context),
+                              ),
+                            ],
+                          ),
               ),
               const Divider(height: 24),
               Wrap(
                 spacing: 8,
                 children: [
-                  _ShareAction(label: '微信', icon: TIcons.logo_wechat, onTap: onShare),
-                  _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: onShare),
-                  _ShareAction(label: '复制链接', icon: TIcons.link, onTap: onShare),
-                  _ShareAction(label: '更多', icon: TIcons.more, onTap: onShare),
+                  _ShareAction(label: '微信', icon: TIcons.logo_wechat, onTap: widget.onShare),
+                  _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: widget.onShare),
+                  _ShareAction(label: '复制链接', icon: TIcons.link, onTap: widget.onShare),
+                  _ShareAction(label: '更多', icon: TIcons.more, onTap: widget.onShare),
                 ],
               ),
               const Divider(height: 24),
               Wrap(
                 spacing: 8,
                 children: [
-                  _ShareAction(label: '私聊', icon: TIcons.chat, onTap: onShare),
-                  _ShareAction(label: '关注', icon: TIcons.user_add, onTap: onShare),
-                  _ShareAction(label: '送礼', icon: TIcons.gift, onTap: onShare),
-                  _ShareAction(label: '举报', icon: TIcons.report, onTap: onReport),
+                  _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onShare),
+                  _ShareAction(label: '关注', icon: TIcons.user_add, onTap: widget.onShare),
+                  _ShareAction(label: '送礼', icon: TIcons.gift, onTap: widget.onShare),
+                  _ShareAction(label: '举报', icon: TIcons.report, onTap: widget.onReport),
                 ],
               ),
             ],
@@ -336,7 +417,46 @@ class _DiscoverShareSheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       builder: (_) => const SafeArea(
-        child: Center(child: Text('互关好友列表暂未加载')),
+        child: Center(child: Text('互关好友列表接口尚未提供')),
+      ),
+    );
+  }
+}
+
+class _ConversationShareTile extends StatelessWidget {
+  const _ConversationShareTile({required this.conversation, required this.sending, required this.onSend});
+  final DDConversation conversation;
+  final bool sending;
+  final VoidCallback onSend;
+  @override
+  Widget build(BuildContext context) {
+    final peer = conversation.peer;
+    final avatar = peer?.avatarUrl ?? peer?.avatarKey ?? '';
+    return SizedBox(
+      width: 86,
+      child: Column(
+        children: [
+          SizedBox(
+            width: 38,
+            height: 38,
+            child: ClipOval(
+              child: _PermanentCachedImage(
+                url: avatar,
+                fit: BoxFit.cover,
+                placeholder: const Icon(Icons.person_outline, size: 18),
+              ),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(peer?.nickname ?? '好友', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+          SizedBox(
+            height: 24,
+            child: TextButton(
+              onPressed: sending ? null : onSend,
+              child: const Text('发送', style: TextStyle(fontSize: 11)),
+            ),
+          ),
+        ],
       ),
     );
   }
