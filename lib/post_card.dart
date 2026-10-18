@@ -286,6 +286,7 @@ class _DiscoverShareSheet extends StatefulWidget {
   final DDPost post;
   final Future<void> Function(String peerId)? onSendToFriend;
   final VoidCallback onShare;
+  final Future<void> Function(String peerId)? onSendToFriend;
   final VoidCallback onReport;
   final VoidCallback? onDirectChat;
   final VoidCallback? onFollow;
@@ -408,7 +409,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
               Wrap(
                 spacing: 8,
                 children: [
-                  _ShareAction(label: '微信', icon: TIcons.logo_wechat, onTap: widget.onShare),
+                  _ShareAction(label: '微信', icon: TIcons.logo_wechat_stroke, onTap: widget.onShare),
                   _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: widget.onShare),
                   _ShareAction(label: '复制链接', icon: TIcons.link, onTap: () => _copyPostLink(context)),
                   _ShareAction(label: '更多', icon: TIcons.more, onTap: widget.onShare),
@@ -421,7 +422,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                   _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onDirectChat ?? () => _openDirectChat(context)),
                   _ShareAction(label: '关注', icon: TIcons.user_add, onTap: widget.onFollow ?? () => _toggleFollow(context)),
                   _ShareAction(label: '送礼', icon: TIcons.gift, onTap: widget.onGift ?? () => _openGift(context)),
-                  _ShareAction(label: '举报', icon: TIcons.report, onTap: widget.onReport),
+                  _ShareAction(label: '举报', icon: TIcons.bug_report, onTap: widget.onReport),
                 ],
               ),
             ],
@@ -560,6 +561,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     required this.onLike,
     required this.onFavorite,
     required this.onShare,
+    this.onSendToFriend,
     required this.onReport,
     required this.onOpen,
   });
