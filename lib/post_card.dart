@@ -547,25 +547,25 @@ class _ConversationShareTile extends StatelessWidget {
     final peer = conversation.peer;
     final avatar = peer?.avatarUrl ?? peer?.avatarKey ?? '';
     return SizedBox(
-      width: 86,
+      width: 72,
       child: InkWell(
         onTap: () => _confirmSend(context),
         borderRadius: BorderRadius.circular(10),
         child: Column(
           children: [
             SizedBox(
-              width: 38,
-              height: 38,
+              width: 50,
+              height: 50,
               child: ClipOval(
                 child: _PermanentCachedImage(
                   url: avatar,
                   fit: BoxFit.cover,
-                  placeholder: const Icon(Icons.person_outline, size: 18),
+                  placeholder: const Icon(Icons.person_outline, size: 23),
                 ),
               ),
             ),
-            const SizedBox(height: 3),
-            Text(peer?.nickname ?? '好友', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+            const SizedBox(height: 6),
+            Text(peer?.nickname ?? '好友', maxLines: 1, overflow: TextOverflow.ellipsis, ),
           ],
         ),
       ),
