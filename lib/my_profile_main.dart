@@ -871,6 +871,35 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
   }
 
+  final _profilePendingLikes = <int>{};
+  final _profilePendingFavorites = <int>{};
+
+  Future<void> _profileLike(DDPost post) async {
+    if (!_profilePendingLikes.add(post.id)) return;
+    try {
+      await service.toggleLike(await _token(), post.id);
+      final updated = post.copyWith(liked: !post.liked, likes: post.likes + (post.liked ? -1 : 1));
+      for (final feed in feeds) feed.updateLike(updated);
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    } finally {
+      _profilePendingLikes.remove(post.id);
+    }
+  }
+
+  Future<void> _profileFavorite(DDPost post) async {
+    if (!_profilePendingFavorites.add(post.id)) return;
+    try {
+      await service.toggleFavorite(await _token(), post.id);
+      final updated = post.copyWith(favorited: !post.favorited, favorites: post.favorites + (post.favorited ? -1 : 1));
+      for (final feed in feeds) feed.updateFavorite(updated);
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    } finally {
+      _profilePendingFavorites.remove(post.id);
+    }
+  }
+
   List<Widget> _profileSlivers(int tab) {
     final feed = feeds[tab];
     return [
@@ -883,6 +912,8 @@ class _DDProfilePageState extends State<DDProfilePage>
               return _MyProfileKeepAliveCard(
                 key: ValueKey('${tab}:${post.id}'),
                 post: post,
+                onLike: () => _profileLike(post),
+                onFavorite: () => _profileFavorite(post),
                 onDelete: () => _deleteMyPost(post),
                 onTap: () async {
                   final changed = await Navigator.push<bool>(

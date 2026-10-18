@@ -282,6 +282,7 @@ class _DiscoverShareSheet extends StatefulWidget {
     this.onDirectChat,
     this.onFollow,
     this.onGift,
+    this.onDelete,
   });
   final DDPost post;
   final Future<void> Function(String peerId)? onSendToFriend;
@@ -290,6 +291,7 @@ class _DiscoverShareSheet extends StatefulWidget {
   final VoidCallback? onDirectChat;
   final VoidCallback? onFollow;
   final VoidCallback? onGift;
+  final VoidCallback? onDelete;
 
   @override
   State<_DiscoverShareSheet> createState() => _DiscoverShareSheetState();
@@ -415,7 +417,13 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onDirectChat ?? () => _openDirectChat(context)),
+                  if (widget.onDelete != null)
+                    _ShareAction(label: '删除', icon: Icons.delete_outline, onTap: () {
+                      Navigator.pop(context);
+                      widget.onDelete!.call();
+                    }),
+                  if (widget.onDelete == null)
+                    _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onDirectChat ?? () => _openDirectChat(context)),
                   _ShareAction(
                     label: widget.post.following ? '已关注' : '关注',
                     icon: widget.post.following ? TIcons.user_checked : TIcons.user_add,
@@ -745,6 +753,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback? onDirectChat;
   final VoidCallback? onFollow;
   final VoidCallback? onGift;
+  final VoidCallback? onDelete;
   final VoidCallback onReport;
   final VoidCallback onOpen;
 
@@ -792,6 +801,7 @@ class _DiscoverProfileCard extends StatelessWidget {
         onDirectChat: onDirectChat,
         onFollow: onFollow,
         onGift: onGift,
+        onDelete: onDelete,
       ),
     );
   }

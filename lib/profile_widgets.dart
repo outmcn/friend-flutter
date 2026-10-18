@@ -219,260 +219,27 @@ class _MyProfilePostCard extends StatelessWidget {
     required this.post,
     this.onLike,
     this.onFavorite,
-    this.onSendToFriend,
-    this.onShare,
-    this.onDirectChat,
-    this.onFollow,
-    this.onGift,
-    this.onReport,
     this.onDelete,
-    this.onOpen,
     this.onTap,
   });
-
   final DDPost post;
   final VoidCallback? onLike;
   final VoidCallback? onFavorite;
-  final VoidCallback? onShare;
-  final Future<void> Function(String peerId)? onSendToFriend;
-  final VoidCallback? onDirectChat;
-  final VoidCallback? onFollow;
-  final VoidCallback? onGift;
-  final VoidCallback? onReport;
   final VoidCallback? onDelete;
-  final VoidCallback? onOpen;
   final VoidCallback? onTap;
 
-  Widget _media({required String url, required bool thumbnail}) {
-    return _DiscoverMediaImage(url: url);
-  }
-
-  Widget _action({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-    bool active = false,
-  }) => Expanded(
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon,
-                    size: 20,
-                    color: active
-                        ? Theme.of(context).colorScheme.primary
-                        : null),
-                const SizedBox(width: 4),
-                Text(label),
-              ],
-            ),
-          ),
-        ),
-      );
-
-  void _showDiscoverMore(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Center(
-                child: Text('更多操作', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _ShareAction(label: '置顶', icon: Icons.push_pin_outlined, onTap: () => Navigator.pop(sheetContext)),
-                  _ShareAction(label: '权限', icon: TIcons.browse, onTap: () => _showVisibility(sheetContext)),
-                  _ShareAction(label: '私密', icon: Icons.lock_outline, onTap: () => _setPrivate(sheetContext)),
-                  _ShareAction(label: '删除', icon: Icons.delete_outline, onTap: () => _deleteOwnPost(sheetContext)),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showVisibility(BuildContext context) {
-    Navigator.pop(context);
-    _showTopNotice(context, const Text('当前权限：所有人可见'));
-  }
-
-  void _setPrivate(BuildContext context) {
-    Navigator.pop(context);
-    _showTopNotice(context, const Text('已设为仅自己可见'));
-  }
-
-  void _deleteOwnPost(BuildContext context) {
-    Navigator.pop(context);
-    onDelete?.call();
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final hasMedia = (post.imageUrl?.trim().isNotEmpty == true) ||
-        (post.videoUrl?.trim().isNotEmpty == true);
-    return InkWell(
-      onTap: onTap ?? onOpen,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipOval(
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: post.avatar.trim().isEmpty
-                    ? const Icon(Icons.person_outline)
-                    : _PermanentCachedImage(
-                        url: post.avatar,
-                        fit: BoxFit.cover,
-                        placeholder: const Icon(Icons.person_outline),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Flexible(
-                                  child: Text(post.nickname,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                      )),
-                                ),
-                                if (post.distanceKm != null &&
-                                    post.distanceKm! <= 30)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 6),
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        color: const Color(0x2234C759),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 5, vertical: 2),
-                                        child: Text(
-                                          '${post.distanceKm!.toStringAsFixed(2)}km',
-                                          style: const TextStyle(
-                                            color: Color(0xFF34C759),
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                '${_formatDiscoverDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.55),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: '分享',
-                        onPressed: () => _showDiscoverMore(context),
-                        icon: const Icon(TIcons.share_1),
-                        iconSize: 20,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints.tightFor(
-                          width: 32,
-                          height: 32,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (post.content.trim().isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 5, bottom: 5),
-                      child: _DiscoverPostContent(
-                        text: post.content.trim(),
-                        maxLines: hasMedia ? 3 : 10,
-                      ),
-                    ),
-                  if (post.imageUrl?.trim().isNotEmpty == true) ...[
-                    const SizedBox(height: 10),
-                    _media(url: post.imageUrl!.trim(), thumbnail: false),
-                  ] else if (post.videoUrl?.trim().isNotEmpty == true) ...[
-                    const SizedBox(height: 10),
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        _media(url: post.thumbnailUrl?.trim().isNotEmpty == true ? post.thumbnailUrl!.trim() : post.videoUrl!.trim(), thumbnail: post.thumbnailUrl?.trim().isNotEmpty == true),
-                        const Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _action(
-                        context: context,
-                        icon: post.liked ? TIcons.heart_filled : TIcons.heart,
-                        label: '${post.likes}',
-                        onTap: onLike ?? () {},
-                        active: post.liked,
-                      ),
-                      _action(
-                        context: context,
-                        icon: post.favorited ? TIcons.bookmark_filled : TIcons.bookmark,
-                        label: '${post.favorites}',
-                        onTap: onFavorite ?? () {},
-                        active: post.favorited,
-                      ),
-                      _action(context: context, icon: TIcons.chat_bubble_1,
-                          label: '${post.comments}', onTap: onOpen),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _DiscoverProfileCard(
+        post: post,
+        onLike: onLike ?? () {},
+        onFavorite: onFavorite ?? () {},
+        onShare: onTap ?? () {},
+        onDelete: onDelete,
+        onReport: () {},
+        onOpen: onTap ?? () {},
+      );
 }
+
 class _ProfileLikePill extends StatelessWidget {
   const _ProfileLikePill({
     required this.liked,
