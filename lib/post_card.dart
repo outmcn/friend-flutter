@@ -276,6 +276,7 @@ String _formatDiscoverDate(String raw) {
 class _DiscoverShareSheet extends StatefulWidget {
   const _DiscoverShareSheet({
     required this.post,
+    this.onSendToFriend,
     required this.onShare,
     required this.onReport,
     this.onDirectChat,
@@ -283,6 +284,7 @@ class _DiscoverShareSheet extends StatefulWidget {
     this.onGift,
   });
   final DDPost post;
+  final Future<void> Function(String peerId)? onSendToFriend;
   final VoidCallback onShare;
   final VoidCallback onReport;
   final VoidCallback? onDirectChat;
@@ -463,7 +465,10 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
               ),
               title: Text('${friend['nickname'] ?? '好友'}'),
               trailing: FilledButton(
-                onPressed: () => Navigator.pop(sheetContext),
+                onPressed: () async {
+                  await onSendToFriend?.call('${friend['id'] ?? ''}');
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                },
                 child: const Text('发送'),
               ),
             );

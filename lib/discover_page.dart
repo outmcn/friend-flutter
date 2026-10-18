@@ -121,6 +121,22 @@ class _DiscoverPageState extends State<DiscoverPage> {
     if (mounted) _showTopNotice(context, const SnackBar(content: Text('动态内容已复制，可粘贴分享')));
   }
 
+  Future<void> _sendPostToFriend(String peerId, DDPost post) async {
+    try {
+      final conversationId = await service.createDirectConversation(await _token(), peerId);
+      await service.sendImMessage(
+        await _token(),
+        conversationId,
+        text: post.content.trim().isEmpty ? '分享了一条动态' : post.content.trim(),
+        clientId: 'share-${post.id}-${DateTime.now().microsecondsSinceEpoch}',
+        metadata: {'postId': post.id, 'type': 'post_share'},
+      );
+      if (mounted) _showTopNotice(context, const Text('已发送给好友'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
   Future<void> _openPostDirectChat(DDPost post) async {
     if (post.userId == null) return;
     try {
@@ -458,6 +474,7 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       onLike: () => widget.onLike(post),
       onFavorite: () => widget.onFavorite(post),
       onShare: () => widget.onShare(post),
+      onSendToFriend: (peerId) => _sendPostToFriend(peerId, post),
       onReport: () => widget.onReport(post),
       onDirectChat: () => _openPostDirectChat(post),
       onFollow: () => _followPostAuthor(post),
