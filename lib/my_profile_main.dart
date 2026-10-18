@@ -880,7 +880,7 @@ class _DDProfilePageState extends State<DDProfilePage>
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final post = feed.posts[index];
-              return _MyProfilePostCard(
+              return _MyProfileKeepAliveCard(
                 key: ValueKey('${tab}:${post.id}'),
                 post: post,
                 onDelete: () => _deleteMyPost(post),
@@ -1371,6 +1371,51 @@ class _DDProfilePageState extends State<DDProfilePage>
 
             ],
           ),
+    );
+  }
+}
+
+class _MyProfileKeepAliveCard extends StatefulWidget {
+  const _MyProfileKeepAliveCard({
+    super.key,
+    required this.post,
+    required this.onDelete,
+    required this.onTap,
+  });
+  final DDPost post;
+  final VoidCallback onDelete;
+  final VoidCallback onTap;
+
+  @override
+  State<_MyProfileKeepAliveCard> createState() => _MyProfileKeepAliveCardState();
+}
+
+class _MyProfileKeepAliveCardState extends State<_MyProfileKeepAliveCard>
+    with AutomaticKeepAliveClientMixin<_MyProfileKeepAliveCard> {
+  late DDPost post;
+
+  @override
+  void initState() {
+    super.initState();
+    post = widget.post;
+  }
+
+  @override
+  void didUpdateWidget(covariant _MyProfileKeepAliveCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    post = widget.post;
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return _MyProfilePostCard(
+      post: post,
+      onDelete: widget.onDelete,
+      onTap: widget.onTap,
     );
   }
 }
