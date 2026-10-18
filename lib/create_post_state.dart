@@ -292,7 +292,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     child: TextField(
                       controller: _content,
                       autofocus: true,
-                      maxLines: 14,
+                      maxLines: 7,
                       maxLength: 300,
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
