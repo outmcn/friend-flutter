@@ -505,35 +505,56 @@ class _ConversationShareTile extends StatelessWidget {
   final DDConversation conversation;
   final bool sending;
   final VoidCallback onSend;
+
+  Future<void> _confirmSend(BuildContext context) async {
+    if (sending) return;
+    final peerName = conversation.peer?.nickname ?? '好友';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认分享'),
+        content: Text('确定把这条动态发送给 $peerName 吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('发送'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) onSend();
+  }
+
   @override
   Widget build(BuildContext context) {
     final peer = conversation.peer;
     final avatar = peer?.avatarUrl ?? peer?.avatarKey ?? '';
     return SizedBox(
       width: 86,
-      child: Column(
-        children: [
-          SizedBox(
-            width: 38,
-            height: 38,
-            child: ClipOval(
-              child: _PermanentCachedImage(
-                url: avatar,
-                fit: BoxFit.cover,
-                placeholder: const Icon(Icons.person_outline, size: 18),
+      child: InkWell(
+        onTap: () => _confirmSend(context),
+        borderRadius: BorderRadius.circular(10),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 38,
+              height: 38,
+              child: ClipOval(
+                child: _PermanentCachedImage(
+                  url: avatar,
+                  fit: BoxFit.cover,
+                  placeholder: const Icon(Icons.person_outline, size: 18),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 3),
-          Text(peer?.nickname ?? '好友', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
-          SizedBox(
-            height: 24,
-            child: TextButton(
-              onPressed: sending ? null : onSend,
-              child: const Text('发送', style: TextStyle(fontSize: 11)),
-            ),
-          ),
-        ],
+            const SizedBox(height: 3),
+            Text(peer?.nickname ?? '好友', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+          ],
+        ),
       ),
     );
   }
