@@ -303,111 +303,60 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     ),
                   ),
                 ),
-                if (selectedImage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 10, top: 4),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.file(
-                        File(selectedImage!.path),
-                        width: 72,
-                        height: 72,
-                        fit: BoxFit.cover,
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: _pickMedia,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: selectedImage != null
+                              ? Image.file(File(selectedImage!.path), fit: BoxFit.cover)
+                              : selectedVideo != null
+                                  ? FutureBuilder<Uint8List?>(
+                                      future: VideoThumbnail.thumbnailData(
+                                        video: selectedVideo!.path,
+                                        imageFormat: ImageFormat.JPEG,
+                                        maxWidth: 160,
+                                        quality: 82,
+                                      ),
+                                      builder: (_, snapshot) => snapshot.data == null
+                                          ? const ColoredBox(color: Colors.transparent)
+                                          : Image.memory(snapshot.data!, fit: BoxFit.cover),
+                                    )
+                                  : DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Theme.of(context).colorScheme.outline),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(Icons.add, size: 28),
+                                    ),
+                        ),
                       ),
-                    ),
+                      if (selectedImage != null || selectedVideo != null)
+                        Positioned(
+                          top: -8,
+                          right: -8,
+                          child: IconButton.filled(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(width: 24, height: 24),
+                            onPressed: _clearImage,
+                            icon: const Icon(Icons.close, size: 16),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
             if (error != null) ...[
               const SizedBox(height: 8),
               Text(error!, style: const TextStyle(color: Colors.orange)),
             ],
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: GestureDetector(
-                onTap: _pickMedia,
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.add, size: 28),
-                ),
-              ),
-            ),
-            if (selectedImage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.file(
-                        File(selectedImage!.path),
-                        height: 180,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: IconButton.filled(
-                        onPressed: _clearImage,
-                        icon: const Icon(Icons.close),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (selectedVideo != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Stack(
-                  children: [
-                    FutureBuilder<Uint8List?>(
-                      future: VideoThumbnail.thumbnailData(
-                        video: selectedVideo!.path,
-                        imageFormat: ImageFormat.JPEG,
-                        maxWidth: 720,
-                        quality: 82,
-                      ),
-                      builder: (context, snapshot) => ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SizedBox(
-                          height: 180,
-                          width: double.infinity,
-                          child: snapshot.data == null
-                              ? const ColoredBox(color: Colors.transparent)
-                              : Image.memory(snapshot.data!, fit: BoxFit.cover),
-                        ),
-                      ),
-                    ),
-                    const Positioned.fill(
-                      child: Center(
-                        child: Icon(
-                          Icons.play_circle_outline,
-                          size: 56,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: IconButton.filled(
-                        onPressed: _clearImage,
-                        icon: const Icon(Icons.close),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             const SizedBox(height: 8),
             ListTile(
               leading: const Icon(TIcons.browse),
