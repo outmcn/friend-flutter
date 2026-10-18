@@ -579,11 +579,23 @@ class _ShareFriendTile extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(40),
         child: SizedBox(
           width: 72,
-          child: Column(children: [Icon(icon, size: 32), const SizedBox(height: 4), Text(label, overflow: TextOverflow.ellipsis)],),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: Icon(icon, size: 23),
+              ),
+              const SizedBox(height: 6),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
         ),
       );
 }
