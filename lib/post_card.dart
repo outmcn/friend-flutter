@@ -416,7 +416,8 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
               ),
               const Divider(height: 24),
               Wrap(
-                spacing: 8,
+                spacing: 12,
+                runSpacing: 12,
                 children: [
                   _ShareAction(label: '微信', icon: TIcons.logo_wechat_stroke, onTap: widget.onShare),
                   _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: widget.onShare),
@@ -426,7 +427,8 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
               ),
               const Divider(height: 24),
               Wrap(
-                spacing: 8,
+                spacing: 12,
+                runSpacing: 12,
                 children: [
                   _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onDirectChat ?? () => _openDirectChat(context)),
                   _ShareAction(label: '关注', icon: TIcons.user_add, onTap: widget.onFollow ?? () => _toggleFollow(context)),
@@ -580,8 +582,27 @@ class _ShareAction extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+
   @override
-  Widget build(BuildContext context) => ActionChip(avatar: Icon(icon, size: 18), label: Text(label), onPressed: onTap);
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(40),
+        child: SizedBox(
+          width: 72,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: Icon(icon, size: 23),
+              ),
+              const SizedBox(height: 6),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      );
 }
 
 class _DiscoverProfileCard extends StatelessWidget {
