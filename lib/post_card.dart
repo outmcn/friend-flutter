@@ -410,7 +410,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                 children: [
                   _ShareAction(label: '微信', icon: TIcons.logo_wechat, onTap: widget.onShare),
                   _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: widget.onShare),
-                  _ShareAction(label: '复制链接', icon: TIcons.link, onTap: widget.onShare),
+                  _ShareAction(label: '复制链接', icon: TIcons.link, onTap: () => _copyPostLink(context)),
                   _ShareAction(label: '更多', icon: TIcons.more, onTap: widget.onShare),
                 ],
               ),
@@ -428,6 +428,14 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
           ),
         ),
       );
+
+  Future<void> _copyPostLink(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: '动态 ${post.id}'));
+    if (context.mounted) {
+      Navigator.pop(context);
+      _showTopNotice(context, const Text('链接已复制'));
+    }
+  }
 
   void _openDirectChat(BuildContext context) {
     Navigator.pop(context);
