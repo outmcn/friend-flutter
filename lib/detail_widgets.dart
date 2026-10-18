@@ -47,7 +47,8 @@ class _PostImageHolder extends StatelessWidget {
           minScale: 1,
           maxScale: 5,
           panEnabled: true,
-          boundaryMargin: const EdgeInsets.all(double.infinity),
+          boundaryMargin: EdgeInsets.zero,
+          constrained: true,
           child: SizedBox.expand(
             child: _PermanentCachedImage(
               url: url,
