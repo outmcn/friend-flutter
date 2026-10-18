@@ -355,13 +355,13 @@ class _DDProfilePageState extends State<DDProfilePage>
     });
     feeds = List.generate(
         3,
-        (tab) => DiscoverFeed((_) async {
+        (tab) => DiscoverFeed((offset) async {
               final token = await _token();
               final loaded = tab == 0
-                  ? await service.fetchMyPosts(token)
+                  ? await service.fetchMyPosts(token, offset: offset)
                   : tab == 1
-                      ? await service.fetchFavoritedPosts(token)
-                      : await service.fetchLikedPosts(token);
+                      ? await service.fetchFavoritedPosts(token, offset: offset)
+                      : await service.fetchLikedPosts(token, offset: offset);
               return Future.wait(
                   loaded.map((post) => service.resolvePostMedia(token, post)));
             }, cacheKey: 'dd.profile.my.tab.$tab'));

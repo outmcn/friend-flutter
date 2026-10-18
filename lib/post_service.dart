@@ -585,21 +585,21 @@ class DDPostService {
         preserveMediaKeys: true);
   }
 
-  Future<List<DDPost>> fetchMyPosts(String token) async {
-    return _fetchProfilePosts(token, '/me/posts');
+  Future<List<DDPost>> fetchMyPosts(String token, {int offset = 0}) async {
+    return _fetchProfilePosts(token, '/me/posts', offset: offset);
   }
 
-  Future<List<DDPost>> fetchLikedPosts(String token) async {
-    return _fetchProfilePosts(token, '/me/liked-posts');
+  Future<List<DDPost>> fetchLikedPosts(String token, {int offset = 0}) async {
+    return _fetchProfilePosts(token, '/me/liked-posts', offset: offset);
   }
 
-  Future<List<DDPost>> fetchFavoritedPosts(String token) async {
-    return _fetchProfilePosts(token, '/me/favorited-posts');
+  Future<List<DDPost>> fetchFavoritedPosts(String token, {int offset = 0}) async {
+    return _fetchProfilePosts(token, '/me/favorited-posts', offset: offset);
   }
 
-  Future<List<DDPost>> _fetchProfilePosts(String token, String path) async {
+  Future<List<DDPost>> _fetchProfilePosts(String token, String path, {int offset = 0}) async {
     final response = await _client.get(
-      _api(path),
+      Uri.parse('\${_api(path)}?offset=\$offset&limit=30'),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body);
