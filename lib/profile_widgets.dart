@@ -237,7 +237,7 @@ class _MyProfilePostCard extends StatelessWidget {
     this.onFollow,
     this.onGift,
     this.onReport,
-    required this.onOpen,
+    this.onOpen,
     this.onTap,
   });
 
@@ -291,9 +291,9 @@ class _MyProfilePostCard extends StatelessWidget {
       showDragHandle: true,
       builder: (sheetContext) => _DiscoverShareSheet(
         post: post,
-        onShare: onShare,
+        onShare: onShare ?? () {},
         onSendToFriend: onSendToFriend,
-        onReport: onReport,
+        onReport: onReport ?? () {},
         onDirectChat: onDirectChat,
         onFollow: onFollow,
         onGift: onGift,
@@ -430,14 +430,14 @@ class _MyProfilePostCard extends StatelessWidget {
                         context: context,
                         icon: post.liked ? TIcons.heart_filled : TIcons.heart,
                         label: '${post.likes}',
-                        onTap: onLike,
+                        onTap: onLike ?? () {},
                         active: post.liked,
                       ),
                       _action(
                         context: context,
                         icon: post.favorited ? TIcons.star_1_filled : TIcons.star_1,
                         label: '${post.favorites}',
-                        onTap: onFavorite,
+                        onTap: onFavorite ?? () {},
                         active: post.favorited,
                       ),
                       _action(context: context, icon: TIcons.chat_bubble_1,
