@@ -324,6 +324,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   late final List<DiscoverFeed> feeds;
   final pendingLikes = <int>{};
   final pendingFavorites = <int>{};
+  final _profileCardKeys = <String, GlobalKey>{};
   final AudioPlayer _sonicPlayer = AudioPlayer();
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
@@ -931,8 +932,17 @@ class _DDProfilePageState extends State<DDProfilePage>
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final post = feed.posts[index];
+              if (index + 1 < feed.posts.length) {
+                final next = feed.posts[index + 1];
+                if (next.imageUrl?.isNotEmpty == true) {
+                  unawaited(_PermanentImageCache.prefetch(next.imageUrl!));
+                }
+                if (next.thumbnailUrl?.isNotEmpty == true) {
+                  unawaited(_PermanentImageCache.prefetch(next.thumbnailUrl!));
+                }
+              }
               return _DiscoverFeedCard(
-                key: ValueKey('${tab}:${post.id}'),
+                key: _profileCardKeys.putIfAbsent('${tab}:${post.id}', GlobalKey.new),
                 feed: feed,
                 post: post,
                 onLike: (value) => _profileLike(value),
@@ -951,6 +961,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                       builder: (_) => DynamicDetailPage(
                         postId: value.id,
                         initialPost: value,
+                        cardKey: _profileCardKeys['${tab}:${value.id}'],
                       ),
                     ),
                   );
