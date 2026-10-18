@@ -823,6 +823,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                 childCount: feed.posts.length,
               ),
             ),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(24),
