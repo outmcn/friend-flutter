@@ -902,7 +902,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (submitted == true && mounted) _showTopNotice(context, const Text('举报已提交'));
   }
 
-  List<Widget> _profileFeedShellSlivers(int tab) {
+  List<Widget> _sharedFeedShellSlivers(int tab) {
     final shell = FeedShellController(
       feeds: feeds,
       cardKeys: _profileCardKeys,
@@ -1364,7 +1364,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ),
                     ),
                   ),
-                  ..._profileFeedShellSlivers(selectedTab),
+                  ..._sharedFeedShellSlivers(selectedTab),
                 ],
               ),
               ),
