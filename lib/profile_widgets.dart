@@ -191,7 +191,6 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
           post: post,
           onLike: () {},
           onFavorite: () {},
-          onReport: () {},
           onOpen: () {},
           onTap: () async {
             final changed = await Navigator.push<bool>(

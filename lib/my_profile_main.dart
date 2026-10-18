@@ -1410,10 +1410,14 @@ class _MyProfileKeepAliveCard extends StatefulWidget {
   const _MyProfileKeepAliveCard({
     super.key,
     required this.post,
+    required this.onLike,
+    required this.onFavorite,
     required this.onDelete,
     required this.onTap,
   });
   final DDPost post;
+  final VoidCallback onLike;
+  final VoidCallback onFavorite;
   final VoidCallback onDelete;
   final VoidCallback onTap;
 
@@ -1445,6 +1449,8 @@ class _MyProfileKeepAliveCardState extends State<_MyProfileKeepAliveCard>
     super.build(context);
     return _MyProfilePostCard(
       post: post,
+      onLike: widget.onLike,
+      onFavorite: widget.onFavorite,
       onDelete: widget.onDelete,
       onTap: widget.onTap,
     );
