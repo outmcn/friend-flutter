@@ -282,21 +282,41 @@ class _CreatePostPageState extends State<CreatePostPage> {
         body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            TextField(
-              controller: _content,
-              autofocus: true,
-              maxLines: 7,
-              maxLength: 300,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: '发一条动态吧～',
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: false,
-                alignLabelWithHint: true,
-                contentPadding: EdgeInsets.zero,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _content,
+                    autofocus: true,
+                    maxLines: 7,
+                    maxLength: 300,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: '发一条动态吧～',
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      alignLabelWithHint: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+                if (selectedImage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10, top: 4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.file(
+                        File(selectedImage!.path),
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             if (error != null) ...[
               const SizedBox(height: 8),
