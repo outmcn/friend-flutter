@@ -139,8 +139,29 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Future<void> _openPostDirectChat(DDPost post) async {
     if (post.userId == null) return;
     try {
-      final id = await service.createDirectConversation(await _token(), '${post.userId}');
-      if (mounted) _showTopNotice(context, Text('私聊已创建：$id'));
+      final conversationId = await service.createDirectConversation(await _token(), '${post.userId}');
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _ChatDetailPage(
+            chat: _ChatPreview(
+              post.nickname,
+              '开始聊天',
+              post.avatar,
+              null,
+              '${post.userId}',
+              conversationId,
+              0,
+              null,
+              null,
+              'dm',
+              false,
+              false,
+            ),
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
     }
