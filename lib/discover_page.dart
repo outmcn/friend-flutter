@@ -423,8 +423,41 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 }),
           ],
         ),
-        body:
-            IndexedStack(index: selectedTab, children: List.generate(3, _list)),
+        body: FeedShell(
+          tabs: const [
+            FeedShellTab(title: '推荐', cacheKey: 'dd.discover.feed.0', fetch: _feedShellUnusedFetch),
+            FeedShellTab(title: '本地', cacheKey: 'dd.discover.feed.1', fetch: _feedShellUnusedFetch),
+            FeedShellTab(title: '关注', cacheKey: 'dd.discover.feed.2', fetch: _feedShellUnusedFetch),
+          ],
+          externalFeeds: feeds,
+          showTabs: false,
+          embedded: true,
+          disposeFeeds: false,
+          selectedTab: selectedTab,
+          onTabChanged: (tab) {
+            if (!mounted) return;
+            setState(() => selectedTab = tab);
+            if (tab == 1 && _discoverLocalTabLabel == '本地') {
+              unawaited(_loadDiscoverCity());
+            }
+            final feed = feeds[tab];
+            if (!feed.initialized) {
+              unawaited(feed.restoreCache().then((_) {
+                if (!feed.initialized) return feed.load();
+                return Future<void>.value();
+              }));
+            }
+          },
+          onLike: _like,
+          onFavorite: _favorite,
+          onShare: _share,
+          onSendToFriend: _sendPostToFriend,
+          onDirectChat: _openPostDirectChat,
+          onFollow: _followPostAuthor,
+          onGift: _openPostGift,
+          onReport: _report,
+          onOpen: _open,
+        ),
       );
 
   @override

@@ -1,5 +1,7 @@
 part of 'main.dart';
 
+Future<List<DDPost>> _feedShellUnusedFetch(int _) async => const <DDPost>[];
+
 class FeedShellTab {
   const FeedShellTab({
     required this.title,
@@ -16,6 +18,12 @@ class FeedShell extends StatefulWidget {
   const FeedShell({
     super.key,
     required this.tabs,
+    this.externalFeeds,
+    this.showTabs = true,
+    this.disposeFeeds = true,
+    this.embedded = false,
+    this.selectedTab,
+    this.onTabChanged,
     required this.onLike,
     required this.onFavorite,
     required this.onShare,
@@ -30,6 +38,12 @@ class FeedShell extends StatefulWidget {
   });
 
   final List<FeedShellTab> tabs;
+  final List<DiscoverFeed>? externalFeeds;
+  final bool showTabs;
+  final bool disposeFeeds;
+  final bool embedded;
+  final int? selectedTab;
+  final ValueChanged<int>? onTabChanged;
   final ValueChanged<DDPost> onLike;
   final ValueChanged<DDPost> onFavorite;
   final ValueChanged<DDPost> onShare;
@@ -56,8 +70,8 @@ class _FeedShellState extends State<FeedShell> {
   @override
   void initState() {
     super.initState();
-    selectedTab = widget.initialTab.clamp(0, widget.tabs.length - 1);
-    feeds = widget.tabs.asMap().entries.map((entry) {
+    selectedTab = (widget.selectedTab ?? widget.initialTab).clamp(0, widget.tabs.length - 1);
+    feeds = (widget.externalFeeds ?? widget.tabs.asMap().entries.map((entry) {
       final index = entry.key;
       final tab = entry.value;
       final feed = DiscoverFeed(tab.fetch, cacheKey: tab.cacheKey);
@@ -76,13 +90,13 @@ class _FeedShellState extends State<FeedShell> {
         }));
       }
       return feed;
-    }).toList();
+    }).toList());
   }
 
   @override
   void dispose() {
-    for (final feed in feeds) {
-      feed.dispose();
+    if (widget.disposeFeeds) {
+      for (final feed in feeds) feed.dispose();
     }
     super.dispose();
   }
@@ -170,10 +184,9 @@ class _FeedShellState extends State<FeedShell> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: Column(
+  Widget _content(BuildContext context) => Column(
           children: [
-            SizedBox(
+            if (widget.showTabs) SizedBox(
               height: 48,
               child: Row(
                 children: [
@@ -181,7 +194,12 @@ class _FeedShellState extends State<FeedShell> {
                     Expanded(
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: () => setState(() => selectedTab = entry.key),
+                        onTap: () {
+                          widget.onTabChanged?.call(entry.key);
+                          if (widget.onTabChanged == null) {
+                            setState(() => selectedTab = entry.key);
+                          }
+                        },
                         child: Center(
                           child: Text(
                             entry.value.title,
@@ -200,11 +218,16 @@ class _FeedShellState extends State<FeedShell> {
             ),
             Expanded(
               child: IndexedStack(
-                index: selectedTab,
+                index: widget.selectedTab ?? selectedTab,
                 children: List.generate(widget.tabs.length, _tab),
               ),
             ),
           ],
         ),
       );
+
+  @override
+  Widget build(BuildContext context) => widget.embedded
+      ? _content(context)
+      : Scaffold(body: _content(context));
 }
