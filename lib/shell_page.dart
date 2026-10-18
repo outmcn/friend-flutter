@@ -354,6 +354,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 ...local,
                 'kind': '${local['kind'] ?? 'text'}',
                 'status': '${local['status'] ?? 'sent'}',
+                'metadata': local['metadata'] is Map
+                    ? local['metadata']
+                    : (local['metadata'] is String
+                        ? _decodeConversationMetadata(local['metadata'])
+                        : null),
                 'localDurationSeconds': local['local_duration_seconds'] ??
                     local['localDurationSeconds'],
               });
@@ -858,6 +863,17 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
 String _callPreviewStatus(Map<String, dynamic> row) => ImCall.statusText(row);
 
+Map<String, dynamic>? _decodeConversationMetadata(Object? value) {
+  if (value is Map) return Map<String, dynamic>.from(value);
+  if (value is! String || value.trim().isEmpty) return null;
+  try {
+    final decoded = jsonDecode(value);
+    return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 String? _localMessagePreview(Map<String, dynamic>? row) {
   if (row == null) return null;
   final status = '${row['status'] ?? 'sent'}';
@@ -896,6 +912,7 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
       return '[语音通话]';
     default:
       final text = message.text.trim();
+      if (text.startsWith('动态：')) return text;
       return text.isEmpty ? null : text;
   }
 }
