@@ -802,7 +802,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => _MyProfileGrid(posts: feed.posts, emptyLabel: selectedTab == 0 ? '还没有发布动态' : selectedTab == 1 ? '还没有收藏内容' : '还没有点赞内容', onChanged: _invalidateProfileCacheAndReload),
-                  childCount: index == 0 ? 1 : 0,
+                  childCount: 1,
                 ),
               ),
             ),
