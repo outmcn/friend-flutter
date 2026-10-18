@@ -135,7 +135,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
                     ? ConstrainedBox(
                         constraints: widget.unlimitedHeight
                             ? const BoxConstraints()
-                            : const BoxConstraints(maxHeight: 400),
+                            : const BoxConstraints(maxHeight: 500),
                         child: _PermanentCachedImage(
                           url: widget.thumbnailUrl!,
                           fit: BoxFit.contain,
@@ -178,7 +178,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
             final width = constraints.maxWidth;
             final height = widget.unlimitedHeight
                 ? width / active.value.aspectRatio
-                : math.min(400.0, width / active.value.aspectRatio);
+                : math.min(500.0, width / active.value.aspectRatio);
             return SizedBox(
               width: width,
               height: height,

@@ -63,7 +63,7 @@ class _PostImageHolder extends StatelessWidget {
         child: ConstrainedBox(
           constraints: unlimitedHeight
               ? const BoxConstraints()
-              : const BoxConstraints(maxHeight: 600),
+              : const BoxConstraints(maxHeight: 500),
           child: _PermanentCachedImage(
             url: url,
             fit: BoxFit.contain,
