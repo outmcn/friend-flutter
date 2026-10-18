@@ -273,6 +273,99 @@ String _formatDiscoverDate(String raw) {
       : '${value.year}年${value.month}月${value.day}日';
 }
 
+class _DiscoverShareSheet extends StatelessWidget {
+  const _DiscoverShareSheet({
+    required this.post,
+    required this.onShare,
+    required this.onReport,
+  });
+  final DDPost post;
+  final VoidCallback onShare;
+  final VoidCallback onReport;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('分享动态', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 72,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _ShareFriendTile(
+                      label: '更多好友',
+                      icon: TIcons.more,
+                      onTap: () => _showAllMutualFriends(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 24),
+              Wrap(
+                spacing: 8,
+                children: [
+                  _ShareAction(label: '微信', icon: TIcons.logo_wechat, onTap: onShare),
+                  _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: onShare),
+                  _ShareAction(label: '复制链接', icon: TIcons.link, onTap: onShare),
+                  _ShareAction(label: '更多', icon: TIcons.more, onTap: onShare),
+                ],
+              ),
+              const Divider(height: 24),
+              Wrap(
+                spacing: 8,
+                children: [
+                  _ShareAction(label: '私聊', icon: TIcons.chat, onTap: onShare),
+                  _ShareAction(label: '关注', icon: TIcons.user_add, onTap: onShare),
+                  _ShareAction(label: '送礼', icon: TIcons.gift, onTap: onShare),
+                  _ShareAction(label: '举报', icon: TIcons.report, onTap: onReport),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+
+  void _showAllMutualFriends(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const SafeArea(
+        child: Center(child: Text('互关好友列表暂未加载')),
+      ),
+    );
+  }
+}
+
+class _ShareFriendTile extends StatelessWidget {
+  const _ShareFriendTile({required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: SizedBox(
+          width: 72,
+          child: Column(children: [Icon(icon, size: 32), const SizedBox(height: 4), Text(label, overflow: TextOverflow.ellipsis)],),
+        ),
+      );
+}
+
+class _ShareAction extends StatelessWidget {
+  const _ShareAction({required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => ActionChip(avatar: Icon(icon, size: 18), label: Text(label), onPressed: onTap);
+}
+
 class _DiscoverProfileCard extends StatelessWidget {
   const _DiscoverProfileCard({
     super.key,
@@ -325,27 +418,12 @@ class _DiscoverProfileCard extends StatelessWidget {
   void _showDiscoverMore(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(TIcons.share_1),
-              title: const Text('分享动态'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                onShare();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.report_outlined),
-              title: const Text('举报动态'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                onReport();
-              },
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => _DiscoverShareSheet(
+        post: post,
+        onShare: onShare,
+        onReport: onReport,
       ),
     );
   }
