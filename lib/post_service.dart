@@ -31,6 +31,7 @@ class DDPostService {
     for (var tab = 0; tab < 3; tab++) {
       await prefs.remove('$profileTabCachePrefix$tab');
       await prefs.remove('dd.profile.tab.cache.at.$tab');
+      await prefs.remove('dd.profile.my.tab.$tab');
     }
   }
 
