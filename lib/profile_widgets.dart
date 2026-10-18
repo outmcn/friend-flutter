@@ -81,7 +81,7 @@ class _MyProfileIconTabs extends StatelessWidget {
                       : icon,
                   size: 24,
                   color: selectedTab == index
-                      ? const Color(0xFF1677FF)
+                      ? Theme.of(context).colorScheme.primary
                       : Theme.of(context).hintColor,
                 ),
               ],
