@@ -614,12 +614,39 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   Future<void> _selectProfileTab(int tab) async {
-    if (_tabSwitching || tab == selectedTab) return;
-    setState(() => _tabSwitching = true);
+    if (_tabSwitching) return;
+    if (tab == selectedTab) {
+      if (_profileScrollController.hasClients) {
+        unawaited(_profileScrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        ));
+      }
+      return;
+    }
+    final feed = feeds[tab];
+    setState(() {
+      _tabSwitching = true;
+      selectedTab = tab;
+      posts = feed.posts;
+      tabLoading = !feed.initialized;
+    });
     try {
-      await load(tab: tab);
+      if (!feed.initialized) {
+        await feed.restoreCache();
+        if (!feed.initialized) await feed.load();
+      }
+      if (mounted) setState(() => posts = feed.posts);
+    } catch (error) {
+      if (mounted) _showTopNotice(context, Text('动态加载失败：$error'));
     } finally {
-      if (mounted) setState(() => _tabSwitching = false);
+      if (mounted) {
+        setState(() {
+          tabLoading = false;
+          _tabSwitching = false;
+        });
+      }
     }
   }
   Future<void> _refreshProfileOnly() async {
