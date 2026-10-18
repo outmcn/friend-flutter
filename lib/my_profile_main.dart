@@ -790,57 +790,63 @@ class _DDProfilePageState extends State<DDProfilePage>
     final feed = feeds[tab];
     return AnimatedBuilder(
       animation: feed,
-      builder: (context, _) => RefreshIndicator(
-        onRefresh: () => feed.load(refresh: true),
-        child: CustomScrollView(
-          key: PageStorageKey('profile.$tab'),
-          controller: feed.scroll,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index >= feed.posts.length) return const SizedBox.shrink();
-                  final post = feed.posts[index];
-                  return _MyProfilePostCard(
-                    post: post,
-                    onTap: () async {
-                      final changed = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute<bool>(
-                          builder: (_) => DynamicDetailPage(
-                            postId: post.id,
-                            initialPost: post,
-                          ),
-                        ),
-                      );
-                      if (changed == true) _invalidateProfileCacheAndReload();
-                    },
-                  );
-                },
-                childCount: feed.posts.length,
-              ),
+      builder: (context, _) {
+        final children = <Widget>[
+          for (final post in feed.posts)
+            _MyProfilePostCard(
+              key: ValueKey('${tab}:${post.id}'),
+              post: post,
+              onTap: () async {
+                final changed = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute<bool>(
+                    builder: (_) => DynamicDetailPage(
+                      postId: post.id,
+                      initialPost: post,
+                    ),
+                  ),
+                );
+                if (changed == true) _invalidateProfileCacheAndReload();
+              },
             ),
+          if (feed.error != null)
+            _PageErrorState(
+              title: '动态加载失败',
+              subtitle: feed.error!,
+              onRetry: () => feed.load(refresh: true),
+            )
+          else if (feed.restoring || (feed.busy && feed.posts.isEmpty))
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (feed.posts.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: Center(child: Text('暂无动态')),
+            )
+          else if (feed.hasMore)
+            TextButton(
+              onPressed: feed.busy ? null : () => feed.load(),
+              child: Text(feed.busy ? '加载中…' : '加载更多'),
+            )
+          else
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: Text('没有更多动态了')),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: feed.error != null
-                    ? _PageErrorState(title: '动态加载失败', subtitle: feed.error!, onRetry: () => feed.load(refresh: true))
-                    : (feed.restoring || (feed.busy && feed.posts.isEmpty))
-                        ? const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()))
-                        : feed.posts.isEmpty
-                            ? const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: Text('暂无动态')))
-                            : feed.hasMore
-                                ? TextButton(onPressed: feed.busy ? null : () => feed.load(), child: Text(feed.busy ? '加载中…' : '加载更多'))
-                                : const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: Text('没有更多动态了'))),
-              ),
-            ),
-          ],
-        ),
-      ),
+        ];
+        return RefreshIndicator(
+          onRefresh: () => feed.load(refresh: true),
+          child: ListView(
+            key: PageStorageKey('profile.$tab'),
+            controller: feed.scroll,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: children,
+          ),
+        );
+      },
     );
   }
 
