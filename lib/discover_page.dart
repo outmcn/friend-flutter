@@ -115,10 +115,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   Future<void> _share(DDPost post) async {
-    await Clipboard.setData(
-      ClipboardData(text: '动态 ${post.id}：${post.content}'),
-    );
-    if (mounted) _showTopNotice(context, const SnackBar(content: Text('动态内容已复制，可粘贴分享')));
+    final text = '动态 ${post.id}：${post.content}';
+    await Share.share(text);
+    if (mounted) _showTopNotice(context, const Text('已打开系统分享面板'));
   }
 
   Future<void> _sendPostToFriend(String peerId, DDPost post) async {

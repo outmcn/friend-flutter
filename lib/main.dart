@@ -23,6 +23,7 @@ import 'package:record/record.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'auth_client.dart';
 import 'avatar_crop_page.dart';
