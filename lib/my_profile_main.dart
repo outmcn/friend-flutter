@@ -626,24 +626,25 @@ class _DDProfilePageState extends State<DDProfilePage>
       return;
     }
     final feed = feeds[tab];
-    setState(() {
-      _tabSwitching = true;
-      selectedTab = tab;
-      posts = feed.posts;
-      tabLoading = !feed.initialized;
-    });
+    if (mounted) {
+      setState(() {
+        _tabSwitching = true;
+        selectedTab = tab;
+        posts = feed.posts;
+        tabLoading = !feed.initialized;
+      });
+    }
     try {
       if (!feed.initialized) {
         await feed.restoreCache();
-        if (mounted) setState(() => posts = feed.posts);
         if (!feed.initialized) await feed.load();
       }
-      if (mounted) setState(() => posts = feed.posts);
     } catch (error) {
       if (mounted) _showTopNotice(context, Text('动态加载失败：$error'));
     } finally {
       if (mounted) {
         setState(() {
+          posts = feed.posts;
           tabLoading = false;
           _tabSwitching = false;
         });
