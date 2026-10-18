@@ -599,7 +599,7 @@ class DDPostService {
 
   Future<List<DDPost>> _fetchProfilePosts(String token, String path, {int offset = 0}) async {
     final response = await _client.get(
-      Uri.parse('\${_api(path)}?offset=\$offset&limit=30'),
+      Uri.parse('${_api(path)}?offset=$offset&limit=30'),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body);
