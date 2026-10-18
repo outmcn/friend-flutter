@@ -621,7 +621,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                     children: [
                       Text(
                         formatDDTime(comment.createdAt),
-                        style: const TextStyle(fontSize: 11),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.55),
+                        ),
                       ),
                       if (comment.city.trim().isNotEmpty) ...[
                         const SizedBox(width: 8),
@@ -629,7 +635,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                           comment.city.trim(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 11),
+                          style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.55),
+                        ),
                         ),
                       ],
                       const SizedBox(width: 8),
