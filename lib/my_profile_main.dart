@@ -845,14 +845,13 @@ class _DDProfilePageState extends State<DDProfilePage>
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final post = feed.posts[index];
-              return _DiscoverProfileCard(
+              return _ProfileDiscoverCard(
                 key: ValueKey('${tab}:${post.id}'),
+                feed: feed,
                 post: post,
                 onLike: () => _profileLike(post),
                 onFavorite: () => _profileFavorite(post),
-                onShare: () {},
                 onDelete: tab == 0 ? () => _deleteMyPost(post) : null,
-                onReport: () {},
                 onOpen: () async {
                   final changed = await Navigator.push<bool>(
                     context,
@@ -1326,6 +1325,27 @@ class _DDProfilePageState extends State<DDProfilePage>
           ),
     );
   }
+}
+
+class _ProfileDiscoverCard extends StatefulWidget {
+  const _ProfileDiscoverCard({super.key, required this.feed, required this.post, required this.onLike, required this.onFavorite, required this.onDelete, required this.onOpen});
+  final DiscoverFeed feed;
+  final DDPost post;
+  final VoidCallback onLike;
+  final VoidCallback onFavorite;
+  final VoidCallback? onDelete;
+  final VoidCallback onOpen;
+  @override State<_ProfileDiscoverCard> createState() => _ProfileDiscoverCardState();
+}
+
+class _ProfileDiscoverCardState extends State<_ProfileDiscoverCard> with AutomaticKeepAliveClientMixin<_ProfileDiscoverCard> {
+  late DDPost post;
+  @override void initState() { super.initState(); post = widget.post; widget.feed.postChanges.addListener(_update); }
+  void _update() { final updated = widget.feed.postChanges.value; if (updated != null && updated.id == post.id && mounted) setState(() => post = updated); }
+  @override void didUpdateWidget(covariant _ProfileDiscoverCard oldWidget) { super.didUpdateWidget(oldWidget); if (oldWidget.feed != widget.feed) { oldWidget.feed.postChanges.removeListener(_update); widget.feed.postChanges.addListener(_update); } post = widget.post; }
+  @override bool get wantKeepAlive => true;
+  @override Widget build(BuildContext context) { super.build(context); return _DiscoverProfileCard(post: post, onLike: widget.onLike, onFavorite: widget.onFavorite, onShare: widget.onOpen, onDelete: widget.onDelete, onReport: () {}, onOpen: widget.onOpen); }
+  @override void dispose() { widget.feed.postChanges.removeListener(_update); super.dispose(); }
 }
 
 class _ProfileFeedTabView extends StatefulWidget {
