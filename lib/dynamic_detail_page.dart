@@ -948,7 +948,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 onTap: _toggleLike,
               ),
               _DetailAction(
-                icon: item.favorited ? Icons.favorite : Icons.favorite_border,
+                icon: item.favorited ? Icons.star : Icons.star_border,
                 label: '${item.favorites}',
                 active: item.favorited,
                 onTap: _toggleFavorite,

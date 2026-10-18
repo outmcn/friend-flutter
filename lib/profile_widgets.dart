@@ -58,7 +58,7 @@ class _MyProfileIconTabs extends StatelessWidget {
           _tab(context, 0, Icons.blur_on),
           if (!postsOnly) ...[
             _tab(context, 1, Icons.bookmark_border),
-            _tab(context, 2, Icons.favorite_border),
+            _tab(context, 2, Icons.star_border),
           ],
         ],
       );
@@ -457,7 +457,7 @@ class _MyProfilePostCard extends StatelessWidget {
                       ),
                       _action(
                         context: context,
-                        icon: post.favorited ? Icons.favorite : Icons.favorite_border,
+                        icon: post.favorited ? Icons.star : Icons.star_border,
                         label: '${post.favorites}',
                         onTap: onFavorite ?? () {},
                         active: post.favorited,
@@ -492,7 +492,7 @@ class _ProfileLikePill extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Icon(
-              liked ? Icons.favorite : Icons.favorite_border,
+              liked ? Icons.star : Icons.star_border,
               color: liked ? Colors.pinkAccent : null,
               size: 24,
             ),

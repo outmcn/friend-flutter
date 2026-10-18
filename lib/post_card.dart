@@ -930,7 +930,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       ),
                       _action(
                         context: context,
-                        icon: post.favorited ? TIcons.star_1_filled : TIcons.star_1,
+                        icon: post.favorited ? Icons.favorite : Icons.favorite_border,
                         label: '${post.favorites}',
                         onTap: onFavorite,
                         active: post.favorited,
