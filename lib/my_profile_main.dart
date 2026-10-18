@@ -364,7 +364,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                       : await service.fetchLikedPosts(token);
               return Future.wait(
                   loaded.map((post) => service.resolvePostMedia(token, post)));
-            }));
+            }, cacheKey: 'dd.profile.my.tab.$tab'));
     load();
   }
 
@@ -635,6 +635,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     try {
       if (!feed.initialized) {
         await feed.restoreCache();
+        if (mounted) setState(() => posts = feed.posts);
         if (!feed.initialized) await feed.load();
       }
       if (mounted) setState(() => posts = feed.posts);
