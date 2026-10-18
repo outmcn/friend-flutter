@@ -66,6 +66,7 @@ class DDImLastMessage {
     this.deletedAt,
     this.updatedAt,
     this.mutationId,
+    this.metadata,
   });
   final String text;
   final String kind;
@@ -75,6 +76,7 @@ class DDImLastMessage {
   final String? deletedAt;
   final String? updatedAt;
   final String? mutationId;
+  final Map<String, dynamic>? metadata;
 
   factory DDImLastMessage.fromJson(Map<String, dynamic> json) =>
       DDImLastMessage(
@@ -86,6 +88,9 @@ class DDImLastMessage {
         deletedAt: json['deletedAt']?.toString(),
         updatedAt: json['updatedAt']?.toString(),
         mutationId: json['mutationId']?.toString(),
+        metadata: json['metadata'] is Map
+            ? Map<String, dynamic>.from(json['metadata'] as Map)
+            : null,
       );
 }
 

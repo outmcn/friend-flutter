@@ -863,6 +863,11 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
   final status = '${row['status'] ?? 'sent'}';
   if (status == 'recalled') return '消息已撤回';
   if (status == 'deleted') return '消息已删除';
+  final metadata = row['metadata'];
+  if (metadata is Map && '${metadata['type'] ?? ''}' == 'post_share') {
+    final author = '${metadata['author'] ?? ''}'.trim();
+    return author.isEmpty ? '动态：动态' : '动态：$author的动态';
+  }
   final kind = '${row['kind'] ?? 'text'}';
   if (kind == 'call') {
     return '语音通话 · ${_callPreviewStatus(row)}';
@@ -876,6 +881,10 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
   if (message == null) return null;
   if (message.recalledAt != null) return '消息已撤回';
   if (message.deletedAt != null) return '消息已删除';
+  if (message.metadata?['type'] == 'post_share') {
+    final author = '${message.metadata?['author'] ?? ''}'.trim();
+    return author.isEmpty ? '动态：动态' : '动态：$author的动态';
+  }
   switch (message.kind) {
     case 'audio':
       return '[语音]';
