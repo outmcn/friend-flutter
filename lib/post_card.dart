@@ -408,7 +408,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                                 ),
                               _ShareFriendTile(
                                 label: '更多好友',
-                                icon: TIcons.more,
+                                icon: TIcons.ellipsis,
                                 onTap: () => _showAllMutualFriends(context),
                               ),
                             ],
