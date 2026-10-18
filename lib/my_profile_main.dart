@@ -850,6 +850,69 @@ class _DDProfilePageState extends State<DDProfilePage>
     );
   }
 
+  List<Widget> _profileSlivers(int tab) {
+    final feed = feeds[tab];
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final post = feed.posts[index];
+              return _MyProfilePostCard(
+                key: ValueKey('${tab}:${post.id}'),
+                post: post,
+                onTap: () async {
+                  final changed = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute<bool>(
+                      builder: (_) => DynamicDetailPage(
+                        postId: post.id,
+                        initialPost: post,
+                      ),
+                    ),
+                  );
+                  if (changed == true) _invalidateProfileCacheAndReload();
+                },
+              );
+            },
+            childCount: feed.posts.length,
+          ),
+        ),
+      ),
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: feed.error != null
+              ? _PageErrorState(
+                  title: '动态加载失败',
+                  subtitle: feed.error!,
+                  onRetry: () => feed.load(refresh: true),
+                )
+              : (feed.restoring || (feed.busy && feed.posts.isEmpty))
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : feed.posts.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 48),
+                          child: Center(child: Text('暂无动态')),
+                        )
+                      : feed.hasMore
+                          ? TextButton(
+                              onPressed: feed.busy ? null : () => feed.load(),
+                              child: Text(feed.busy ? '加载中…' : '加载更多'),
+                            )
+                          : const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(child: Text('没有更多动态了')),
+                            ),
+        ),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -1279,12 +1342,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: IndexedStack(
-                      index: selectedTab,
-                      children: List.generate(3, _profileList),
-                    ),
-                  ),
+                  for (final sliver in _profileSlivers(selectedTab)) sliver,
                 ],
               ),
               ),
