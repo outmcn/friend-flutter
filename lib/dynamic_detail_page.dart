@@ -831,18 +831,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   Future<void> _sendPostToFriend(String peerId) async {
     final conversationId = await service.createDirectConversation(await token(), peerId);
-    await service.sendImMessage(
-      await token(),
-      conversationId,
-      text: post?.content.trim().isEmpty == true ? '分享了一条动态' : post!.content.trim(),
-      clientId: 'share-${itemId}-${DateTime.now().microsecondsSinceEpoch}',
-      metadata: {
-        'postId': itemId,
-        'type': 'post_share',
-        'author': post?.nickname ?? '',
-        'content': post?.content ?? '',
-        'thumbnailUrl': post?.thumbnailUrl ?? post?.imageUrl ?? '',
-      },
+    await _sendSharedPostMessage(
+      conversationId: conversationId,
+      postId: itemId,
+      text: post?.content ?? '',
+      author: post?.nickname ?? '',
+      content: post?.content ?? '',
+      thumbnailUrl: post?.thumbnailUrl ?? post?.imageUrl ?? '',
     );
     if (mounted) _showTopNotice(context, const Text('已发送给好友'));
   }

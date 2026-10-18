@@ -25,6 +25,43 @@ void _showTopErrorBanner(BuildContext context, String message) {
 ImageProvider _cachedAvatarProvider(String url) =>
     _avatarProviderCache.putIfAbsent(url, () => NetworkImage(url));
 
+Future<void> _sendSharedPostMessage({
+  required String conversationId,
+  required int postId,
+  required String text,
+  required String author,
+  required String content,
+  required String thumbnailUrl,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final accountId = prefs.getString('friend.auth.userId') ?? '';
+  if (accountId.isEmpty) throw Exception('登录状态已失效，请重新登录');
+  final clientId = 'share-$postId-${DateTime.now().microsecondsSinceEpoch}';
+  final result = await MessageSendCoordinator.instance.send(
+    accountId: accountId,
+    message: {
+      'id': 'local:$clientId',
+      'clientId': clientId,
+      'conversationId': conversationId,
+      'senderId': accountId,
+      'text': text.trim().isEmpty ? '分享了一条动态' : text.trim(),
+      'kind': 'text',
+      'metadata': {
+        'postId': postId,
+        'type': 'post_share',
+        'author': author,
+        'content': content,
+        'thumbnailUrl': thumbnailUrl,
+      },
+      'createdAt': DateTime.now().toIso8601String(),
+      'status': 'pending',
+    },
+  );
+  if ('${result['status'] ?? ''}' == 'failed') {
+    throw Exception('${result['lastError'] ?? '动态发送失败'}');
+  }
+}
+
 void _dismissIncomingDialog(BuildContext? dialogContext) {
   if (dialogContext == null || !dialogContext.mounted) return;
   final route = ModalRoute.of(dialogContext);

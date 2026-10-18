@@ -355,20 +355,13 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     if (peer == null || sending) return;
     try {
       setState(() => sending = true);
-      await service.sendImMessage(
-        await _token(),
-        conversation.id,
-        text: widget.post.content.trim().isEmpty
-            ? '分享了一条动态'
-            : widget.post.content.trim(),
-        clientId: 'share-${widget.post.id}-${DateTime.now().microsecondsSinceEpoch}',
-        metadata: {
-          'postId': widget.post.id,
-          'type': 'post_share',
-          'author': widget.post.nickname,
-          'content': widget.post.content,
-          'thumbnailUrl': widget.post.thumbnailUrl ?? widget.post.imageUrl ?? '',
-        },
+      await _sendSharedPostMessage(
+        conversationId: conversation.id,
+        postId: widget.post.id,
+        text: widget.post.content,
+        author: widget.post.nickname,
+        content: widget.post.content,
+        thumbnailUrl: widget.post.thumbnailUrl ?? widget.post.imageUrl ?? '',
       );
       if (mounted) {
         Navigator.pop(context);
