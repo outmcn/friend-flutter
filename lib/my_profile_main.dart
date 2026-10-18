@@ -850,6 +850,27 @@ class _DDProfilePageState extends State<DDProfilePage>
     );
   }
 
+  Future<void> _deleteMyPost(DDPost post) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认删除动态'),
+        content: const Text('删除后无法恢复，确定继续吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('删除')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await service.deletePost(await _token(), post.id);
+      await _invalidateProfileCacheAndReload();
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('删除失败：$e'));
+    }
+  }
+
   List<Widget> _profileSlivers(int tab) {
     final feed = feeds[tab];
     return [
@@ -862,6 +883,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               return _MyProfilePostCard(
                 key: ValueKey('${tab}:${post.id}'),
                 post: post,
+                onDelete: () => _deleteMyPost(post),
                 onTap: () async {
                   final changed = await Navigator.push<bool>(
                     context,

@@ -225,6 +225,7 @@ class _MyProfilePostCard extends StatelessWidget {
     this.onFollow,
     this.onGift,
     this.onReport,
+    this.onDelete,
     this.onOpen,
     this.onTap,
   });
@@ -238,6 +239,7 @@ class _MyProfilePostCard extends StatelessWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onGift;
   final VoidCallback? onReport;
+  final VoidCallback? onDelete;
   final VoidCallback? onOpen;
   final VoidCallback? onTap;
 
@@ -316,7 +318,7 @@ class _MyProfilePostCard extends StatelessWidget {
 
   void _deleteOwnPost(BuildContext context) {
     Navigator.pop(context);
-    onOpen?.call();
+    onDelete?.call();
   }
 
   @override
