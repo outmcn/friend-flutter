@@ -726,9 +726,9 @@ class _DiscoverProfileCard extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        tooltip: '更多',
+                        tooltip: '分享',
                         onPressed: () => _showDiscoverMore(context),
-                        icon: const Icon(TIcons.more),
+                        icon: const Icon(TIcons.share_1),
                         iconSize: 20,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints.tightFor(
