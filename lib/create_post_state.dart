@@ -252,7 +252,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
                               ? 'friends'
                               : visibility == '仅自己可见'
                                   ? 'private'
-                                  : 'public',
+                                  : visibility == '仅主页可见'
+                                      ? 'profile'
+                                      : visibility == '仅陌生人可见'
+                                          ? 'strangers'
+                                          : 'public',
                           latitude: location?.latitude,
                           longitude: location?.longitude,
                         );
@@ -394,7 +398,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 builder: (_) => SafeArea(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: ['所有人可见', '仅主页可见', '仅陌生人可见', '仅自己可见']
+                    children: ['所有人可见', '仅好友可见', '仅主页可见', '仅陌生人可见', '仅自己可见']
                         .map(
                           (item) => ListTile(
                             title: Text(item),
