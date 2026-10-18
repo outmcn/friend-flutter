@@ -412,8 +412,8 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _ShareAction(label: '微信', icon: TIcons.logo_wechat_stroke, onTap: widget.onShare),
-                  _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: widget.onShare),
+                  _ShareAction(label: '微信', icon: TIcons.logo_wechat_stroke, onTap: () => _openApp(context, 'weixin://')),
+                  _ShareAction(label: 'QQ', icon: TIcons.logo_qq, onTap: () => _openApp(context, 'mqq://')),
                   _ShareAction(label: '复制链接', icon: TIcons.link, onTap: () => _copyPostLink(context)),
                   _ShareAction(label: '更多', icon: TIcons.more, onTap: widget.onShare),
                 ],
@@ -568,6 +568,14 @@ class _ShareFriendTile extends StatelessWidget {
           child: Column(children: [Icon(icon, size: 32), const SizedBox(height: 4), Text(label, overflow: TextOverflow.ellipsis)],),
         ),
       );
+}
+
+Future<void> _openApp(BuildContext context, String scheme) async {
+  final uri = Uri.parse(scheme);
+  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!launched && context.mounted) {
+    _showTopNotice(context, const Text('未安装对应应用'));
+  }
 }
 
 class _PostGiftSheet extends StatefulWidget {
