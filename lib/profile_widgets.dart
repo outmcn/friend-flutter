@@ -488,8 +488,8 @@ class _ProfileLikePill extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Icon(
-              liked ? Icons.star : Icons.star_border,
-              color: liked ? Colors.pinkAccent : null,
+              liked ? TIcons.heart_filled : TIcons.heart,
+              color: liked ? Theme.of(context).colorScheme.primary : null,
               size: 24,
             ),
           ),
