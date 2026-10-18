@@ -784,69 +784,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
   }
 
-  Widget _profileList(int tab) {
-    final feed = feeds[tab];
-    return AnimatedBuilder(
-      animation: feed,
-      builder: (context, _) {
-        final children = <Widget>[
-          for (final post in feed.posts)
-            _MyProfilePostCard(
-              key: ValueKey('${tab}:${post.id}'),
-              post: post,
-              onTap: () async {
-                final changed = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute<bool>(
-                    builder: (_) => DynamicDetailPage(
-                      postId: post.id,
-                      initialPost: post,
-                    ),
-                  ),
-                );
-                if (changed == true) _invalidateProfileCacheAndReload();
-              },
-            ),
-          if (feed.error != null)
-            _PageErrorState(
-              title: '动态加载失败',
-              subtitle: feed.error!,
-              onRetry: () => feed.load(refresh: true),
-            )
-          else if (feed.restoring || (feed.busy && feed.posts.isEmpty))
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (feed.posts.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 48),
-              child: Center(child: Text('暂无动态')),
-            )
-          else if (feed.hasMore)
-            TextButton(
-              onPressed: feed.busy ? null : () => feed.load(),
-              child: Text(feed.busy ? '加载中…' : '加载更多'),
-            )
-          else
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: Text('没有更多动态了')),
-            ),
-        ];
-        return RefreshIndicator(
-          onRefresh: () => feed.load(refresh: true),
-          child: ListView(
-            key: PageStorageKey('profile.$tab'),
-            controller: feed.scroll,
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            children: children,
-          ),
-        );
-      },
-    );
-  }
 
   Future<void> _deleteMyPost(DDPost post) async {
     final confirmed = await showDialog<bool>(
@@ -898,71 +835,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
   }
 
-  List<Widget> _profileSlivers(int tab) {
-    final feed = feeds[tab];
-    return [
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final post = feed.posts[index];
-              return _MyProfileKeepAliveCard(
-                key: ValueKey('${tab}:${post.id}'),
-                post: post,
-                onLike: () => _profileLike(post),
-                onFavorite: () => _profileFavorite(post),
-                onDelete: () => _deleteMyPost(post),
-                onTap: () async {
-                  final changed = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute<bool>(
-                      builder: (_) => DynamicDetailPage(
-                        postId: post.id,
-                        initialPost: post,
-                      ),
-                    ),
-                  );
-                  if (changed == true) _invalidateProfileCacheAndReload();
-                },
-              );
-            },
-            childCount: feed.posts.length,
-          ),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: feed.error != null
-              ? _PageErrorState(
-                  title: '动态加载失败',
-                  subtitle: feed.error!,
-                  onRetry: () => feed.load(refresh: true),
-                )
-              : (feed.restoring || (feed.busy && feed.posts.isEmpty))
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  : feed.posts.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 48),
-                          child: Center(child: Text('暂无动态')),
-                        )
-                      : feed.hasMore
-                          ? TextButton(
-                              onPressed: feed.busy ? null : () => feed.load(),
-                              child: Text(feed.busy ? '加载中…' : '加载更多'),
-                            )
-                          : const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              child: Center(child: Text('没有更多动态了')),
-                            ),
-        ),
-      ),
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1480,13 +1352,15 @@ class _ProfileFeedTabViewState extends State<_ProfileFeedTabView>
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final post = feed.posts[index];
-                    return _MyProfileKeepAliveCard(
+                    return _DiscoverProfileCard(
                       key: ValueKey('${widget.tab}:${post.id}'),
                       post: post,
                       onLike: () => widget.onLike(post),
                       onFavorite: () => widget.onFavorite(post),
+                      onShare: () {},
                       onDelete: () => widget.onDelete(post),
-                      onTap: () => widget.onOpen(post),
+                      onReport: () {},
+                      onOpen: () => widget.onOpen(post),
                     );
                   },
                   childCount: feed.posts.length,
@@ -1530,56 +1404,6 @@ class _ProfileFeedTabViewState extends State<_ProfileFeedTabView>
   }
 }
 
-class _MyProfileKeepAliveCard extends StatefulWidget {
-  const _MyProfileKeepAliveCard({
-    super.key,
-    required this.post,
-    required this.onLike,
-    required this.onFavorite,
-    required this.onDelete,
-    required this.onTap,
-  });
-  final DDPost post;
-  final VoidCallback onLike;
-  final VoidCallback onFavorite;
-  final VoidCallback onDelete;
-  final VoidCallback onTap;
-
-  @override
-  State<_MyProfileKeepAliveCard> createState() => _MyProfileKeepAliveCardState();
-}
-
-class _MyProfileKeepAliveCardState extends State<_MyProfileKeepAliveCard>
-    with AutomaticKeepAliveClientMixin<_MyProfileKeepAliveCard> {
-  late DDPost post;
-
-  @override
-  void initState() {
-    super.initState();
-    post = widget.post;
-  }
-
-  @override
-  void didUpdateWidget(covariant _MyProfileKeepAliveCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    post = widget.post;
-  }
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return _MyProfilePostCard(
-      post: post,
-      onLike: widget.onLike,
-      onFavorite: widget.onFavorite,
-      onDelete: widget.onDelete,
-      onTap: widget.onTap,
-    );
-  }
-}
 
 class _ProfileActionButton extends StatelessWidget {
   const _ProfileActionButton({
