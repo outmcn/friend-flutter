@@ -851,7 +851,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                 onLike: () => _profileLike(post),
                 onFavorite: () => _profileFavorite(post),
                 onShare: () {},
-                onDelete: () => _deleteMyPost(post),
+                onDelete: tab == 0 ? () => _deleteMyPost(post) : null,
                 onReport: () {},
                 onOpen: () async {
                   final changed = await Navigator.push<bool>(
@@ -1380,7 +1380,7 @@ class _ProfileFeedTabViewState extends State<_ProfileFeedTabView>
                       onLike: () => widget.onLike(post),
                       onFavorite: () => widget.onFavorite(post),
                       onShare: () {},
-                      onDelete: () => widget.onDelete(post),
+                      onDelete: widget.tab == 0 ? () => widget.onDelete(post) : null,
                       onReport: () {},
                       onOpen: () => widget.onOpen(post),
                     );
