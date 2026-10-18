@@ -99,7 +99,7 @@ class _ProfilePostFeed extends StatefulWidget {
   const _ProfilePostFeed({
     required this.posts,
     required this.onChanged,
-    required this.onOpen,
+    this.onOpen,
   });
   final List<DDPost> posts;
   final VoidCallback onChanged;
@@ -198,7 +198,6 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
           onShare: () {},
           onReport: () {},
           onOpen: () {},
-          mediaKey: mediaKey,
           onTap: () async {
             final box = mediaKey.currentContext?.findRenderObject() as RenderBox?;
             final topLeft = box?.localToGlobal(Offset.zero);
@@ -230,28 +229,28 @@ class _MyProfilePostCard extends StatelessWidget {
   const _MyProfilePostCard({
     super.key,
     required this.post,
-    required this.onLike,
-    required this.onFavorite,
+    this.onLike,
+    this.onFavorite,
     this.onSendToFriend,
-    required this.onShare,
+    this.onShare,
     this.onDirectChat,
     this.onFollow,
     this.onGift,
-    required this.onReport,
+    this.onReport,
     required this.onOpen,
     this.onTap,
   });
 
   final DDPost post;
-  final VoidCallback onLike;
-  final VoidCallback onFavorite;
-  final VoidCallback onShare;
+  final VoidCallback? onLike;
+  final VoidCallback? onFavorite;
+  final VoidCallback? onShare;
   final Future<void> Function(String peerId)? onSendToFriend;
   final VoidCallback? onDirectChat;
   final VoidCallback? onFollow;
   final VoidCallback? onGift;
-  final VoidCallback onReport;
-  final VoidCallback onOpen;
+  final VoidCallback? onReport;
+  final VoidCallback? onOpen;
   final VoidCallback? onTap;
 
   Widget _media({required String url, required bool thumbnail}) {
