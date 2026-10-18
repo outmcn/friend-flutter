@@ -861,6 +861,67 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
   }
 
+  Future<void> _profileShare(DDPost post) async {
+    await Share.share('动态 ${post.id}：${post.content}');
+    if (mounted) _showTopNotice(context, const Text('已打开系统分享面板'));
+  }
+
+  Future<void> _profileSendToFriend(String peerId, DDPost post) async {
+    try {
+      final conversationId = await service.createDirectConversation(await _token(), peerId);
+      await _sendSharedPostMessage(
+        conversationId: conversationId,
+        postId: post.id,
+        text: post.content,
+        author: post.nickname,
+        content: post.content,
+        thumbnailUrl: post.thumbnailUrl ?? post.imageUrl ?? '',
+      );
+      if (mounted) _showTopNotice(context, const Text('已发送给好友'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  Future<void> _profileDirectChat(DDPost post) async {
+    if (post.userId == null) return;
+    try {
+      final conversationId = await service.createDirectConversation(await _token(), '${post.userId}');
+      if (!mounted) return;
+      Navigator.push(context, MaterialPageRoute(builder: (_) => _ChatDetailPage(
+        chat: _ChatPreview(post.nickname, '开始聊天', post.avatar, null, '${post.userId}', conversationId, 0, null, null, 'dm', false, false),
+      )));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  Future<void> _profileFollow(DDPost post) async {
+    if (post.userId == null) return;
+    try {
+      final followed = await service.toggleFollow(await _token(), post.userId!);
+      final updated = post.copyWith(following: followed);
+      for (final feed in feeds) feed.updateFollowing(updated);
+      if (mounted) _showTopNotice(context, Text(followed ? '已关注' : '已取消关注'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
+  void _profileGift(DDPost post) {
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => DynamicDetailPage(postId: post.id, initialPost: post)));
+  }
+
+  Future<void> _profileReport(DDPost post) async {
+    if (post.userId == profile?['id']) return;
+    final submitted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ReportPostPage(postId: post.id, service: service, token: _token)),
+    );
+    if (submitted == true && mounted) _showTopNotice(context, const Text('举报已提交'));
+  }
+
   List<Widget> _profileContentSlivers(int tab) {
     final feed = feeds[tab];
     return [
@@ -876,7 +937,13 @@ class _DDProfilePageState extends State<DDProfilePage>
                 post: post,
                 onLike: () => _profileLike(post),
                 onFavorite: () => _profileFavorite(post),
+                onShare: () => _profileShare(post),
+                onSendToFriend: (peerId) => _profileSendToFriend(peerId, post),
+                onDirectChat: () => _profileDirectChat(post),
+                onFollow: () => _profileFollow(post),
+                onGift: () => _profileGift(post),
                 onDelete: tab == 0 ? () => _deleteMyPost(post) : null,
+                onReport: () => _profileReport(post),
                 onOpen: () async {
                   final changed = await Navigator.push<bool>(
                     context,
@@ -1354,12 +1421,18 @@ class _DDProfilePageState extends State<DDProfilePage>
 }
 
 class _ProfileDiscoverCard extends StatefulWidget {
-  const _ProfileDiscoverCard({super.key, required this.feed, required this.post, required this.onLike, required this.onFavorite, required this.onDelete, required this.onOpen});
+  const _ProfileDiscoverCard({super.key, required this.feed, required this.post, required this.onLike, required this.onFavorite, required this.onShare, required this.onSendToFriend, required this.onDirectChat, required this.onFollow, required this.onGift, required this.onDelete, required this.onReport, required this.onOpen});
   final DiscoverFeed feed;
   final DDPost post;
   final VoidCallback onLike;
   final VoidCallback onFavorite;
+  final VoidCallback onShare;
+  final Future<void> Function(String)? onSendToFriend;
+  final VoidCallback? onDirectChat;
+  final VoidCallback? onFollow;
+  final VoidCallback? onGift;
   final VoidCallback? onDelete;
+  final VoidCallback onReport;
   final VoidCallback onOpen;
   @override State<_ProfileDiscoverCard> createState() => _ProfileDiscoverCardState();
 }
@@ -1370,7 +1443,7 @@ class _ProfileDiscoverCardState extends State<_ProfileDiscoverCard> with Automat
   void _update() { final updated = widget.feed.postChanges.value; if (updated != null && updated.id == post.id && mounted) setState(() => post = updated); }
   @override void didUpdateWidget(covariant _ProfileDiscoverCard oldWidget) { super.didUpdateWidget(oldWidget); if (oldWidget.feed != widget.feed) { oldWidget.feed.postChanges.removeListener(_update); widget.feed.postChanges.addListener(_update); } post = widget.post; }
   @override bool get wantKeepAlive => true;
-  @override Widget build(BuildContext context) { super.build(context); return _DiscoverProfileCard(post: post, onLike: widget.onLike, onFavorite: widget.onFavorite, onShare: widget.onOpen, onDelete: widget.onDelete, onReport: () {}, onOpen: widget.onOpen); }
+  @override Widget build(BuildContext context) { super.build(context); return _DiscoverProfileCard(post: post, onLike: widget.onLike, onFavorite: widget.onFavorite, onShare: widget.onShare, onSendToFriend: widget.onSendToFriend, onDirectChat: widget.onDirectChat, onFollow: widget.onFollow, onGift: widget.onGift, onDelete: widget.onDelete, onReport: widget.onReport, onOpen: widget.onOpen); }
   @override void dispose() { widget.feed.postChanges.removeListener(_update); super.dispose(); }
 }
 
