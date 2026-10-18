@@ -799,15 +799,28 @@ class _DDProfilePageState extends State<DDProfilePage>
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              sliver: SliverList(
+            sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) => _MyProfileGrid(
-                    posts: feed.posts,
-                    emptyLabel: tab == 0 ? '还没有发布动态' : tab == 1 ? '还没有收藏内容' : '还没有点赞内容',
-                    onChanged: _invalidateProfileCacheAndReload,
-                  ),
-                  childCount: 1,
-                ),
+                (context, index) {
+                  if (index >= feed.posts.length) return const SizedBox.shrink();
+                  final post = feed.posts[index];
+                  return _MyProfilePostCard(
+                    post: post,
+                    onTap: () async {
+                      final changed = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute<bool>(
+                          builder: (_) => DynamicDetailPage(
+                            postId: post.id,
+                            initialPost: post,
+                          ),
+                        ),
+                      );
+                      if (changed == true) _invalidateProfileCacheAndReload();
+                    },
+                  );
+                },
+                childCount: feed.posts.length,
               ),
             ),
             SliverToBoxAdapter(
