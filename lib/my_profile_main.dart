@@ -325,6 +325,8 @@ class _DDProfilePageState extends State<DDProfilePage>
   final pendingLikes = <int>{};
   final pendingFavorites = <int>{};
   final _profileCardKeys = <String, GlobalKey>{};
+  String? _cachedAllProfileSignature;
+  List<Widget>? _cachedAllProfileSlivers;
   final AudioPlayer _sonicPlayer = AudioPlayer();
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
