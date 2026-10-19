@@ -315,7 +315,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         }
       },
       child: Padding(
-        padding: const EdgeInsets.only(right: 20, top: 1, bottom: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -350,12 +350,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
           surfaceTintColor: Colors.transparent,
           toolbarHeight: 48,
           titleSpacing: 0,
-          title: SizedBox(
-            width: double.infinity,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Row(
+          title: const SizedBox.shrink(),
+          flexibleSpace: Stack(
+            fit: StackFit.expand,
+            alignment: Alignment.center,
+            children: [
+              Row(
                   mainAxisSize: MainAxisSize.min,
                   children: ['推荐', _discoverLocalTabLabel, '关注']
                       .asMap()
