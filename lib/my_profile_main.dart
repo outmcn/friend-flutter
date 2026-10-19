@@ -333,11 +333,9 @@ class _DDProfilePageState extends State<DDProfilePage>
   final ScrollController _profileHeaderScroll = ScrollController();
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
-  bool _tagSaving = false;
   String? _sonicUrl;
   String? _avatarUrl;
   String? error;
-  List<String> _tags = <String>[];
   bool _stealth = false;
   bool _antiHarassment = false;
   bool _smartBlock = false;
@@ -706,7 +704,6 @@ class _DDProfilePageState extends State<DDProfilePage>
           charmCoins = int.tryParse('${loaded['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
           _avatarUrl = avatar;
-          _tags = tags;
           _stealth = '${loaded['presenceMode'] ?? 'online'}' == 'stealth';
           _antiHarassment = loaded['antiHarassment'] == true;
           _smartBlock = loaded['smartBlock'] == true;
@@ -780,8 +777,7 @@ class _DDProfilePageState extends State<DDProfilePage>
             charmCoins =
                 int.tryParse('${loadedProfile['charmCoins'] ?? 0}') ?? 0;
             _avatarUrl = avatar;
-            _tags = tags;
-            _stealth = '${loadedProfile['presenceMode'] ?? 'online'}' == 'stealth';
+              _stealth = '${loadedProfile['presenceMode'] ?? 'online'}' == 'stealth';
             _antiHarassment = loadedProfile['antiHarassment'] == true;
             _smartBlock = loadedProfile['smartBlock'] == true;
             _matching = loadedProfile['matchingEnabled'] == true;
@@ -1285,83 +1281,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                 ],
                               ),
                               const SizedBox(height: 18),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                height: 32,
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: [
-                                      ..._tags.map((tag) => Padding(
-                                            padding:
-                                                const EdgeInsets.only(right: 6),
-                                            child: _ProfileTag(text: tag),
-                                          )),
-                                      GestureDetector(
-                                        onTap: _tagSaving
-                                            ? null
-                                            : () async {
-                                                final selected =
-                                                    await Navigator.push<List<String>>(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        _ProfileTagEditorPage(
-                                                            selectedTags: _tags),
-                                                  ),
-                                                );
-                                                if (selected != null && mounted) {
-                                                  final previousTags =
-                                                      List<String>.of(_tags);
-                                                  setState(() => _tagSaving = true);
-                                                  try {
-                                                    final t = await _token();
-                                                    final updated =
-                                                        await service.updateMe(
-                                                            token: t,
-                                                            tags: selected);
-                                                    if (!mounted) return;
-                                                    setState(() {
-                                                      _tags = selected;
-                                                      profile = {
-                                                        ...(profile ??
-                                                            <String, dynamic>{}),
-                                                        ...updated,
-                                                        'tags': selected,
-                                                      };
-                                                    });
-                                                  } catch (e) {
-                                                    if (mounted) {
-                                                      setState(() =>
-                                                          _tags = previousTags);
-                                                      _showTopNotice(context,
-                                                          Text('标签保存失败：$e'));
-                                                    }
-                                                  } finally {
-                                                    if (mounted) {
-                                                      setState(() =>
-                                                          _tagSaving = false);
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                        child: _tagSaving
-                                            ? const SizedBox(
-                                                width: 28,
-                                                height: 28,
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(6),
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                          strokeWidth: 2),
-                                                ),
-                                              )
-                                            : const _ProfileTag(text: '+'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                         ),
