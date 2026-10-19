@@ -1137,19 +1137,20 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ),
                                           ],
                                         ),
-                                        if ('${p?['signature'] ?? p?['bio'] ?? ''}'.trim().isNotEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 4),
-                                            child: Text(
-                                              '${p?['signature'] ?? p?['bio'] ?? ''}'.trim(),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                              ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            '${p?['signature'] ?? p?['bio'] ?? ''}'.trim().isEmpty
+                                                ? '设置个性签名'
+                                                : '${p?['signature'] ?? p?['bio'] ?? ''}'.trim(),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                                             ),
                                           ),
+                                        ),
                                         const SizedBox(height: 10),
                                         Container(
                                           padding:
