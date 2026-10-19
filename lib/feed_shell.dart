@@ -271,12 +271,7 @@ class _FeedShellState extends State<FeedShell> {
             ),
           ],
         );
-        return widget.refreshAtTop
-            ? RefreshIndicator(
-                onRefresh: () => feed.load(refresh: true),
-                child: view,
-              )
-            : view;
+        return view;
       },
     );
   }

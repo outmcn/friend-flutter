@@ -380,7 +380,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
             ),
           ],
         ),
-        body: FeedShell(
+        body: RefreshIndicator(
+          onRefresh: () => feeds[selectedTab].load(refresh: true),
+          child: FeedShell(
           tabs: const [
             FeedShellTab(title: '推荐', cacheKey: 'dd.discover.feed.0', fetch: _feedShellUnusedFetch),
             FeedShellTab(title: '本地', cacheKey: 'dd.discover.feed.1', fetch: _feedShellUnusedFetch),
@@ -388,7 +390,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
           ],
           externalFeeds: feeds,
           showTabs: false,
-          refreshAtTop: true,
           embedded: true,
           disposeFeeds: false,
           selectedTab: selectedTab,
@@ -416,6 +417,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           onGift: _openPostGift,
           onReport: _report,
           onOpen: _open,
+        ),
         ),
       );
 
