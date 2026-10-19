@@ -67,7 +67,7 @@ class FeedShellController {
                 onDelete: currentUserId != null && post.userId == currentUserId ? onDelete : null,
                 onReport: onReport,
                 onOpen: onOpen,
-                hideAuthorRow: hideAuthorRow,
+                hideAuthorRow: false,
               );
             },
             childCount: feed.posts.length,
@@ -240,7 +240,7 @@ class _FeedShellState extends State<FeedShell> {
                       onDelete: widget.currentUserId != null && post.userId == widget.currentUserId ? widget.onDelete : null,
                       onReport: widget.onReport,
                       onOpen: widget.onOpen,
-                      hideAuthorRow: hideAuthorRow,
+                      hideAuthorRow: widget.hideAuthorRow,
                     );
                   },
                   childCount: feed.posts.length,
