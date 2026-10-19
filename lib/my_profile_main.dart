@@ -353,6 +353,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _profileHeaderScroll.addListener(_handleProfileScroll);
     _presenceTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_appActive) _sendPresenceHeartbeat();
     });
@@ -448,6 +449,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _presenceTimer?.cancel();
+    _profileHeaderScroll.removeListener(_handleProfileScroll);
     _profileHeaderScroll.dispose();
     for (final feed in feeds) {
       feed.scroll.removeListener(_handleProfileScroll);
