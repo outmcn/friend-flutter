@@ -32,6 +32,7 @@ class FeedShellController {
     ValueChanged<DDPost>? onFollow,
     ValueChanged<DDPost>? onGift,
     ValueChanged<DDPost>? onDelete,
+    required int? currentUserId,
   }) {
     final feed = feeds[index];
     return [
@@ -52,7 +53,7 @@ class FeedShellController {
                 onDirectChat: onDirectChat,
                 onFollow: onFollow,
                 onGift: onGift,
-                onDelete: onDelete,
+                onDelete: currentUserId != null && post.userId == currentUserId ? onDelete : null,
                 onReport: onReport,
                 onOpen: onOpen,
               );
@@ -99,6 +100,7 @@ class FeedShell extends StatefulWidget {
     this.onFollow,
     this.onGift,
     this.onDelete,
+    this.currentUserId,
     this.initialTab = 0,
   });
 
@@ -119,6 +121,7 @@ class FeedShell extends StatefulWidget {
   final ValueChanged<DDPost>? onFollow;
   final ValueChanged<DDPost>? onGift;
   final ValueChanged<DDPost>? onDelete;
+  final int? currentUserId;
   final int initialTab;
 
   @override
@@ -204,7 +207,7 @@ class _FeedShellState extends State<FeedShell> {
                       onDirectChat: widget.onDirectChat,
                       onFollow: widget.onFollow,
                       onGift: widget.onGift,
-                      onDelete: widget.onDelete,
+                      onDelete: widget.currentUserId != null && post.userId == widget.currentUserId ? widget.onDelete : null,
                       onReport: widget.onReport,
                       onOpen: widget.onOpen,
                     );

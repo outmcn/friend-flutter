@@ -14,12 +14,20 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final _cardKeys = <String, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
+  int? _currentUserId;
 
   Future<String> _token() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) throw Exception('请先登录');
     return token;
+  }
+
+  Future<void> _loadCurrentUserId() async {
+    try {
+      final user = await DDPostService().fetchMe(await _token());
+      if (mounted) setState(() => _currentUserId = int.tryParse('${user['id'] ?? user['userId'] ?? ''}'));
+    } catch (_) {}
   }
 
   Future<void> _restoreDiscoverCityLabel() async {
@@ -44,6 +52,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   void initState() {
     super.initState();
     _restoreDiscoverCityLabel();
+    unawaited(_loadCurrentUserId());
     feeds = List.generate(3, (tab) {
       final feed = DiscoverFeed((offset) async {
         final token = await _token();
@@ -396,6 +405,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               }));
             }
           },
+          currentUserId: _currentUserId,
           onLike: _like,
           onFavorite: _favorite,
           onShare: _share,

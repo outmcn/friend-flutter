@@ -318,6 +318,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   int coinBalance = 0;
   int charmCoins = 0;
   int selectedTab = 0;
+  int? _currentUserId;
   bool loading = true;
   late final List<FeedShellTab> profileFeedTabs;
   late final List<DiscoverFeed> feeds;
@@ -669,6 +670,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (mounted) {
         setState(() {
           profile = loaded;
+          _currentUserId = int.tryParse('${loaded['id'] ?? loaded['userId'] ?? ''}');
           coinBalance = int.tryParse('${loaded['coinBalance'] ?? 0}') ?? 0;
           charmCoins = int.tryParse('${loaded['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
@@ -741,6 +743,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         if (mounted) {
           setState(() {
             profile = loadedProfile;
+            _currentUserId = int.tryParse('${loadedProfile['id'] ?? loadedProfile['userId'] ?? ''}');
             coinBalance =
                 int.tryParse('${loadedProfile['coinBalance'] ?? 0}') ?? 0;
             charmCoins =
@@ -909,6 +912,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     );
     return shell.slivers(
       index: tab,
+      currentUserId: _currentUserId,
       onLike: _profileLike,
       onFavorite: _profileFavorite,
       onShare: _profileShare,
@@ -940,6 +944,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     for (var index = 0; index < feeds.length; index++) {
       final slivers = shell.slivers(
         index: index,
+        currentUserId: _currentUserId,
         onLike: _profileLike,
         onFavorite: _profileFavorite,
         onShare: _profileShare,
