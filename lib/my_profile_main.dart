@@ -1027,7 +1027,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                   onRefresh: () => load(forceRefresh: true),
                   child: NestedScrollView(
                     controller: _profileHeaderScroll,
-                    physics: const AlwaysScrollableScrollPhysics(),                  headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    headerSliverBuilder: (context, innerBoxIsScrolled) => [
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                         sliver: SliverList(
@@ -1447,7 +1448,6 @@ class _DDProfilePageState extends State<DDProfilePage>
               ),
 
             ],
-          ),
           ),
     );
   }
