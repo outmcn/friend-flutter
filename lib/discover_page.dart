@@ -388,6 +388,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           ],
           externalFeeds: feeds,
           showTabs: false,
+          refreshAtTop: true,
           embedded: true,
           disposeFeeds: false,
           selectedTab: selectedTab,

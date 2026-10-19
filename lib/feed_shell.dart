@@ -195,7 +195,8 @@ class _FeedShellState extends State<FeedShell> {
     final feed = feeds[index];
     return AnimatedBuilder(
       animation: feed,
-      builder: (context, _) => CustomScrollView(
+      builder: (context, _) {
+        final view = CustomScrollView(
           key: PageStorageKey('feed-shell.$index'),
           primary: widget.nestedScroll ? true : false,
           controller: widget.nestedScroll ? null : feed.scroll,
@@ -269,7 +270,14 @@ class _FeedShellState extends State<FeedShell> {
               ),
             ),
           ],
-        ),
+        );
+        return widget.refreshAtTop
+            ? RefreshIndicator(
+                onRefresh: () => feed.load(refresh: true),
+                child: view,
+              )
+            : view;
+      },
     );
   }
 
