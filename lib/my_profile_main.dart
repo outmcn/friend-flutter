@@ -1050,7 +1050,11 @@ class _DDProfilePageState extends State<DDProfilePage>
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        leading: _presenceButton(),
+        leading: IconButton(
+          tooltip: '在线状态',
+          onPressed: _openPresenceControls,
+          icon: const Icon(TIcons.chat_message),
+        ),
         title: _showStickyNickname
             ? Text(
                 '${p?['nickname'] ?? 'Friend 用户'}',
