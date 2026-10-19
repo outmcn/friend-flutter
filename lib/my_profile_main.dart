@@ -941,6 +941,10 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   List<Widget> _allProfileFeedSlivers() {
+    final signature = feeds.map((feed) => feed.posts.map((post) => post.id).join(',')).join('|');
+    if (_cachedAllProfileSignature == signature && _cachedAllProfileSlivers != null) {
+      return _cachedAllProfileSlivers!;
+    }
     final shell = FeedShellController(feeds: feeds, cardKeys: _profileCardKeys);
     final result = <Widget>[];
     for (var index = 0; index < feeds.length; index++) {
@@ -979,6 +983,8 @@ class _DDProfilePageState extends State<DDProfilePage>
         ));
       }
     }
+    _cachedAllProfileSignature = signature;
+    _cachedAllProfileSlivers = result;
     return result;
   }
 

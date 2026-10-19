@@ -19,6 +19,8 @@ class FeedShellController {
   FeedShellController({required this.feeds, required this.cardKeys});
   final List<DiscoverFeed> feeds;
   final Map<String, GlobalKey> cardKeys;
+  final Map<int, List<Widget>> _sliverCache = <int, List<Widget>>{};
+  final Map<int, String> _sliverSignatures = <int, String>{};
 
   List<Widget> slivers({
     required int index,
@@ -35,7 +37,11 @@ class FeedShellController {
     required int? currentUserId,
   }) {
     final feed = feeds[index];
-    return [
+    final signature = feed.posts.map((post) => post.id).join(',');
+    if (_sliverSignatures[index] == signature && _sliverCache[index] != null) {
+      return _sliverCache[index]!;
+    }
+    final result = <Widget>[
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         sliver: SliverList(
@@ -77,6 +83,9 @@ class FeedShellController {
         ),
       ),
     ];
+    _sliverSignatures[index] = signature;
+    _sliverCache[index] = result;
+    return result;
   }
 }
 
