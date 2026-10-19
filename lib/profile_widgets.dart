@@ -58,7 +58,7 @@ class _MyProfileIconTabs extends StatelessWidget {
           _tab(context, 0, TIcons.highlight_1),
           if (!postsOnly) ...[
             _tab(context, 1, TIcons.bookmark),
-            _tab(context, 2, TIcons.star_1),
+            _tab(context, 2, TIcons.heart),
           ],
         ],
       );
@@ -77,7 +77,7 @@ class _MyProfileIconTabs extends StatelessWidget {
                           ? TIcons.highlight_1_filled
                           : index == 1
                               ? TIcons.bookmark_filled
-                              : TIcons.star_1_filled)
+                              : TIcons.heart_filled)
                       : icon,
                   size: 24,
                   color: selectedTab == index
