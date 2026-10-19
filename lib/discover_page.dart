@@ -317,7 +317,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       child: SizedBox(
         height: 48,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
@@ -365,16 +365,13 @@ class _DiscoverPageState extends State<DiscoverPage> {
           icon: const Icon(TIcons.notification),
           ),
         ),
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: ['推荐', _discoverLocalTabLabel, '关注']
-                .asMap()
-                .entries
-                .map((entry) => _discoverTabButton(context, entry))
-                .toList(),
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: ['推荐', _discoverLocalTabLabel, '关注']
+              .asMap()
+              .entries
+              .map((entry) => _discoverTabButton(context, entry))
+              .toList(),
         ),
         centerTitle: true,
         leadingWidth: 48,
