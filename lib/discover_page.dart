@@ -306,78 +306,19 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          surfaceTintColor: Colors.transparent,
-          toolbarHeight: 48,
-          titleSpacing: 16,
-          title: Row(
-            children: ['推荐', _discoverLocalTabLabel, '关注']
-                .asMap()
-                .entries
-                .map((entry) => GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        if (selectedTab == entry.key) {
-                          _scrollCurrentTabToTop();
-                          return;
-                        }
-                        setState(() => selectedTab = entry.key);
-                        final feed = feeds[entry.key];
-                        if (entry.key == 1 && _discoverLocalTabLabel == '本地') {
-                          unawaited(_loadDiscoverCity());
-                        }
-                        if (!feed.initialized) {
-                          unawaited(feed.restoreCache().then((_) {
-                            if (!feed.initialized) return feed.load();
-                            return Future<void>.value();
-                          }));
-                        }
-                      },
-                      child: Padding(
-                        padding:
-                            const EdgeInsets.only(right: 20, top: 1, bottom: 2),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              entry.value,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: selectedTab == entry.key
-                                    ? null
-                                    : Theme.of(context).hintColor,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              curve: Curves.easeOutCubic,
-                              width: selectedTab == entry.key ? 24 : 0,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ))
-                .toList(),
-          ),
+          title: const Text('发现'),
           actions: [
             IconButton(
-                tooltip: '创建动态',
-                icon: const Icon(TIcons.logo_instagram),
-                onPressed: () async {
-                  await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const CreatePostPage()));
-                  if (mounted) feeds[selectedTab].load(refresh: true);
-                }),
+              tooltip: '创建动态',
+              icon: const Icon(TIcons.logo_instagram),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreatePostPage()),
+                );
+                if (mounted) feeds[selectedTab].load(refresh: true);
+              },
+            ),
           ],
         ),
         body: FeedShell(
@@ -387,7 +328,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
             FeedShellTab(title: '关注', cacheKey: 'dd.discover.feed.2', fetch: _feedShellUnusedFetch),
           ],
           externalFeeds: feeds,
-          showTabs: false,
+          showTabs: true,
           embedded: true,
           disposeFeeds: false,
           selectedTab: selectedTab,
