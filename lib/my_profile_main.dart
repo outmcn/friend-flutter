@@ -1397,19 +1397,42 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ]),
                     ),
                   ),
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _ProfileTabsHeaderDelegate(
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          _MyProfileIconTabs(selectedTab: selectedTab, onSelect: _selectProfileTab),
-
-                        ],
-                      ),
+                  SliverFillRemaining(
+                    hasScrollBody: true,
+                    child: FeedShell(
+                      tabs: profileFeedTabs,
+                      externalFeeds: feeds,
+                      showTabs: true,
+                      embedded: true,
+                      disposeFeeds: false,
+                      selectedTab: selectedTab,
+                      currentUserId: _currentUserId,
+                      onTabChanged: (tab) => _selectProfileTab(tab),
+                      onLike: _profileLike,
+                      onFavorite: _profileFavorite,
+                      onShare: _profileShare,
+                      onSendToFriend: _profileSendToFriend,
+                      onDirectChat: _profileDirectChat,
+                      onFollow: _profileFollow,
+                      onGift: _profileGift,
+                      onDelete: _deleteMyPost,
+                      onReport: _profileReport,
+                      onOpen: (post) async {
+                        final changed = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute<bool>(
+                            builder: (_) => DynamicDetailPage(
+                              postId: post.id,
+                              initialPost: post,
+                            ),
+                          ),
+                        );
+                        if (changed == true) {
+                          await _invalidateProfileCacheAndReload();
+                        }
+                      },
                     ),
                   ),
-                  ..._allProfileFeedSlivers(),
                 ],
               ),
               ),
