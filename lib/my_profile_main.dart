@@ -1399,6 +1399,24 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ]),
                     ),
                   ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _ProfileStickyIdentityDelegate(
+                      child: Material(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          child: Row(
+                            children: [
+                              CircleAvatar(radius: 16, backgroundImage: (_avatarUrl ?? '').isNotEmpty ? NetworkImage(_avatarUrl!) : null, child: (_avatarUrl ?? '').isEmpty ? const Icon(Icons.person, size: 18) : null),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text('${p?['nickname'] ?? 'Friend 用户'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                   SliverFillRemaining(
                     hasScrollBody: true,
                     child: FeedShell(
@@ -1445,6 +1463,15 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 }
 
+
+class _ProfileStickyIdentityDelegate extends SliverPersistentHeaderDelegate {
+  const _ProfileStickyIdentityDelegate({required this.child});
+  final Widget child;
+  @override double get minExtent => 50;
+  @override double get maxExtent => 50;
+  @override Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => child;
+  @override bool shouldRebuild(covariant _ProfileStickyIdentityDelegate oldDelegate) => oldDelegate.child != child;
+}
 
 class _ProfileActionButton extends StatelessWidget {
   const _ProfileActionButton({
