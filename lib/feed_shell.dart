@@ -53,7 +53,7 @@ class FeedShellController {
             (context, itemIndex) {
               final post = feed.posts[itemIndex];
               return _DiscoverFeedCard(
-                key: cardKeys.putIfAbsent('$index:${post.id}', GlobalKey.new),
+                key: cardKeys.putIfAbsent('${post.id}', GlobalKey.new),
                 feed: feed,
                 post: post,
                 onLike: onLike,
@@ -223,7 +223,7 @@ class _FeedShellState extends State<FeedShell> {
                       }
                     }
                     return _DiscoverFeedCard(
-                      key: cardKeys.putIfAbsent('$index:${post.id}', GlobalKey.new),
+                      key: cardKeys.putIfAbsent('${post.id}', GlobalKey.new),
                       feed: feed,
                       post: post,
                       onLike: widget.onLike,

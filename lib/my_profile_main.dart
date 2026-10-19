@@ -960,7 +960,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               builder: (_) => DynamicDetailPage(
                 postId: post.id,
                 initialPost: post,
-                cardKey: _profileCardKeys['$index:${post.id}'],
+                cardKey: _profileCardKeys['${post.id}'],
               ),
             ),
           );
