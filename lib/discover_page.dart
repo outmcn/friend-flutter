@@ -390,6 +390,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
           actions: const [],
         ),
         body: RefreshIndicator(
+          displacement: 56,
+          edgeOffset: 48,
+          triggerMode: RefreshIndicatorTriggerMode.anywhere,
           onRefresh: () => feeds[selectedTab].load(refresh: true),
           child: FeedShell(
           tabs: const [
