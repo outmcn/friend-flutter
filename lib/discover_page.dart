@@ -315,7 +315,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         }
       },
       child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -346,47 +346,34 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          surfaceTintColor: Colors.transparent,
-          toolbarHeight: 48,
-          titleSpacing: 0,
-          title: const SizedBox.shrink(),
-          flexibleSpace: Stack(
-            fit: StackFit.expand,
-            alignment: Alignment.center,
-            children: [
-              Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: ['推荐', _discoverLocalTabLabel, '关注']
-                      .asMap()
-                      .entries
-                      .map((entry) => _discoverTabButton(context, entry))
-                      .toList(),
-                ),
-                Positioned(
-                  left: 0,
-                  child: IconButton(
-                    tooltip: '通知',
-                    icon: const Icon(TIcons.notification),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const NotificationsPage(),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 0,
-                  child: IconButton(
-                    tooltip: '创建动态',
-                    icon: const Icon(TIcons.logo_instagram),
-                    onPressed: _createPost,
-                  ),
-                ),
-              ],
-            ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 0,
+        leading: IconButton(
+          tooltip: '通知',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationsPage()),
           ),
+          icon: const Icon(TIcons.notification),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: ['推荐', _discoverLocalTabLabel, '关注']
+              .asMap()
+              .entries
+              .map((entry) => _discoverTabButton(context, entry))
+              .toList(),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: '创建动态',
+            onPressed: _createPost,
+            icon: const Icon(TIcons.logo_instagram),
+          ),
+        ],
+      ),
         body: FeedShell(
           tabs: const [
             FeedShellTab(title: '推荐', cacheKey: 'dd.discover.feed.0', fetch: _feedShellUnusedFetch),
