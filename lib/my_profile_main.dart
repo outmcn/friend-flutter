@@ -1048,70 +1048,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      ClipOval(
-                                        child: SizedBox(
-                                          width: 78,
-                                          height: 78,
-                                          child: _avatarUrl == null ||
-                                                  _avatarUrl!.isEmpty
-                                              ? const ColoredBox(
-                                                  color: Colors.black12,
-                                                  child: Icon(Icons.person,
-                                                      size: 40),
-                                                )
-                                              : _PermanentCachedImage(
-                                                  url: _avatarUrl!,
-                                                  width: 78,
-                                                  height: 78,
-                                                  fit: BoxFit.cover,
-                                                  placeholder: const ColoredBox(
-                                                    color: Colors.black12,
-                                                    child: Icon(Icons.person,
-                                                        size: 40),
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: -9,
-                                        child: Center(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .surface,
-                                              border: Border.all(
-                                                  color: Theme.of(context)
-                                                      .dividerColor),
-                                              borderRadius:
-                                                  BorderRadius.circular(999),
-                                              boxShadow: const [
-                                                BoxShadow(
-                                                    color: Color(0x19000000),
-                                                    blurRadius: 8,
-                                                    offset: Offset(0, 2)),
-                                              ],
-                                            ),
-                                            child: Text(
-                                              '${p?['city'] ?? ''}'.trim().isEmpty
-                                                  ? '添加城市'
-                                                  : '${p?['city']}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelSmall),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -1282,6 +1218,73 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                   ),
                                 ),
+                                  const SizedBox(width: 12),
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      ClipOval(
+                                        child: SizedBox(
+                                          width: 78,
+                                          height: 78,
+                                          child: _avatarUrl == null ||
+                                                  _avatarUrl!.isEmpty
+                                              ? const ColoredBox(
+                                                  color: Colors.black12,
+                                                  child: Icon(Icons.person,
+                                                      size: 40),
+                                                )
+                                              : _PermanentCachedImage(
+                                                  url: _avatarUrl!,
+                                                  width: 78,
+                                                  height: 78,
+                                                  fit: BoxFit.cover,
+                                                  placeholder: const ColoredBox(
+                                                    color: Colors.black12,
+                                                    child: Icon(Icons.person,
+                                                        size: 40),
+                                                  ),
+                                                ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom: -9,
+                                        child: Center(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .surface,
+                                              border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .dividerColor),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                    color: Color(0x19000000),
+                                                    blurRadius: 8,
+                                                    offset: Offset(0, 2)),
+                                              ],
+                                            ),
+                                            child: Text(
+                                              '${p?['city'] ?? ''}'.trim().isEmpty
+                                                  ? '添加城市'
+                                                  : '${p?['city']}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelSmall),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 12),
+
+
                                 ],
                               ),
                               const SizedBox(height: 12),
