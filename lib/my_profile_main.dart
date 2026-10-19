@@ -989,7 +989,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: _showStickyNickname
             ? Text(
                 '${p?['nickname'] ?? 'Friend 用户'}',
