@@ -1028,7 +1028,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             if (error != null && profile != null)
@@ -1111,7 +1111,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(width: 16),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -1284,11 +1284,11 @@ class _DDProfilePageState extends State<DDProfilePage>
                                 ),
                                 ],
                               ),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 12),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
@@ -1412,7 +1412,7 @@ class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
             : Theme.of(context).scaffoldBackgroundColor,
         elevation: overlapsContent ? 2 : 0,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+          padding: const EdgeInsets.fromLTRB(24, 6, 24, 6),
           child: child,
         ),
       );
