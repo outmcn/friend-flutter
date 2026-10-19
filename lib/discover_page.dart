@@ -453,6 +453,7 @@ class _DiscoverFeedCard extends StatefulWidget {
     this.onFollow,
     this.onGift,
     this.onDelete,
+    this.hideAuthorRow = false,
   });
 
   final DiscoverFeed feed;
@@ -467,6 +468,7 @@ class _DiscoverFeedCard extends StatefulWidget {
   final ValueChanged<DDPost>? onDelete;
   final ValueChanged<DDPost> onReport;
   final ValueChanged<DDPost> onOpen;
+  final bool hideAuthorRow;
 
   @override
   State<_DiscoverFeedCard> createState() => _DiscoverFeedCardState();
@@ -522,6 +524,7 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       onFollow: widget.onFollow == null ? null : () => widget.onFollow!(post),
       onGift: widget.onGift == null ? null : () => widget.onGift!(post),
       onOpen: () => widget.onOpen(post),
+      hideAuthorRow: widget.hideAuthorRow,
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),

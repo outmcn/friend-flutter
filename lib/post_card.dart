@@ -748,6 +748,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     this.onDelete,
     required this.onReport,
     required this.onOpen,
+    this.hideAuthorRow = false,
   });
 
   final DDPost post;
@@ -761,6 +762,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback onReport;
   final VoidCallback onOpen;
+  final bool hideAuthorRow;
 
   Widget _media({required String url, required bool thumbnail}) {
     return _DiscoverMediaImage(url: url);
@@ -822,27 +824,49 @@ class _DiscoverProfileCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipOval(
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: post.avatar.trim().isEmpty
-                    ? const Icon(Icons.person_outline)
-                    : _PermanentCachedImage(
-                        url: post.avatar,
-                        fit: BoxFit.cover,
-                        placeholder: const Icon(Icons.person_outline),
-                      ),
+            if (!hideAuthorRow) ...[
+              ClipOval(
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: post.avatar.trim().isEmpty
+                      ? const Icon(Icons.person_outline)
+                      : _PermanentCachedImage(
+                          url: post.avatar,
+                          fit: BoxFit.cover,
+                          placeholder: const Icon(Icons.person_outline),
+                        ),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
+              const SizedBox(width: 10),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
+                  if (hideAuthorRow)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${_formatDiscoverDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: '分享',
+                          onPressed: () => _showDiscoverMore(context),
+                          icon: const Icon(TIcons.share_1),
+                          iconSize: 20,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

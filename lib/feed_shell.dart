@@ -39,6 +39,7 @@ class FeedShellController {
     ValueChanged<DDPost>? onGift,
     ValueChanged<DDPost>? onDelete,
     required int? currentUserId,
+    bool hideAuthorRow = false,
   }) {
     final feed = feeds[index];
     final signature = feed.posts.map((post) => post.id).join(',');
@@ -66,6 +67,7 @@ class FeedShellController {
                 onDelete: currentUserId != null && post.userId == currentUserId ? onDelete : null,
                 onReport: onReport,
                 onOpen: onOpen,
+                hideAuthorRow: hideAuthorRow,
               );
             },
             childCount: feed.posts.length,
@@ -115,6 +117,7 @@ class FeedShell extends StatefulWidget {
     this.onGift,
     this.onDelete,
     this.currentUserId,
+    this.hideAuthorRow = false,
     this.initialTab = 0,
   });
 
@@ -137,6 +140,7 @@ class FeedShell extends StatefulWidget {
   final ValueChanged<DDPost>? onGift;
   final ValueChanged<DDPost>? onDelete;
   final int? currentUserId;
+  final bool hideAuthorRow;
   final int initialTab;
 
   @override
@@ -236,6 +240,7 @@ class _FeedShellState extends State<FeedShell> {
                       onDelete: widget.currentUserId != null && post.userId == widget.currentUserId ? widget.onDelete : null,
                       onReport: widget.onReport,
                       onOpen: widget.onOpen,
+                      hideAuthorRow: hideAuthorRow,
                     );
                   },
                   childCount: feed.posts.length,

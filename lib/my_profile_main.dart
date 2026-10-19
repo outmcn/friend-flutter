@@ -953,6 +953,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         onGift: _profileGift,
         onDelete: index == 0 ? _deleteMyPost : null,
         onReport: _profileReport,
+        hideAuthorRow: index == 0,
         onOpen: (post) async {
           final changed = await Navigator.push<bool>(
             context,
