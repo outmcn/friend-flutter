@@ -635,17 +635,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   Future<void> _selectProfileTab(int tab) async {
-    if (tab == selectedTab) {
-      final scroll = feeds[selectedTab].scroll;
-      if (scroll.hasClients) {
-        unawaited(scroll.animateTo(
-          0,
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutCubic,
-        ));
-      }
-      return;
-    }
+    if (tab == selectedTab) return;
     final feed = feeds[tab];
     if (mounted) setState(() => selectedTab = tab);
     if (!feed.initialized) {
