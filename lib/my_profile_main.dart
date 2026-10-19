@@ -486,6 +486,9 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (number >= 10000) {
       return '${(number / 10000).toStringAsFixed(1)}万';
     }
+    if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}k';
+    }
     return number.toString();
   }
 
