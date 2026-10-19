@@ -67,7 +67,7 @@ class FeedShellController {
                 onDelete: currentUserId != null && post.userId == currentUserId ? onDelete : null,
                 onReport: onReport,
                 onOpen: onOpen,
-                hideAuthorRow: false,
+                hideAuthorRow: hideAuthorRow,
               );
             },
             childCount: feed.posts.length,
