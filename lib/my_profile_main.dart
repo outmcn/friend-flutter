@@ -1144,12 +1144,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         Container(
                                           padding:
                                               const EdgeInsets.symmetric(vertical: 14),
-                                          decoration: BoxDecoration(
-                                            border: Border.symmetric(
-                                                horizontal: BorderSide(
-                                                    color:
-                                                        Theme.of(context).dividerColor)),
-                                          ),
+                                          decoration: const BoxDecoration(),
                                           child: Row(
                                             children: [
                                               Expanded(
