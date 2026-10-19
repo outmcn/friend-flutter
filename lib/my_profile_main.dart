@@ -1458,7 +1458,6 @@ class _ProfileActionButton extends StatelessWidget {
                     Text(subtitle!,
                         style: TextStyle(
                             fontSize: 10, color: scheme.onSurfaceVariant)),
-                ..._allProfileFeedSlivers(),
                 ],
               ),
             ],
