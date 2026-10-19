@@ -200,9 +200,13 @@ class _FeedShellState extends State<FeedShell> {
           key: PageStorageKey('feed-shell.$index'),
           primary: widget.nestedScroll ? true : false,
           controller: widget.nestedScroll ? null : feed.scroll,
-          physics: widget.nestedScroll
-              ? const AlwaysScrollableScrollPhysics()
-              : const ClampingScrollPhysics(),
+          physics: widget.refreshAtTop
+              ? const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                )
+              : widget.nestedScroll
+                  ? const AlwaysScrollableScrollPhysics()
+                  : const ClampingScrollPhysics(),
           slivers: [
             if (widget.refreshAtTop)
               CupertinoSliverRefreshControl(
