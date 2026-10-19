@@ -1082,6 +1082,18 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ),
                                           ],
                                         ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _SonicProfileButton(
+                                              playing: _sonicPlaying,
+                                              enabled: _sonicUrl != null &&
+                                                  _sonicUrl!.isNotEmpty,
+                                              onTap: _editSonic,
+                                            ),
+                                          ],
+                                        ),
+
                                         Padding(
                                           padding: const EdgeInsets.only(top: 4),
                                           child: Text(
@@ -1153,17 +1165,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               )),
                                             ],
                                           ),
-                                        ),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            _SonicProfileButton(
-                                              playing: _sonicPlaying,
-                                              enabled: _sonicUrl != null &&
-                                                  _sonicUrl!.isNotEmpty,
-                                              onTap: _editSonic,
-                                            ),
-                                          ],
                                         ),
                                       ],
                                     ),
