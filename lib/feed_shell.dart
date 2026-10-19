@@ -204,6 +204,10 @@ class _FeedShellState extends State<FeedShell> {
               ? const AlwaysScrollableScrollPhysics()
               : const ClampingScrollPhysics(),
           slivers: [
+            if (widget.refreshAtTop)
+              CupertinoSliverRefreshControl(
+                onRefresh: () => feed.load(refresh: true),
+              ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               sliver: SliverList(
@@ -271,12 +275,7 @@ class _FeedShellState extends State<FeedShell> {
             ),
           ],
         );
-        return widget.refreshAtTop
-            ? RefreshIndicator(
-                onRefresh: () => feed.load(refresh: true),
-                child: view,
-              )
-            : view;
+        return view;
       },
     );
   }
