@@ -907,38 +907,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (submitted == true && mounted) _showTopNotice(context, const Text('举报已提交'));
   }
 
-  List<Widget> _sharedFeedShellSlivers(int tab) {
-    final shell = FeedShellController(
-      feeds: feeds,
-      cardKeys: _profileCardKeys,
-    );
-    return shell.slivers(
-      index: tab,
-      currentUserId: _currentUserId,
-      onLike: _profileLike,
-      onFavorite: _profileFavorite,
-      onShare: _profileShare,
-      onSendToFriend: _profileSendToFriend,
-      onDirectChat: _profileDirectChat,
-      onFollow: _profileFollow,
-      onGift: _profileGift,
-      onDelete: tab == 0 ? _deleteMyPost : null,
-      onReport: _profileReport,
-      onOpen: (post) async {
-        final changed = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute<bool>(
-            builder: (_) => DynamicDetailPage(
-              postId: post.id,
-              initialPost: post,
-              cardKey: _profileCardKeys['$tab:${post.id}'],
-            ),
-          ),
-        );
-        if (changed == true) await _invalidateProfileCacheAndReload();
-      },
-    );
-  }
 
   List<Widget> _allProfileFeedSlivers() {
     final signature = feeds.map((feed) => feed.posts.map((post) => post.id).join(',')).join('|');
