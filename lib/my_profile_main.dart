@@ -934,6 +934,47 @@ class _DDProfilePageState extends State<DDProfilePage>
     );
   }
 
+  List<Widget> _allProfileFeedSlivers() {
+    final shell = FeedShellController(feeds: feeds, cardKeys: _profileCardKeys);
+    final result = <Widget>[];
+    for (var index = 0; index < feeds.length; index++) {
+      final slivers = shell.slivers(
+        index: index,
+        onLike: _profileLike,
+        onFavorite: _profileFavorite,
+        onShare: _profileShare,
+        onSendToFriend: _profileSendToFriend,
+        onDirectChat: _profileDirectChat,
+        onFollow: _profileFollow,
+        onGift: _profileGift,
+        onDelete: index == 0 ? _deleteMyPost : null,
+        onReport: _profileReport,
+        onOpen: (post) async {
+          final changed = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute<bool>(
+              builder: (_) => DynamicDetailPage(
+                postId: post.id,
+                initialPost: post,
+                cardKey: _profileCardKeys['$index:${post.id}'],
+              ),
+            ),
+          );
+          if (changed == true) await _invalidateProfileCacheAndReload();
+        },
+      );
+      for (final sliver in slivers) {
+        result.add(SliverVisibility(
+          visible: selectedTab == index,
+          maintainState: true,
+          maintainAnimation: true,
+          sliver: sliver,
+        ));
+      }
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -1364,7 +1405,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ),
                     ),
                   ),
-                  ..._sharedFeedShellSlivers(selectedTab),
+                  ..._allProfileFeedSlivers(),
                 ],
               ),
               ),
