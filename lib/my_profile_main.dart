@@ -1202,15 +1202,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               playing: _sonicPlaying,
                                               enabled: _sonicUrl != null &&
                                                   _sonicUrl!.isNotEmpty,
-                                              onTap: _toggleSonic,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            IconButton(
-                                              tooltip: '编辑语音',
-                                              onPressed: _editSonic,
-                                              visualDensity:
-                                                  VisualDensity.compact,
-                                              icon: const Icon(TIcons.ai_edit_1, size: 18),
+                                              onTap: _editSonic,
                                             ),
                                           ],
                                         ),
