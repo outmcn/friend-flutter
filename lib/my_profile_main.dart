@@ -375,6 +375,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         .map((tab) => DiscoverFeed(tab.fetch, cacheKey: tab.cacheKey))
         .toList();
     for (final feed in feeds) {
+      feed.scroll.addListener(_handleProfileScroll);
       feed.scroll.addListener(() {
         if (feed.scroll.hasClients &&
             feed.scroll.position.extentAfter < 500 &&
@@ -428,6 +429,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     WidgetsBinding.instance.removeObserver(this);
     _presenceTimer?.cancel();
     for (final feed in feeds) {
+      feed.scroll.removeListener(_handleProfileScroll);
       feed.dispose();
     }
     _sonicPlayer.dispose();
