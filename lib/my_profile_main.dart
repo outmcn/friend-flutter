@@ -1140,6 +1140,68 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ],
                                         ),
                                         const SizedBox(height: 10),
+                                        Container(
+                                          padding:
+                                              const EdgeInsets.symmetric(vertical: 14),
+                                          decoration: BoxDecoration(
+                                            border: Border.symmetric(
+                                                horizontal: BorderSide(
+                                                    color:
+                                                        Theme.of(context).dividerColor)),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '粉丝',
+                                                      value: _formatCount(p?['followers']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation:
+                                                                                    'followers',
+                                                                                title: '粉丝'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '关注',
+                                                      value: _formatCount(p?['following']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation:
+                                                                                    'following',
+                                                                                title: '关注'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '获赞',
+                                                      value: _formatCount(
+                                                          p?['receivedLikes'] ?? p?['likes']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation: 'likers',
+                                                                                title: '获赞'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                label: '魅力',
+                                                value: _formatCount(charmCoins),
+                                                onTap: () => Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const _CharmSourcesPage(),
+                                                  ),
+                                                ),
+                                              )),
+                                            ],
+                                          ),
+                                        ),
                                         Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
@@ -1226,68 +1288,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                 ],
                               ),
                               const SizedBox(height: 18),
-                              Container(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                                decoration: BoxDecoration(
-                                  border: Border.symmetric(
-                                      horizontal: BorderSide(
-                                          color:
-                                              Theme.of(context).dividerColor)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                        child: _InlineProfileStat(
-                                            label: '粉丝',
-                                            value: _formatCount(p?['followers']),
-                                            onTap: () => Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const _UserRelationListPage(
-                                                            relation:
-                                                                'followers',
-                                                            title: '粉丝'))))),
-                                    Expanded(
-                                        child: _InlineProfileStat(
-                                            label: '关注',
-                                            value: _formatCount(p?['following']),
-                                            onTap: () => Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const _UserRelationListPage(
-                                                            relation:
-                                                                'following',
-                                                            title: '关注'))))),
-                                    Expanded(
-                                        child: _InlineProfileStat(
-                                            label: '获赞',
-                                            value: _formatCount(
-                                                p?['receivedLikes'] ?? p?['likes']),
-                                            onTap: () => Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const _UserRelationListPage(
-                                                            relation: 'likers',
-                                                            title: '获赞'))))),
-                                    Expanded(
-                                        child: _InlineProfileStat(
-                                      label: '魅力',
-                                      value: _formatCount(charmCoins),
-                                      onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const _CharmSourcesPage(),
-                                        ),
-                                      ),
-                                    )),
-                                  ],
-                                ),
-                              ),
                               const SizedBox(height: 12),
                               SizedBox(
                                 height: 32,
