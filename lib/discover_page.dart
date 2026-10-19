@@ -309,9 +309,22 @@ class _DiscoverPageState extends State<DiscoverPage> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           surfaceTintColor: Colors.transparent,
           toolbarHeight: 48,
-          titleSpacing: 16,
+          titleSpacing: 0,
           title: Row(
-            children: ['推荐', _discoverLocalTabLabel, '关注']
+            children: [
+              IconButton(
+                tooltip: '通知',
+                icon: const Icon(TIcons.notification),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsPage()),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: ['推荐', _discoverLocalTabLabel, '关注']
                 .asMap()
                 .entries
                 .map((entry) => GestureDetector(
@@ -364,7 +377,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         ),
                       ),
                     ))
-                .toList(),
+                    .toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 48),
+            ],
           ),
           actions: [
             IconButton(
