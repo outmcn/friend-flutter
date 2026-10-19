@@ -1021,13 +1021,10 @@ class _DDProfilePageState extends State<DDProfilePage>
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
-                RefreshIndicator(
-                  onRefresh: () => load(forceRefresh: true),
-                  child: CustomScrollView(
-                    key: PageStorageKey('profile.$selectedTab'),
-                    controller: _profileHeaderScroll,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
+                NestedScrollView(
+                  controller: _profileHeaderScroll,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  headerSliverBuilder: (context, innerBoxIsScrolled) => [
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                         sliver: SliverList(
@@ -1413,44 +1410,35 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ),
                     ),
                   ),
-                  SliverFillRemaining(
-                    hasScrollBody: true,
-                    child: FeedShell(
-                      tabs: profileFeedTabs,
-                      externalFeeds: feeds,
-                      showTabs: false,
-                      embedded: true,
-                      disposeFeeds: false,
-                      selectedTab: selectedTab,
-                      currentUserId: _currentUserId,
-                      onTabChanged: (tab) => _selectProfileTab(tab),
-                      onLike: _profileLike,
-                      onFavorite: _profileFavorite,
-                      onShare: _profileShare,
-                      onSendToFriend: _profileSendToFriend,
-                      onDirectChat: _profileDirectChat,
-                      onFollow: _profileFollow,
-                      onGift: _profileGift,
-                      onDelete: _deleteMyPost,
-                      onReport: _profileReport,
-                      onOpen: (post) async {
-                        final changed = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute<bool>(
-                            builder: (_) => DynamicDetailPage(
-                              postId: post.id,
-                              initialPost: post,
-                            ),
-                          ),
-                        );
-                        if (changed == true) {
-                          await _invalidateProfileCacheAndReload();
-                        }
-                      },
-                    ),
-                  ),
                 ],
-              ),
+                body: FeedShell(
+                  tabs: profileFeedTabs,
+                  externalFeeds: feeds,
+                  showTabs: false,
+                  embedded: true,
+                  disposeFeeds: false,
+                  selectedTab: selectedTab,
+                  currentUserId: _currentUserId,
+                  onTabChanged: (tab) => _selectProfileTab(tab),
+                  onLike: _profileLike,
+                  onFavorite: _profileFavorite,
+                  onShare: _profileShare,
+                  onSendToFriend: _profileSendToFriend,
+                  onDirectChat: _profileDirectChat,
+                  onFollow: _profileFollow,
+                  onGift: _profileGift,
+                  onDelete: _deleteMyPost,
+                  onReport: _profileReport,
+                  onOpen: (post) async {
+                    final changed = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute<bool>(
+                        builder: (_) => DynamicDetailPage(postId: post.id, initialPost: post),
+                      ),
+                    );
+                    if (changed == true) await _invalidateProfileCacheAndReload();
+                  },
+                ),
               ),
 
             ],
