@@ -1402,9 +1402,12 @@ class _DDProfilePageState extends State<DDProfilePage>
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _ProfileTabsHeaderDelegate(
-                      child: _MyProfileIconTabs(
-                        selectedTab: selectedTab,
-                        onSelect: _selectProfileTab,
+                      child: Material(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: _MyProfileIconTabs(
+                          selectedTab: selectedTab,
+                          onSelect: _selectProfileTab,
+                        ),
                       ),
                     ),
                   ),
