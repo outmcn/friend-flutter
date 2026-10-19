@@ -1287,11 +1287,11 @@ class _DDProfilePageState extends State<DDProfilePage>
 
                                 ],
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 18),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 14),
                         Row(
                           children: [
                             Expanded(
@@ -1321,6 +1321,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                             ),
                           ],
                         ),
+                        const SizedBox(height: 10),
                       ]),
                     ),
                   ),
