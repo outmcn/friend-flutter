@@ -391,7 +391,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         ),
         body: RefreshIndicator(
           displacement: 56,
-          edgeOffset: 48,
+          edgeOffset: 0,
           triggerMode: RefreshIndicatorTriggerMode.anywhere,
           onRefresh: () => feeds[selectedTab].load(refresh: true),
           child: FeedShell(
@@ -402,7 +402,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
           ],
           externalFeeds: feeds,
           showTabs: false,
-          refreshAtTop: true,
           embedded: true,
           disposeFeeds: false,
           selectedTab: selectedTab,
