@@ -293,6 +293,46 @@ class _DiscoverPageState extends State<DiscoverPage> {
     );
   }
 
+  Widget _discoverTabButton(BuildContext context, MapEntry<int, String> entry) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        if (selectedTab == entry.key) {
+          _scrollCurrentTabToTop();
+          return;
+        }
+        setState(() => selectedTab = entry.key);
+        final feed = feeds[entry.key];
+        if (entry.key == 1 && _discoverLocalTabLabel == '本地') {
+          unawaited(_loadDiscoverCity());
+        }
+        if (!feed.initialized) {
+          unawaited(feed.restoreCache().then((_) {
+            if (!feed.initialized) return feed.load();
+            return Future<void>.value();
+          }));
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(right: 20, top: 1, bottom: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(entry.value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: selectedTab == entry.key ? null : Theme.of(context).hintColor)),
+            const SizedBox(height: 5),
+            AnimatedContainer(duration: const Duration(milliseconds: 160), curve: Curves.easeOutCubic, width: selectedTab == entry.key ? 24 : 0, height: 3, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(99))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createPost() async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostPage()));
+    if (mounted) await feeds[selectedTab].load(refresh: true);
+  }
+
   void _scrollCurrentTabToTop() {
     final scroll = feeds[selectedTab].scroll;
     if (!scroll.hasClients || scroll.offset <= 0) return;
@@ -310,93 +350,41 @@ class _DiscoverPageState extends State<DiscoverPage> {
           surfaceTintColor: Colors.transparent,
           toolbarHeight: 48,
           titleSpacing: 0,
-          title: Row(
-            children: [
-              IconButton(
+          title: SizedBox(
+            width: double.infinity,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: ['推荐', _discoverLocalTabLabel, '关注']
+                      .asMap()
+                      .entries
+                      .map((entry) => _discoverTabButton(context, entry))
+                      .toList(),
+                ),
+                Positioned(
+                  left: 0,
+                  child: IconButton(
                 tooltip: '通知',
                 icon: const Icon(TIcons.notification),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const NotificationsPage()),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: ['推荐', _discoverLocalTabLabel, '关注']
-                .asMap()
-                .entries
-                .map((entry) => GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        if (selectedTab == entry.key) {
-                          _scrollCurrentTabToTop();
-                          return;
-                        }
-                        setState(() => selectedTab = entry.key);
-                        final feed = feeds[entry.key];
-                        if (entry.key == 1 && _discoverLocalTabLabel == '本地') {
-                          unawaited(_loadDiscoverCity());
-                        }
-                        if (!feed.initialized) {
-                          unawaited(feed.restoreCache().then((_) {
-                            if (!feed.initialized) return feed.load();
-                            return Future<void>.value();
-                          }));
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 20, top: 1, bottom: 2),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              entry.value,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: selectedTab == entry.key
-                                    ? null
-                                    : Theme.of(context).hintColor,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              curve: Curves.easeOutCubic,
-                              width: selectedTab == entry.key ? 24 : 0,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ))
-                    .toList(),
+                ),
+                Positioned(
+                  right: 0,
+                  child: IconButton(
+                    tooltip: '创建动态',
+                    icon: const Icon(TIcons.logo_instagram),
+                    onPressed: _createPost,
                   ),
                 ),
-              ),
-              const SizedBox(width: 48),
-            ],
-          ),
-          actions: [
-            IconButton(
-              tooltip: '创建动态',
-              icon: const Icon(TIcons.logo_instagram),
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CreatePostPage()),
-                );
-                if (mounted) feeds[selectedTab].load(refresh: true);
-              },
+              ],
             ),
-          ],
+          ),
+          actions: const [],
         ),
         body: RefreshIndicator(
           onRefresh: () => feeds[selectedTab].load(refresh: true),
@@ -408,6 +396,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           ],
           externalFeeds: feeds,
           showTabs: false,
+          refreshAtTop: true,
           embedded: true,
           disposeFeeds: false,
           selectedTab: selectedTab,
