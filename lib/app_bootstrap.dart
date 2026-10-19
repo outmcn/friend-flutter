@@ -1,5 +1,21 @@
 part of 'main.dart';
 
+class _GlobalScrollToTopRegistry {
+  static final controllers = <ScrollController>{};
+  static void register(ScrollController controller) => controllers.add(controller);
+  static void unregister(ScrollController controller) => controllers.remove(controller);
+  static void scrollTop() {
+    for (final controller in List<ScrollController>.of(controllers)) {
+      if (!controller.hasClients) continue;
+      controller.animateTo(
+        0,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+}
+
 void _showTopNotice(BuildContext context, Widget content) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   if (overlay == null) return;
@@ -84,8 +100,21 @@ class DDApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      builder: (context, child) =>
+      builder: (context, child) => Stack(
+        children: [
           _KeyboardDismissBehavior(child: child ?? const SizedBox.shrink()),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.paddingOf(context).top,
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _GlobalScrollToTopRegistry.scrollTop,
+            ),
+          ),
+        ],
+      ),
       title: 'DD',
       themeMode: ThemeMode.system,
       theme: ThemeData(

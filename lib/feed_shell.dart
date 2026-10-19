@@ -152,6 +152,7 @@ class _FeedShellState extends State<FeedShell> {
       final index = entry.key;
       final tab = entry.value;
       final feed = DiscoverFeed(tab.fetch, cacheKey: tab.cacheKey);
+      _GlobalScrollToTopRegistry.register(feed.scroll);
       feed.scroll.addListener(() {
         if (feed.scroll.hasClients &&
             feed.scroll.position.extentAfter < 500 &&
@@ -173,7 +174,10 @@ class _FeedShellState extends State<FeedShell> {
   @override
   void dispose() {
     if (widget.disposeFeeds) {
-      for (final feed in feeds) feed.dispose();
+      for (final feed in feeds) {
+        _GlobalScrollToTopRegistry.unregister(feed.scroll);
+        feed.dispose();
+      }
     }
     super.dispose();
   }
