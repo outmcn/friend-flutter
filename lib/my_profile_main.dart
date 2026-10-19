@@ -983,64 +983,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     return result;
   }
 
-  Widget _presenceButton() => Semantics(
-                                    button: true,
-                                    label: _appActive
-                                        ? (_stealth ? '隐身状态设置' : '在线状态设置')
-                                        : '离线状态设置',
-                                    child: InkWell(
-                                      onTap: _openPresenceControls,
-                                      borderRadius: BorderRadius.circular(999),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: !_appActive
-                                              ? const Color(0xfff3f4f6)
-                                              : _stealth
-                                                  ? const Color(0xfff3f4f6)
-                                                  : const Color(0xfff0fdf4),
-                                          border: Border.all(
-                                              color: _stealth
-                                                  ? const Color(0xffd1d5db)
-                                                  : const Color(0xffbbf7d0)),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: BoxDecoration(
-                                              color: !_appActive
-                                                  ? const Color(0xff9ca3af)
-                                                  : _stealth
-                                                      ? const Color(0xff9ca3af)
-                                                      : const Color(0xff22c55e),
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 5),
-                                          Text(
-                                            _appActive
-                                                ? (_stealth ? '隐身' : '在线')
-                                                : '离线',
-                                            style: TextStyle(
-                                              color: !_appActive
-                                                  ? const Color(0xff9ca3af)
-                                                  : _stealth
-                                                      ? const Color(0xff6b7280)
-                                                      : const Color(0xff16a34a),
-                                              fontSize: 11,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ),
-                              );
+
 
   @override
   Widget build(BuildContext context) {
@@ -1225,8 +1168,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ],
                                     ),
                                   ),
-                                  _presenceButton(),
-
                                   const SizedBox(width: 12),
                                   Stack(
                                     clipBehavior: Clip.none,
