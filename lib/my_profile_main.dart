@@ -328,6 +328,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   String? _cachedAllProfileSignature;
   List<Widget>? _cachedAllProfileSlivers;
   final List<VoidCallback> _profileFeedListeners = <VoidCallback>[];
+  final Map<int, double> _profileTabOffsets = <int, double>{};
   final AudioPlayer _sonicPlayer = AudioPlayer();
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
@@ -387,6 +388,11 @@ class _DDProfilePageState extends State<DDProfilePage>
       feed.addListener(invalidate);
       _GlobalScrollToTopRegistry.register(feed.scroll);
       feed.scroll.addListener(_handleProfileScroll);
+      feed.scroll.addListener(() {
+        if (feed.scroll.hasClients) {
+          _profileTabOffsets[feeds.indexOf(feed)] = feed.scroll.offset;
+        }
+      });
       feed.scroll.addListener(() {
         if (feed.scroll.hasClients &&
             feed.scroll.position.extentAfter < 500 &&
@@ -655,6 +661,14 @@ class _DDProfilePageState extends State<DDProfilePage>
       _cachedAllProfileSignature = null;
       _cachedAllProfileSlivers = null;
       setState(() => selectedTab = tab);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !feed.scroll.hasClients) return;
+        final target = _profileTabOffsets[tab] ?? 0.0;
+        feed.scroll.jumpTo(target.clamp(
+          feed.scroll.position.minScrollExtent,
+          feed.scroll.position.maxScrollExtent,
+        ));
+      });
     }
     if (!feed.initialized) {
       await feed.restoreCache();
