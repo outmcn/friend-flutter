@@ -1026,10 +1026,10 @@ class _DDProfilePageState extends State<DDProfilePage>
                 RefreshIndicator(
                   notificationPredicate: (notification) => notification.depth == 0,
                   onRefresh: () => load(forceRefresh: true),
-                  child: NestedScrollView(
+                  child: CustomScrollView(
                     controller: _profileHeaderScroll,
                     physics: const AlwaysScrollableScrollPhysics(),
-                    headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                    slivers: [
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                         sliver: SliverList(
@@ -1410,42 +1410,10 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ),
                     ),
                   ),
+                  ..._allProfileFeedSlivers(),
                 ],
-                body: FeedShell(
-                  tabs: profileFeedTabs,
-                  externalFeeds: feeds,
-                  showTabs: false,
-                  embedded: true,
-                  disposeFeeds: false,
-                  nestedScroll: true,
-                  refreshAtTop: true,
-                  selectedTab: selectedTab,
-                  currentUserId: _currentUserId,
-                  onTabChanged: (tab) => _selectProfileTab(tab),
-                  onLike: _profileLike,
-                  onFavorite: _profileFavorite,
-                  onShare: _profileShare,
-                  onSendToFriend: _profileSendToFriend,
-                  onDirectChat: _profileDirectChat,
-                  onFollow: _profileFollow,
-                  onGift: _profileGift,
-                  onDelete: _deleteMyPost,
-                  onReport: _profileReport,
-                  onOpen: (post) async {
-                    final changed = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute<bool>(
-                        builder: (_) => DynamicDetailPage(postId: post.id, initialPost: post),
-                      ),
-                    );
-                    if (changed == true) await _invalidateProfileCacheAndReload();
-                  },
-                ),
               ),
-              ),
-
-            ],
-          ),
+            ),
     );
   }
 }
@@ -1490,6 +1458,7 @@ class _ProfileActionButton extends StatelessWidget {
                     Text(subtitle!,
                         style: TextStyle(
                             fontSize: 10, color: scheme.onSurfaceVariant)),
+                ..._allProfileFeedSlivers(),
                 ],
               ),
             ],
