@@ -108,6 +108,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         token: token,
         nickname: nickname.text.trim(),
         signature: signature.text.trim(),
+        bio: signature.text.trim(),
         avatarKey: avatarKey,
       );
       if (mounted) Navigator.pop(context, true);

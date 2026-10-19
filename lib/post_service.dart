@@ -1096,6 +1096,7 @@ class DDPostService {
     required String token,
     String? nickname,
     String? signature,
+    String? bio,
     String? gender,
     String? city,
     String? avatarKey,
@@ -1111,6 +1112,7 @@ class DDPostService {
       body: jsonEncode({
         if (nickname != null) 'nickname': nickname,
         if (signature != null) 'signature': signature,
+        if (bio != null) 'bio': bio,
         if (gender != null) 'gender': gender,
         if (city != null) 'city': city,
         if (avatarKey != null) 'avatarKey': avatarKey,
