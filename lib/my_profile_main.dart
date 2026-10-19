@@ -1024,6 +1024,7 @@ class _DDProfilePageState extends State<DDProfilePage>
           : Stack(
               children: [
                 RefreshIndicator(
+                  notificationPredicate: (notification) => notification.depth == 0,
                   onRefresh: () => load(forceRefresh: true),
                   child: NestedScrollView(
                     controller: _profileHeaderScroll,
