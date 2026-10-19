@@ -102,6 +102,7 @@ class FeedShell extends StatefulWidget {
     this.disposeFeeds = true,
     this.embedded = false,
     this.nestedScroll = false,
+    this.refreshAtTop = false,
     this.selectedTab,
     this.onTabChanged,
     required this.onLike,
@@ -124,6 +125,7 @@ class FeedShell extends StatefulWidget {
   final bool disposeFeeds;
   final bool embedded;
   final bool nestedScroll;
+  final bool refreshAtTop;
   final int? selectedTab;
   final ValueChanged<int>? onTabChanged;
   final ValueChanged<DDPost> onLike;
@@ -194,7 +196,8 @@ class _FeedShellState extends State<FeedShell> {
     return AnimatedBuilder(
       animation: feed,
       builder: (context, _) => RefreshIndicator(
-        onRefresh: () => feed.load(refresh: true),
+        notificationPredicate: (_) => !widget.refreshAtTop,
+        onRefresh: () => widget.refreshAtTop ? Future<void>.value() : feed.load(refresh: true),
         child: CustomScrollView(
           key: PageStorageKey('feed-shell.$index'),
           primary: widget.nestedScroll ? true : false,
