@@ -101,6 +101,7 @@ class FeedShell extends StatefulWidget {
     this.showTabs = true,
     this.disposeFeeds = true,
     this.embedded = false,
+    this.nestedScroll = false,
     this.selectedTab,
     this.onTabChanged,
     required this.onLike,
@@ -122,6 +123,7 @@ class FeedShell extends StatefulWidget {
   final bool showTabs;
   final bool disposeFeeds;
   final bool embedded;
+  final bool nestedScroll;
   final int? selectedTab;
   final ValueChanged<int>? onTabChanged;
   final ValueChanged<DDPost> onLike;
@@ -195,8 +197,11 @@ class _FeedShellState extends State<FeedShell> {
         onRefresh: () => feed.load(refresh: true),
         child: CustomScrollView(
           key: PageStorageKey('feed-shell.$index'),
-          controller: feed.scroll,
-          physics: const AlwaysScrollableScrollPhysics(),
+          primary: widget.nestedScroll ? true : false,
+          controller: widget.nestedScroll ? null : feed.scroll,
+          physics: widget.nestedScroll
+              ? const AlwaysScrollableScrollPhysics()
+              : const ClampingScrollPhysics(),
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),

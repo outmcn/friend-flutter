@@ -1417,6 +1417,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                   showTabs: false,
                   embedded: true,
                   disposeFeeds: false,
+                  nestedScroll: true,
                   selectedTab: selectedTab,
                   currentUserId: _currentUserId,
                   onTabChanged: (tab) => _selectProfileTab(tab),
