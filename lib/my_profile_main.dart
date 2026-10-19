@@ -362,6 +362,8 @@ class _DDProfilePageState extends State<DDProfilePage>
       3,
       (tab) => FeedShellTab(
         title: tab == 0 ? '我的动态' : tab == 1 ? '收藏' : '点赞',
+        icon: tab == 0 ? TIcons.highlight_1 : tab == 1 ? TIcons.bookmark : TIcons.heart,
+        selectedIcon: tab == 0 ? TIcons.highlight_1_filled : tab == 1 ? TIcons.bookmark_filled : TIcons.heart_filled,
         cacheKey: 'dd.profile.my.v2.tab.$tab',
         fetch: (offset) async {
           final token = await _token();

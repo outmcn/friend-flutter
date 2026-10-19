@@ -7,11 +7,15 @@ class FeedShellTab {
     required this.title,
     required this.cacheKey,
     required this.fetch,
+    this.icon,
+    this.selectedIcon,
   });
 
   final String title;
   final String cacheKey;
   final Future<List<DDPost>> Function(int offset) fetch;
+  final IconData? icon;
+  final IconData? selectedIcon;
 }
 
 
@@ -282,15 +286,30 @@ class _FeedShellState extends State<FeedShell> {
                           }
                         },
                         child: Center(
-                          child: Text(
-                            entry.value.title,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: selectedTab == entry.key
-                                  ? null
-                                  : Theme.of(context).hintColor,
-                            ),
-                          ),
+                          child: entry.value.icon == null
+                              ? Text(
+                                  entry.value.title,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: selectedTab == entry.key
+                                        ? null
+                                        : Theme.of(context).hintColor,
+                                  ),
+                                )
+                              : Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      selectedTab == entry.key
+                                          ? (entry.value.selectedIcon ?? entry.value.icon!)
+                                          : entry.value.icon!,
+                                      size: 24,
+                                      color: selectedTab == entry.key
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Theme.of(context).hintColor,
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
                     ),
