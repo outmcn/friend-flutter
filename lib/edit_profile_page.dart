@@ -132,8 +132,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             : ListView(padding: const EdgeInsets.all(18), children: [
                 GestureDetector(
                   onTap: pickAvatar,
-                  child: Align(
-                    alignment: Alignment.centerRight,
+                  child: Center(
                     child: SizedBox(
                       width: 96,
                       height: 96,
