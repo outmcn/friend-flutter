@@ -366,12 +366,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 Positioned(
                   left: 0,
                   child: IconButton(
-                tooltip: '通知',
-                icon: const Icon(TIcons.notification),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NotificationsPage()),
-                ),
+                    tooltip: '通知',
+                    icon: const Icon(TIcons.notification),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationsPage(),
+                      ),
+                    ),
+                  ),
                 ),
                 Positioned(
                   right: 0,
