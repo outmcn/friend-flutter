@@ -387,7 +387,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
               ],
             ),
           ),
-        ),
         body: FeedShell(
           tabs: const [
             FeedShellTab(title: '推荐', cacheKey: 'dd.discover.feed.0', fetch: _feedShellUnusedFetch),
