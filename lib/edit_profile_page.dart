@@ -9,6 +9,7 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final service = DDPostService();
   final nickname = TextEditingController();
+  final signature = TextEditingController();
   XFile? image;
   List<int>? croppedAvatar;
   bool loading = true;
@@ -25,6 +26,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void dispose() {
     service.dispose();
     nickname.dispose();
+    signature.dispose();
     super.dispose();
   }
 
@@ -38,6 +40,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ? data['user'] as Map<String, dynamic>
           : data;
       nickname.text = '${profile['nickname'] ?? ''}';
+      signature.text = '${profile['signature'] ?? profile['bio'] ?? ''}';
       if (profile['avatarKey'] is String &&
           (profile['avatarKey'] as String).trim().isNotEmpty) {
         final signed = await service.resolveAvatarUrl(
@@ -104,6 +107,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       await service.updateMe(
         token: token,
         nickname: nickname.text.trim(),
+        signature: signature.text.trim(),
         avatarKey: avatarKey,
       );
       if (mounted) Navigator.pop(context, true);
@@ -168,6 +172,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     controller: nickname,
                     maxLength: 5,
                     decoration: const InputDecoration(labelText: '昵称')),
+                TextField(
+                    controller: signature,
+                    maxLength: 80,
+                    minLines: 1,
+                    maxLines: 3,
+                    decoration: const InputDecoration(labelText: '个性签名')),
               ]),
       );
 }

@@ -1095,6 +1095,7 @@ class DDPostService {
   Future<Map<String, dynamic>> updateMe({
     required String token,
     String? nickname,
+    String? signature,
     String? gender,
     String? city,
     String? avatarKey,
@@ -1109,6 +1110,7 @@ class DDPostService {
       },
       body: jsonEncode({
         if (nickname != null) 'nickname': nickname,
+        if (signature != null) 'signature': signature,
         if (gender != null) 'gender': gender,
         if (city != null) 'city': city,
         if (avatarKey != null) 'avatarKey': avatarKey,
