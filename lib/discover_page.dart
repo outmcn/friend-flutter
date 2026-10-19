@@ -387,7 +387,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
               ],
             ),
           ),
-          actions: const [],
         ),
         body: FeedShell(
           tabs: const [

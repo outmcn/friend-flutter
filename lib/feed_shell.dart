@@ -101,7 +101,6 @@ class FeedShell extends StatefulWidget {
     this.showTabs = true,
     this.disposeFeeds = true,
     this.embedded = false,
-    this.nestedScroll = false,
     this.refreshAtTop = false,
     this.selectedTab,
     this.onTabChanged,
@@ -124,7 +123,6 @@ class FeedShell extends StatefulWidget {
   final bool showTabs;
   final bool disposeFeeds;
   final bool embedded;
-  final bool nestedScroll;
   final bool refreshAtTop;
   final int? selectedTab;
   final ValueChanged<int>? onTabChanged;
@@ -198,15 +196,12 @@ class _FeedShellState extends State<FeedShell> {
       builder: (context, _) {
         final view = CustomScrollView(
           key: PageStorageKey('feed-shell.$index'),
-          primary: widget.nestedScroll ? true : false,
-          controller: widget.nestedScroll ? null : feed.scroll,
+          controller: feed.scroll,
           physics: widget.refreshAtTop
               ? const BouncingScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 )
-              : widget.nestedScroll
-                  ? const AlwaysScrollableScrollPhysics()
-                  : const ClampingScrollPhysics(),
+              : const ClampingScrollPhysics(),
           slivers: [
             if (widget.refreshAtTop)
               CupertinoSliverRefreshControl(
