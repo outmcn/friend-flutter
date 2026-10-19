@@ -327,6 +327,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   final _profileCardKeys = <String, GlobalKey>{};
   String? _cachedAllProfileSignature;
   List<Widget>? _cachedAllProfileSlivers;
+  final List<VoidCallback> _profileFeedListeners = <VoidCallback>[];
   final AudioPlayer _sonicPlayer = AudioPlayer();
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
@@ -377,6 +378,13 @@ class _DDProfilePageState extends State<DDProfilePage>
         .map((tab) => DiscoverFeed(tab.fetch, cacheKey: tab.cacheKey))
         .toList();
     for (final feed in feeds) {
+      void invalidate() {
+        _cachedAllProfileSignature = null;
+        _cachedAllProfileSlivers = null;
+        if (mounted) setState(() {});
+      }
+      _profileFeedListeners.add(invalidate);
+      feed.addListener(invalidate);
       _GlobalScrollToTopRegistry.register(feed.scroll);
       feed.scroll.addListener(_handleProfileScroll);
       feed.scroll.addListener(() {
@@ -433,6 +441,10 @@ class _DDProfilePageState extends State<DDProfilePage>
     _presenceTimer?.cancel();
     for (final feed in feeds) {
       feed.scroll.removeListener(_handleProfileScroll);
+      final listenerIndex = feeds.indexOf(feed);
+      if (listenerIndex >= 0 && listenerIndex < _profileFeedListeners.length) {
+        feed.removeListener(_profileFeedListeners[listenerIndex]);
+      }
       _GlobalScrollToTopRegistry.unregister(feed.scroll);
       feed.dispose();
     }
@@ -639,7 +651,11 @@ class _DDProfilePageState extends State<DDProfilePage>
   Future<void> _selectProfileTab(int tab) async {
     if (tab == selectedTab) return;
     final feed = feeds[tab];
-    if (mounted) setState(() => selectedTab = tab);
+    if (mounted) {
+      _cachedAllProfileSignature = null;
+      _cachedAllProfileSlivers = null;
+      setState(() => selectedTab = tab);
+    }
     if (!feed.initialized) {
       await feed.restoreCache();
       if (!feed.initialized) await feed.load();
