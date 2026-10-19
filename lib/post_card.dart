@@ -988,6 +988,8 @@ class _DiscoverProfileCard extends StatelessWidget {
                       ),
                       _action(context: context, icon: TIcons.chat_bubble_1,
                           label: '${post.comments}', onTap: onOpen),
+                      _action(context: context, icon: TIcons.browse,
+                          label: '${post.views}', onTap: onOpen),
                     ],
                   ),
                 ],
