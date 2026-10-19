@@ -263,6 +263,18 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
 }
 
 
+String _formatMyPostDateTime(String raw) {
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+  final value = parsed.toUtc().add(const Duration(hours: 8));
+  final hour24 = value.hour;
+  final period = hour24 >= 12 ? 'pm' : 'am';
+  final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+  final two = (int value) => value.toString().padLeft(2, '0');
+  return '${value.year}.${two(value.month)}.${two(value.day)} '
+      '${two(hour12)}:${two(value.minute)} $period';
+}
+
 String _formatDiscoverDate(String raw) {
   final parsed = DateTime.tryParse(raw);
   if (parsed == null) return raw;
@@ -849,7 +861,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${_formatDiscoverDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
+                            _formatMyPostDateTime(post.createdAt),
                             style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
                           ),
                         ),
