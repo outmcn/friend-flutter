@@ -761,6 +761,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     required this.onReport,
     required this.onOpen,
     this.hideAuthorRow = false,
+    this.showViews = false,
   });
 
   final DDPost post;
@@ -775,6 +776,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onReport;
   final VoidCallback onOpen;
   final bool hideAuthorRow;
+  final bool showViews;
 
   Widget _media({required String url, required bool thumbnail}) {
     return _DiscoverMediaImage(url: url);
@@ -988,8 +990,9 @@ class _DiscoverProfileCard extends StatelessWidget {
                       ),
                       _action(context: context, icon: TIcons.chat_bubble_1,
                           label: '${post.comments}', onTap: onOpen),
-                      _action(context: context, icon: TIcons.browse,
-                          label: '${post.views}', onTap: onOpen),
+                      if (showViews)
+                        _action(context: context, icon: TIcons.browse,
+                            label: '${post.views}', onTap: onOpen),
                     ],
                   ),
                 ],

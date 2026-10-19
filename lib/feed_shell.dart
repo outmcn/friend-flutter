@@ -68,6 +68,7 @@ class FeedShellController {
                 onReport: onReport,
                 onOpen: onOpen,
                 hideAuthorRow: hideAuthorRow,
+                showViews: showViews,
               );
             },
             childCount: feed.posts.length,
@@ -118,6 +119,7 @@ class FeedShell extends StatefulWidget {
     this.onDelete,
     this.currentUserId,
     this.hideAuthorRow = false,
+    this.showViews = false,
     this.initialTab = 0,
   });
 
@@ -141,6 +143,7 @@ class FeedShell extends StatefulWidget {
   final ValueChanged<DDPost>? onDelete;
   final int? currentUserId;
   final bool hideAuthorRow;
+  final bool showViews;
   final int initialTab;
 
   @override
@@ -241,6 +244,7 @@ class _FeedShellState extends State<FeedShell> {
                       onReport: widget.onReport,
                       onOpen: widget.onOpen,
                       hideAuthorRow: widget.hideAuthorRow,
+                      showViews: widget.showViews,
                     );
                   },
                   childCount: feed.posts.length,
