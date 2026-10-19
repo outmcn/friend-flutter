@@ -368,8 +368,12 @@ class _DDProfilePageState extends State<DDProfilePage>
               : tab == 1
                   ? await service.fetchFavoritedPosts(token, offset: offset)
                   : await service.fetchLikedPosts(token, offset: offset);
+          final ownerId = _currentUserId;
+          final filtered = tab == 0 && ownerId != null
+              ? loaded.where((post) => post.userId == ownerId).toList()
+              : loaded;
           return Future.wait(
-              loaded.map((post) => service.resolvePostMedia(token, post)));
+              filtered.map((post) => service.resolvePostMedia(token, post)));
         },
       ),
     );
