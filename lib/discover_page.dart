@@ -314,15 +314,19 @@ class _DiscoverPageState extends State<DiscoverPage> {
           }));
         }
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      child: SizedBox(
+        height: 48,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
           children: [
             Text(entry.value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: selectedTab == entry.key ? null : Theme.of(context).hintColor)),
             const SizedBox(height: 5),
             AnimatedContainer(duration: const Duration(milliseconds: 160), curve: Curves.easeOutCubic, width: selectedTab == entry.key ? 24 : 0, height: 3, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(99))),
           ],
+          ),
         ),
       ),
     );
@@ -349,13 +353,17 @@ class _DiscoverPageState extends State<DiscoverPage> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 0,
-        leading: IconButton(
+        leading: SizedBox(
+          width: 48,
+          height: 48,
+          child: IconButton(
           tooltip: '通知',
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const NotificationsPage()),
           ),
           icon: const Icon(TIcons.notification),
+          ),
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -366,11 +374,16 @@ class _DiscoverPageState extends State<DiscoverPage> {
               .toList(),
         ),
         centerTitle: true,
+        leadingWidth: 48,
         actions: [
-          IconButton(
-            tooltip: '创建动态',
-            onPressed: _createPost,
-            icon: const Icon(TIcons.logo_instagram),
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: IconButton(
+              tooltip: '创建动态',
+              onPressed: _createPost,
+              icon: const Icon(TIcons.logo_instagram),
+            ),
           ),
         ],
       ),
