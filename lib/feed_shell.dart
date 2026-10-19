@@ -40,6 +40,7 @@ class FeedShellController {
     ValueChanged<DDPost>? onDelete,
     required int? currentUserId,
     bool hideAuthorRow = false,
+    bool showViews = false,
   }) {
     final feed = feeds[index];
     final signature = feed.posts.map((post) => post.id).join(',');

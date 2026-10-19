@@ -1040,7 +1040,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ),
                                 ),
-                              ));
+                              );
 
   @override
   Widget build(BuildContext context) {
