@@ -330,6 +330,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   final List<VoidCallback> _profileFeedListeners = <VoidCallback>[];
   final Map<int, double> _profileTabOffsets = <int, double>{};
   final AudioPlayer _sonicPlayer = AudioPlayer();
+  final ScrollController _profileHeaderScroll = ScrollController();
   bool _showStickyNickname = false;
   bool _sonicPlaying = false;
   bool _tagSaving = false;
@@ -415,8 +416,8 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   void _handleProfileScroll() {
-    final shouldShow = feeds[selectedTab].scroll.hasClients &&
-        feeds[selectedTab].scroll.offset >= 58;
+    final shouldShow = _profileHeaderScroll.hasClients &&
+        _profileHeaderScroll.offset >= 58;
     if (shouldShow != _showStickyNickname && mounted) {
       setState(() => _showStickyNickname = shouldShow);
     }
@@ -447,6 +448,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _presenceTimer?.cancel();
+    _profileHeaderScroll.dispose();
     for (final feed in feeds) {
       feed.scroll.removeListener(_handleProfileScroll);
       final listenerIndex = feeds.indexOf(feed);
@@ -1023,7 +1025,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                   onRefresh: () => load(forceRefresh: true),
                   child: CustomScrollView(
                     key: PageStorageKey('profile.$selectedTab'),
-                    controller: feeds[selectedTab].scroll,
+                    controller: _profileHeaderScroll,
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverPadding(
