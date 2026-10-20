@@ -1177,99 +1177,101 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  Stack(
-                                    clipBehavior: Clip.none,
+                                  Column(
                                     children: [
-                                      Container(
-                                        width: 90,
-                                        height: 90,
-                                        padding: const EdgeInsets.all(3),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: p?['gender'] == '男'
-                                                ? const Color(0xFF1677FF)
-                                                : p?['gender'] == '女'
-                                                    ? const Color(0xFFFF6FAE)
-                                                    : Theme.of(context).dividerColor,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: ClipOval(
-                                          child: SizedBox(
-                                            width: 84,
-                                            height: 84,
-                                          child: _avatarReviewRejected
-                                              ? const ColoredBox(
-                                                  color: Colors.black12,
-                                                  child: Center(
-                                                    child: Text(
-                                                      '图片涉嫌违规',
-                                                      textAlign: TextAlign.center,
-                                                      style: TextStyle(fontSize: 11, color: Colors.black54),
-                                                    ),
-                                                  ),
-                                                )
-                                              : _avatarUrl == null ||
-                                                  _avatarUrl!.isEmpty
-                                              ? const ColoredBox(
-                                                  color: Colors.black12,
-                                                  child: Icon(Icons.person,
-                                                      size: 40),
-                                                )
-                                              : _PermanentCachedImage(
-                                                  url: _avatarUrl!,
-                                                  width: 84,
-                                                  height: 84,
-                                                  fit: BoxFit.cover,
-                                                  placeholder: const ColoredBox(
-                                                    color: Colors.black12,
-                                                    child: Icon(Icons.person,
-                                                        size: 40),
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
-                                      ),
-                                      Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: -9,
-                                        child: Center(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 3),
+                                      Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Container(
+                                            width: 90,
+                                            height: 90,
+                                            padding: const EdgeInsets.all(3),
                                             decoration: BoxDecoration(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .surface,
-                                              border: Border.all(
-                                                  color: Theme.of(context)
-                                                      .dividerColor),
-                                              borderRadius:
-                                                  BorderRadius.circular(999),
-                                              boxShadow: const [
-                                                BoxShadow(
-                                                    color: Color(0x19000000),
-                                                    blurRadius: 8,
-                                                    offset: Offset(0, 2)),
-                                              ],
+                                              shape: BoxShape.circle,
+                                              gradient: p?['gender'] == '男'
+                                                  ? const LinearGradient(
+                                                      colors: [Color(0xFF69B7FF), Color(0xFF1677FF), Color(0xFF0B3D91)],
+                                                      begin: Alignment.topLeft,
+                                                      end: Alignment.bottomRight,
+                                                    )
+                                                  : p?['gender'] == '女'
+                                                      ? const LinearGradient(
+                                                          colors: [Color(0xFFFFB6D5), Color(0xFFFF6FAE), Color(0xFFC2185B)],
+                                                          begin: Alignment.topLeft,
+                                                          end: Alignment.bottomRight,
+                                                        )
+                                                      : null,
+                                              color: p?['gender'] == '男' || p?['gender'] == '女'
+                                                  ? null
+                                                  : Theme.of(context).dividerColor,
                                             ),
-                                            child: Text(
-                                              '${p?['city'] ?? ''}'.trim().isEmpty
-                                                  ? '添加城市'
-                                                  : '${p?['city']}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelSmall),
+                                            child: ClipOval(
+                                              child: SizedBox(
+                                                width: 84,
+                                                height: 84,
+                                                child: _avatarReviewRejected
+                                                    ? const ColoredBox(
+                                                        color: Colors.black12,
+                                                        child: Center(
+                                                          child: Text('图片涉嫌违规', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.black54)),
+                                                        ),
+                                                      )
+                                                    : _avatarUrl == null || _avatarUrl!.isEmpty
+                                                        ? const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40))
+                                                        : _PermanentCachedImage(
+                                                            url: _avatarUrl!,
+                                                            width: 84,
+                                                            height: 84,
+                                                            fit: BoxFit.cover,
+                                                            placeholder: const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40)),
+                                                          ),
+                                              ),
+                                            ),
                                           ),
+                                          Positioned(
+                                            left: 0,
+                                            right: 0,
+                                            bottom: -9,
+                                            child: Center(
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context).colorScheme.surface,
+                                                  border: Border.all(color: Theme.of(context).dividerColor),
+                                                  borderRadius: BorderRadius.circular(999),
+                                                  boxShadow: const [BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 2))],
+                                                ),
+                                                child: Text(
+                                                  '${p?['city'] ?? ''}'.trim().isEmpty ? '添加城市' : '${p?['city']}',
+                                                  style: Theme.of(context).textTheme.labelSmall,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      SizedBox(
+                                        width: 90,
+                                        child: _ProfileActionButton(
+                                          icon: Icons.account_balance_wallet_outlined,
+                                          label: '钱包',
+                                          subtitle: coinBalance > 0 ? '$coinBalance 金币' : null,
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      SizedBox(
+                                        width: 90,
+                                        child: _ProfileActionButton(
+                                          icon: Icons.auto_awesome_outlined,
+                                          label: '展馆',
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
                                         ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(width: 12),
-
-
                                 ],
                               ),
                               const SizedBox(height: 18),
@@ -1277,35 +1279,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                           ),
                         ),
                         const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _ProfileActionButton(
-                                icon: Icons.account_balance_wallet_outlined,
-                                label: '钱包',
-                                subtitle: coinBalance > 0
-                                    ? '$coinBalance 金币'
-                                    : null,
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) => const WalletPage())),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _ProfileActionButton(
-                                icon: Icons.auto_awesome_outlined,
-                                label: '展馆',
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const GiftExhibitionPage())),
-                              ),
-                            ),
-                          ],
-                        ),
                         const SizedBox(height: 10),
                       ]),
                     ),
