@@ -1133,7 +1133,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ],
                                   ),),
-                                Positioned(left: 112, right: 16, bottom: 18, child: Expanded(
+                                Positioned(left: 112, right: 16, bottom: 18, child: Column(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -1151,11 +1151,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                     fontWeight:
                                                         FontWeight.w700),
                                               ),
-                                            ),
-                                            IconButton(
-                                              tooltip: '编辑资料',
-                                              onPressed: _openEditProfile,
-                                              icon: const Icon(TIcons.ai_edit_1, size: 22),
                                             ),
                                           ],
                                         ),
@@ -1189,7 +1184,6 @@ class _DDProfilePageState extends State<DDProfilePage>
 
                                       ],
                                     ),
-                                  ),),
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -1249,7 +1243,15 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               )),
                                             ],
                                           ),
-                                        ),,
+                                        ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IconButton(
+                                tooltip: '编辑资料',
+                                onPressed: _openEditProfile,
+                                icon: const Icon(TIcons.ai_edit_1, size: 22),
+                              ),
+                            ),
                             const SizedBox(height: 18),
                         const SizedBox(height: 14),
                         Row(
