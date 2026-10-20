@@ -1007,6 +1007,10 @@ class _DDProfilePageState extends State<DDProfilePage>
 
 
 
+  void _showProfileFeatureNotice(BuildContext context, String label) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label功能即将开放')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -1331,10 +1335,6 @@ class _ProfileActionButton extends StatelessWidget {
   final String label;
   final String? subtitle;
   final VoidCallback onTap;
-
-  void _showProfileFeatureNotice(BuildContext context, String label) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label功能即将开放')));
-  }
 
   @override
   Widget build(BuildContext context) {
