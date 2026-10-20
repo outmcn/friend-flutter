@@ -1085,6 +1085,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                     ),
                                   ),
+                                ),
                                 Positioned(left: 16, bottom: 48, child: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
