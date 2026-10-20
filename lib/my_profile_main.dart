@@ -977,6 +977,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         onReport: _profileReport,
         hideAuthorRow: index == 0,
         showViews: index == 0,
+        showItemDivider: index == 0,
         onOpen: (post) async {
           final changed = await Navigator.push<bool>(
             context,

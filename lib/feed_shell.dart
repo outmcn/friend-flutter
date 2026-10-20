@@ -41,6 +41,7 @@ class FeedShellController {
     required int? currentUserId,
     bool hideAuthorRow = false,
     bool showViews = false,
+    bool showItemDivider = false,
   }) {
     final feed = feeds[index];
     final signature = feed.posts.map((post) => post.id).join(',');
@@ -54,22 +55,29 @@ class FeedShellController {
           delegate: SliverChildBuilderDelegate(
             (context, itemIndex) {
               final post = feed.posts[itemIndex];
-              return _DiscoverFeedCard(
-                key: cardKeys.putIfAbsent('${post.id}', GlobalKey.new),
-                feed: feed,
-                post: post,
-                onLike: onLike,
-                onFavorite: onFavorite,
-                onShare: onShare,
-                onSendToFriend: onSendToFriend,
-                onDirectChat: onDirectChat,
-                onFollow: onFollow,
-                onGift: onGift,
-                onDelete: currentUserId != null && post.userId == currentUserId ? onDelete : null,
-                onReport: onReport,
-                onOpen: onOpen,
-                hideAuthorRow: hideAuthorRow,
-                showViews: showViews,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _DiscoverFeedCard(
+                    key: cardKeys.putIfAbsent('${post.id}', GlobalKey.new),
+                    feed: feed,
+                    post: post,
+                    onLike: onLike,
+                    onFavorite: onFavorite,
+                    onShare: onShare,
+                    onSendToFriend: onSendToFriend,
+                    onDirectChat: onDirectChat,
+                    onFollow: onFollow,
+                    onGift: onGift,
+                    onDelete: currentUserId != null && post.userId == currentUserId ? onDelete : null,
+                    onReport: onReport,
+                    onOpen: onOpen,
+                    hideAuthorRow: hideAuthorRow,
+                    showViews: showViews,
+                  ),
+                  if (showItemDivider)
+                    Container(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.28)),
+                ],
               );
             },
             childCount: feed.posts.length,
