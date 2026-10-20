@@ -6,7 +6,7 @@ class _ExpandableProfileSignature extends StatelessWidget {
   final String value;
   String _format(String raw) {
     final clean = raw.replaceAll(RegExp(r'\s+'), '').trim();
-    final chars = clean.characters.take(100).toList();
+    final chars = clean.characters.take(75).toList();
     final lines = <String>[];
     for (var i = 0; i < chars.length; i += 15) lines.add(chars.skip(i).take(15).join());
     return lines.join('\n');

@@ -32,7 +32,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   String _formatSignature(String raw) {
     final clean = raw.replaceAll(RegExp(r'\s+'), '').trim();
-    final chars = clean.characters.take(100).toList();
+    final chars = clean.characters.take(75).toList();
     final lines = <String>[];
     for (var i = 0; i < chars.length; i += 15) lines.add(chars.skip(i).take(15).join());
     return lines.join('\n');
@@ -192,7 +192,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 TextField(
                     controller: signature,
                     onChanged: (_) => _normalizeSignature(),
-                    maxLength: 100,
+                    maxLength: 75,
                     minLines: 1,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
