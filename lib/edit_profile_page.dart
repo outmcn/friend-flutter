@@ -171,7 +171,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   Text(error!, style: const TextStyle(color: Colors.orange)),
                 TextField(
                     controller: nickname,
-                    maxLength: 5,
+                    maxLength: 8,
+                    inputFormatters: [LengthLimitingTextInputFormatter(8)],
                     decoration: const InputDecoration(labelText: '昵称')),
                 TextField(
                     controller: signature,
