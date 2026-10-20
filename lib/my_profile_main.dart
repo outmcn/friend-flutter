@@ -1063,7 +1063,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                               children: [
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width + 48,
-                                  height: 200,
+                                  height: 240,
                                   child: Transform.translate(
                                     offset: const Offset(-24, 0),
                                     child: _backgroundUrl == null || _backgroundUrl!.isEmpty
@@ -1074,7 +1074,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         : _PermanentCachedImage(
                                             url: _backgroundUrl!,
                                             width: double.infinity,
-                                            height: 200,
+                                            height: 240,
                                             fit: BoxFit.cover,
                                           ),
                                   ),
@@ -1254,18 +1254,15 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                   ),
                                                 ),
                                               )),
+                                              IconButton(
+                                                tooltip: '编辑资料',
+                                                onPressed: _openEditProfile,
+                                                icon: const Icon(TIcons.ai_edit_1, size: 22),
+                                              ),
                                             ],
                                           ),
                                         ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                tooltip: '编辑资料',
-                                onPressed: _openEditProfile,
-                                icon: const Icon(TIcons.ai_edit_1, size: 22),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
+
                             const SizedBox(height: 14),
                         Row(
                           children: [
