@@ -11,20 +11,34 @@ class _ExpandableProfileSignature extends StatefulWidget {
 class _ExpandableProfileSignatureState extends State<_ExpandableProfileSignature> {
   bool expanded = false;
   String get normalized => widget.value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
-  String get clipped => normalized.characters.take(60).toList().join();
-  String _lines(String value) => value;
+  List<String> _wrap(String value) {
+    final result = <String>[];
+    for (final source in value.split('\n')) {
+      final chars = source.characters.toList();
+      if (chars.isEmpty) {
+        result.add('');
+      } else {
+        for (var i = 0; i < chars.length; i += 20) {
+          result.add(chars.skip(i).take(20).join());
+        }
+      }
+    }
+    return result;
+  }
   @override
   Widget build(BuildContext context) {
     if (normalized.isEmpty) return const Text('设置个性签名');
-    final shown = expanded ? normalized : clipped;
+    final lines = _wrap(normalized);
+    final hasMore = lines.length > 3;
+    final shown = expanded ? lines.join('\n') : lines.take(3).join('\n');
     return RichText(
       maxLines: expanded ? null : 3,
       overflow: expanded ? TextOverflow.visible : TextOverflow.clip,
       text: TextSpan(
         style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
         children: [
-          TextSpan(text: _lines(shown)),
-          if (normalized.characters.length > 60)
+          TextSpan(text: shown),
+          if (hasMore)
             TextSpan(
               text: expanded ? '  收起' : '...更多',
               style: TextStyle(color: Theme.of(context).colorScheme.primary),
@@ -35,6 +49,7 @@ class _ExpandableProfileSignatureState extends State<_ExpandableProfileSignature
     );
   }
 }
+
 String _formatProfilePostDate(String raw) {
   final parsed = DateTime.tryParse(raw);
   if (parsed == null || raw.trim().isEmpty) return '2026.01.01';
