@@ -2956,7 +2956,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                               emojiExpanded = false;
                             }),
                             icon: Icon(
-                                voiceMode ? Icons.keyboard : Icons.mic_none),
+                                voiceMode ? Icons.keyboard : TIcons.microphone_1),
                           ),
                           Expanded(
                             child: voiceMode
