@@ -937,11 +937,14 @@ class _DDProfilePageState extends State<DDProfilePage>
 
   String _wrapSignature(String value) {
     final chars = value.characters.toList();
-    final lines = <String>[];
-    for (var i = 0; i < chars.length; i += 15) {
-      lines.add(chars.skip(i).take(15).join());
+    if (chars.length <= 45) {
+      final lines = <String>[];
+      for (var i = 0; i < chars.length; i += 15) {
+        lines.add(chars.skip(i).take(15).join());
+      }
+      return lines.join('\n');
     }
-    return lines.take(2).join('\n');
+    return '${chars.take(15).join()}\n${chars.skip(15).take(15).join()}\n${chars.skip(30).take(10).join()}...更多';
   }
 
   List<Widget> _allProfileFeedSlivers() {
@@ -1161,7 +1164,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             '${p?['signature'] ?? p?['bio'] ?? ''}'.trim().isEmpty
                                                 ? '设置个性签名'
                                                 : _wrapSignature('${p?['signature'] ?? p?['bio'] ?? ''}'.trim()),
-                                            maxLines: 2,
+                                            maxLines: 3,
                                             softWrap: true,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
