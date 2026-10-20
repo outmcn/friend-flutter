@@ -1021,6 +1021,11 @@ class _DDProfilePageState extends State<DDProfilePage>
             : const SizedBox.shrink(),
         actions: [
           IconButton(
+            tooltip: '编辑资料',
+            onPressed: _openEditProfile,
+            icon: const Icon(TIcons.ai_edit_1),
+          ),
+          IconButton(
             tooltip: '浏览记录',
             onPressed: () => Navigator.push(
               context,
@@ -1034,7 +1039,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               context,
               MaterialPageRoute(builder: (_) => const SettingsPage()),
             ),
-            icon: const Icon(TIcons.menu),
+            icon: const Icon(Icons.settings_outlined),
           ),
         ],
       ),
@@ -1064,9 +1069,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                               ),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Column(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
@@ -1079,7 +1082,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       children: [
                                         Row(
                                           children: [
-                                            Flexible(
+                                            Expanded(
                                               child: Text(
                                                 '${p?['nickname'] ?? 'Friend 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
                                                 maxLines: 1,
@@ -1090,13 +1093,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                     fontWeight:
                                                         FontWeight.w700),
                                               ),
-                                            ),
-                                            IconButton(
-                                              tooltip: '编辑资料',
-                                              onPressed: _openEditProfile,
-                                              icon: const Icon(TIcons.textformat_shorter),
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                                             ),
                                             _SonicProfileButton(
                                               playing: _sonicPlaying,
@@ -1113,18 +1109,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             children: [
                                               Expanded(
                                                   child: _InlineProfileStat(
-                                                      label: '关注',
-                                                      value: _formatCount(p?['following']),
-                                                      onTap: () => Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (_) =>
-                                                                  const _UserRelationListPage(
-                                                                                relation:
-                                                                                    'following',
-                                                                                title: '关注'))))),
-                                              Expanded(
-                                                  child: _InlineProfileStat(
                                                       label: '粉丝',
                                                       value: _formatCount(p?['followers']),
                                                       onTap: () => Navigator.push(
@@ -1135,6 +1119,18 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                                                 relation:
                                                                                     'followers',
                                                                                 title: '粉丝'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '关注',
+                                                      value: _formatCount(p?['following']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation:
+                                                                                    'following',
+                                                                                title: '关注'))))),
                                               Expanded(
                                                   child: _InlineProfileStat(
                                                       label: '获赞',
@@ -1172,7 +1168,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             softWrap: true,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              fontSize: 16,
+                                              fontSize: 15,
                                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                                             ),
                                           ),
