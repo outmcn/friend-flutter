@@ -995,6 +995,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   Widget build(BuildContext context) {
     final p = profile;
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -1042,7 +1043,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                        padding: EdgeInsets.zero,
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             if (error != null && profile != null)
@@ -1059,7 +1060,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                               children: [
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width + 48,
-                                  height: 300,
+                                  height: 200,
                                   child: Transform.translate(
                                     offset: const Offset(-24, 0),
                                     child: _backgroundUrl == null || _backgroundUrl!.isEmpty
@@ -1070,7 +1071,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         : _PermanentCachedImage(
                                             url: _backgroundUrl!,
                                             width: double.infinity,
-                                            height: 300,
+                                            height: 200,
                                             fit: BoxFit.cover,
                                           ),
                                   ),
