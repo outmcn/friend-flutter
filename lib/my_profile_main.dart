@@ -936,15 +936,17 @@ class _DDProfilePageState extends State<DDProfilePage>
 
 
   String _wrapSignature(String value) {
-    final chars = value.characters.toList();
-    if (chars.length <= 60) {
-      final lines = <String>[];
-      for (var i = 0; i < chars.length; i += 20) {
-        lines.add(chars.skip(i).take(20).join());
-      }
-      return lines.join('\n');
+    final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final chars = normalized.characters.toList();
+    final visible = chars.take(60).toList();
+    final lines = <String>[];
+    for (var i = 0; i < visible.length; i += 20) {
+      lines.add(visible.skip(i).take(20).join());
     }
-    return '${chars.take(20).join()}\n${chars.skip(20).take(20).join()}\n${chars.skip(40).take(20).join()}...更多';
+    if (chars.length > 60 && lines.isNotEmpty) {
+      lines[lines.length - 1] = '${lines.last}...更多';
+    }
+    return lines.join('\n');
   }
 
   List<Widget> _allProfileFeedSlivers() {
@@ -1021,11 +1023,6 @@ class _DDProfilePageState extends State<DDProfilePage>
             : const SizedBox.shrink(),
         actions: [
           IconButton(
-            tooltip: '编辑资料',
-            onPressed: _openEditProfile,
-            icon: const Icon(TIcons.ai_edit_1),
-          ),
-          IconButton(
             tooltip: '浏览记录',
             onPressed: () => Navigator.push(
               context,
@@ -1039,7 +1036,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               context,
               MaterialPageRoute(builder: (_) => const SettingsPage()),
             ),
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(TIcons.menu),
           ),
         ],
       ),
@@ -1069,7 +1066,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                               ),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Column(
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
@@ -1082,7 +1081,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       children: [
                                         Row(
                                           children: [
-                                            Expanded(
+                                            Flexible(
                                               child: Text(
                                                 '${p?['nickname'] ?? 'Friend 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
                                                 maxLines: 1,
@@ -1093,6 +1092,13 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                     fontWeight:
                                                         FontWeight.w700),
                                               ),
+                                            ),
+                                            IconButton(
+                                              tooltip: '编辑资料',
+                                              onPressed: _openEditProfile,
+                                              icon: const Icon(TIcons.textformat_shorter),
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                                             ),
                                             _SonicProfileButton(
                                               playing: _sonicPlaying,
@@ -1109,18 +1115,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             children: [
                                               Expanded(
                                                   child: _InlineProfileStat(
-                                                      label: '粉丝',
-                                                      value: _formatCount(p?['followers']),
-                                                      onTap: () => Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (_) =>
-                                                                  const _UserRelationListPage(
-                                                                                relation:
-                                                                                    'followers',
-                                                                                title: '粉丝'))))),
-                                              Expanded(
-                                                  child: _InlineProfileStat(
                                                       label: '关注',
                                                       value: _formatCount(p?['following']),
                                                       onTap: () => Navigator.push(
@@ -1131,6 +1125,18 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                                                 relation:
                                                                                     'following',
                                                                                 title: '关注'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '粉丝',
+                                                      value: _formatCount(p?['followers']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation:
+                                                                                    'followers',
+                                                                                title: '粉丝'))))),
                                               Expanded(
                                                   child: _InlineProfileStat(
                                                       label: '获赞',
@@ -1295,6 +1301,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ]),
                     ),
                   ),
+                ),
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _ProfileTabsHeaderDelegate(
