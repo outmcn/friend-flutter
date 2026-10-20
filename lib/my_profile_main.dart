@@ -1113,18 +1113,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             children: [
                                               Expanded(
                                                   child: _InlineProfileStat(
-                                                      label: '粉丝',
-                                                      value: _formatCount(p?['followers']),
-                                                      onTap: () => Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (_) =>
-                                                                  const _UserRelationListPage(
-                                                                                relation:
-                                                                                    'followers',
-                                                                                title: '粉丝'))))),
-                                              Expanded(
-                                                  child: _InlineProfileStat(
                                                       label: '关注',
                                                       value: _formatCount(p?['following']),
                                                       onTap: () => Navigator.push(
@@ -1135,6 +1123,18 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                                                 relation:
                                                                                     'following',
                                                                                 title: '关注'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '粉丝',
+                                                      value: _formatCount(p?['followers']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation:
+                                                                                    'followers',
+                                                                                title: '粉丝'))))),
                                               Expanded(
                                                   child: _InlineProfileStat(
                                                       label: '获赞',
