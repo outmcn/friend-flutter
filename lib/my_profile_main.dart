@@ -1021,11 +1021,6 @@ class _DDProfilePageState extends State<DDProfilePage>
             : const SizedBox.shrink(),
         actions: [
           IconButton(
-            tooltip: '编辑资料',
-            onPressed: _openEditProfile,
-            icon: const Icon(TIcons.ai_edit_1),
-          ),
-          IconButton(
             tooltip: '浏览记录',
             onPressed: () => Navigator.push(
               context,
@@ -1084,7 +1079,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       children: [
                                         Row(
                                           children: [
-                                            Expanded(
+                                            Flexible(
                                               child: Text(
                                                 '${p?['nickname'] ?? 'Friend 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
                                                 maxLines: 1,
@@ -1095,6 +1090,13 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                     fontWeight:
                                                         FontWeight.w700),
                                               ),
+                                            ),
+                                            IconButton(
+                                              tooltip: '编辑资料',
+                                              onPressed: _openEditProfile,
+                                              icon: const Icon(TIcons.ai_edit_1),
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                                             ),
                                             _SonicProfileButton(
                                               playing: _sonicPlaying,
