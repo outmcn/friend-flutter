@@ -33,19 +33,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _formatSignature(String raw) {
     final clean = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
     final result = <String>[];
-    var remaining = 75;
-    for (final source in clean.split('\n')) {
-      if (remaining <= 0) break;
+    final sourceLines = clean.split('\n');
+    for (final source in sourceLines.take(5)) {
       final chars = source.characters.toList();
-      for (var i = 0; i < chars.length && remaining > 0; i += 15) {
-        final take = (chars.length - i).clamp(0, 15).clamp(0, remaining);
-        if (take > 0) result.add(chars.skip(i).take(take).join());
-        remaining -= take;
+      if (chars.isEmpty) {
+        result.add('');
+      } else {
+        for (var i = 0; i < chars.length && result.length < 5; i += 15) {
+          result.add(chars.skip(i).take(15).join());
+        }
       }
+      if (result.length >= 5) break;
     }
     return result.join('\n');
   }
-
   void _normalizeSignature() {
     final formatted = _formatSignature(signature.text);
     if (signature.text == formatted) return;
