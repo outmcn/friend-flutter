@@ -1,7 +1,7 @@
 part of 'main.dart';
 
 class _CreatePostPageState extends State<CreatePostPage> {
-  static const int _maxContentLines = 8;
+  static const int _maxContentLines = 15;
   String? mediaType;
   XFile? selectedImage;
   XFile? selectedVideo;
@@ -307,8 +307,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     child: TextField(
                       controller: _content,
                       autofocus: true,
-                      maxLines: 8,
-                      maxLength: 300,
+                      maxLines: 15,
+                      maxLength: 500,
                       onChanged: _onContentChanged,
                       decoration: const InputDecoration(
                         hintText: '发一条动态吧～',
