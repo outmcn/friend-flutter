@@ -1134,8 +1134,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     ],
                                   ),),
                                 Positioned(left: 112, right: 16, bottom: 18, child: Column(
-                                    child: Column(
-                                      crossAxisAlignment:
+                                    crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Row(
