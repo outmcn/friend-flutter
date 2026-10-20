@@ -268,8 +268,8 @@ class _InlineProfileStat extends StatelessWidget {
     required this.label,
     required this.value,
     this.onTap,
-    this.valueFontSize = 16,
-    this.labelFontSize = 13,
+    this.valueFontSize = 18,
+    this.labelFontSize = 16,
   });
   final String label;
   final String value;
