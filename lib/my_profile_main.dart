@@ -1007,6 +1007,11 @@ class _DDProfilePageState extends State<DDProfilePage>
             : const SizedBox.shrink(),
         actions: [
           IconButton(
+            tooltip: '编辑资料',
+            onPressed: _openEditProfile,
+            icon: const Icon(TIcons.ai_edit_1),
+          ),
+          IconButton(
             tooltip: '浏览记录',
             onPressed: () => Navigator.push(
               context,
@@ -1074,11 +1079,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                     fontWeight:
                                                         FontWeight.w700),
                                               ),
-                                            ),
-                                            IconButton(
-                                              tooltip: '编辑资料',
-                                              onPressed: _openEditProfile,
-                                              icon: const Icon(TIcons.ai_edit_1, size: 22),
                                             ),
                                           ],
                                         ),
