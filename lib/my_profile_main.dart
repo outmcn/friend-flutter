@@ -1055,7 +1055,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(0, 8, 24, 0),
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             if (error != null && profile != null)
