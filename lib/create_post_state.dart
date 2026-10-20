@@ -1,6 +1,7 @@
 part of 'main.dart';
 
 class _CreatePostPageState extends State<CreatePostPage> {
+  static const int _maxContentLines = 8;
   String? mediaType;
   XFile? selectedImage;
   XFile? selectedVideo;
@@ -9,6 +10,21 @@ class _CreatePostPageState extends State<CreatePostPage> {
   final TextEditingController _content = TextEditingController();
   final DDPostService _service = DDPostService();
   String? error;
+
+  void _onContentChanged(String value) {
+    final lines = value.split('\n');
+    if (lines.length <= _maxContentLines) {
+      setState(() {});
+      return;
+    }
+    final limited = lines.take(_maxContentLines).join('\n');
+    _content.value = _content.value.copyWith(
+      text: limited,
+      selection: TextSelection.collapsed(offset: limited.length),
+      composing: TextRange.empty,
+    );
+    setState(() {});
+  }
 
   @override
   void dispose() {
@@ -293,7 +309,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                       autofocus: true,
                       maxLines: 8,
                       maxLength: 300,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: _onContentChanged,
                       decoration: const InputDecoration(
                         hintText: '发一条动态吧～',
                         border: InputBorder.none,
