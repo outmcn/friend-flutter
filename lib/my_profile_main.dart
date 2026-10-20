@@ -1133,7 +1133,11 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ],
                                   ),),
-                                Positioned(left: 112, right: 16, bottom: 18, child: Column(
+                              Positioned(
+                                left: 112,
+                                right: 16,
+                                bottom: 18,
+                                child: Column(
                                     crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
@@ -1252,7 +1256,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                               ),
                             ),
                             const SizedBox(height: 18),
-                        const SizedBox(height: 14),
+                            const SizedBox(height: 14),
                         Row(
                           children: [
                             Expanded(
