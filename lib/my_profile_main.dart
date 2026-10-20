@@ -374,7 +374,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                   ? await service.fetchFavoritedPosts(token, offset: offset)
                   : await service.fetchLikedPosts(token, offset: offset);
           return Future.wait(
-              loaded.map((post) => service.resolvePostMedia(token, post)));
+              loaded.where((post) => post.reviewStatus == 'approved').map((post) => service.resolvePostMedia(token, post)));
         },
       ),
     );
