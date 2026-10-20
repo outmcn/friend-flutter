@@ -832,6 +832,11 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     if (action == 'delete') await _delete();
   }
 
+  Future<void> _openViolationAppeal() async {
+    final submitted = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => PostAppealPage(postId: widget.postId, service: service, token: token)));
+    if (submitted == true && mounted) _showTopNotice(context, const Text('申诉已提交'));
+  }
+
   Future<void> _shareToSystem(DDPost item) async {
     await Share.share('动态 ${item.id}：${item.content}');
     if (mounted) _showTopNotice(context, const Text('已打开系统分享面板'));
@@ -1082,8 +1087,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                   tooltip: '分享',
                   onPressed: item == null || deleting
                       ? null
-                      : () => _openShareMenu(item),
-                  icon: Icon(TIcons.share_1),
+                      : item.reviewStatus == 'rejected' && isOwner
+                          ? _openViolationAppeal
+                          : () => _openShareMenu(item),
+                  icon: Icon(item.reviewStatus == 'rejected' && isOwner ? TIcons.error_triangle_filled : TIcons.share_1, color: item.reviewStatus == 'rejected' && isOwner ? Colors.red : null),
                 ),
               ],
             ),
@@ -1102,7 +1109,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                             _PageErrorState(
                                 title: '加载失败', subtitle: error!, onRetry: load),
                           if (item != null) ...[
-                            if (item.imageUrl?.isNotEmpty == true) ...[
+                            if (item.reviewStatus == 'rejected' && isOwner) ...[
+                              if (item.reviewStatus != 'rejected' && item.content.isNotEmpty) Padding(padding: const EdgeInsets.fromLTRB(16,16,16,0), child: Text(item.content.characters.map((_) => '*').join(), style: const TextStyle(fontSize:18,height:1.5))),
+                              if (item.imageUrl?.isNotEmpty == true || item.videoUrl?.isNotEmpty == true) const Padding(padding: EdgeInsets.all(16), child: _ViolationMediaPlaceholder()),
+                            ] else if (item.imageUrl?.isNotEmpty == true) ...[
                               _PostImageHolder(
                                 url: item.imageUrl!,
                               ),

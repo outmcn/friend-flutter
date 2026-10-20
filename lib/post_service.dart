@@ -1262,6 +1262,12 @@ class DDPostService {
     }
   }
 
+  Future<void> appealPost({required String token, required int postId, required String content}) async {
+    final response = await _client.post(_api('/posts/$postId/appeal'), headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'}, body: jsonEncode({'content': content})).timeout(const Duration(seconds: 15));
+    final decoded = response.body.trim().isEmpty ? <String,dynamic>{} : jsonDecode(response.body) as Map<String,dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300) throw Exception('${decoded['error'] ?? '提交申诉失败'}');
+  }
+
   Future<void> reportPost(
       {required String token,
       required int postId,
