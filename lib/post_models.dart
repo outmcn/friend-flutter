@@ -50,6 +50,7 @@ class DDPost {
     this.imageHeight,
     this.thumbnailWidth,
     this.thumbnailHeight,
+    this.reviewStatus = 'approved',
   });
 
   final int id;
@@ -75,6 +76,7 @@ class DDPost {
   final int? imageHeight;
   final int? thumbnailWidth;
   final int? thumbnailHeight;
+  final String reviewStatus;
 
   DDPost copyWith({
     bool? following,
@@ -109,6 +111,7 @@ class DDPost {
         imageHeight: imageHeight,
         thumbnailWidth: thumbnailWidth,
         thumbnailHeight: thumbnailHeight,
+        reviewStatus: reviewStatus,
       );
 
   Map<String, dynamic> toJson() => {
@@ -135,6 +138,7 @@ class DDPost {
         'imageHeight': imageHeight,
         'thumbnailWidth': thumbnailWidth,
         'thumbnailHeight': thumbnailHeight,
+        'reviewStatus': reviewStatus,
       };
 
   factory DDPost.fromJson(
@@ -166,6 +170,7 @@ class DDPost {
         imageHeight: _intValue(json['imageHeight']),
         thumbnailWidth: _intValue(json['thumbnailWidth']),
         thumbnailHeight: _intValue(json['thumbnailHeight']),
+        reviewStatus: '${json['reviewStatus'] ?? json['review_status'] ?? 'approved'}',
       );
 }
 

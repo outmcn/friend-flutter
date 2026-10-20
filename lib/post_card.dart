@@ -425,7 +425,19 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                           ),
               ),
               const Divider(height: 24),
-              Wrap(
+              if (widget.post.reviewStatus == 'rejected' && widget.onDelete != null)
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _ShareAction(label: '删除', icon: TIcons.delete, onTap: () {
+                      Navigator.pop(context);
+                      widget.onDelete!.call();
+                    }),
+                    _ShareAction(label: '申诉', icon: TIcons.question_circle, onTap: widget.onReport),
+                  ],
+                )
+              else Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: [
@@ -746,6 +758,27 @@ class _ShareAction extends StatelessWidget {
       );
 }
 
+String _maskViolationText(String text) => text.characters.map((_) => '*').join();
+
+class _ViolationMediaPlaceholder extends StatelessWidget {
+  const _ViolationMediaPlaceholder();
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        height: 180,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(TIcons.error_triangle_filled, color: Colors.red, size: 36),
+          SizedBox(height: 8),
+          Text('图片涉嫌违规'),
+        ]),
+      );
+}
+
 class _DiscoverProfileCard extends StatelessWidget {
   const _DiscoverProfileCard({
     super.key,
@@ -829,6 +862,7 @@ class _DiscoverProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final violation = post.reviewStatus == 'rejected' && onDelete != null;
     final hasMedia = (post.imageUrl?.trim().isNotEmpty == true) ||
         (post.videoUrl?.trim().isNotEmpty == true);
     return InkWell(
@@ -870,7 +904,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                         IconButton(
                           tooltip: '分享',
                           onPressed: () => _showDiscoverMore(context),
-                          icon: const Icon(TIcons.share_1),
+                          icon: Icon(violation ? TIcons.error_triangle_filled : TIcons.share_1, color: violation ? Colors.red : null),
                           iconSize: 20,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints.tightFor(width: 32, height: 32),
@@ -940,7 +974,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       IconButton(
                         tooltip: '分享',
                         onPressed: () => _showDiscoverMore(context),
-                        icon: const Icon(TIcons.share_1),
+                        icon: Icon(violation ? TIcons.error_triangle_filled : TIcons.share_1, color: violation ? Colors.red : null),
                         iconSize: 20,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints.tightFor(
@@ -954,13 +988,19 @@ class _DiscoverProfileCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 5, bottom: 5),
                       child: _DiscoverPostContent(
-                        text: post.content.trim(),
+                        text: violation ? _maskViolationText(post.content) : post.content.trim(),
                         maxLines: hasMedia ? 3 : 10,
                       ),
                     ),
-                  if (post.imageUrl?.trim().isNotEmpty == true) ...[
+                  if (post.imageUrl?.trim().isNotEmpty == true && violation) ...[
+                    const SizedBox(height: 10),
+                    _ViolationMediaPlaceholder(),
+                  ] else if (post.imageUrl?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 10),
                     _media(url: post.imageUrl!.trim(), thumbnail: false),
+                  ] else if (post.videoUrl?.trim().isNotEmpty == true && violation) ...[
+                    const SizedBox(height: 10),
+                    _ViolationMediaPlaceholder(),
                   ] else if (post.videoUrl?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 10),
                     Stack(
