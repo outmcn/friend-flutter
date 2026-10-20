@@ -52,15 +52,43 @@ class _PasswordLoginPageState extends State<PasswordLoginPage> {
       );
     } catch (error) {
       if (mounted) {
-        setState(
-          () => _error = error.toString().replaceFirst('Exception: ', ''),
-        );
+        final raw = error.toString().replaceFirst('Exception: ', '');
+        if (raw.startsWith('账号已被封禁|')) {
+          final parts = raw.split('|');
+          final until = parts.length > 1 ? parts[1] : '永久';
+          final reason = parts.length > 2 ? parts[2] : '';
+          await showDialog<void>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('账号已被封禁'),
+              content: Text('您已封禁（${until == '永久' ? '永久' : _banDurationText(until)}）${reason.isEmpty ? '' : '\\n原因：$reason'}'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('关闭')),
+                FilledButton(onPressed: () { Navigator.pop(dialogContext); _openAppeal(); }, child: const Text('申诉')),
+              ],
+            ),
+          );
+        } else {
+          setState(() => _error = raw);
+        }
       }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  Future<void> _openAppeal() async {
+    final controller = TextEditingController();
+    await showDialog<void>(context: context, builder: (c) => AlertDialog(title: const Text('封禁申诉'), content: TextField(controller: controller, maxLines: 5, decoration: const InputDecoration(hintText: '请填写申诉内容')), actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('取消')), FilledButton(onPressed: () { Navigator.pop(c); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('申诉已提交'))); }, child: const Text('提交'))]));
+    controller.dispose();
+  }
+
+  String _banDurationText(String value) {
+    final date = DateTime.tryParse(value);
+    if (date == null) return value;
+    final days = date.difference(DateTime.now()).inDays + 1;
+    return '${days < 1 ? 1 : days}天';
+  }
   Future<void> _openSmsFlow(String purpose) async {
     final phone = _username.text.trim();
     if (!RegExp(r'^1\d{10}$').hasMatch(phone)) {

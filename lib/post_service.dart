@@ -97,7 +97,12 @@ class DDPostService {
     );
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('${decoded['error'] ?? '登录失败'}');
+      final message = '${decoded['error'] ?? '登录失败'}';
+      if (decoded['code'] == 'ACCOUNT_DISABLED') {
+        final until = decoded['disabledUntil'];
+        throw Exception('${message}|${until ?? '永久'}|${decoded['reason'] ?? ''}');
+      }
+      throw Exception(message);
     }
     final token = decoded['token'];
     if (token is! String) throw Exception('登录响应格式错误');
