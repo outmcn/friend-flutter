@@ -55,8 +55,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
     switch (item.type) {
       case 'like':
         return '点赞了你的动态';
+      case 'post_like':
+        return '';
       case 'favorite':
         return '收藏了你的动态';
+      case 'post_favorite':
+        return '';
+      case 'post_gift':
+        return '';
+      case 'post_comment':
+        return '';
       case 'comment':
         return '评论了你的动态';
       case 'comment_reply':
