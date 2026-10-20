@@ -175,9 +175,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: const InputDecoration(labelText: '昵称')),
                 TextField(
                     controller: signature,
-                    maxLength: 80,
+                    maxLength: 30,
                     minLines: 1,
-                    maxLines: 3,
+                    maxLines: 2,
+                    inputFormatters: [LengthLimitingTextInputFormatter(30)],
                     decoration: const InputDecoration(labelText: '个性签名')),
               ]),
       );

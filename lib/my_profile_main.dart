@@ -935,6 +935,15 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
 
+  String _wrapSignature(String value) {
+    final chars = value.characters.toList();
+    final lines = <String>[];
+    for (var i = 0; i < chars.length; i += 15) {
+      lines.add(chars.skip(i).take(15).join());
+    }
+    return lines.take(2).join('\n');
+  }
+
   List<Widget> _allProfileFeedSlivers() {
     final signature = feeds.map((feed) => feed.posts.map((post) => post.id).join(',')).join('|');
     if (_cachedAllProfileSignature == signature && _cachedAllProfileSlivers != null) {
@@ -1151,8 +1160,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           child: Text(
                                             '${p?['signature'] ?? p?['bio'] ?? ''}'.trim().isEmpty
                                                 ? '设置个性签名'
-                                                : '${p?['signature'] ?? p?['bio'] ?? ''}'.trim(),
+                                                : _wrapSignature('${p?['signature'] ?? p?['bio'] ?? ''}'.trim()),
                                             maxLines: 2,
+                                            softWrap: true,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               fontSize: 15,
