@@ -1187,10 +1187,25 @@ class _DDProfilePageState extends State<DDProfilePage>
                                   Stack(
                                     clipBehavior: Clip.none,
                                     children: [
-                                      ClipOval(
-                                        child: SizedBox(
-                                          width: 84,
-                                          height: 84,
+                                      Container(
+                                        width: 90,
+                                        height: 90,
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: p?['gender'] == '男'
+                                                ? const Color(0xFF1677FF)
+                                                : p?['gender'] == '女'
+                                                    ? const Color(0xFFFF6FAE)
+                                                    : Theme.of(context).dividerColor,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: ClipOval(
+                                          child: SizedBox(
+                                            width: 84,
+                                            height: 84,
                                           child: _avatarReviewRejected
                                               ? const ColoredBox(
                                                   color: Colors.black12,
@@ -1221,6 +1236,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                   ),
                                                 ),
                                         ),
+                                      ),
                                       ),
                                       Positioned(
                                         left: 0,
