@@ -3852,23 +3852,23 @@ class _DDShellState extends State<DDShell> {
           },
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
+              icon: Icon(TIcons.highlight_1),
+              selectedIcon: Icon(TIcons.highlight_1_filled),
               label: '主页',
             ),
             NavigationDestination(
-              icon: Icon(Icons.explore_outlined),
-              selectedIcon: Icon(Icons.explore),
+              icon: Icon(TIcons.gps),
+              selectedIcon: Icon(TIcons.gps_filled),
               label: '发现',
             ),
             NavigationDestination(
-              icon: Icon(Icons.chat_bubble_outline),
-              selectedIcon: Icon(Icons.chat_bubble),
+              icon: Icon(TIcons.chat_bubble),
+              selectedIcon: Icon(TIcons.chat_bubble_filled),
               label: '聊天',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
+              icon: Icon(TIcons.fingerprint_3),
+              selectedIcon: Icon(TIcons.fingerprint_3),
               label: '我的',
             ),
           ],

@@ -1254,7 +1254,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       SizedBox(
                                         width: 90,
                                         child: _ProfileActionButton(
-                                          icon: Icons.account_balance_wallet_outlined,
+                                          icon: TIcons.pantone,
                                           label: '钱包',
                                           subtitle: coinBalance > 0 ? '$coinBalance 金币' : null,
                                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())),
