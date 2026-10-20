@@ -1,63 +1,23 @@
 part of 'main.dart';
 
 
-class _ExpandableProfileSignature extends StatefulWidget {
+class _ExpandableProfileSignature extends StatelessWidget {
   const _ExpandableProfileSignature({required this.value});
   final String value;
-  @override
-  State<_ExpandableProfileSignature> createState() => _ExpandableProfileSignatureState();
-}
-
-class _ExpandableProfileSignatureState extends State<_ExpandableProfileSignature> {
-  bool expanded = false;
-  String get normalized => widget.value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
-  List<String> _wrap(String value) {
-    final result = <String>[];
-    for (final source in value.split('\n')) {
-      final chars = source.characters.toList();
-      if (chars.isEmpty) {
-        result.add('');
-      } else {
-        for (var i = 0; i < chars.length; i += 20) {
-          result.add(chars.skip(i).take(20).join());
-        }
-      }
-    }
-    return result;
+  String _format(String raw) {
+    final clean = raw.replaceAll(RegExp(r'\s+'), '').trim();
+    final chars = clean.characters.take(100).toList();
+    final lines = <String>[];
+    for (var i = 0; i < chars.length; i += 15) lines.add(chars.skip(i).take(15).join());
+    return lines.join('\n');
   }
   @override
   Widget build(BuildContext context) {
-    if (normalized.isEmpty) return const Text('设置个性签名');
-    final lines = _wrap(normalized);
-    final hasMore = lines.length > 3;
-    final shown = expanded ? lines.join('\n') : lines.take(3).join('\n');
-    if (expanded) {
-      return RichText(
-        text: TextSpan(
-          style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          children: [
-            TextSpan(text: shown),
-            if (hasMore) TextSpan(text: '  收起', style: TextStyle(color: Theme.of(context).colorScheme.primary), recognizer: TapGestureRecognizer()..onTap = () => setState(() => expanded = false)),
-          ],
-        ),
-      );
-    }
-    final visible = lines.take(3).toList();
-    final tail = hasMore ? '...更多' : '';
-    if (hasMore) {
-      final last = visible.isEmpty ? '' : visible.removeLast();
-      visible.add(last.characters.take((last.characters.length - tail.characters.length).clamp(0, 20)).toList().join() + tail);
-    }
-    return RichText(
-      maxLines: 3,
-      overflow: TextOverflow.clip,
-      text: TextSpan(
-        style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
-        children: [
-          TextSpan(text: visible.join('\n')),
-          if (hasMore) TextSpan(style: TextStyle(color: Theme.of(context).colorScheme.primary), recognizer: TapGestureRecognizer()..onTap = () => setState(() => expanded = true)),
-        ],
-      ),
+    final formatted = _format(value);
+    return Text(
+      formatted.isEmpty ? '设置个性签名' : formatted,
+      softWrap: false,
+      style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }

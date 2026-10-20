@@ -30,6 +30,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
+  String _formatSignature(String raw) {
+    final clean = raw.replaceAll(RegExp(r'\s+'), '').trim();
+    final chars = clean.characters.take(100).toList();
+    final lines = <String>[];
+    for (var i = 0; i < chars.length; i += 15) lines.add(chars.skip(i).take(15).join());
+    return lines.join('\n');
+  }
+
+  void _normalizeSignature() {
+    final formatted = _formatSignature(signature.text);
+    if (signature.text == formatted) return;
+    final offset = formatted.length.clamp(0, formatted.length);
+    signature.value = TextEditingValue(text: formatted, selection: TextSelection.collapsed(offset: offset));
+  }
+
   Future<void> load() async {
     try {
       final p = await SharedPreferences.getInstance();
@@ -40,7 +55,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ? data['user'] as Map<String, dynamic>
           : data;
       nickname.text = '${profile['nickname'] ?? ''}';
-      signature.text = '${profile['signature'] ?? profile['bio'] ?? ''}';
+      signature.text = _formatSignature('${profile['signature'] ?? profile['bio'] ?? ''}');
       if (profile['avatarKey'] is String &&
           (profile['avatarKey'] as String).trim().isNotEmpty) {
         final signed = await service.resolveAvatarUrl(
@@ -176,9 +191,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: const InputDecoration(labelText: '昵称')),
                 TextField(
                     controller: signature,
+                    onChanged: (_) => _normalizeSignature(),
                     maxLength: 100,
                     minLines: 1,
-                    maxLines: 3,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
                     inputFormatters: [LengthLimitingTextInputFormatter(100)],
                     decoration: const InputDecoration(labelText: '个性签名')),
               ]),
