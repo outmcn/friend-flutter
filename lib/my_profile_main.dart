@@ -1174,12 +1174,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ),
                                         const SizedBox(height: 8),
-                                        _SonicProfileButton(
-                                          playing: _sonicPlaying,
-                                          enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
-                                          onTap: _editSonic,
-                                        ),
-                                        const SizedBox(height: 8),
                                         Row(
                                           children: [
                                             Expanded(child: _ProfileActionButton(icon: TIcons.pantone, label: '钱包', subtitle: coinBalance > 0 ? '$coinBalance 金币' : null, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())))),
@@ -1271,6 +1265,12 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ),
                                           ),
                                         ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _SonicProfileButton(
+                                        playing: _sonicPlaying,
+                                        enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
+                                        onTap: _editSonic,
                                       ),
                                     ],
                                   ),
