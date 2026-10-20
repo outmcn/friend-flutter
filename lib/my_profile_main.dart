@@ -1260,6 +1260,12 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
                                         onTap: _editSonic,
                                       ),
+                                      const SizedBox(height: 8),
+                                      _ProfileActionButton(
+                                        icon: Icons.auto_awesome_outlined,
+                                        label: '展馆',
+                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(width: 12),
@@ -1269,8 +1275,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                                       Row(
                                           children: [
                                             Expanded(child: _ProfileActionButton(icon: TIcons.pantone, label: '钱包', subtitle: coinBalance > 0 ? '$coinBalance 金币' : null, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())))),
-                                            const SizedBox(width: 6),
-                                            Expanded(child: _ProfileActionButton(icon: Icons.auto_awesome_outlined, label: '展馆', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())))),
                                             const SizedBox(width: 6),
                                             Expanded(child: _ProfileActionButton(icon: TIcons.collection, label: '典藏', onTap: () => _showProfileFeatureNotice(context, '典藏'))),
                                             const SizedBox(width: 6),
