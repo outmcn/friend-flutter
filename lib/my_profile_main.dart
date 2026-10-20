@@ -1103,7 +1103,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              fontSize: 13,
+                                              fontSize: 15,
                                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                                             ),
                                           ),
