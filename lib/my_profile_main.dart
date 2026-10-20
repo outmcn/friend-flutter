@@ -1045,12 +1045,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                         padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
-                            if (_backgroundUrl != null && _backgroundUrl!.isNotEmpty)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Image.network(_backgroundUrl!, height: 150, width: double.infinity, fit: BoxFit.cover),
-                              ),
-                            if (_backgroundUrl != null && _backgroundUrl!.isNotEmpty) const SizedBox(height: 12),
                             if (error != null && profile != null)
                               _PageErrorState(
                                 title: profile == null ? '资料加载失败' : '动态加载失败',
@@ -1060,6 +1054,84 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     : () => load(
                                         tab: selectedTab, forceRefresh: true),
                               ),
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: _backgroundUrl == null || _backgroundUrl!.isEmpty
+                                      ? ColoredBox(
+                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                          child: const SizedBox(height: 180, width: double.infinity),
+                                        )
+                                      : Image.network(_backgroundUrl!, height: 180, width: double.infinity, fit: BoxFit.cover),
+                                ),
+                                Positioned(left: 16, bottom: -30, child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      ClipOval(
+                                        child: SizedBox(
+                                          width: 78,
+                                          height: 78,
+                                          child: _avatarUrl == null ||
+                                                  _avatarUrl!.isEmpty
+                                              ? const ColoredBox(
+                                                  color: Colors.black12,
+                                                  child: Icon(Icons.person,
+                                                      size: 40),
+                                                )
+                                              : _PermanentCachedImage(
+                                                  url: _avatarUrl!,
+                                                  width: 78,
+                                                  height: 78,
+                                                  fit: BoxFit.cover,
+                                                  placeholder: const ColoredBox(
+                                                    color: Colors.black12,
+                                                    child: Icon(Icons.person,
+                                                        size: 40),
+                                                  ),
+                                                ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom: -9,
+                                        child: Center(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .surface,
+                                              border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .dividerColor),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                    color: Color(0x19000000),
+                                                    blurRadius: 8,
+                                                    offset: Offset(0, 2)),
+                                              ],
+                                            ),
+                                            child: Text(
+                                              '${p?['city'] ?? ''}'.trim().isEmpty
+                                                  ? '添加城市'
+                                                  : '${p?['city']}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelSmall),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),),
+                              ],
+                            ),
+                            const SizedBox(height: 42),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Column(
@@ -1182,69 +1254,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      ClipOval(
-                                        child: SizedBox(
-                                          width: 78,
-                                          height: 78,
-                                          child: _avatarUrl == null ||
-                                                  _avatarUrl!.isEmpty
-                                              ? const ColoredBox(
-                                                  color: Colors.black12,
-                                                  child: Icon(Icons.person,
-                                                      size: 40),
-                                                )
-                                              : _PermanentCachedImage(
-                                                  url: _avatarUrl!,
-                                                  width: 78,
-                                                  height: 78,
-                                                  fit: BoxFit.cover,
-                                                  placeholder: const ColoredBox(
-                                                    color: Colors.black12,
-                                                    child: Icon(Icons.person,
-                                                        size: 40),
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: -9,
-                                        child: Center(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .surface,
-                                              border: Border.all(
-                                                  color: Theme.of(context)
-                                                      .dividerColor),
-                                              borderRadius:
-                                                  BorderRadius.circular(999),
-                                              boxShadow: const [
-                                                BoxShadow(
-                                                    color: Color(0x19000000),
-                                                    blurRadius: 8,
-                                                    offset: Offset(0, 2)),
-                                              ],
-                                            ),
-                                            child: Text(
-                                              '${p?['city'] ?? ''}'.trim().isEmpty
-                                                  ? '添加城市'
-                                                  : '${p?['city']}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelSmall),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+
                                   const SizedBox(width: 12),
 
 
