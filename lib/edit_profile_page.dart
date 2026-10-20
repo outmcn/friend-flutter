@@ -10,6 +10,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final service = DDPostService();
   final nickname = TextEditingController();
   final signature = TextEditingController();
+  XFile? backgroundImage;
+  String? _backgroundPreviewUrl;
   XFile? image;
   List<int>? croppedAvatar;
   bool loading = true;
@@ -41,6 +43,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           : data;
       nickname.text = '${profile['nickname'] ?? ''}';
       signature.text = '${profile['signature'] ?? profile['bio'] ?? ''}';
+      final backgroundKey = '${profile['backgroundKey'] ?? ''}'.trim();
+      if (backgroundKey.isNotEmpty) {
+        _backgroundPreviewUrl = await service.backgroundUrl(token, backgroundKey);
+      }
       if (profile['avatarKey'] is String &&
           (profile['avatarKey'] as String).trim().isNotEmpty) {
         final signed = await service.resolveAvatarUrl(
@@ -56,6 +62,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  Future<void> pickBackground() async {
+    try {
+      final value = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (value != null && mounted) setState(() => backgroundImage = value);
+    } catch (e) {
+      if (mounted) setState(() => error = '背景图选择失败：$e');
+    }
+  }
+
+  Future<String?> _backgroundObjectKey(String token) async {
+    if (backgroundImage == null) return null;
+    final response = await service.backgroundUploadUrl(token: token, fileName: backgroundImage!.name, contentType: 'image/jpeg');
+    final url = response['url']; final objectKey = response['objectKey'];
+    if (url is! String || objectKey is! String) throw Exception('背景图上传地址格式错误');
+    final upload = await service.uploadAvatar(url: url, bytes: await backgroundImage!.readAsBytes(), contentType: 'image/jpeg');
+    if (!upload) throw Exception('背景图上传失败');
+    return objectKey;
   }
 
   Future<void> pickAvatar() async {
@@ -104,12 +129,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final token = p.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       final avatarKey = await _avatarObjectKey(token);
+      final backgroundKey = await _backgroundObjectKey(token);
       await service.updateMe(
         token: token,
         nickname: nickname.text.trim(),
         signature: signature.text.trim(),
         bio: signature.text.trim(),
         avatarKey: avatarKey,
+        backgroundKey: backgroundKey,
       );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -131,6 +158,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : ListView(padding: const EdgeInsets.all(18), children: [
+                GestureDetector(
+                  onTap: pickBackground,
+                  child: Container(
+                    height: 150,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      image: backgroundImage != null
+                          ? DecorationImage(image: FileImage(File(backgroundImage!.path)), fit: BoxFit.cover)
+                          : (_backgroundPreviewUrl == null ? null : DecorationImage(image: NetworkImage(_backgroundPreviewUrl!), fit: BoxFit.cover)),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    ),
+                    child: const Center(child: Icon(Icons.add_photo_alternate_outlined, color: Colors.white)),
+                  ),
+                ),
+                const SizedBox(height: 14),
                 GestureDetector(
                   onTap: pickAvatar,
                   child: Center(

@@ -971,6 +971,33 @@ class DDPostService {
     return decoded['url'] as String;
   }
 
+  Future<Map<String, dynamic>> backgroundUploadUrl({
+    required String token,
+    required String fileName,
+    required String contentType,
+  }) async {
+    final uri = _api('/media/background/upload-url').replace(queryParameters: {
+      'fileName': fileName,
+      'contentType': contentType,
+    });
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic>) {
+      throw Exception('背景图上传地址获取失败');
+    }
+    return decoded;
+  }
+
+  Future<String> backgroundUrl(String token, String objectKey) async {
+    final uri = _api('/media/background/url').replace(queryParameters: {'key': objectKey});
+    final response = await _client.get(uri, headers: {'Authorization': 'Bearer $token'});
+    final decoded = jsonDecode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300 || decoded is! Map<String, dynamic> || decoded['url'] is! String) {
+      throw Exception('背景图地址获取失败');
+    }
+    return decoded['url'] as String;
+  }
+
   Future<Map<String, dynamic>> voiceUploadUrl({
     required String token,
     required String fileName,
@@ -1097,6 +1124,7 @@ class DDPostService {
     String? nickname,
     String? signature,
     String? bio,
+    String? backgroundKey,
     String? gender,
     String? city,
     String? avatarKey,
@@ -1113,6 +1141,7 @@ class DDPostService {
         if (nickname != null) 'nickname': nickname,
         if (signature != null) 'signature': signature,
         if (bio != null) 'bio': bio,
+        if (backgroundKey != null) 'backgroundKey': backgroundKey,
         if (gender != null) 'gender': gender,
         if (city != null) 'city': city,
         if (avatarKey != null) 'avatarKey': avatarKey,

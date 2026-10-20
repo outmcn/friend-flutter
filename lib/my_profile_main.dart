@@ -335,6 +335,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _sonicPlaying = false;
   String? _sonicUrl;
   String? _avatarUrl;
+  String? _backgroundUrl;
   String? error;
   bool _stealth = false;
   bool _antiHarassment = false;
@@ -689,6 +690,8 @@ class _DDProfilePageState extends State<DDProfilePage>
       final avatar = avatarKey.isEmpty
           ? null
           : await service.resolveAvatarUrl(token, avatarKey);
+      final backgroundKey = '${loaded['backgroundKey'] ?? ''}'.trim();
+      final background = backgroundKey.isEmpty ? null : await service.backgroundUrl(token, backgroundKey);
       final rawTags = loaded['tags'];
       final tags = rawTags is List
           ? rawTags
@@ -704,6 +707,7 @@ class _DDProfilePageState extends State<DDProfilePage>
           charmCoins = int.tryParse('${loaded['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
           _avatarUrl = avatar;
+          _backgroundUrl = background;
           _stealth = '${loaded['presenceMode'] ?? 'online'}' == 'stealth';
           _antiHarassment = loaded['antiHarassment'] == true;
           _smartBlock = loaded['smartBlock'] == true;
@@ -746,6 +750,8 @@ class _DDProfilePageState extends State<DDProfilePage>
         final avatar = avatarKey.isEmpty
             ? null
             : await service.resolveAvatarUrl(t, avatarKey);
+        final backgroundKey = '${loadedProfile['backgroundKey'] ?? ''}'.trim();
+        final background = backgroundKey.isEmpty ? null : await service.backgroundUrl(t, backgroundKey);
         if (avatarKey.isNotEmpty && avatar != null && avatar.isNotEmpty) {
           try {
             final response = await http.get(Uri.parse(avatar));
@@ -1039,6 +1045,12 @@ class _DDProfilePageState extends State<DDProfilePage>
                         padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
+                            if (_backgroundUrl != null && _backgroundUrl!.isNotEmpty)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.network(_backgroundUrl!, height: 150, width: double.infinity, fit: BoxFit.cover),
+                              ),
+                            if (_backgroundUrl != null && _backgroundUrl!.isNotEmpty) const SizedBox(height: 12),
                             if (error != null && profile != null)
                               _PageErrorState(
                                 title: profile == null ? '资料加载失败' : '动态加载失败',
