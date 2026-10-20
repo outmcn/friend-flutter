@@ -1087,10 +1087,10 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                   tooltip: '分享',
                   onPressed: item == null || deleting
                       ? null
-                      : item.reviewStatus == 'rejected' && isOwner
+                      : item?.reviewStatus == 'rejected' && isOwner
                           ? _openViolationAppeal
                           : () => _openShareMenu(item),
-                  icon: Icon(item.reviewStatus == 'rejected' && isOwner ? TIcons.error_triangle_filled : TIcons.share_1, color: item.reviewStatus == 'rejected' && isOwner ? Colors.red : null),
+                  icon: Icon(item?.reviewStatus == 'rejected' && isOwner ? TIcons.error_triangle_filled : TIcons.share_1, color: item?.reviewStatus == 'rejected' && isOwner ? Colors.red : null),
                 ),
               ],
             ),
