@@ -1253,7 +1253,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 90),
+                                      const SizedBox(height: 128),
                                       SizedBox(
                                         width: 90,
                                         child: _ProfileActionButton(
