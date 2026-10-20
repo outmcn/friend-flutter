@@ -1174,19 +1174,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ),
                                         const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            Expanded(child: _ProfileActionButton(icon: TIcons.pantone, label: '钱包', subtitle: coinBalance > 0 ? '$coinBalance 金币' : null, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())))),
-                                            const SizedBox(width: 6),
-                                            Expanded(child: _ProfileActionButton(icon: Icons.auto_awesome_outlined, label: '展馆', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())))),
-                                            const SizedBox(width: 6),
-                                            Expanded(child: _ProfileActionButton(icon: TIcons.collection, label: '典藏', onTap: () => _showProfileFeatureNotice(context, '典藏'))),
-                                            const SizedBox(width: 6),
-                                            Expanded(child: _ProfileActionButton(icon: TIcons.space, label: '空间', onTap: () => _showProfileFeatureNotice(context, '空间'))),
-                                            const SizedBox(width: 6),
-                                            Expanded(child: _ProfileActionButton(icon: TIcons.browse_gallery, label: '频道', onTap: () => _showProfileFeatureNotice(context, '频道'))),
-                                          ],
-                                        ),
+
 
 
                                       ],
@@ -1277,6 +1265,20 @@ class _DDProfilePageState extends State<DDProfilePage>
                                   const SizedBox(width: 12),
                                 ],
                               ),
+                              const SizedBox(height: 12),
+                                                                      Row(
+                                          children: [
+                                            Expanded(child: _ProfileActionButton(icon: TIcons.pantone, label: '钱包', subtitle: coinBalance > 0 ? '$coinBalance 金币' : null, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())))),
+                                            const SizedBox(width: 6),
+                                            Expanded(child: _ProfileActionButton(icon: Icons.auto_awesome_outlined, label: '展馆', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())))),
+                                            const SizedBox(width: 6),
+                                            Expanded(child: _ProfileActionButton(icon: TIcons.collection, label: '典藏', onTap: () => _showProfileFeatureNotice(context, '典藏'))),
+                                            const SizedBox(width: 6),
+                                            Expanded(child: _ProfileActionButton(icon: TIcons.space, label: '空间', onTap: () => _showProfileFeatureNotice(context, '空间'))),
+                                            const SizedBox(width: 6),
+                                            Expanded(child: _ProfileActionButton(icon: TIcons.browse_gallery, label: '频道', onTap: () => _showProfileFeatureNotice(context, '频道'))),
+                                          ],
+                                        ),
                               const SizedBox(height: 18),
                             ],
                           ),
