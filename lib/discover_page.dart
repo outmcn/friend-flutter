@@ -15,7 +15,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
   int? _currentUserId;
-  int _unreadNotifications = 0;
+  int get _unreadNotifications => _unreadNotificationIds.length;
+  final _unreadNotificationIds = <int>{};
   StreamSubscription<Map<String, dynamic>>? _notificationEvents;
 
   Future<String> _token() async {
@@ -35,7 +36,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Future<void> _loadNotificationUnread() async {
     try {
       final rows = await service.fetchNotifications(await _token());
-      if (mounted) setState(() => _unreadNotifications = rows.where((x) => !x.read).length);
+      if (mounted) setState(() {
+        _unreadNotificationIds
+          ..clear()
+          ..addAll(rows.where((x) => !x.read).map((x) => x.id));
+      });
     } catch (_) {}
   }
   Future<void> _restoreDiscoverCityLabel() async {
@@ -63,7 +68,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     unawaited(_loadNotificationUnread());
     _notificationEvents = ImSession.instance.events.listen((event) {
       if (event['type'] == 'notification:new' && mounted) {
-        setState(() => _unreadNotifications++);
+        setState(() => _unreadNotificationIds.add(int.tryParse('${event['notification']?['id'] ?? event['id'] ?? ''}') ?? DateTime.now().microsecondsSinceEpoch));
       }
     });
     unawaited(_loadCurrentUserId());
@@ -382,13 +387,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 icon: const Icon(TIcons.notification),
               ),
               if (_unreadNotifications > 0)
-                Positioned(
-                  right: 3,
-                  top: 3,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
-                    child: Text('${_unreadNotifications > 99 ? '99+' : _unreadNotifications}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                const Positioned(
+                  right: 6,
+                  top: 6,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    child: SizedBox(width: 8, height: 8),
                   ),
                 ),
             ],

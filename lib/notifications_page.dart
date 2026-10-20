@@ -12,6 +12,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<DDNotification> notifications = const [];
   bool loading = true;
   String? error;
+  bool get hasUnread => notifications.any((item) => !item.read);
 
   @override
   void initState() {
@@ -71,11 +72,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
+  Future<void> _markAllRead() async {
+    try {
+      await service.markNotificationsRead(await token());
+      if (mounted) setState(() {
+        notifications = notifications.map((n) => DDNotification(id: n.id, type: n.type, content: n.content, createdAt: n.createdAt, nickname: n.nickname, avatar: n.avatar, postId: n.postId, commentId: n.commentId, postContent: n.postContent, commentContent: n.commentContent, read: true)).toList();
+      });
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('通知'),
           actions: [
+            TextButton(onPressed: hasUnread ? _markAllRead : null, child: const Text('一键已读')),
             IconButton(onPressed: load, icon: const Icon(Icons.refresh)),
           ],
         ),
