@@ -14,6 +14,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final _cardKeys = <String, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
+  int? _currentUserId;
   int _unreadNotifications = 0;
   StreamSubscription<Map<String, dynamic>>? _notificationEvents;
 
