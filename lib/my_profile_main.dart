@@ -1174,6 +1174,19 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             value: '${p?['signature'] ?? p?['bio'] ?? ''}',
                                           ),
                                         ),
+                                        const SizedBox(height: 8),
+                                        _ProfileActionButton(
+                                          icon: TIcons.pantone,
+                                          label: '钱包',
+                                          subtitle: coinBalance > 0 ? '$coinBalance 金币' : null,
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _ProfileActionButton(
+                                          icon: Icons.auto_awesome_outlined,
+                                          label: '展馆',
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
+                                        ),
 
 
                                       ],
@@ -1252,25 +1265,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ),
                                           ),
                                         ],
-                                      ),
-                                      const SizedBox(height: 90),
-                                      SizedBox(
-                                        width: 90,
-                                        child: _ProfileActionButton(
-                                          icon: TIcons.pantone,
-                                          label: '钱包',
-                                          subtitle: coinBalance > 0 ? '$coinBalance 金币' : null,
-                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      SizedBox(
-                                        width: 90,
-                                        child: _ProfileActionButton(
-                                          icon: Icons.auto_awesome_outlined,
-                                          label: '展馆',
-                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
-                                        ),
                                       ),
                                     ],
                                   ),
