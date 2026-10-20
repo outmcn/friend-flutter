@@ -1168,15 +1168,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.only(top: 4),
-                                          child: Text(
-                                            _displaySignature(p?['signature'] ?? p?['bio']),
-                                            maxLines: 3,
-                                            softWrap: true,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                            ),
+                                          child: _ExpandableProfileSignature(
+                                            value: '${p?['signature'] ?? p?['bio'] ?? ''}',
                                           ),
                                         ),
 

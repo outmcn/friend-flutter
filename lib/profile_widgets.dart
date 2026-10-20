@@ -1,6 +1,45 @@
 part of 'main.dart';
 
 
+class _ExpandableProfileSignature extends StatefulWidget {
+  const _ExpandableProfileSignature({required this.value});
+  final String value;
+  @override
+  State<_ExpandableProfileSignature> createState() => _ExpandableProfileSignatureState();
+}
+
+class _ExpandableProfileSignatureState extends State<_ExpandableProfileSignature> {
+  bool expanded = false;
+  String get normalized => widget.value.replaceAll(RegExp(r'\s+'), ' ').trim();
+  String get clipped => normalized.characters.take(60).toList().asMap().entries.map((e) => e.value).join();
+  String _lines(String value) {
+    final chars = value.characters.toList();
+    final lines = <String>[];
+    for (var i = 0; i < chars.length; i += 20) lines.add(chars.skip(i).take(20).join());
+    return lines.join('\n');
+  }
+  @override
+  Widget build(BuildContext context) {
+    if (normalized.isEmpty) return const Text('设置个性签名');
+    final shown = expanded ? normalized : clipped;
+    return RichText(
+      maxLines: expanded ? null : 3,
+      overflow: expanded ? TextOverflow.visible : TextOverflow.clip,
+      text: TextSpan(
+        style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        children: [
+          TextSpan(text: _lines(shown)),
+          if (normalized.characters.length > 60)
+            TextSpan(
+              text: expanded ? '  收起' : '...更多',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              recognizer: TapGestureRecognizer()..onTap = () => setState(() => expanded = !expanded),
+            ),
+        ],
+      ),
+    );
+  }
+}
 String _formatProfilePostDate(String raw) {
   final parsed = DateTime.tryParse(raw);
   if (parsed == null || raw.trim().isEmpty) return '2026.01.01';
