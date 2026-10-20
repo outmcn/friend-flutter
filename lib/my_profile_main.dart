@@ -1016,7 +1016,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         leading: IconButton(
           tooltip: '在线状态',
           onPressed: _openPresenceControls,
-          icon: const Icon(TIcons.chat_message),
+          icon: const Icon(TIcons.sensors),
         ),
         title: _showStickyNickname
             ? Text(
