@@ -470,10 +470,27 @@ class DDPostService {
     }
   }
 
-  Future<List<DDNotification>> fetchNotifications(String token) async =>
-      <DDNotification>[];
+  Future<List<DDNotification>> fetchNotifications(String token) async {
+    final response = await _client.get(
+      _api('/notifications'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 200) throw Exception('通知加载失败');
+    final data = jsonDecode(response.body);
+    final rows = data is Map ? data['notifications'] : null;
+    if (rows is! List) return <DDNotification>[];
+    return rows
+        .whereType<Map>()
+        .map((row) => DDNotification.fromJson(Map<String, dynamic>.from(row)))
+        .toList();
+  }
 
-  Future<void> markNotificationsRead(String token) async {}
+  Future<void> markNotificationsRead(String token) async {
+    await _client.post(
+      _api('/notifications/read'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
 
   Future<List<DDPost>> fetchPosts(
     String token, {
