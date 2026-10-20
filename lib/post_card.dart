@@ -860,6 +860,11 @@ class _DiscoverProfileCard extends StatelessWidget {
     );
   }
 
+  Widget _avatarFrame({required Widget child, required String gender, double size = 40}) {
+    final color = gender == '男' ? const Color(0xFF1677FF) : gender == '女' ? const Color(0xFFFF6FAE) : Colors.transparent;
+    return Container(width: size, height: size, padding: EdgeInsets.all(color == Colors.transparent ? 0 : 2), decoration: BoxDecoration(shape: BoxShape.circle, border: color == Colors.transparent ? null : Border.all(color: color, width: 2)), child: ClipOval(child: child));
+  }
+
   @override
   Widget build(BuildContext context) {
     final violation = post.reviewStatus == 'rejected' && onDelete != null;
@@ -873,10 +878,9 @@ class _DiscoverProfileCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!hideAuthorRow) ...[
-              ClipOval(
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
+              _avatarFrame(
+                gender: post.gender,
+                child: SizedBox.expand(
                   child: post.avatar.trim().isEmpty
                       ? const Icon(Icons.person_outline)
                       : _PermanentCachedImage(

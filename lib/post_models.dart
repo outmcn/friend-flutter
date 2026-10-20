@@ -33,6 +33,7 @@ class DDPost {
     required this.createdAt,
     required this.nickname,
     required this.avatar,
+    this.gender = '',
     required this.likes,
     required this.favorites,
     required this.comments,
@@ -59,6 +60,7 @@ class DDPost {
   final String createdAt;
   final String nickname;
   final String avatar;
+  final String gender;
   final int likes;
   final int favorites;
   final int comments;
@@ -86,6 +88,7 @@ class DDPost {
     int? favorites,
     String? nickname,
     String? avatar,
+    String? gender,
   }) =>
       DDPost(
         id: id,
@@ -94,6 +97,7 @@ class DDPost {
         createdAt: createdAt,
         nickname: nickname ?? this.nickname,
         avatar: avatar ?? this.avatar,
+        gender: gender ?? this.gender,
         likes: likes ?? this.likes,
         favorites: favorites ?? this.favorites,
         comments: comments,
@@ -152,6 +156,7 @@ class DDPost {
         createdAt: '${json['createdAt'] ?? ''}',
         nickname: '${json['nickname'] ?? '用户'}',
         avatar: _mediaValue(json['avatar'], preserveMediaKeys),
+        gender: '${json['gender'] ?? ''}',
         likes: _intValue(json['likes']) ?? 0,
         favorites: _intValue(json['favorites']) ?? 0,
         comments: _intValue(json['comments']) ?? 0,
