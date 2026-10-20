@@ -335,7 +335,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _sonicPlaying = false;
   String? _sonicUrl;
   String? _avatarUrl;
-  String? _backgroundUrl;
   String? error;
   bool _stealth = false;
   bool _antiHarassment = false;
@@ -690,8 +689,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       final avatar = avatarKey.isEmpty
           ? null
           : await service.resolveAvatarUrl(token, avatarKey);
-      final backgroundKey = '${loaded['backgroundKey'] ?? ''}'.trim();
-      final background = backgroundKey.isEmpty ? null : await service.backgroundUrl(token, backgroundKey);
       final rawTags = loaded['tags'];
       final tags = rawTags is List
           ? rawTags
@@ -707,7 +704,6 @@ class _DDProfilePageState extends State<DDProfilePage>
           charmCoins = int.tryParse('${loaded['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
           _avatarUrl = avatar;
-          _backgroundUrl = background;
           _stealth = '${loaded['presenceMode'] ?? 'online'}' == 'stealth';
           _antiHarassment = loaded['antiHarassment'] == true;
           _smartBlock = loaded['smartBlock'] == true;
@@ -750,8 +746,6 @@ class _DDProfilePageState extends State<DDProfilePage>
         final avatar = avatarKey.isEmpty
             ? null
             : await service.resolveAvatarUrl(t, avatarKey);
-        final backgroundKey = '${loadedProfile['backgroundKey'] ?? ''}'.trim();
-        final background = backgroundKey.isEmpty ? null : await service.backgroundUrl(t, backgroundKey);
         if (avatarKey.isNotEmpty && avatar != null && avatar.isNotEmpty) {
           try {
             final response = await http.get(Uri.parse(avatar));
@@ -995,13 +989,9 @@ class _DDProfilePageState extends State<DDProfilePage>
   Widget build(BuildContext context) {
     final p = profile;
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        forceMaterialTransparency: true,
         elevation: 0,
-        scrolledUnderElevation: 0,
         centerTitle: true,
         leading: IconButton(
           tooltip: '在线状态',
@@ -1046,7 +1036,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverPadding(
-                        padding: EdgeInsets.zero,
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             if (error != null && profile != null)
@@ -1058,35 +1048,129 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     : () => load(
                                         tab: selectedTab, forceRefresh: true),
                               ),
-                            Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                OverflowBox(
-                                  alignment: Alignment.topCenter,
-                                  minWidth: MediaQuery.of(context).size.width + 48,
-                                  maxWidth: MediaQuery.of(context).size.width + 48,
-                                  minHeight: 240,
-                                  maxHeight: 500,
-                                  child: SizedBox(
-                                    width: MediaQuery.of(context).size.width + 48,
-                                    height: 240,
-                                    child: Transform.translate(
-                                    offset: const Offset(-24, 0),
-                                    child: _backgroundUrl == null || _backgroundUrl!.isEmpty
-                                        ? ColoredBox(
-                                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                            child: const SizedBox.expand(),
-                                          )
-                                        : _PermanentCachedImage(
-                                            url: _backgroundUrl!,
-                                            width: double.infinity,
-                                            height: 240,
-                                            fit: BoxFit.cover,
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                '${p?['nickname'] ?? 'Friend 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    fontSize: 20,
+                                                    height: 1.2,
+                                                    fontWeight:
+                                                        FontWeight.w700),
+                                              ),
+                                            ),
+                                            IconButton(
+                                              tooltip: '编辑资料',
+                                              onPressed: _openEditProfile,
+                                              icon: const Icon(TIcons.ai_edit_1, size: 22),
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _SonicProfileButton(
+                                              playing: _sonicPlaying,
+                                              enabled: _sonicUrl != null &&
+                                                  _sonicUrl!.isNotEmpty,
+                                              onTap: _editSonic,
+                                            ),
+                                          ],
+                                        ),
+
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            '${p?['signature'] ?? p?['bio'] ?? ''}'.trim().isEmpty
+                                                ? '设置个性签名'
+                                                : '${p?['signature'] ?? p?['bio'] ?? ''}'.trim(),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            ),
                                           ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Container(
+                                          padding:
+                                              const EdgeInsets.symmetric(vertical: 14),
+                                          decoration: const BoxDecoration(),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '粉丝',
+                                                      value: _formatCount(p?['followers']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation:
+                                                                                    'followers',
+                                                                                title: '粉丝'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '关注',
+                                                      value: _formatCount(p?['following']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation:
+                                                                                    'following',
+                                                                                title: '关注'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                      label: '获赞',
+                                                      value: _formatCount(
+                                                          p?['receivedLikes'] ?? p?['likes']),
+                                                      onTap: () => Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  const _UserRelationListPage(
+                                                                                relation: 'likers',
+                                                                                title: '获赞'))))),
+                                              Expanded(
+                                                  child: _InlineProfileStat(
+                                                label: '魅力',
+                                                value: _formatCount(charmCoins),
+                                                onTap: () => Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const _CharmSourcesPage(),
+                                                  ),
+                                                ),
+                                              )),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                                Positioned(left: 16, bottom: 48, child: Stack(
+                                  const SizedBox(width: 12),
+                                  Stack(
                                     clipBehavior: Clip.none,
                                     children: [
                                       ClipOval(
@@ -1148,129 +1232,17 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         ),
                                       ),
                                     ],
-                                  ),),
-                              Positioned(
-                                left: 112,
-                                right: 16,
-                                bottom: 18,
-                                child: Column(
-                                    crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                '${p?['nickname'] ?? 'Friend 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                    fontSize: 20,
-                                                    height: 1.2,
-                                                    fontWeight:
-                                                        FontWeight.w700),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            _SonicProfileButton(
-                                              playing: _sonicPlaying,
-                                              enabled: _sonicUrl != null &&
-                                                  _sonicUrl!.isNotEmpty,
-                                              onTap: _editSonic,
-                                            ),
-                                          ],
-                                        ),
+                                  ),
+                                  const SizedBox(width: 12),
 
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 4),
-                                          child: Text(
-                                            '${p?['signature'] ?? p?['bio'] ?? ''}'.trim().isEmpty
-                                                ? '设置个性签名'
-                                                : '${p?['signature'] ?? p?['bio'] ?? ''}'.trim(),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 10),
 
-                                      ],
-                                    ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                                          padding:
-                                              const EdgeInsets.symmetric(vertical: 14),
-                                          decoration: const BoxDecoration(),
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                  child: _InlineProfileStat(
-                                                      label: '粉丝',
-                                                      value: _formatCount(p?['followers']),
-                                                      onTap: () => Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (_) =>
-                                                                  const _UserRelationListPage(
-                                                                                relation:
-                                                                                    'followers',
-                                                                                title: '粉丝'))))),
-                                              Expanded(
-                                                  child: _InlineProfileStat(
-                                                      label: '关注',
-                                                      value: _formatCount(p?['following']),
-                                                      onTap: () => Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (_) =>
-                                                                  const _UserRelationListPage(
-                                                                                relation:
-                                                                                    'following',
-                                                                                title: '关注'))))),
-                                              Expanded(
-                                                  child: _InlineProfileStat(
-                                                      label: '获赞',
-                                                      value: _formatCount(
-                                                          p?['receivedLikes'] ?? p?['likes']),
-                                                      onTap: () => Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (_) =>
-                                                                  const _UserRelationListPage(
-                                                                                relation: 'likers',
-                                                                                title: '获赞'))))),
-                                              Expanded(
-                                                  child: _InlineProfileStat(
-                                                label: '魅力',
-                                                value: _formatCount(charmCoins),
-                                                onTap: () => Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const _CharmSourcesPage(),
-                                                  ),
-                                                ),
-                                              )),
-                                              IconButton(
-                                                tooltip: '编辑资料',
-                                                onPressed: _openEditProfile,
-                                                icon: const Icon(TIcons.ai_edit_1, size: 22),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                            const SizedBox(height: 14),
+                                ],
+                              ),
+                              const SizedBox(height: 18),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
                         Row(
                           children: [
                             Expanded(
