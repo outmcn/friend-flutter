@@ -1377,7 +1377,7 @@ class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.28),
                 width: 1,
               ),
             ),
