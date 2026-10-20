@@ -253,6 +253,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) return;
+      if (accepted == 'answer') {
+        if (mounted) _showTopErrorBanner(context, '实时语音通话暂未开放');
+        return;
+      }
       final service = DDPostService();
       try {
         final result =
@@ -1832,6 +1836,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _startAudioCall() async {
+    if (mounted) {
+      _showTopErrorBanner(context, '实时语音通话暂未开放');
+    }
+    return;
+    /*
     if (outgoingCallStarting || activeCallId != null) return;
     outgoingCallStarting = true;
     final prefs = await SharedPreferences.getInstance();
@@ -1866,6 +1875,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       service.dispose();
     }
   }
+  */
 
   Future<void> _sendRecordedAudio(String pathValue) async {
     final prefs = await SharedPreferences.getInstance();
