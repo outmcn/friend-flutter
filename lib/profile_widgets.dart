@@ -81,6 +81,23 @@ class _SonicProfileButton extends StatelessWidget {
       );
 }
 
+class _ProfileCapsuleButton extends StatelessWidget {
+  const _ProfileCapsuleButton({required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: .14), borderRadius: BorderRadius.circular(99)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 4), Text(label, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))]),
+    ),
+  );
+}
+
+
 class _MyProfileIconTabs extends StatelessWidget {
   const _MyProfileIconTabs(
       {required this.selectedTab,

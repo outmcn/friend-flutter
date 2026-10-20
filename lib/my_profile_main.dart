@@ -1261,7 +1261,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         onTap: _editSonic,
                                       ),
                                       const SizedBox(height: 8),
-                                      _ProfileActionButton(
+                                      _ProfileCapsuleButton(
                                         icon: Icons.auto_awesome_outlined,
                                         label: '展馆',
                                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
