@@ -1061,10 +1061,16 @@ class _DDProfilePageState extends State<DDProfilePage>
                             Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                SizedBox(
-                                  width: MediaQuery.of(context).size.width + 48,
-                                  height: 240,
-                                  child: Transform.translate(
+                                OverflowBox(
+                                  alignment: Alignment.topCenter,
+                                  minWidth: MediaQuery.of(context).size.width + 48,
+                                  maxWidth: MediaQuery.of(context).size.width + 48,
+                                  minHeight: 240,
+                                  maxHeight: 500,
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context).size.width + 48,
+                                    height: 240,
+                                    child: Transform.translate(
                                     offset: const Offset(-24, 0),
                                     child: _backgroundUrl == null || _backgroundUrl!.isEmpty
                                         ? ColoredBox(
@@ -1077,8 +1083,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             height: 240,
                                             fit: BoxFit.cover,
                                           ),
+                                    ),
                                   ),
-                                ),
                                 Positioned(left: 16, bottom: 48, child: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
