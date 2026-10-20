@@ -335,6 +335,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _sonicPlaying = false;
   String? _sonicUrl;
   String? _avatarUrl;
+  bool _avatarReviewRejected = false;
   String? error;
   bool _stealth = false;
   bool _antiHarassment = false;
@@ -704,6 +705,7 @@ class _DDProfilePageState extends State<DDProfilePage>
           charmCoins = int.tryParse('${loaded['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
           _avatarUrl = avatar;
+        _avatarReviewRejected = loaded['avatarReviewStatus'] == 'rejected' || loaded['avatar_review_status'] == 'rejected';
           _stealth = '${loaded['presenceMode'] ?? 'online'}' == 'stealth';
           _antiHarassment = loaded['antiHarassment'] == true;
           _smartBlock = loaded['smartBlock'] == true;
@@ -1170,7 +1172,18 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         child: SizedBox(
                                           width: 84,
                                           height: 84,
-                                          child: _avatarUrl == null ||
+                                          child: _avatarReviewRejected
+                                              ? const ColoredBox(
+                                                  color: Colors.black12,
+                                                  child: Center(
+                                                    child: Text(
+                                                      '图片涉嫌违规',
+                                                      textAlign: TextAlign.center,
+                                                      style: TextStyle(fontSize: 11, color: Colors.black54),
+                                                    ),
+                                                  ),
+                                                )
+                                              : _avatarUrl == null ||
                                                   _avatarUrl!.isEmpty
                                               ? const ColoredBox(
                                                   color: Colors.black12,

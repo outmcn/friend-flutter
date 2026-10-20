@@ -33,6 +33,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool _sonicPlaying = false;
   String? _sonicUrl;
   String? _avatarUrl;
+  bool _avatarReviewRejected = false;
   String? error;
 
   @override
@@ -244,6 +245,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           charmCoins = int.tryParse('${data['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(data['voiceUrl']?.toString());
           _avatarUrl = signedAvatar;
+          _avatarReviewRejected = data['avatarReviewStatus'] == 'rejected' || data['avatar_review_status'] == 'rejected';
         });
       }
     } on UnsupportedError catch (e) {
@@ -379,7 +381,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 children: [
                                   CircleAvatar(
                                     radius: 40,
-                                    child: _avatarUrl == null ||
+                                    child: _avatarReviewRejected
+                                        ? const Center(child: Text('图片涉嫌违规', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.black54)))
+                                        : _avatarUrl == null ||
                                             _avatarUrl!.isEmpty
                                         ? const Icon(Icons.person_outline,
                                             size: 34)
