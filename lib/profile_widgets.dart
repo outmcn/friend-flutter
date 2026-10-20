@@ -279,16 +279,19 @@ class _InlineProfileStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+    final child = Align(
+      alignment: Alignment.centerLeft,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         SizedBox(
           height: 22,
           child: Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
+            textAlign: TextAlign.left,
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: valueFontSize,
@@ -303,7 +306,8 @@ class _InlineProfileStat extends StatelessWidget {
             fontSize: labelFontSize,
           ),
         ),
-      ],
+        ],
+      ),
     );
     return onTap == null
         ? child
