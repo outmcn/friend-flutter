@@ -31,11 +31,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   String _formatSignature(String raw) {
-    final clean = raw.replaceAll(RegExp(r'\s+'), '').trim();
-    final chars = clean.characters.take(75).toList();
-    final lines = <String>[];
-    for (var i = 0; i < chars.length; i += 15) lines.add(chars.skip(i).take(15).join());
-    return lines.join('\n');
+    final clean = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
+    final result = <String>[];
+    var remaining = 75;
+    for (final source in clean.split('\n')) {
+      if (remaining <= 0) break;
+      final chars = source.characters.toList();
+      for (var i = 0; i < chars.length && remaining > 0; i += 15) {
+        final take = (chars.length - i).clamp(0, 15).clamp(0, remaining);
+        if (take > 0) result.add(chars.skip(i).take(take).join());
+        remaining -= take;
+      }
+    }
+    return result.join('\n');
   }
 
   void _normalizeSignature() {
