@@ -936,17 +936,15 @@ class _DDProfilePageState extends State<DDProfilePage>
 
 
   String _wrapSignature(String value) {
-    final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
-    final chars = normalized.characters.toList();
-    final visible = chars.take(60).toList();
-    final lines = <String>[];
-    for (var i = 0; i < visible.length; i += 20) {
-      lines.add(visible.skip(i).take(20).join());
+    final chars = value.characters.toList();
+    if (chars.length <= 60) {
+      final lines = <String>[];
+      for (var i = 0; i < chars.length; i += 20) {
+        lines.add(chars.skip(i).take(20).join());
+      }
+      return lines.join('\n');
     }
-    if (chars.length > 60 && lines.isNotEmpty) {
-      lines[lines.length - 1] = '${lines.last}...更多';
-    }
-    return lines.join('\n');
+    return '${chars.take(20).join()}\n${chars.skip(20).take(20).join()}\n${chars.skip(40).take(20).join()}...更多';
   }
 
   List<Widget> _allProfileFeedSlivers() {
@@ -1066,9 +1064,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                               ),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Column(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
@@ -1301,8 +1297,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ]),
                     ),
                   ),
-                ),
-              ),
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _ProfileTabsHeaderDelegate(
