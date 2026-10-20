@@ -1064,13 +1064,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     : () => load(
                                         tab: selectedTab, forceRefresh: true),
                               ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -1301,7 +1294,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ]),
                     ),
                   ),
-                ),
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _ProfileTabsHeaderDelegate(
