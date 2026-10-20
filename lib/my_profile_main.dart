@@ -998,7 +998,10 @@ class _DDProfilePageState extends State<DDProfilePage>
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        forceMaterialTransparency: true,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
         leading: IconButton(
           tooltip: '在线状态',
