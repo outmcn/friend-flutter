@@ -1172,7 +1172,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             softWrap: true,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              fontSize: 15,
+                                              fontSize: 16,
                                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                                             ),
                                           ),
