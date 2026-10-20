@@ -1008,7 +1008,7 @@ class _DDProfilePageState extends State<DDProfilePage>
 
 
   void _showProfileFeatureNotice(BuildContext context, String label) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label功能即将开放')));
+    _showTopNotice(context, Text('$label功能即将开放'));
   }
 
   @override
