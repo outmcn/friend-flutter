@@ -485,6 +485,14 @@ class DDPostService {
         .toList();
   }
 
+  Future<void> markNotificationRead(String token, int id) async {
+    await _client.post(
+      _api('/notifications/read'),
+      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      body: jsonEncode({'id': id}),
+    );
+  }
+
   Future<void> markNotificationsRead(String token) async {
     await _client.post(
       _api('/notifications/read'),

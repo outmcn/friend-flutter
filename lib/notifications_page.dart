@@ -40,7 +40,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     try {
       final t = await token();
       final items = await service.fetchNotifications(t);
-      await service.markNotificationsRead(t);
       if (mounted) setState(() => notifications = items);
     } catch (e) {
       if (mounted) {
@@ -113,19 +112,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 margin: EdgeInsets.zero,
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(14),
-                                  onTap: item.postId == null
-                                      ? null
-                                      : () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => item.type == 'post_rejected'
-                                                  ? ViolationNotificationPage(postId: item.postId!)
-                                                  : DynamicDetailPage(
-                                                      postId: item.postId!,
-                                                      focusComment: item.commentId != null,
-                                                    ),
-                                            ),
-                                          ),
+                                  onTap: () async {
+                                    final t = await token();
+                                    await service.markNotificationRead(t, item.id);
+                                    if (mounted) setState(() {
+                                      notifications = notifications.map((n) => n.id == item.id
+                                          ? DDNotification(id: n.id, type: n.type, content: n.content, createdAt: n.createdAt, nickname: n.nickname, avatar: n.avatar, postId: n.postId, commentId: n.commentId, postContent: n.postContent, commentContent: n.commentContent, read: true)
+                                          : n).toList();
+                                    });
+                                    if (!mounted || item.postId == null) return;
+                                    await Navigator.push(context, MaterialPageRoute(builder: (_) => item.type == 'post_rejected'
+                                        ? ViolationNotificationPage(postId: item.postId!)
+                                        : DynamicDetailPage(postId: item.postId!, focusComment: item.commentId != null)));
+                                  },
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Row(
@@ -201,8 +200,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                             ],
                                           ),
                                         ),
-                                        if (item.postId != null)
-                                          const Icon(Icons.chevron_right),
+                                        if (!item.read)
+                                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
                                       ],
                                     ),
                                   ),
