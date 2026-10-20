@@ -51,33 +51,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  String titleFor(DDNotification item) {
-    switch (item.type) {
-      case 'like':
-        return '点赞了你的动态';
-      case 'post_like':
-        return '';
-      case 'favorite':
-        return '收藏了你的动态';
-      case 'post_favorite':
-        return '';
-      case 'post_gift':
-        return '';
-      case 'post_comment':
-        return '';
-      case 'comment':
-        return '评论了你的动态';
-      case 'comment_reply':
-        return '回复了你的评论';
-      case 'comment_deleted':
-        return '你的评论被系统删除';
-      case 'post_deleted':
-        return '你的动态被系统删除';
-      case 'follow':
-        return '关注了你';
-      default:
-        return item.content;
-    }
+  bool isSystem(DDNotification item) => item.nickname == null ||
+      item.type == 'post_rejected' || item.type == 'profile_rejected' ||
+      item.type == 'post_deleted' || item.type == 'comment_deleted';
+
+  String beijingTime(String value) {
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value.replaceAll(RegExp(r'\s*\+08:?00'), '');
+    final local = parsed.toUtc().add(const Duration(hours: 8));
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${local.year}.${two(local.month)}.${two(local.day)} ${two(local.hour)}:${two(local.minute)}';
   }
 
   Future<void> _markAllRead() async {
@@ -125,10 +108,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 const SizedBox(height: 2),
                             itemBuilder: (context, index) {
                               final item = notifications[index];
-                              final actor =
-                                  item.nickname?.trim().isNotEmpty == true
-                                      ? item.nickname!
-                                      : '系统';
+                              final header = isSystem(item) ? '系统通知' : '动态通知';
                               return Card(
                                 margin: EdgeInsets.zero,
                                 child: InkWell(
@@ -171,45 +151,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Text('$actor ${titleFor(item)}',
+                                              Text(header,
                                                   style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.w700)),
-                                              if (item.postContent
-                                                      ?.trim()
-                                                      .isNotEmpty ==
-                                                  true)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          top: 5),
-                                                  child: Text(
-                                                    '动态：${item.postContent}',
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              if (item.commentContent
-                                                      ?.trim()
-                                                      .isNotEmpty ==
-                                                  true)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          top: 3),
-                                                  child: Text(
-                                                    '评论：${item.commentContent}',
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 4),
+                                                child: Text(item.content, maxLines: 3, overflow: TextOverflow.ellipsis),
+                                              ),
                                               Padding(
                                                 padding: const EdgeInsets.only(
                                                     top: 5),
                                                 child: Text(
-                                                  '${item.content} · ${item.createdAt}',
+                                                  beijingTime(item.createdAt),
                                                   style: TextStyle(
                                                     color: Theme.of(context)
                                                         .colorScheme
