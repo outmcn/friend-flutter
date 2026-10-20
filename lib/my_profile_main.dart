@@ -1372,10 +1372,20 @@ class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) =>
       Material(
-        color: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 6, 24, 6),
-          child: child,
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1,
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 6, 24, 6),
+            child: child,
+          ),
         ),
       );
 
