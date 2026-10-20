@@ -10,14 +10,9 @@ class _ExpandableProfileSignature extends StatefulWidget {
 
 class _ExpandableProfileSignatureState extends State<_ExpandableProfileSignature> {
   bool expanded = false;
-  String get normalized => widget.value.replaceAll(RegExp(r'\s+'), ' ').trim();
-  String get clipped => normalized.characters.take(60).toList().asMap().entries.map((e) => e.value).join();
-  String _lines(String value) {
-    final chars = value.characters.toList();
-    final lines = <String>[];
-    for (var i = 0; i < chars.length; i += 20) lines.add(chars.skip(i).take(20).join());
-    return lines.join('\n');
-  }
+  String get normalized => widget.value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
+  String get clipped => normalized.characters.take(60).toList().join();
+  String _lines(String value) => value;
   @override
   Widget build(BuildContext context) {
     if (normalized.isEmpty) return const Text('设置个性签名');
@@ -98,6 +93,7 @@ class _MyProfileIconTabs extends StatelessWidget {
           if (!postsOnly) ...[
             _tab(context, 1, TIcons.bookmark),
             _tab(context, 2, TIcons.heart),
+            _tab(context, 3, TIcons.lock_on),
           ],
         ],
       );
@@ -105,7 +101,10 @@ class _MyProfileIconTabs extends StatelessWidget {
   Widget _tab(BuildContext context, int index, IconData icon) => Expanded(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => onSelect(index),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onSelect(index);
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Column(
@@ -116,7 +115,9 @@ class _MyProfileIconTabs extends StatelessWidget {
                           ? TIcons.highlight_1_filled
                           : index == 1
                               ? TIcons.bookmark_filled
-                              : TIcons.heart_filled)
+                              : index == 2
+                              ? TIcons.heart_filled
+                              : TIcons.lock_on)
                       : icon,
                   size: 24,
                   color: selectedTab == index

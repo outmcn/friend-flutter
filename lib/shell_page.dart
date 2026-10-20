@@ -794,7 +794,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           Padding(
                             padding: const EdgeInsets.only(left: 4),
                             child: Icon(
-                              TIcons.chat_bubble_locked,
+                              Icons.lock_outline,
                               size: 13,
                               color: Theme.of(context).colorScheme.primary,
                             ),

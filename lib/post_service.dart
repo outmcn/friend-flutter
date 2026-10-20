@@ -619,6 +619,10 @@ class DDPostService {
     return _fetchProfilePosts(token, '/me/posts', offset: offset);
   }
 
+  Future<List<DDPost>> fetchPrivatePosts(String token, {int offset = 0}) async {
+    return _fetchProfilePosts(token, '/me/private-posts', offset: offset);
+  }
+
   Future<List<DDPost>> fetchLikedPosts(String token, {int offset = 0}) async {
     return _fetchProfilePosts(token, '/me/liked-posts', offset: offset);
   }

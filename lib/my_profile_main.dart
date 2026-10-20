@@ -360,11 +360,11 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (mounted) setState(() => _sonicPlaying = false);
     });
     profileFeedTabs = List.generate(
-      3,
+      4,
       (tab) => FeedShellTab(
-        title: tab == 0 ? '我的动态' : tab == 1 ? '收藏' : '点赞',
-        icon: tab == 0 ? TIcons.highlight_1 : tab == 1 ? TIcons.bookmark : TIcons.heart,
-        selectedIcon: tab == 0 ? TIcons.highlight_1_filled : tab == 1 ? TIcons.bookmark_filled : TIcons.heart_filled,
+        title: tab == 0 ? '我的动态' : tab == 1 ? '收藏' : tab == 2 ? '点赞' : '私密动态',
+        icon: tab == 0 ? TIcons.highlight_1 : tab == 1 ? TIcons.bookmark : tab == 2 ? TIcons.heart : TIcons.lock_on,
+        selectedIcon: tab == 0 ? TIcons.highlight_1_filled : tab == 1 ? TIcons.bookmark_filled : tab == 2 ? TIcons.heart_filled : TIcons.lock_on,
         cacheKey: 'dd.profile.my.v2.tab.$tab',
         fetch: (offset) async {
           final token = await _token();
@@ -372,7 +372,9 @@ class _DDProfilePageState extends State<DDProfilePage>
               ? await service.fetchMyPosts(token, offset: offset)
               : tab == 1
                   ? await service.fetchFavoritedPosts(token, offset: offset)
-                  : await service.fetchLikedPosts(token, offset: offset);
+                  : tab == 2
+                      ? await service.fetchLikedPosts(token, offset: offset)
+                      : await service.fetchPrivatePosts(token, offset: offset);
           return Future.wait(
               loaded.where((post) => post.reviewStatus == 'approved').map((post) => service.resolvePostMedia(token, post)));
         },
@@ -1363,10 +1365,7 @@ class _ProfileTabsHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) =>
       Material(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Theme.of(context).scaffoldBackgroundColor,
-        elevation: overlapsContent ? 2 : 0,
+        color: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 6, 24, 6),
           child: child,
