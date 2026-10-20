@@ -1104,11 +1104,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               padding: EdgeInsets.zero,
                                               constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                                             ),
-                                            _SonicProfileButton(
-                                              playing: _sonicPlaying,
-                                              enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
-                                              onTap: _editSonic,
-                                            ),
                                           ],
                                         ),
                                         Container(
@@ -1173,6 +1168,12 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           child: _ExpandableProfileSignature(
                                             value: '${p?['signature'] ?? p?['bio'] ?? ''}',
                                           ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _SonicProfileButton(
+                                          playing: _sonicPlaying,
+                                          enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
+                                          onTap: _editSonic,
                                         ),
                                         const SizedBox(height: 8),
                                         _ProfileActionButton(

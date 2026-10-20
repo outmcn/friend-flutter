@@ -66,12 +66,19 @@ class _SonicProfileButton extends StatelessWidget {
                 .withValues(alpha: enabled ? .14 : .07),
             borderRadius: BorderRadius.circular(99),
           ),
-          child: Icon(
-            playing ? Icons.pause : TIcons.sonic,
-            size: 18,
-            color: enabled
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).disabledColor,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                playing ? Icons.pause : TIcons.sonic,
+                size: 18,
+                color: enabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).disabledColor,
+              ),
+              const SizedBox(width: 4),
+              Text('声音', style: TextStyle(fontSize: 14, color: enabled ? Theme.of(context).colorScheme.primary : Theme.of(context).disabledColor)),
+            ],
           ),
         ),
       );
