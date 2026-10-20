@@ -1069,7 +1069,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                               ),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Column(
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
