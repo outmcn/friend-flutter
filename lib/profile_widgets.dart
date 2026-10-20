@@ -31,19 +31,31 @@ class _ExpandableProfileSignatureState extends State<_ExpandableProfileSignature
     final lines = _wrap(normalized);
     final hasMore = lines.length > 3;
     final shown = expanded ? lines.join('\n') : lines.take(3).join('\n');
+    if (expanded) {
+      return RichText(
+        text: TextSpan(
+          style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          children: [
+            TextSpan(text: shown),
+            if (hasMore) TextSpan(text: '  收起', style: TextStyle(color: Theme.of(context).colorScheme.primary), recognizer: TapGestureRecognizer()..onTap = () => setState(() => expanded = false)),
+          ],
+        ),
+      );
+    }
+    final visible = lines.take(3).toList();
+    final tail = hasMore ? '...更多' : '';
+    if (hasMore) {
+      final last = visible.isEmpty ? '' : visible.removeLast();
+      visible.add(last.characters.take((last.characters.length - tail.characters.length).clamp(0, 20)).toList().join() + tail);
+    }
     return RichText(
-      maxLines: expanded ? null : 3,
-      overflow: expanded ? TextOverflow.visible : TextOverflow.clip,
+      maxLines: 3,
+      overflow: TextOverflow.clip,
       text: TextSpan(
         style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
         children: [
-          TextSpan(text: shown),
-          if (hasMore)
-            TextSpan(
-              text: expanded ? '  收起' : '...更多',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-              recognizer: TapGestureRecognizer()..onTap = () => setState(() => expanded = !expanded),
-            ),
+          TextSpan(text: visible.join('\n')),
+          if (hasMore) TextSpan(style: TextStyle(color: Theme.of(context).colorScheme.primary), recognizer: TapGestureRecognizer()..onTap = () => setState(() => expanded = true)),
         ],
       ),
     );
