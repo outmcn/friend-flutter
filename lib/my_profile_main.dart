@@ -1032,7 +1032,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               context,
               MaterialPageRoute(builder: (_) => const _HistoryRecordsPage()),
             ),
-            icon: const Icon(Icons.history_outlined),
+            icon: const Icon(TIcons.location),
           ),
           IconButton(
             tooltip: '设置',
