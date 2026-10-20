@@ -1094,7 +1094,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             IconButton(
                                               tooltip: '编辑资料',
                                               onPressed: _openEditProfile,
-                                              icon: const Icon(TIcons.ai_edit_1),
+                                              icon: const Icon(TIcons.textformat_shorter),
                                               padding: EdgeInsets.zero,
                                               constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                                             ),
