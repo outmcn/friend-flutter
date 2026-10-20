@@ -1034,7 +1034,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               context,
               MaterialPageRoute(builder: (_) => const SettingsPage()),
             ),
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(TIcons.menu),
           ),
         ],
       ),
