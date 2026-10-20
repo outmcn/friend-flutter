@@ -1301,6 +1301,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                       ]),
                     ),
                   ),
+                ),
+              ),
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _ProfileTabsHeaderDelegate(
