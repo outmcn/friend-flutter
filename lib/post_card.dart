@@ -434,7 +434,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                       Navigator.pop(context);
                       widget.onDelete!.call();
                     }),
-                    _ShareAction(label: '申诉', icon: TIcons.question_circle, onTap: widget.onReport),
+                    _ShareAction(label: '申诉', icon: TIcons.shield_error, onTap: widget.onReport),
                   ],
                 )
               else Wrap(
