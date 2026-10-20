@@ -14,7 +14,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final _cardKeys = <String, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
-  int? _currentUserId;
+  int _unreadNotifications = 0;
+  Timer? _notificationTimer;
 
   Future<String> _token() async {
     final prefs = await SharedPreferences.getInstance();
@@ -30,6 +31,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
     } catch (_) {}
   }
 
+  Future<void> _loadNotificationUnread() async {
+    try {
+      final rows = await service.fetchNotifications(await _token());
+      if (mounted) setState(() => _unreadNotifications = rows.where((x) => !x.read).length);
+    } catch (_) {}
+  }
   Future<void> _restoreDiscoverCityLabel() async {
     final prefs = await SharedPreferences.getInstance();
     final cached = (prefs.getString('dd.location.city') ?? '').trim();
@@ -52,6 +59,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
   void initState() {
     super.initState();
     _restoreDiscoverCityLabel();
+    unawaited(_loadNotificationUnread());
+    _notificationTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadNotificationUnread());
     unawaited(_loadCurrentUserId());
     feeds = List.generate(3, (tab) {
       final feed = DiscoverFeed((offset) async {
@@ -356,13 +365,28 @@ class _DiscoverPageState extends State<DiscoverPage> {
         leading: SizedBox(
           width: 48,
           height: 48,
-          child: IconButton(
-          tooltip: '通知',
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotificationsPage()),
-          ),
-          icon: const Icon(TIcons.notification),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: '通知',
+                onPressed: () async {
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage()));
+                  _loadNotificationUnread();
+                },
+                icon: const Icon(TIcons.notification),
+              ),
+              if (_unreadNotifications > 0)
+                Positioned(
+                  right: 3,
+                  top: 3,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                    child: Text('${_unreadNotifications > 99 ? '99+' : _unreadNotifications}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+            ],
           ),
         ),
         title: Row(
@@ -428,6 +452,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   @override
   void dispose() {
+    _notificationTimer?.cancel();
     for (final feed in feeds) {
       feed.dispose();
     }
