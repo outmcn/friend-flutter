@@ -1067,7 +1067,12 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                             child: const SizedBox.expand(),
                                           )
-                                        : Image.network(_backgroundUrl!, fit: BoxFit.cover),
+                                        : _PermanentCachedImage(
+                                            url: _backgroundUrl!,
+                                            width: double.infinity,
+                                            height: 300,
+                                            fit: BoxFit.cover,
+                                          ),
                                   ),
                                 ),
                                 Positioned(left: 16, bottom: 48, child: Stack(
