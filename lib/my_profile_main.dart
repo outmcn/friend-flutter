@@ -1254,7 +1254,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 28),
                                       _SonicProfileButton(
                                         playing: _sonicPlaying,
                                         enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
