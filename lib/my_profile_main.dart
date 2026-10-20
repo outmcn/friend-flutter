@@ -1175,8 +1175,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     children: [
                                       ClipOval(
                                         child: SizedBox(
-                                          width: 78,
-                                          height: 78,
+                                          width: 84,
+                                          height: 84,
                                           child: _avatarUrl == null ||
                                                   _avatarUrl!.isEmpty
                                               ? const ColoredBox(
@@ -1186,8 +1186,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                 )
                                               : _PermanentCachedImage(
                                                   url: _avatarUrl!,
-                                                  width: 78,
-                                                  height: 78,
+                                                  width: 84,
+                                                  height: 84,
                                                   fit: BoxFit.cover,
                                                   placeholder: const ColoredBox(
                                                     color: Colors.black12,
