@@ -59,7 +59,7 @@ class _FloatingNoticeState extends State<_FloatingNotice>
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.paddingOf(context).top + kToolbarHeight + 8;
+    final top = MediaQuery.paddingOf(context).top + kToolbarHeight + 3;
     return Positioned(
       top: top,
       left: 16,
