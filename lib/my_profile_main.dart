@@ -1187,6 +1187,24 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           label: '展馆',
                                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
                                         ),
+                                        const SizedBox(height: 8),
+                                        _ProfileActionButton(
+                                          icon: TIcons.collection,
+                                          label: '典藏',
+                                          onTap: () => _showProfileFeatureNotice(context, '典藏'),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _ProfileActionButton(
+                                          icon: TIcons.space,
+                                          label: '空间',
+                                          onTap: () => _showProfileFeatureNotice(context, '空间'),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _ProfileActionButton(
+                                          icon: TIcons.browse_gallery,
+                                          label: '频道',
+                                          onTap: () => _showProfileFeatureNotice(context, '频道'),
+                                        ),
 
 
                                       ],
@@ -1312,6 +1330,10 @@ class _ProfileActionButton extends StatelessWidget {
   final String label;
   final String? subtitle;
   final VoidCallback onTap;
+
+  void _showProfileFeatureNotice(BuildContext context, String label) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label功能即将开放')));
+  }
 
   @override
   Widget build(BuildContext context) {
