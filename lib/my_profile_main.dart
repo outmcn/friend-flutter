@@ -1069,7 +1069,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
-                                                    fontSize: 20,
+                                                    fontSize: 30,
                                                     height: 1.2,
                                                     fontWeight:
                                                         FontWeight.w700),
