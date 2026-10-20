@@ -1187,6 +1187,7 @@ class _DDProfilePageState extends State<DDProfilePage>
 
                                       ],
                                     ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 12),
