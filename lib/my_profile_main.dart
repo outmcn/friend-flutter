@@ -1057,16 +1057,20 @@ class _DDProfilePageState extends State<DDProfilePage>
                             Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: _backgroundUrl == null || _backgroundUrl!.isEmpty
-                                      ? ColoredBox(
-                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                          child: const SizedBox(height: 180, width: double.infinity),
-                                        )
-                                      : Image.network(_backgroundUrl!, height: 180, width: double.infinity, fit: BoxFit.cover),
+                                SizedBox(
+                                  width: MediaQuery.of(context).size.width + 48,
+                                  height: 300,
+                                  child: Transform.translate(
+                                    offset: const Offset(-24, 0),
+                                    child: _backgroundUrl == null || _backgroundUrl!.isEmpty
+                                        ? ColoredBox(
+                                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                            child: const SizedBox.expand(),
+                                          )
+                                        : Image.network(_backgroundUrl!, fit: BoxFit.cover),
+                                  ),
                                 ),
-                                Positioned(left: 16, bottom: -30, child: Stack(
+                                Positioned(left: 16, bottom: 48, child: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
                                       ClipOval(
@@ -1129,18 +1133,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ],
                                   ),),
-                              ],
-                            ),
-                            const SizedBox(height: 42),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
+                                Positioned(left: 112, right: 16, bottom: 18, child: Expanded(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -1193,7 +1186,14 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ),
                                         const SizedBox(height: 10),
-                                        Container(
+
+                                      ],
+                                    ),
+                                  ),),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
                                           padding:
                                               const EdgeInsets.symmetric(vertical: 14),
                                           decoration: const BoxDecoration(),
@@ -1249,21 +1249,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               )),
                                             ],
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-
-                                  const SizedBox(width: 12),
-
-
-                                ],
-                              ),
-                              const SizedBox(height: 18),
-                            ],
-                          ),
-                        ),
+                                        ),,
+                            const SizedBox(height: 18),
                         const SizedBox(height: 14),
                         Row(
                           children: [
