@@ -88,6 +88,11 @@ class ImSession {
           unawaited(_persistIncoming(message.cast<String, dynamic>())
               .catchError((Object _) {}));
         }
+      } else if (type == 'notification:new') {
+        final notification = event['notification'];
+        if (notification is Map) {
+          _events.add({'type': 'notification:new', 'notification': notification.cast<String, dynamic>()});
+        }
       } else if (type == 'message:recalled') {
         final message = event['message'];
         if (message is Map && _userId != null) {

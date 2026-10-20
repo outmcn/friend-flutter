@@ -15,7 +15,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
   int _unreadNotifications = 0;
-  Timer? _notificationTimer;
+  StreamSubscription<Map<String, dynamic>>? _notificationEvents;
 
   Future<String> _token() async {
     final prefs = await SharedPreferences.getInstance();
@@ -60,7 +60,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
     super.initState();
     _restoreDiscoverCityLabel();
     unawaited(_loadNotificationUnread());
-    _notificationTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadNotificationUnread());
+    _notificationEvents = ImSession.instance.events.listen((event) {
+      if (event['type'] == 'notification:new' && mounted) {
+        setState(() => _unreadNotifications++);
+      }
+    });
     unawaited(_loadCurrentUserId());
     feeds = List.generate(3, (tab) {
       final feed = DiscoverFeed((offset) async {
@@ -452,7 +456,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   @override
   void dispose() {
-    _notificationTimer?.cancel();
+    _notificationEvents?.cancel();
     for (final feed in feeds) {
       feed.dispose();
     }
