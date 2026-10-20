@@ -118,11 +118,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       : () => Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (_) => DynamicDetailPage(
-                                                postId: item.postId!,
-                                                focusComment:
-                                                    item.commentId != null,
-                                              ),
+                                              builder: (_) => item.type == 'post_rejected'
+                                                  ? ViolationNotificationPage(postId: item.postId!)
+                                                  : DynamicDetailPage(
+                                                      postId: item.postId!,
+                                                      focusComment: item.commentId != null,
+                                                    ),
                                             ),
                                           ),
                                   child: Padding(
@@ -211,4 +212,40 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           ),
                   ),
       );
+}
+
+
+class ViolationNotificationPage extends StatefulWidget {
+  const ViolationNotificationPage({super.key, required this.postId});
+  final int postId;
+  @override State<ViolationNotificationPage> createState() => _ViolationNotificationPageState();
+}
+
+class _ViolationNotificationPageState extends State<ViolationNotificationPage> {
+  final DDPostService service = DDPostService();
+  DDPost? post; String? error;
+  @override void initState() { super.initState(); _load(); }
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final value = await service.fetchPost(prefs.getString('friend.auth.token') ?? '', widget.postId);
+      if (mounted) setState(() => post = value);
+    } catch (e) { if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', '')); }
+  }
+  @override void dispose() { service.dispose(); super.dispose(); }
+  @override Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('违规内容')),
+    body: error != null ? Center(child: Text(error!)) : post == null ? const Center(child: CircularProgressIndicator()) : ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Row(children: [Icon(TIcons.error_triangle_filled, color: Colors.red), SizedBox(width: 8), Text('该动态正在确认违规', style: TextStyle(fontWeight: FontWeight.w700))]),
+        const SizedBox(height: 18),
+        if (post!.content.trim().isNotEmpty) Text(post!.content.characters.map((_) => '*').join(), style: const TextStyle(fontSize: 16, height: 1.5)),
+        if (post!.imageUrl?.isNotEmpty == true || post!.videoUrl?.isNotEmpty == true) ...[
+          const SizedBox(height: 16),
+          Container(height: 220, alignment: Alignment.center, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)), child: const Column(mainAxisSize: MainAxisSize.min, children: [Icon(TIcons.error_triangle_filled, color: Colors.red, size: 42), SizedBox(height: 8), Text('图片涉嫌违规')]))
+        ],
+      ],
+    ),
+  );
 }
