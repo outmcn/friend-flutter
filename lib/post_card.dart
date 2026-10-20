@@ -990,7 +990,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   ),
                   if (post.content.trim().isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: 5, bottom: 5),
+                      padding: const EdgeInsets.only(top: 1, bottom: 5),
                       child: _DiscoverPostContent(
                         text: violation ? _maskViolationText(post.content) : post.content.trim(),
                         maxLines: hasMedia ? 3 : 10,
