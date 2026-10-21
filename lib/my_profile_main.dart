@@ -1079,7 +1079,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Expanded(
                                     child: Column(
@@ -1175,9 +1175,11 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  Column(
-                                    children: [
-                                      Stack(
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 9),
+                                    child: Column(
+                                      children: [
+                                        Stack(
                                         clipBehavior: Clip.none,
                                         children: [
                                           Container(
@@ -1247,8 +1249,9 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ),
                                           ),
                                         ],
-                                      ),
-                                    ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                 ],
