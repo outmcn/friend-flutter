@@ -1160,7 +1160,7 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
             alignment: Alignment.bottomCenter,
             child: CustomPaint(
               size: const Size(100, 100),
-              painter: _RadarPainter(bearing: bearing == null ? null : bearing! - heading, heading: heading, hasPeer: bearing != null, avatar: widget.avatar),
+              painter: _RadarPainter(bearing: bearing, heading: heading, hasPeer: bearing != null, avatar: widget.avatar),
             ),
           ),
         ],
@@ -1182,7 +1182,7 @@ class _RadarPainter extends CustomPainter {
     final ring = Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = const Color(0x664C4CFF);
     for (final k in [1.0, .72, .44]) c.drawCircle(o, r * k, ring);
     c.drawCircle(o, 4, Paint()..color = const Color(0xFF34C759));
-    final sectorHeading = -math.pi / 2;
+    final sectorHeading = (heading - 90) * math.pi / 180;
     final sector = Path()..moveTo(o.dx, o.dy)..lineTo(o.dx + math.cos(sectorHeading - .524) * r, o.dy + math.sin(sectorHeading - .524) * r)..arcTo(Rect.fromCircle(center: o, radius: r), sectorHeading - .524, 1.048, false)..close();
     c.drawPath(sector, Paint()..color = const Color(0x334CFFD9));
     if (!hasPeer || bearing == null) return;
