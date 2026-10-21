@@ -329,16 +329,30 @@ class _AuthGateState extends State<AuthGate> {
   bool loading = true;
   String? token;
   late final FriendAuthClient auth;
+  StreamSubscription<Map<String, dynamic>>? _messageNoticeSubscription;
 
   @override
   void initState() {
     super.initState();
     auth = FriendAuthClient();
+    _messageNoticeSubscription = ImSession.instance.events.listen(_handleMessageNotice);
     // Render the shell immediately; token restoration continues in the background.
     // A valid token will keep the user on the main page without a startup spinner.
     _restore();
   }
 
+  void _handleMessageNotice(Map<String, dynamic> event) {
+    if (!mounted || event['type'] != 'message:new') return;
+    final message = event['message'];
+    if (message is! Map) return;
+    final senderId = '${message['senderId'] ?? message['sender_id'] ?? ''}';
+    final selfId = ImSession.instance.userId ?? '';
+    if (senderId.isEmpty || senderId == selfId) return;
+    final text = '${message['text'] ?? ''}'.trim();
+    final kind = '${message['kind'] ?? 'text'}';
+    final preview = text.isNotEmpty ? text : (kind == 'image' ? '图片消息' : kind == 'audio' ? '语音消息' : '收到一条新消息');
+    _showTopNotice(context, Row(children: [const Text('收到新消息：'), Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis))]));
+  }
   Future<void> _restore() async {
     final restored = await auth.restoreToken();
     if (restored != null) {
@@ -353,6 +367,7 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   void dispose() {
+    _messageNoticeSubscription?.cancel();
     auth.dispose();
     super.dispose();
   }
