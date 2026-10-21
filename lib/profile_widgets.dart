@@ -42,43 +42,26 @@ String _formatProfilePostDate(String raw) {
 }
 
 class _SonicProfileButton extends StatelessWidget {
-  const _SonicProfileButton({
-    required this.playing,
-    required this.enabled,
-    required this.onTap,
-  });
+  const _SonicProfileButton({required this.playing, required this.enabled, required this.onTap});
   final bool playing;
   final bool enabled;
   final VoidCallback onTap;
-
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-          decoration: BoxDecoration(
-            color: Theme.of(context)
-                .colorScheme
-                .primary
-                .withValues(alpha: enabled ? .14 : .07),
-            borderRadius: BorderRadius.circular(99),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                playing ? Icons.pause : TIcons.sonic,
-                size: 18,
-                color: enabled
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).disabledColor,
-              ),
-              const SizedBox(width: 4),
-              Text('声音', style: TextStyle(fontSize: 14, color: enabled ? Theme.of(context).colorScheme.primary : Theme.of(context).disabledColor)),
-            ],
-          ),
-        ),
-      );
+    onTap: onTap,
+    child: SizedBox(
+      width: 90,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: enabled ? .14 : .07), borderRadius: BorderRadius.circular(99)),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(playing ? Icons.pause : TIcons.sonic, size: 18, color: enabled ? Theme.of(context).colorScheme.primary : Theme.of(context).disabledColor),
+          const SizedBox(width: 4),
+          Text('声音', style: TextStyle(fontSize: 14, color: enabled ? Theme.of(context).colorScheme.primary : Theme.of(context).disabledColor)),
+        ]),
+      ),
+    ),
+  );
 }
 
 class _ProfileCapsuleButton extends StatelessWidget {
@@ -89,14 +72,16 @@ class _ProfileCapsuleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: .14), borderRadius: BorderRadius.circular(99)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 4), Text(label, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))]),
+    child: SizedBox(
+      width: 90,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: .14), borderRadius: BorderRadius.circular(99)),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 4), Text(label, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))]),
+      ),
     ),
   );
 }
-
 
 class _MyProfileIconTabs extends StatelessWidget {
   const _MyProfileIconTabs(
