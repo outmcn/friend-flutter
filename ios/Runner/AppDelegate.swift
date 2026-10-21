@@ -148,6 +148,21 @@ private final class NativeCompassManager: NSObject, CLLocationManagerDelegate {
   private let manager = CLLocationManager()
   var heading: Double = 0
   override init() { super.init(); manager.delegate = self; manager.headingFilter = 1; manager.headingOrientation = .portrait }
-  func start() { manager.requestWhenInUseAuthorization(); if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() } }
-  func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) { heading = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading }
+  func start() {
+    manager.requestWhenInUseAuthorization()
+    manager.headingOrientation = currentHeadingOrientation()
+    if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
+  }
+  private func currentHeadingOrientation() -> CLDeviceOrientation {
+    switch UIDevice.current.orientation {
+    case .landscapeLeft: return .landscapeLeft
+    case .landscapeRight: return .landscapeRight
+    case .portraitUpsideDown: return .portraitUpsideDown
+    default: return .portrait
+    }
+  }
+  func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+    manager.headingOrientation = currentHeadingOrientation()
+    heading = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
+  }
 }
