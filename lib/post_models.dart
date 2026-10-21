@@ -34,6 +34,7 @@ class DDPost {
     required this.nickname,
     required this.avatar,
     this.gender = '',
+    this.authorOnline = false,
     required this.likes,
     required this.favorites,
     required this.comments,
@@ -61,6 +62,7 @@ class DDPost {
   final String nickname;
   final String avatar;
   final String gender;
+  final bool authorOnline;
   final int likes;
   final int favorites;
   final int comments;
@@ -157,6 +159,7 @@ class DDPost {
         nickname: '${json['nickname'] ?? '用户'}',
         avatar: _mediaValue(json['avatar'], preserveMediaKeys),
         gender: '${json['gender'] ?? ''}',
+        authorOnline: json['authorOnline'] == true || json['author_online'] == true,
         likes: _intValue(json['likes']) ?? 0,
         favorites: _intValue(json['favorites']) ?? 0,
         comments: _intValue(json['comments']) ?? 0,

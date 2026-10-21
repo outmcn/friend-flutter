@@ -737,7 +737,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 clipBehavior: Clip.none,
                 children: [
                   CircleAvatar(radius: 24, backgroundImage: _avatarFor(chat)),
-                  Positioned(
+                  if (chat.online) Positioned(
                     right: -1,
                     bottom: -1,
                     child: Container(
@@ -974,7 +974,7 @@ class _ConversationSwipeButton extends StatelessWidget {
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.peerUserId, this.conversationId, this.unreadCount,
-      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm', this.pinned = false, this.muted = false]);
+      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm', this.pinned = false, this.muted = false, this.online = false]);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -987,6 +987,7 @@ class _ChatPreview {
   final String kind;
   final bool pinned;
   final bool muted;
+  final bool online;
 
   factory _ChatPreview.fromCache(Map<String, dynamic> row) => _ChatPreview(
         '${row['name'] ?? '用户'}',
@@ -1001,6 +1002,7 @@ class _ChatPreview {
         '${row['kind'] ?? 'dm'}',
         row['pinned'] == true,
         row['muted'] == true,
+        row['online'] == true,
       );
 
   _ChatPreview copyWith({bool? pinned, bool? muted, int? unreadCount}) => _ChatPreview(
@@ -1016,6 +1018,7 @@ class _ChatPreview {
         kind,
         pinned ?? this.pinned,
         muted ?? this.muted,
+        online,
       );
 
   Map<String, dynamic> toCache() => {
@@ -1031,6 +1034,7 @@ class _ChatPreview {
         'kind': kind,
         'pinned': pinned,
         'muted': muted,
+        'online': online,
       };
 }
 
@@ -2426,9 +2430,25 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           title: GestureDetector(
             onTap: _openPeerProfile,
             child: Row(children: [
-              CircleAvatar(
-                radius: 15,
-                backgroundImage: _chatAvatarFor(widget.chat),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(radius: 15, backgroundImage: _chatAvatarFor(widget.chat)),
+                  if (widget.chat.online)
+                    Positioned(
+                      right: -1,
+                      bottom: -1,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF34C759),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 8),
               Text(widget.chat.name,

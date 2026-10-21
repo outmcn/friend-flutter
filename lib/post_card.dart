@@ -893,7 +893,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                             ),
                     ),
                   ),
-                  Positioned(
+                  if (post.authorOnline) Positioned(
                     right: -1,
                     bottom: -1,
                     child: Container(

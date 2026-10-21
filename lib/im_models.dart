@@ -42,17 +42,19 @@ class DDImPeer {
       {required this.id,
       required this.nickname,
       this.avatarKey,
-      this.avatarUrl});
+      this.avatarUrl, this.online = false});
   final String id;
   final String nickname;
   final String? avatarKey;
   final String? avatarUrl;
+  final bool online;
 
   factory DDImPeer.fromJson(Map<String, dynamic> json) => DDImPeer(
         id: '${json['id'] ?? ''}',
         nickname: '${json['nickname'] ?? json['username'] ?? '用户'}',
         avatarKey: json['avatarKey'] as String?,
         avatarUrl: json['avatarUrl'] as String?,
+        online: json['online'] == true,
       );
 }
 
