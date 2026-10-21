@@ -1174,16 +1174,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ],
                                           ),
                                         ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 4),
-                                          child: _ExpandableProfileSignature(
-                                            value: '${p?['signature'] ?? p?['bio'] ?? ''}',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-
-
-
                                       ],
                                     ),
                                   ),
@@ -1261,7 +1251,27 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 28),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 12),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: _ExpandableProfileSignature(
+                                        value: '${p?['signature'] ?? p?['bio'] ?? ''}',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
                                       _SonicProfileButton(
                                         playing: _sonicPlaying,
                                         enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
@@ -1275,11 +1285,10 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(width: 12),
                                 ],
                               ),
                               const SizedBox(height: 12),
-                                                                      Row(
+                              Row(
                                           children: [
                                             Expanded(child: _ProfileActionButton(icon: TIcons.pantone, label: '钱包', subtitle: coinBalance > 0 ? '$coinBalance 金币' : null, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())))),
                                             const SizedBox(width: 6),
