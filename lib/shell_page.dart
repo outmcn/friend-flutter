@@ -741,8 +741,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     right: -1,
                     bottom: -1,
                     child: Container(
-                      width: 12,
-                      height: 12,
+                      width: 48 * .30,
+                      height: 48 * .30,
                       decoration: BoxDecoration(
                         color: const Color(0xFF34C759),
                         shape: BoxShape.circle,
@@ -2439,8 +2439,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                       right: -1,
                       bottom: -1,
                       child: Container(
-                        width: 10,
-                        height: 10,
+                        width: 30 * .30,
+                          height: 30 * .30,
                         decoration: BoxDecoration(
                           color: const Color(0xFF34C759),
                           shape: BoxShape.circle,

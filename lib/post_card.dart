@@ -897,8 +897,8 @@ class _DiscoverProfileCard extends StatelessWidget {
                     right: -1,
                     bottom: -1,
                     child: Container(
-                      width: 12,
-                      height: 12,
+                      width: 40 * .30,
+                      height: 40 * .30,
                       decoration: BoxDecoration(
                         color: const Color(0xFF34C759),
                         shape: BoxShape.circle,
