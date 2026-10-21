@@ -403,7 +403,10 @@ class _DDProfilePageState extends State<DDProfilePage>
             feed.scroll.position.extentAfter < 500 &&
             feed.initialized &&
             feed.error == null) {
-          feed.load();
+          feed.load().then((_) {
+            if (!mounted || feed.error == null) return;
+            _showTopNotice(context, Text('动态加载失败：${feed.error}'));
+          });
         }
       });
     }
@@ -795,11 +798,15 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (!mounted) return;
       setState(() {
         selectedTab = targetTab;
-        error = feed.error;
+        error = null;
       });
+      if (feed.error != null && mounted) {
+        _showTopNotice(context, Text('动态加载失败：${feed.error}'));
+      }
     } catch (e) {
       if (mounted) {
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+        setState(() => error = null);
+        _showTopNotice(context, Text('动态加载失败：$e'));
       }
     } finally {
       if (mounted) {
@@ -1066,15 +1073,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
-                            if (error != null && profile != null)
-                              _PageErrorState(
-                                title: profile == null ? '资料加载失败' : '动态加载失败',
-                                subtitle: error!,
-                                onRetry: profile == null
-                                    ? load
-                                    : () => load(
-                                        tab: selectedTab, forceRefresh: true),
-                              ),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Column(
