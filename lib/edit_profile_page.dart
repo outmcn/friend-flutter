@@ -39,8 +39,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (chars.isEmpty) {
         result.add('');
       } else {
-        for (var i = 0; i < chars.length && result.length < 5; i += 15) {
-          result.add(chars.skip(i).take(15).join());
+        for (var i = 0; i < chars.length && result.length < 5; i += 20) {
+          result.add(chars.skip(i).take(20).join());
         }
       }
       if (result.length >= 5) break;
@@ -207,11 +207,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 TextField(
                     controller: signature,
                     onChanged: (_) => _normalizeSignature(value: signature.value),
-                    maxLength: 75,
+                    maxLength: 100,
                     minLines: 1,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
-                    inputFormatters: [LengthLimitingTextInputFormatter(75)],
+                    inputFormatters: [LengthLimitingTextInputFormatter(100)],
                     decoration: const InputDecoration(labelText: '个性签名')),
               ]),
       );
