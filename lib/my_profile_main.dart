@@ -1111,7 +1111,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ],
                                         ),
                                         Text(
-                                          'ID ${p?['id'] ?? p?['userId'] ?? ''}',
+                                          'ID：${p?['id'] ?? p?['userId'] ?? ''}',
                                           style: TextStyle(
                                             fontSize: 16,
                                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
