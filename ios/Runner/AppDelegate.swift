@@ -154,8 +154,8 @@ private final class NativeCompassManager: NSObject, CLLocationManagerDelegate {
     manager.headingOrientation = currentHeadingOrientation()
     if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
   }
-  func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-    if manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways {
+  func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    if status == .authorizedWhenInUse || status == .authorizedAlways {
       manager.headingOrientation = currentHeadingOrientation()
       if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
     }
