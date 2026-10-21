@@ -147,11 +147,18 @@ private final class NativeMapView: NSObject, FlutterPlatformView, MKMapViewDeleg
 private final class NativeCompassManager: NSObject, CLLocationManagerDelegate {
   private let manager = CLLocationManager()
   var heading: Double = 0
-  override init() { super.init(); manager.delegate = self; manager.headingFilter = 1; manager.headingOrientation = .portrait }
+  override init() { super.init(); UIDevice.current.beginGeneratingDeviceOrientationNotifications(); manager.delegate = self; manager.headingFilter = 1; manager.headingOrientation = .portrait }
+  deinit { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
   func start() {
     manager.requestWhenInUseAuthorization()
     manager.headingOrientation = currentHeadingOrientation()
     if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
+  }
+  func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+    if manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways {
+      manager.headingOrientation = currentHeadingOrientation()
+      if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
+    }
   }
   private func currentHeadingOrientation() -> CLDeviceOrientation {
     switch UIDevice.current.orientation {

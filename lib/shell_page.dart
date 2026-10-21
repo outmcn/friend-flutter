@@ -1136,7 +1136,8 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   Timer? _magnetometer;
   @override
   void initState() { super.initState(); _loadLocation(); _magnetometer = Timer.periodic(const Duration(milliseconds: 250), (_) async {
-   final value = await _compassChannel.invokeMethod<double>('heading');
+   final raw = await _compassChannel.invokeMethod<dynamic>('heading');
+   final value = raw is num ? raw.toDouble() : null;
    if (value != null && mounted) setState(() => heading = value);
  }); }
   Future<void> _loadLocation() async { final p=await SharedPreferences.getInstance(); if(!mounted)return; setState(() { myLatitude=p.getDouble('dd.location.latitude'); myLongitude=p.getDouble('dd.location.longitude'); }); }
