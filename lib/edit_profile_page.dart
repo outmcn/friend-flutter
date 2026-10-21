@@ -32,8 +32,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   String _formatSignature(String raw) {
     final clean = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-    final lines = clean.split('\n');
-    return lines.take(5).join('\n').characters.take(100).toList().join();
+    return clean.characters.take(100).toList().join();
   }
   void _normalizeSignature({TextEditingValue? value}) {
     final current = value ?? signature.value;
