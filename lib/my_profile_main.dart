@@ -851,7 +851,8 @@ class _DDProfilePageState extends State<DDProfilePage>
         error = null;
       });
       if (feed.error != null && mounted) {
-        _showTopNotice(context, Text('动态加载失败：${feed.error}'));
+        _showTopNotice(context, const Text('动态加载失败'));
+        feed.clearError();
       }
     } catch (e) {
       if (mounted) {

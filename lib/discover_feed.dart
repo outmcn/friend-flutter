@@ -92,6 +92,11 @@ class DiscoverFeed extends ChangeNotifier {
     );
   }
 
+  void clearError() {
+    if (error == null) return;
+    error = null;
+    if (!disposed) notifyListeners();
+  }
   Future<void> load({bool refresh = false}) async {
     if (disposed || busy || (!refresh && initialized && !hasMore)) return;
     busy = true;
