@@ -13,7 +13,7 @@ class _ExpandableProfileSignature extends StatelessWidget {
     return Text(
       formatted.isEmpty ? '设置个性签名' : formatted,
       softWrap: false,
-      style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }
