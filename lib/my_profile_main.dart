@@ -1271,21 +1271,16 @@ class _DDProfilePageState extends State<DDProfilePage>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      _SonicProfileButton(
-                                        playing: _sonicPlaying,
-                                        enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
-                                        onTap: _editSonic,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      _ProfileCapsuleButton(
-                                        icon: Icons.auto_awesome_outlined,
-                                        label: '展馆',
-                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
-                                      ),
-                                    ],
+                                  _SonicProfileButton(
+                                    playing: _sonicPlaying,
+                                    enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
+                                    onTap: _editSonic,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _ProfileCapsuleButton(
+                                    icon: Icons.auto_awesome_outlined,
+                                    label: '展馆',
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
                                   ),
                                 ],
                               ),
