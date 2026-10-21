@@ -902,7 +902,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFF34C759),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
+                        border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1),
                       ),
                     ),
                   ),
