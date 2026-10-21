@@ -1126,7 +1126,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                             child: Align(
                               alignment: Alignment.centerRight,
                               child: Text(
-                                '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未设置' : '${p?['city']}'.trim()}',
+                                '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
