@@ -366,7 +366,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   if (error != null)
                     _PageErrorState(
                         title: '主页加载失败', subtitle: error!, onRetry: load),
-                  SliverToBoxAdapter(
+                  Align(
+                    alignment: Alignment.centerRight,
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: Text(
