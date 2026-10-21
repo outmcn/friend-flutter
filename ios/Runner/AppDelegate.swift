@@ -18,6 +18,13 @@ import CoreLocation
     guard let controller = window?.rootViewController as? FlutterViewController else {
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
+    let compassChannel = FlutterMethodChannel(name: "com.outmcn.friend/compass", binaryMessenger: controller.binaryMessenger)
+    let compassManager = NativeCompassManager()
+    compassManager.start()
+    compassChannel.setMethodCallHandler { call, result in
+      if call.method == "heading" { result(compassManager.heading) } else { result(FlutterMethodNotImplemented) }
+    }
+
     let locationFactory = NativeMapViewFactory(messenger: controller.binaryMessenger)
     self.registrar(forPlugin: "NativeMapView")?.register(locationFactory, withId: "com.outmcn.friend/native_map_view")
 
@@ -134,4 +141,13 @@ private final class NativeMapView: NSObject, FlutterPlatformView, MKMapViewDeleg
   func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
     notifyLocation(CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude))
   }
+}
+
+
+private final class NativeCompassManager: NSObject, CLLocationManagerDelegate {
+  private let manager = CLLocationManager()
+  var heading: Double = 0
+  override init() { super.init(); manager.delegate = self; manager.headingFilter = 1; manager.headingOrientation = .portrait }
+  func start() { manager.requestWhenInUseAuthorization(); if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() } }
+  func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) { heading = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading }
 }

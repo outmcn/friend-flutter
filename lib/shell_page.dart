@@ -1,6 +1,7 @@
 part of 'main.dart';
 
 final Map<String, ImageProvider> _avatarProviderCache = {};
+final MethodChannel _compassChannel = const MethodChannel('com.outmcn.friend/compass');
 
 /// Shows recoverable chat errors at the top of the current page instead of
 /// placing them over the composer as a bottom SnackBar.
@@ -1132,9 +1133,12 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   double heading = 0;
   double? myLatitude;
   double? myLongitude;
-  StreamSubscription<MagnetometerEvent>? _magnetometer;
+  Timer? _magnetometer;
   @override
-  void initState() { super.initState(); _loadLocation(); _magnetometer = magnetometerEvents.listen((e) { final v=math.atan2(e.y,e.x)*180/math.pi; if(mounted)setState(()=>heading=v); }); }
+  void initState() { super.initState(); _loadLocation(); _magnetometer = Timer.periodic(const Duration(milliseconds: 250), (_) async {
+   final value = await _compassChannel.invokeMethod<double>('heading');
+   if (value != null && mounted) setState(() => heading = value);
+ }); }
   Future<void> _loadLocation() async { final p=await SharedPreferences.getInstance(); if(!mounted)return; setState(() { myLatitude=p.getDouble('dd.location.latitude'); myLongitude=p.getDouble('dd.location.longitude'); }); }
   @override void dispose(){_magnetometer?.cancel();super.dispose();}
   double? get distance { if(myLatitude==null||myLongitude==null||widget.peerLatitude==null||widget.peerLongitude==null)return null; const r=6371.0; final a1=myLatitude!*math.pi/180,a2=widget.peerLatitude!*math.pi/180, da=(widget.peerLatitude!-myLatitude!)*math.pi/180,dl=(widget.peerLongitude!-myLongitude!)*math.pi/180; final h=math.sin(da/2)*math.sin(da/2)+math.cos(a1)*math.cos(a2)*math.sin(dl/2)*math.sin(dl/2); return 2*r*math.asin(math.sqrt(h)); }
