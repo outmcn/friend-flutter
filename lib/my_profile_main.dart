@@ -1290,8 +1290,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                               const SizedBox(height: 12),
                               Row(
                                           children: [
-                                            Expanded(child: _ProfileActionButton(icon: TIcons.pantone, label: '钱包', subtitle: coinBalance > 0 ? '$coinBalance 金币' : null, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletPage())))),
-                                            const SizedBox(width: 6),
                                             Expanded(child: _ProfileActionButton(icon: TIcons.collection, label: '典藏', onTap: () => _showProfileFeatureNotice(context, '典藏'))),
                                             const SizedBox(width: 6),
                                             Expanded(child: _ProfileActionButton(icon: TIcons.space, label: '空间', onTap: () => _showProfileFeatureNotice(context, '空间'))),
