@@ -1322,8 +1322,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                   Expanded(child: _ProfileActionButton(icon: TIcons.sonic, label: '声音', onTap: _editSonic)),
                                   const SizedBox(width: 6),
                                   Expanded(child: _ProfileActionButton(icon: Icons.auto_awesome_outlined, label: '展馆', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())))),
-                                  const SizedBox(width: 6),
-                                  Expanded(child: _ProfileActionButton(icon: TIcons.collection, label: '典藏', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileCollectionPage())))),
+
                                   const SizedBox(width: 6),
                                   Expanded(child: _ProfileActionButton(icon: TIcons.space, label: '空间', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSpacePage())))),
                                   const SizedBox(width: 6),
