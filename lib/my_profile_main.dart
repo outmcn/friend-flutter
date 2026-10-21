@@ -1120,9 +1120,24 @@ class _DDProfilePageState extends State<DDProfilePage>
                     controller: _profileHeaderScroll,
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        sliver: SliverList(
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未设置' : '${p?['city']}'.trim()}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          sliver: SliverList(
                           delegate: SliverChildListDelegate([
                         Align(
                           alignment: Alignment.centerLeft,
