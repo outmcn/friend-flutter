@@ -563,67 +563,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                               const SizedBox(width: 8),
                             ],
                           ),
-                          const SizedBox(height: 18),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed:
-                                      actionLoading ? null : toggleFollow,
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: following
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                        : Colors.white,
-                                    backgroundColor: following
-                                        ? Colors.transparent
-                                        : Colors.red,
-                                    side: BorderSide(
-                                      color: following
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .outlineVariant
-                                          : Colors.red,
-                                    ),
-                                  ),
-                                  icon: Icon(
-                                    following
-                                        ? Icons.person_remove_outlined
-                                        : Icons.person_add_alt_1_outlined,
-                                  ),
-                                  label: Text(
-                                    actionLoading
-                                        ? '处理中…'
-                                        : following
-                                            ? (p?['followedByViewer'] == true
-                                                ? '好友'
-                                                : '已关注')
-                                            : (p?['followedByViewer'] == true
-                                                ? '回关'
-                                                : '关注'),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed:
-                                      isSelfProfile ? null : _openPrivateChat,
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor:
-                                        Theme.of(context).colorScheme.primary,
-                                    side: BorderSide(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary),
-                                  ),
-                                  icon: const Icon(Icons.chat_bubble_outline),
-                                  label: const Text('私聊'),
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
@@ -653,6 +592,33 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 ],
               ),
             ),
+      bottomNavigationBar: (!loading && !isSelfProfile)
+          ? SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: actionLoading ? null : toggleFollow,
+                        icon: Icon(following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined),
+                        label: Text(actionLoading ? '处理中…' : following ? (p?['followedByViewer'] == true ? '好友' : '已关注') : (p?['followedByViewer'] == true ? '回关' : '关注')),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _openPrivateChat,
+                        icon: const Icon(Icons.chat_bubble_outline),
+                        label: const Text('私聊'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 
