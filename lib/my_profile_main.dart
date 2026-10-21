@@ -1249,8 +1249,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         clipBehavior: Clip.none,
                                         children: [
                                           Container(
-                                            width: 90,
-                                            height: 90,
+                                            width: 108,
+                                            height: 108,
                                             padding: const EdgeInsets.all(3),
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
@@ -1273,8 +1273,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             ),
                                             child: ClipOval(
                                               child: SizedBox(
-                                                width: 84,
-                                                height: 84,
+                                                width: 102,
+                                                height: 102,
                                                 child: _avatarReviewRejected
                                                     ? const ColoredBox(
                                                         color: Colors.black12,
@@ -1286,8 +1286,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                         ? const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40))
                                                         : _PermanentCachedImage(
                                                             url: _avatarUrl!,
-                                                            width: 84,
-                                                            height: 84,
+                                                            width: 102,
+                                                            height: 102,
                                                             fit: BoxFit.cover,
                                                             placeholder: const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40)),
                                                           ),
