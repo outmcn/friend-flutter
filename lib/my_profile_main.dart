@@ -518,7 +518,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         if (mounted) setState(() => _sonicPlaying = true);
       }
     } catch (_) {
-      if (mounted) _showTopNotice(context, const const Text('声音播放失败'));
+      if (mounted) _showTopNotice(context, const Text('声音播放失败'));
     }
   }
 
