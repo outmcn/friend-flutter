@@ -1251,28 +1251,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 16),
-                                      SizedBox(
-                                        width: 90,
-                                        child: Center(
-                                          child: _SonicProfileButton(
-                                            playing: _sonicPlaying,
-                                            enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
-                                            onTap: _editSonic,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      SizedBox(
-                                        width: 90,
-                                        child: Center(
-                                          child: _ProfileCapsuleButton(
-                                            icon: Icons.auto_awesome_outlined,
-                                            label: '展馆',
-                                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
-                                          ),
-                                        ),
-                                      ),
                                     ],
                                   ),
                                   const SizedBox(width: 12),
@@ -1289,6 +1267,23 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         value: '${p?['signature'] ?? p?['bio'] ?? ''}',
                                       ),
                                     ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      _SonicProfileButton(
+                                        playing: _sonicPlaying,
+                                        enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
+                                        onTap: _editSonic,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _ProfileCapsuleButton(
+                                        icon: Icons.auto_awesome_outlined,
+                                        label: '展馆',
+                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
