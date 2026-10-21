@@ -1270,23 +1270,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  _SonicProfileButton(
-                                    playing: _sonicPlaying,
-                                    enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
-                                    onTap: _editSonic,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _ProfileCapsuleButton(
-                                    icon: Icons.auto_awesome_outlined,
-                                    label: '展馆',
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
-                                  ),
-                                ],
-                              ),
                               const SizedBox(height: 12),
                               Row(
                                           children: [
@@ -1297,6 +1280,28 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             Expanded(child: _ProfileActionButton(icon: TIcons.browse_gallery, label: '频道', onTap: () => _showProfileFeatureNotice(context, '频道'))),
                                           ],
                                         ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _ProfileActionButton(
+                                      icon: TIcons.sonic,
+                                      label: '声音',
+                                      onTap: _editSonic,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: _ProfileActionButton(
+                                      icon: Icons.auto_awesome_outlined,
+                                      label: '展馆',
+                                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Expanded(child: SizedBox()),
+                                ],
+                              ),
                               const SizedBox(height: 8),
                             ],
                           ),
