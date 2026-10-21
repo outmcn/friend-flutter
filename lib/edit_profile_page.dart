@@ -31,21 +31,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   String _formatSignature(String raw) {
-    final clean = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
-    final result = <String>[];
-    final sourceLines = clean.split('\n');
-    for (final source in sourceLines.take(5)) {
-      final chars = source.characters.toList();
-      if (chars.isEmpty) {
-        result.add('');
-      } else {
-        for (var i = 0; i < chars.length && result.length < 5; i += 20) {
-          result.add(chars.skip(i).take(20).join());
-        }
-      }
-      if (result.length >= 5) break;
-    }
-    return result.join('\n');
+    final clean = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final lines = clean.split('\n');
+    return lines.take(5).join('\n').characters.take(100).toList().join();
   }
   void _normalizeSignature({TextEditingValue? value}) {
     final current = value ?? signature.value;
@@ -207,11 +195,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 TextField(
                     controller: signature,
                     onChanged: (_) => _normalizeSignature(value: signature.value),
-                    maxLength: 80,
+                    maxLength: 100,
                     minLines: 1,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
-                    inputFormatters: [LengthLimitingTextInputFormatter(80)],
+                    inputFormatters: [LengthLimitingTextInputFormatter(100)],
                     decoration: const InputDecoration(labelText: '个性签名')),
               ]),
       );
