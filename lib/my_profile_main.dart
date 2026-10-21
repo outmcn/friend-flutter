@@ -1098,8 +1098,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                 style: const TextStyle(
                                                     fontSize: 30,
                                                     height: 1.2,
-                                                    fontWeight:
-                                                        FontWeight.w700),
+                                                    fontWeight: FontWeight.w700),
                                               ),
                                             ),
                                             IconButton(
@@ -1110,6 +1109,13 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                                             ),
                                           ],
+                                        ),
+                                        Text(
+                                          'ID ${p?['id'] ?? p?['userId'] ?? ''}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
+                                          ),
                                         ),
                                         Container(
                                           padding:
