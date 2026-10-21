@@ -16,13 +16,16 @@ class _GlobalScrollToTopRegistry {
   }
 }
 
-void _showTopNotice(BuildContext context, Widget content) {
+final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
+
+void _showTopNotice(BuildContext context, Widget content, {VoidCallback? onTap}) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   if (overlay == null) return;
   late OverlayEntry entry;
   entry = OverlayEntry(
     builder: (context) => _FloatingNotice(
       content: content,
+      onTap: onTap,
       onClose: () => entry.remove(),
     ),
   );
@@ -30,8 +33,9 @@ void _showTopNotice(BuildContext context, Widget content) {
 }
 
 class _FloatingNotice extends StatefulWidget {
-  const _FloatingNotice({required this.content, required this.onClose});
+  const _FloatingNotice({required this.content, this.onTap, required this.onClose});
   final Widget content;
+  final VoidCallback? onTap;
   final VoidCallback onClose;
 
   @override
@@ -69,7 +73,9 @@ class _FloatingNoticeState extends State<_FloatingNotice>
         child: SlideTransition(
           position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
               .animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic)),
-          child: Material(
+          child: GestureDetector(
+            onTap: widget.onTap,
+            child: Material(
             elevation: 8,
             borderRadius: BorderRadius.circular(12),
             color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -86,6 +92,7 @@ class _FloatingNoticeState extends State<_FloatingNotice>
                 ],
               ),
             ),
+            ),
           ),
         ),
       ),
@@ -99,6 +106,7 @@ class DDApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _appNavigatorKey,
       debugShowCheckedModeBanner: false,
       builder: (context, child) => Stack(
         children: [
@@ -351,7 +359,44 @@ class _AuthGateState extends State<AuthGate> {
     final text = '${message['text'] ?? ''}'.trim();
     final kind = '${message['kind'] ?? 'text'}';
     final preview = text.isNotEmpty ? text : (kind == 'image' ? '图片消息' : kind == 'audio' ? '语音消息' : '收到一条新消息');
-    _showTopNotice(context, Row(children: [const Text('收到新消息：'), Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis))]));
+    final conversationId = '${message['conversationId'] ?? message['conversation_id'] ?? ''}';
+    _showTopNotice(
+      context,
+      Row(children: [const Text('收到新消息：'), Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis))]),
+      onTap: conversationId.isEmpty ? null : () => unawaited(_openMessageConversation(conversationId)),
+    );
+  }
+
+  Future<void> _openMessageConversation(String conversationId) async {
+    final navigator = _appNavigatorKey.currentState;
+    if (navigator == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    final currentUserId = prefs.getString('friend.auth.userId') ?? ImSession.instance.userId ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final rows = await service.fetchImConversations(token);
+      final conversation = rows.firstWhere((item) => item.id == conversationId, orElse: () => const DDConversation(id: '', kind: 'dm'));
+      if (conversation.id.isEmpty) return;
+      final peer = conversation.peer;
+      final last = conversation.lastMessage;
+      final chat = _ChatPreview(
+        peer?.nickname ?? '用户',
+        last?.text ?? '',
+        peer?.avatarUrl,
+        peer?.avatarKey,
+        peer?.id,
+        conversation.id,
+        conversation.unreadCount,
+        conversation.peerReadMessageId,
+        conversation.updatedAt,
+        conversation.kind,
+      );
+      await navigator.push(MaterialPageRoute(builder: (_) => _ChatDetailPage(chat: chat, currentUserId: currentUserId)));
+    } finally {
+      service.dispose();
+    }
   }
   Future<void> _restore() async {
     final restored = await auth.restoreToken();
