@@ -974,7 +974,7 @@ class _ConversationSwipeButton extends StatelessWidget {
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.peerUserId, this.conversationId, this.unreadCount,
-      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm', this.pinned = false, this.muted = false, this.online = false]);
+      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm', this.pinned = false, this.muted = false, this.online = false, this.peerLatitude, this.peerLongitude]);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -988,6 +988,8 @@ class _ChatPreview {
   final bool pinned;
   final bool muted;
   final bool online;
+  final double? peerLatitude;
+  final double? peerLongitude;
 
   factory _ChatPreview.fromCache(Map<String, dynamic> row) => _ChatPreview(
         '${row['name'] ?? '用户'}',
@@ -1003,6 +1005,8 @@ class _ChatPreview {
         row['pinned'] == true,
         row['muted'] == true,
         row['online'] == true,
+        (row['peerLatitude'] as num?)?.toDouble(),
+        (row['peerLongitude'] as num?)?.toDouble(),
       );
 
   _ChatPreview copyWith({bool? pinned, bool? muted, int? unreadCount}) => _ChatPreview(
@@ -1035,6 +1039,8 @@ class _ChatPreview {
         'pinned': pinned,
         'muted': muted,
         'online': online,
+        'peerLatitude': peerLatitude,
+        'peerLongitude': peerLongitude,
       };
 }
 
@@ -2497,7 +2503,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             Positioned(
               top: 8,
               right: 8,
-              child: _ChatRadarPanel(avatar: _chatAvatarFor(widget.chat), peerLatitude: null, peerLongitude: null),
+              child: _ChatRadarPanel(avatar: _chatAvatarFor(widget.chat), peerLatitude: widget.chat.peerLatitude, peerLongitude: widget.chat.peerLongitude),
             ),
             Column(children: [
               Expanded(

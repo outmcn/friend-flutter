@@ -42,12 +42,14 @@ class DDImPeer {
       {required this.id,
       required this.nickname,
       this.avatarKey,
-      this.avatarUrl, this.online = false});
+      this.avatarUrl, this.online = false, this.latitude, this.longitude});
   final String id;
   final String nickname;
   final String? avatarKey;
   final String? avatarUrl;
   final bool online;
+  final double? latitude;
+  final double? longitude;
 
   factory DDImPeer.fromJson(Map<String, dynamic> json) => DDImPeer(
         id: '${json['id'] ?? ''}',
@@ -55,6 +57,8 @@ class DDImPeer {
         avatarKey: json['avatarKey'] as String?,
         avatarUrl: json['avatarUrl'] as String?,
         online: json['online'] == true,
+        latitude: (json['latitude'] as num?)?.toDouble(),
+        longitude: (json['longitude'] as num?)?.toDouble(),
       );
 }
 
