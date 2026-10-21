@@ -3847,19 +3847,52 @@ class _DDShellState extends State<DDShell> {
       );
 }
 
-class _PageErrorState extends StatelessWidget {
-  const _PageErrorState(
-      {required this.title, required this.subtitle, this.onRetry});
+class _PageErrorState extends StatefulWidget {
+  const _PageErrorState({required this.title, required this.subtitle, this.onRetry});
   final String title;
   final String subtitle;
   final VoidCallback? onRetry;
+
   @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          leading: const Icon(Icons.cloud_off_outlined),
-          title: Text(title),
-          subtitle: Text(subtitle),
-          trailing: TextButton(onPressed: onRetry, child: const Text('重试')),
+  State<_PageErrorState> createState() => _PageErrorStateState();
+}
+
+class _PageErrorStateState extends State<_PageErrorState> {
+  String? _shown;
+
+  @override
+  void initState() {
+    super.initState();
+    _showAfterBuild();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PageErrorState oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.title != widget.title || oldWidget.subtitle != widget.subtitle) {
+      _showAfterBuild();
+    }
+  }
+
+  void _showAfterBuild() {
+    final message = '${widget.title}：${widget.subtitle}';
+    if (_shown == message) return;
+    _shown = message;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _showTopNotice(
+        context,
+        Row(
+          children: [
+            Expanded(child: Text(message)),
+            if (widget.onRetry != null)
+              TextButton(onPressed: widget.onRetry, child: const Text('重试')),
+          ],
         ),
       );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
