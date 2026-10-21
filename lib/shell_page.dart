@@ -2474,6 +2474,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
               Expanded(
                 child: Column(
                   children: [
+                    if (peerTyping)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .55),
+                        child: Text('正在输入…', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      ),
                     Expanded(
                       child: _timeline.isEmpty
                           ? Center(
@@ -2494,7 +2501,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                         color: Theme.of(context).hintColor),
                                   ),
                                   if (peerTyping && messages.isEmpty)
-                                    _TypingBubble(),
+                                    const SizedBox.shrink(),
                                 ],
                               ),
                             )
@@ -2505,12 +2512,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                               keyboardDismissBehavior:
                                   ScrollViewKeyboardDismissBehavior.manual,
                               padding: const EdgeInsets.all(16),
-                              itemCount:
-                                  _timeline.length + (peerTyping ? 1 : 0),
+                              itemCount: _timeline.length,
                               itemBuilder: (_, index) {
-                                if (index >= _timeline.length) {
-                                  return _TypingBubble();
-                                }
                                 final message = _timeline[index];
                                 final isCall =
                                     message['_timelineKind'] == 'call';
