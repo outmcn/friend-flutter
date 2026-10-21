@@ -1294,26 +1294,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               ),
                                             ),
                                           ),
-                                          Positioned(
-                                            left: 0,
-                                            right: 0,
-                                            bottom: -9,
-                                            child: Center(
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(context).colorScheme.surface,
-                                                  border: Border.all(color: Theme.of(context).dividerColor),
-                                                  borderRadius: BorderRadius.circular(999),
-                                                  boxShadow: const [BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 2))],
-                                                ),
-                                                child: Text(
-                                                  '${p?['city'] ?? ''}'.trim().isEmpty ? '添加城市' : '${p?['city']}',
-                                                  style: Theme.of(context).textTheme.labelSmall,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
                                         ],
                                         ),
                                       ],

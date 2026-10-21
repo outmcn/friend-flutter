@@ -401,17 +401,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                             ),
                                           ),
                                   ),
-                                  Positioned(
-                                    left: 0,
-                                    right: 0,
-                                    bottom: -12,
-                                    child: Align(
-                                      alignment: Alignment.center,
-                                      child: _ProfileTag(
-                                        text: '${p?['city'] ?? '未知'}',
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
                               const SizedBox(width: 14),
