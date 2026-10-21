@@ -147,26 +147,19 @@ private final class NativeMapView: NSObject, FlutterPlatformView, MKMapViewDeleg
 private final class NativeCompassManager: NSObject, CLLocationManagerDelegate {
   private let manager = CLLocationManager()
   var heading: Double = 0
-  override init() { super.init(); UIDevice.current.beginGeneratingDeviceOrientationNotifications(); manager.delegate = self; manager.desiredAccuracy = kCLLocationAccuracyBest; manager.headingFilter = 1; manager.headingOrientation = .portrait }
-  deinit { UIDevice.current.endGeneratingDeviceOrientationNotifications(); manager.stopUpdatingHeading(); manager.stopUpdatingLocation() }
+  override init() { super.init(); manager.delegate = self; manager.desiredAccuracy = kCLLocationAccuracyBest; manager.headingFilter = 1; manager.headingOrientation = .portrait }
+  deinit { manager.stopUpdatingHeading(); manager.stopUpdatingLocation() }
   func start() {
     manager.requestWhenInUseAuthorization()
-    manager.headingOrientation = currentHeadingOrientation()
+    manager.headingOrientation = .portrait
     manager.startUpdatingLocation()
     if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
   }
   func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
     if status == .authorizedWhenInUse || status == .authorizedAlways {
-      manager.headingOrientation = currentHeadingOrientation()
+      manager.headingOrientation = .portrait
+      manager.startUpdatingLocation()
       if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
-    }
-  }
-  private func currentHeadingOrientation() -> CLDeviceOrientation {
-    switch UIDevice.current.orientation {
-    case .landscapeLeft: return .landscapeLeft
-    case .landscapeRight: return .landscapeRight
-    case .portraitUpsideDown: return .portraitUpsideDown
-    default: return .portrait
     }
   }
   func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
