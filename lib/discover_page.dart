@@ -115,7 +115,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
       if (mounted) {
-        _showTopNotice(context, SnackBar(content: Text('$e')));
+        _showTopNotice(context, const Text('操作失败'));
       }
     } finally {
       pendingLikes.remove(post.id);
@@ -136,7 +136,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       }
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
-      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, const Text('操作失败'));
     } finally {
       pendingFavorites.remove(post.id);
     }
@@ -161,7 +161,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       );
       if (mounted) _showTopNotice(context, const Text('已发送给好友'));
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('$e'));
+      if (mounted) _showTopNotice(context, const Text('操作失败'));
     }
   }
 
@@ -192,7 +192,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         ),
       );
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('$e'));
+      if (mounted) _showTopNotice(context, const Text('操作失败'));
     }
   }
 
@@ -206,7 +206,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       }
       if (mounted) _showTopNotice(context, Text(followed ? '已关注' : '已取消关注'));
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('$e'));
+      if (mounted) _showTopNotice(context, const Text('操作失败'));
     }
   }
 

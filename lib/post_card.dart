@@ -382,7 +382,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
         _showTopNotice(context, const Text('已发送给好友'));
       }
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('$e'));
+      if (mounted) _showTopNotice(context, const Text('操作失败'));
     } finally {
       if (mounted) setState(() => sending = false);
     }

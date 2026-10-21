@@ -3884,7 +3884,7 @@ class _PageErrorStateState extends State<_PageErrorState> {
         context,
         Row(
           children: [
-            Expanded(child: Text(message)),
+            Expanded(child: Text(widget.title)),
             if (widget.onRetry != null)
               TextButton(onPressed: widget.onRetry, child: const Text('重试')),
           ],

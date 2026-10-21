@@ -478,7 +478,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       await syncCachedLocation(service, token);
       await _refreshProfileOnly();
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('定位更新失败：$e'));
+      if (mounted) _showTopNotice(context, const Text('定位更新失败'));
     } finally {
       if (mounted) setState(() => _locationRefreshing = false);
     }
@@ -518,7 +518,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         if (mounted) setState(() => _sonicPlaying = true);
       }
     } catch (_) {
-      if (mounted) _showTopNotice(context, const Text('声音播放失败'));
+      if (mounted) _showTopNotice(context, const const Text('声音播放失败'));
     }
   }
 
@@ -553,7 +553,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (mounted) {
         setState(() => _stealth = previous);
         setSheetState?.call(() {});
-        _showTopNotice(context, Text('在线状态更新失败：$e'));
+        _showTopNotice(context, const Text('在线状态更新失败'));
       }
     } finally {
       if (mounted) {
@@ -660,7 +660,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       );
     } catch (e) {
       onFailure?.call();
-      if (mounted) _showTopNotice(context, Text('设置保存失败：$e'));
+      if (mounted) _showTopNotice(context, const Text('设置保存失败'));
     }
   }
 
@@ -718,7 +718,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         });
       }
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('资料刷新失败：$e'));
+      if (mounted) _showTopNotice(context, const Text('资料刷新失败'));
     } finally {
       if (mounted) setState(() => _profileRefreshing = false);
     }
@@ -806,7 +806,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     } catch (e) {
       if (mounted) {
         setState(() => error = null);
-        _showTopNotice(context, Text('动态加载失败：$e'));
+        _showTopNotice(context, const Text('动态加载失败'));
       }
     } finally {
       if (mounted) {
@@ -835,7 +835,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       await service.deletePost(await _token(), post.id);
       await _invalidateProfileCacheAndReload();
     } catch (e) {
-      if (mounted) _showTopNotice(context, Text('删除失败：$e'));
+      if (mounted) _showTopNotice(context, const Text('删除失败'));
     }
   }
 
