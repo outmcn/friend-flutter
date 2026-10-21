@@ -2538,10 +2538,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                               itemCount:
                                   _timeline.length + (peerTyping ? 1 : 0),
                               itemBuilder: (_, index) {
-                                if (index >= _timeline.length) {
+                                if (peerTyping && index == 0) {
                                   return _TypingBubble();
                                 }
-                                final message = _timeline[index];
+                                final message = _timeline[peerTyping ? index - 1 : index];
                                 final isCall =
                                     message['_timelineKind'] == 'call';
                                 final isMine = currentUserId.isNotEmpty &&
