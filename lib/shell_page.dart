@@ -166,7 +166,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           chat.unreadCount,
           chat.peerReadMessageId,
           chat.updatedAt,
-          chat.kind);
+          chat.kind,
+          chat.pinned,
+          chat.muted,
+          chat.online,
+          chat.peerLatitude,
+          chat.peerLongitude);
     });
     await ImLocalStore.saveConversations(
         accountId: accountId,
