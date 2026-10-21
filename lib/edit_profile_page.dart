@@ -47,11 +47,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
     return result.join('\n');
   }
-  void _normalizeSignature() {
-    final formatted = _formatSignature(signature.text);
-    if (signature.text == formatted) return;
+  void _normalizeSignature({TextEditingValue? value}) {
+    final current = value ?? signature.value;
+    if (current.composing.isValid && !current.composing.isCollapsed) return;
+    final formatted = _formatSignature(current.text);
+    if (current.text == formatted) return;
     final offset = formatted.length.clamp(0, formatted.length);
-    signature.value = TextEditingValue(text: formatted, selection: TextSelection.collapsed(offset: offset));
+    signature.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: offset),
+      composing: TextRange.empty,
+    );
   }
 
   Future<void> load() async {
@@ -200,12 +206,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: const InputDecoration(labelText: '昵称')),
                 TextField(
                     controller: signature,
-                    onChanged: (_) => _normalizeSignature(),
+                    onChanged: (_) => _normalizeSignature(value: signature.value),
                     maxLength: 75,
                     minLines: 1,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
-                    inputFormatters: [LengthLimitingTextInputFormatter(100)],
+                    inputFormatters: [LengthLimitingTextInputFormatter(75)],
                     decoration: const InputDecoration(labelText: '个性签名')),
               ]),
       );
