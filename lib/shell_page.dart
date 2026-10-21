@@ -1137,7 +1137,7 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   @override Widget build(BuildContext context)=>SizedBox(width:100,height:160,child:DecoratedBox(decoration:BoxDecoration(color:const Color(0xE6101020),borderRadius:BorderRadius.circular(12),border:Border.all(color:const Color(0x554C4CFF))),child:Stack(alignment:Alignment.center,children:[Positioned(top:6,child:Text(distance==null?'位置未知':'相距 ${distance!.toStringAsFixed(1)}km',style:const TextStyle(color:Colors.white,fontSize:11))),CustomPaint(size:const Size(86,108),painter:_RadarPainter(bearing:bearing==null?null:bearing!-heading,avatar:widget.avatar)),const Positioned(top:28,child:Text('北',style:TextStyle(color:Colors.white54,fontSize:9))),const Positioned(bottom:8,child:Text('南',style:TextStyle(color:Colors.white54,fontSize:9))),const Positioned(left:5,child:Text('西',style:TextStyle(color:Colors.white54,fontSize:9))),const Positioned(right:5,child:Text('东',style:TextStyle(color:Colors.white54,fontSize:9)))])));
 }
 
-class _RadarPainter extends CustomPainter { _RadarPainter({required this.bearing,required this.avatar}); final double? bearing; final ImageProvider avatar; @override void paint(Canvas c,Size s){final o=Offset(s.width/2,s.height/2+8),r=s.shortestSide*.42,ring=Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=const Color(0x664C4CFF);for(final k in [1.0,.72,.44])c.drawCircle(o,r*k,ring);c.drawCircle(o,4,Paint()..color=const Color(0xFF34C759));if(bearing==null)return;final a=bearing!*math.pi/180,path=Path()..moveTo(o.dx,o.dy)..lineTo(o.dx+math.sin(a-.22)*r,o.dy-math.cos(a-.22)*r)..arcTo(Rect.fromCircle(center:o,radius:r),a-.22-math.pi/2,.44,false)..close();c.drawPath(path,Paint()..color=const Color(0x334CFFD9));final p=Offset(o.dx+math.sin(a)*r,o.dy-math.cos(a)*r);c.drawLine(o,p,Paint()..color=const Color(0x9959D9FF)..strokeWidth=1);c.drawCircle(p,5,Paint()..color=const Color(0xFF59D9FF));} @override bool shouldRepaint(covariant _RadarPainter old)=>old.bearing!=bearing;}
+class _RadarPainter extends CustomPainter { _RadarPainter({required this.bearing,required this.avatar}); final double? bearing; final ImageProvider avatar; @override void paint(Canvas c,Size s){final o=Offset(s.width/2,s.height/2+8),r=s.shortestSide*.42,ring=Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=const Color(0x664C4CFF);for(final k in [1.0,.72,.44])c.drawCircle(o,r*k,ring);c.drawCircle(o,4,Paint()..color=const Color(0xFF34C759));if(bearing==null)return;final a=bearing!*math.pi/180;final sector=Path()..moveTo(o.dx,o.dy)..lineTo(o.dx+math.sin(-.22)*r,o.dy-math.cos(-.22)*r)..arcTo(Rect.fromCircle(center:o,radius:r),-.22-math.pi/2,.44,false)..close();c.drawPath(sector,Paint()..color=const Color(0x334CFFD9));final p=Offset(o.dx+math.sin(a)*r,o.dy-math.cos(a)*r);c.drawCircle(p,5,Paint()..color=const Color(0xFF59D9FF));} @override bool shouldRepaint(covariant _RadarPainter old)=>old.bearing!=bearing;}
 
 class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageController = TextEditingController();
@@ -2500,11 +2500,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ),
         body: Stack(
           children: [
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _ChatRadarPanel(avatar: _chatAvatarFor(widget.chat), peerLatitude: widget.chat.peerLatitude, peerLongitude: widget.chat.peerLongitude),
-            ),
             Column(children: [
               Expanded(
                 child: Column(
@@ -3131,6 +3126,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 ),
               ),
             ]),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _ChatRadarPanel(avatar: _chatAvatarFor(widget.chat), peerLatitude: widget.chat.peerLatitude, peerLongitude: widget.chat.peerLongitude),
+            ),
             if (moreExpanded)
               Positioned(
                 right: 8,
