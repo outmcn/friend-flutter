@@ -453,6 +453,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 36),
+                  Row(
+                    children: [
+                      Expanded(child: _ProfileActionButton(icon: TIcons.sonic, label: '声音', onTap: _toggleSonic)),
+                      const SizedBox(width: 6),
+                      Expanded(child: _ProfileActionButton(icon: Icons.auto_awesome_outlined, label: '展馆', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())))),
+                      const SizedBox(width: 6),
+                      Expanded(child: _ProfileActionButton(icon: TIcons.space, label: '空间', onTap: () => _showTopNotice(context, const Text('空间功能即将开放')))),
+                      const SizedBox(width: 6),
+                      Expanded(child: _ProfileActionButton(icon: TIcons.browse_gallery, label: '频道', onTap: () => _showTopNotice(context, const Text('频道功能即将开放')))),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   _MyProfileIconTabs(
                     selectedTab: 0,
                     onSelect: (_) {},
