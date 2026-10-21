@@ -733,7 +733,25 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              CircleAvatar(radius: 24, backgroundImage: _avatarFor(chat)),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(radius: 24, backgroundImage: _avatarFor(chat)),
+                  Positioned(
+                    right: -1,
+                    bottom: -1,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF34C759),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
