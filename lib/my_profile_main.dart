@@ -1265,7 +1265,12 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
