@@ -1156,7 +1156,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           children: [
                                             Flexible(
                                               child: Text(
-                                                '${p?['nickname'] ?? 'Friend 用户'}  ${p?['gender'] == '男' ? '♂' : p?['gender'] == '女' ? '♀' : ''}',
+                                                '${p?['nickname'] ?? 'Friend 用户'}',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
