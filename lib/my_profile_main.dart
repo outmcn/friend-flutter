@@ -1321,7 +1321,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 36),
                               Row(
                                 children: [
                                   Expanded(child: _ProfileActionButton(icon: TIcons.sonic, label: '声音', onTap: _editSonic)),
