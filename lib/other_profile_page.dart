@@ -366,8 +366,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   if (error != null)
                     _PageErrorState(
                         title: '主页加载失败', subtitle: error!, onRetry: load),
-                  Card(
-                    clipBehavior: Clip.antiAlias,
+                  DecoratedBox(
+                    decoration: const BoxDecoration(),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
                       child: Column(
@@ -449,6 +449,14 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                               ),
                                             ],
                                           ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'ID：${p?['id'] ?? p?['userId'] ?? widget.userId}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
+                                            ),
+                                          ),
                                           const Spacer(),
                                           Row(
                                             children: [
@@ -486,6 +494,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                           ),
                                         ],
                                       ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '${p?['signature'] ?? p?['bio'] ?? ''}',
+                                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                      maxLines: 5,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 8),
                                     SizedBox(
@@ -624,24 +639,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ProfileActionButton(
-                          icon: Icons.auto_awesome_outlined,
-                          label: '展馆',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const GiftExhibitionPage(),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
                   _MyProfileIconTabs(
                     selectedTab: 0,
                     onSelect: (_) {},
