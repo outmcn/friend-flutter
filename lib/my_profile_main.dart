@@ -1118,8 +1118,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ),
                                         Container(
-                                          padding:
-                                              const EdgeInsets.symmetric(vertical: 14),
+                                          padding: const EdgeInsets.only(top: 7, bottom: 14),
                                           decoration: const BoxDecoration(),
                                           child: Row(
                                             children: [
