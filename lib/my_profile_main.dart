@@ -1251,17 +1251,27 @@ class _DDProfilePageState extends State<DDProfilePage>
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 28),
-                                      _SonicProfileButton(
-                                        playing: _sonicPlaying,
-                                        enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
-                                        onTap: _editSonic,
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                        width: 90,
+                                        child: Center(
+                                          child: _SonicProfileButton(
+                                            playing: _sonicPlaying,
+                                            enabled: _sonicUrl != null && _sonicUrl!.isNotEmpty,
+                                            onTap: _editSonic,
+                                          ),
+                                        ),
                                       ),
                                       const SizedBox(height: 8),
-                                      _ProfileCapsuleButton(
-                                        icon: Icons.auto_awesome_outlined,
-                                        label: '展馆',
-                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
+                                      SizedBox(
+                                        width: 90,
+                                        child: Center(
+                                          child: _ProfileCapsuleButton(
+                                            icon: Icons.auto_awesome_outlined,
+                                            label: '展馆',
+                                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
