@@ -1109,6 +1109,47 @@ class _ChatDetailPage extends StatefulWidget {
   State<_ChatDetailPage> createState() => _ChatDetailPageState();
 }
 
+class _ChatRadarPanel extends StatefulWidget {
+  const _ChatRadarPanel({required this.distanceKm, required this.bearingDegrees, required this.avatar});
+  final double? distanceKm;
+  final double bearingDegrees;
+  final ImageProvider avatar;
+  @override
+  State<_ChatRadarPanel> createState() => _ChatRadarPanelState();
+}
+
+class _ChatRadarPanelState extends State<_ChatRadarPanel> {
+  double heading = 0;
+  StreamSubscription<MagnetometerEvent>? _magnetometer;
+  @override
+  void initState() { super.initState(); _magnetometer = magnetometerEvents.listen((event) { final value = math.atan2(event.y, event.x) * 180 / math.pi; if (mounted) setState(() => heading = value); }); }
+  @override
+  void dispose() { _magnetometer?.cancel(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 100, height: 160,
+    child: DecoratedBox(
+      decoration: BoxDecoration(color: const Color(0xE6101020), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0x554C4CFF))),
+      child: Stack(alignment: Alignment.center, children: [
+        Positioned(top: 6, child: Text(widget.distanceKm == null ? '距离未知' : '相距 ${widget.distanceKm!.toStringAsFixed(1)}km', style: const TextStyle(color: Colors.white, fontSize: 11))),
+        CustomPaint(size: const Size(86, 108), painter: _RadarPainter(bearing: widget.bearingDegrees - heading, avatar: widget.avatar)),
+        const Positioned(top: 28, child: Text('北', style: TextStyle(color: Colors.white54, fontSize: 9))),
+        const Positioned(bottom: 8, child: Text('南', style: TextStyle(color: Colors.white54, fontSize: 9))),
+        const Positioned(left: 5, child: Text('西', style: TextStyle(color: Colors.white54, fontSize: 9))),
+        const Positioned(right: 5, child: Text('东', style: TextStyle(color: Colors.white54, fontSize: 9))),
+      ]),
+    ),
+  );
+}
+
+class _RadarPainter extends CustomPainter {
+  _RadarPainter({required this.bearing, required this.avatar});
+  final double bearing; final ImageProvider avatar;
+  @override
+  void paint(Canvas canvas, Size size) { final c=Offset(size.width/2,size.height/2+8); final r=size.shortestSide*.42; final ring=Paint()..style=PaintingStyle.stroke..strokeWidth=1..color=const Color(0x664C4CFF); for(final k in [1.0,.72,.44]) canvas.drawCircle(c,r*k,ring); final dot=Paint()..color=const Color(0xFF34C759); canvas.drawCircle(c,4,dot); final a=bearing*math.pi/180; final p=Offset(c.dx+math.sin(a)*r,c.dy-math.cos(a)*r); canvas.drawLine(c,p,Paint()..color=const Color(0x9959D9FF)..strokeWidth=1); canvas.drawCircle(p,5,Paint()..color=const Color(0xFF59D9FF)); }
+  @override bool shouldRepaint(covariant _RadarPainter old) => old.bearing != bearing || old.avatar != avatar;
+}
+
 class _ChatDetailPageState extends State<_ChatDetailPage> {
   final messageController = TextEditingController();
   final messageFocusNode = FocusNode();
@@ -2470,6 +2511,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ),
         body: Stack(
           children: [
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _ChatRadarPanel(distanceKm: null, bearingDegrees: 0, avatar: _chatAvatarFor(widget.chat)),
+            ),
             Column(children: [
               Expanded(
                 child: Column(
