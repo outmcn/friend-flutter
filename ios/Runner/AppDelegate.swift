@@ -147,11 +147,12 @@ private final class NativeMapView: NSObject, FlutterPlatformView, MKMapViewDeleg
 private final class NativeCompassManager: NSObject, CLLocationManagerDelegate {
   private let manager = CLLocationManager()
   var heading: Double = 0
-  override init() { super.init(); UIDevice.current.beginGeneratingDeviceOrientationNotifications(); manager.delegate = self; manager.headingFilter = 1; manager.headingOrientation = .portrait }
-  deinit { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
+  override init() { super.init(); UIDevice.current.beginGeneratingDeviceOrientationNotifications(); manager.delegate = self; manager.desiredAccuracy = kCLLocationAccuracyBest; manager.headingFilter = 1; manager.headingOrientation = .portrait }
+  deinit { UIDevice.current.endGeneratingDeviceOrientationNotifications(); manager.stopUpdatingHeading(); manager.stopUpdatingLocation() }
   func start() {
     manager.requestWhenInUseAuthorization()
     manager.headingOrientation = currentHeadingOrientation()
+    manager.startUpdatingLocation()
     if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
   }
   func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
@@ -169,7 +170,9 @@ private final class NativeCompassManager: NSObject, CLLocationManagerDelegate {
     }
   }
   func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-    manager.headingOrientation = currentHeadingOrientation()
-    heading = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
+    guard newHeading.headingAccuracy >= 0 else { return }
+    let value = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
+    guard value.isFinite else { return }
+    heading = value.truncatingRemainder(dividingBy: 360) >= 0 ? value.truncatingRemainder(dividingBy: 360) : value.truncatingRemainder(dividingBy: 360) + 360
   }
 }
