@@ -366,207 +366,93 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   if (error != null)
                     _PageErrorState(
                         title: '主页加载失败', subtitle: error!, onRetry: load),
-                  DecoratedBox(
-                    decoration: const BoxDecoration(),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 40,
-                                    child: _avatarReviewRejected
-                                        ? const Center(child: Text('图片涉嫌违规', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.black54)))
-                                        : _avatarUrl == null ||
-                                            _avatarUrl!.isEmpty
-                                        ? const Icon(Icons.person_outline,
-                                            size: 34)
-                                        : ClipOval(
-                                            child: _PermanentCachedImage(
-                                              url: _avatarUrl!,
-                                              width: 80,
-                                              height: 80,
-                                              fit: BoxFit.cover,
-                                              placeholder: const ColoredBox(
-                                                color: Colors.black12,
-                                                child: Icon(Icons.person,
-                                                    size: 42),
-                                              ),
-                                            ),
-                                          ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      height: 80,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  '${p?['nickname'] ?? widget.name}',
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    fontSize: 25,
-                                                    fontWeight: FontWeight.w900,
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              _SonicProfileButton(
-                                                playing: _sonicPlaying,
-                                                enabled:
-                                                    _sonicUrl?.isNotEmpty ==
-                                                        true,
-                                                onTap: _toggleSonic,
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            'ID：${p?['id'] ?? p?['userId'] ?? widget.userId}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
-                                            ),
-                                          ),
-                                          const Spacer(),
-                                          Row(
-                                            children: [
-                                              _InlineProfileStat(
-                                                label: '关注',
-                                                value:
-                                                    '${p?['following'] ?? 0}',
-                                                valueFontSize: 18,
-                                                labelFontSize: 14,
-                                              ),
-                                              const SizedBox(width: 18),
-                                              _InlineProfileStat(
-                                                label: '粉丝',
-                                                value:
-                                                    '${p?['followers'] ?? 0}',
-                                                valueFontSize: 18,
-                                                labelFontSize: 14,
-                                              ),
-                                              const SizedBox(width: 18),
-                                              _InlineProfileStat(
-                                                label: '获赞',
-                                                value:
-                                                    '${p?['receivedLikes'] ?? 0}',
-                                                valueFontSize: 18,
-                                                labelFontSize: 14,
-                                              ),
-                                              const SizedBox(width: 18),
-                                              _InlineProfileStat(
-                                                label: '魅力',
-                                                value: '$charmCoins',
-                                                valueFontSize: 18,
-                                                labelFontSize: 14,
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '${p?['signature'] ?? p?['bio'] ?? ''}',
-                                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                      maxLines: 5,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    SizedBox(
-                                      height: 32,
-                                      child: SingleChildScrollView(
-                                        scrollDirection: Axis.horizontal,
-                                        child: Row(
-                                          children: (profile?['tags'] is List
-                                                  ? (profile!['tags'] as List)
-                                                      .map((value) => '$value')
-                                                      .where((value) => value
-                                                          .trim()
-                                                          .isNotEmpty)
-                                                      .toList()
-                                                  : <String>[])
-                                              .map((tag) => Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            right: 6),
-                                                    child:
-                                                        _ProfileTag(text: tag),
-                                                  ))
-                                              .toList(),
-                                        ),
-                                      ),
-                                    ),
-                                    if ('${p?['clubName'] ?? p?['club'] ?? ''}'
-                                        .trim()
-                                        .isNotEmpty) ...[
-                                      const SizedBox(height: 12),
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 10),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .surfaceContainerHighest,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.groups_outlined,
-                                                size: 20),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                '${p?['clubName'] ?? p?['club']}',
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.w700),
-                                              ),
-                                            ),
-                                            if ('${p?['clubMemberCount'] ?? ''}'
-                                                .trim()
-                                                .isNotEmpty)
-                                              Text('${p?['clubMemberCount']}',
-                                                  style: TextStyle(
-                                                      color: Theme.of(context)
-                                                          .hintColor)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                            ],
-                          ),
-                        ],
+                  SliverToBoxAdapter(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
+                        style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${p?['nickname'] ?? widget.name}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 30, height: 1.2, fontWeight: FontWeight.w700),
+                                  ),
+                                  Text(
+                                    'ID：${p?['id'] ?? p?['userId'] ?? widget.userId ?? ''}',
+                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .65)),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.only(top: 7, bottom: 14),
+                                    child: Row(
+                                      children: [
+                                        Expanded(child: _InlineProfileStat(label: '关注', value: '${p?['following'] ?? 0}')),
+                                        Expanded(child: _InlineProfileStat(label: '粉丝', value: '${p?['followers'] ?? 0}')),
+                                        Expanded(child: _InlineProfileStat(label: '获赞', value: '${p?['receivedLikes'] ?? 0}')),
+                                        Expanded(child: _InlineProfileStat(label: '魅力', value: '$charmCoins')),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 23),
+                              child: Container(
+                                width: 108,
+                                height: 108,
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: p?['gender'] == '男'
+                                      ? const LinearGradient(colors: [Color(0xFF69B7FF), Color(0xFF1677FF), Color(0xFF0B3D91)])
+                                      : p?['gender'] == '女'
+                                          ? const LinearGradient(colors: [Color(0xFFFFB6D5), Color(0xFFFF6FAE), Color(0xFFC2185B)])
+                                          : null,
+                                  color: p?['gender'] == '男' || p?['gender'] == '女' ? null : Theme.of(context).dividerColor,
+                                ),
+                                child: ClipOval(
+                                  child: SizedBox(
+                                    width: 102,
+                                    height: 102,
+                                    child: _avatarReviewRejected
+                                        ? const ColoredBox(color: Colors.black12, child: Center(child: Text('图片涉嫌违规', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.black54))))
+                                        : _avatarUrl == null || _avatarUrl!.isEmpty
+                                            ? const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40))
+                                            : _PermanentCachedImage(url: _avatarUrl!, width: 102, height: 102, fit: BoxFit.cover, placeholder: const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40))),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${p?['signature'] ?? p?['bio'] ?? ''}',
+                          softWrap: true,
+                          style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 36),
                   _MyProfileIconTabs(
                     selectedTab: 0,
                     onSelect: (_) {},
