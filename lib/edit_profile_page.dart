@@ -207,11 +207,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 TextField(
                     controller: signature,
                     onChanged: (_) => _normalizeSignature(value: signature.value),
-                    maxLength: 100,
+                    maxLength: 80,
                     minLines: 1,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
-                    inputFormatters: [LengthLimitingTextInputFormatter(100)],
+                    inputFormatters: [LengthLimitingTextInputFormatter(80)],
                     decoration: const InputDecoration(labelText: '个性签名')),
               ]),
       );
