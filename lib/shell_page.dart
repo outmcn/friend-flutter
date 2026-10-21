@@ -1178,7 +1178,7 @@ class _RadarPainter extends CustomPainter {
     for (final k in [1.0, .72, .44]) c.drawCircle(o, r * k, ring);
     c.drawCircle(o, 4, Paint()..color = const Color(0xFF34C759));
     final facing = -math.pi / 2;
-    final sector = Path()..moveTo(o.dx, o.dy)..lineTo(o.dx + math.cos(facing - .22) * r, o.dy + math.sin(facing - .22) * r)..arcTo(Rect.fromCircle(center: o, radius: r), facing - .22, .44, false)..close();
+    final sector = Path()..moveTo(o.dx, o.dy)..lineTo(o.dx + math.cos(facing - .524) * r, o.dy + math.sin(facing - .524) * r)..arcTo(Rect.fromCircle(center: o, radius: r), facing - .524, 1.048, false)..close();
     c.drawPath(sector, Paint()..color = const Color(0x334CFFD9));
     if (!hasPeer || bearing == null) return;
     final a = bearing! * math.pi / 180;
