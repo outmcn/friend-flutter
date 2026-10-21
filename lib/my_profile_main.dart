@@ -305,6 +305,56 @@ class _WalletAssetCard extends StatelessWidget {
       );
 }
 
+class _ProfileFeaturePage extends StatelessWidget {
+  const _ProfileFeaturePage({required this.title, required this.icon, required this.description});
+  final String title;
+  final IconData icon;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 56, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(height: 16),
+                Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                Text(description, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 18),
+                const Text('暂无内容', style: TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class ProfileCollectionPage extends StatelessWidget {
+  const ProfileCollectionPage({super.key});
+  @override
+  Widget build(BuildContext context) => const _ProfileFeaturePage(
+        title: '典藏', icon: TIcons.collection, description: '收藏的内容和作品将在这里展示。');
+}
+
+class ProfileSpacePage extends StatelessWidget {
+  const ProfileSpacePage({super.key});
+  @override
+  Widget build(BuildContext context) => const _ProfileFeaturePage(
+        title: '空间', icon: TIcons.space, description: '个人空间内容将在这里展示。');
+}
+
+class ProfileChannelPage extends StatelessWidget {
+  const ProfileChannelPage({super.key});
+  @override
+  Widget build(BuildContext context) => const _ProfileFeaturePage(
+        title: '频道', icon: TIcons.browse_gallery, description: '关注和创建的频道将在这里展示。');
+}
+
 class DDProfilePage extends StatefulWidget {
   const DDProfilePage({super.key});
   @override
@@ -1277,11 +1327,11 @@ class _DDProfilePageState extends State<DDProfilePage>
                                   const SizedBox(width: 6),
                                   Expanded(child: _ProfileActionButton(icon: Icons.auto_awesome_outlined, label: '展馆', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())))),
                                   const SizedBox(width: 6),
-                                  Expanded(child: _ProfileActionButton(icon: TIcons.collection, label: '典藏', onTap: () => _showProfileFeatureNotice(context, '典藏'))),
+                                  Expanded(child: _ProfileActionButton(icon: TIcons.collection, label: '典藏', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileCollectionPage())))),
                                   const SizedBox(width: 6),
-                                  Expanded(child: _ProfileActionButton(icon: TIcons.space, label: '空间', onTap: () => _showProfileFeatureNotice(context, '空间'))),
+                                  Expanded(child: _ProfileActionButton(icon: TIcons.space, label: '空间', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSpacePage())))),
                                   const SizedBox(width: 6),
-                                  Expanded(child: _ProfileActionButton(icon: TIcons.browse_gallery, label: '频道', onTap: () => _showProfileFeatureNotice(context, '频道'))),
+                                  Expanded(child: _ProfileActionButton(icon: TIcons.browse_gallery, label: '频道', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileChannelPage())))),
                                 ],
                               ),
                               const SizedBox(height: 8),
