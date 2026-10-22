@@ -100,7 +100,8 @@ class DDPostService {
       final message = '${decoded['error'] ?? '登录失败'}';
       if (decoded['code'] == 'ACCOUNT_DISABLED') {
         final until = decoded['disabledUntil'];
-        throw Exception('${message}|${until ?? '永久'}|${decoded['reason'] ?? ''}');
+        throw Exception(
+            '${message}|${until ?? '永久'}|${decoded['reason'] ?? ''}');
       }
       throw Exception(message);
     }
@@ -130,6 +131,33 @@ class DDPostService {
         .whereType<Map>()
         .map((item) => DDConversation.fromJson(item.cast<String, dynamic>()))
         .toList();
+  }
+
+  Future<Map<String, dynamic>> joinVoiceMatch(String token) async {
+    final response = await _client.post(_api('/voice-match/join'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map)
+      throw Exception(data is Map ? '${data['error'] ?? '语音匹配失败'}' : '语音匹配失败');
+    return data.cast<String, dynamic>();
+  }
+
+  Future<Map<String, dynamic>> voiceMatchStatus(String token) async {
+    final response = await _client.get(_api('/voice-match/status'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map)
+      throw Exception(
+          data is Map ? '${data['error'] ?? '匹配状态获取失败'}' : '匹配状态获取失败');
+    return data.cast<String, dynamic>();
+  }
+
+  Future<void> leaveVoiceMatch(String token) async {
+    final response = await _client.post(_api('/voice-match/leave'),
+        headers: {'Authorization': 'Bearer $token'});
+    if (response.statusCode != 200) throw Exception('取消匹配失败');
   }
 
   Future<Map<String, dynamic>> createWerewolfRoom(String token) async =>
@@ -493,7 +521,10 @@ class DDPostService {
   Future<void> markNotificationRead(String token, int id) async {
     await _client.post(
       _api('/notifications/read'),
-      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json'
+      },
       body: jsonEncode({'id': id}),
     );
   }
@@ -627,11 +658,13 @@ class DDPostService {
     return _fetchProfilePosts(token, '/me/liked-posts', offset: offset);
   }
 
-  Future<List<DDPost>> fetchFavoritedPosts(String token, {int offset = 0}) async {
+  Future<List<DDPost>> fetchFavoritedPosts(String token,
+      {int offset = 0}) async {
     return _fetchProfilePosts(token, '/me/favorited-posts', offset: offset);
   }
 
-  Future<List<DDPost>> _fetchProfilePosts(String token, String path, {int offset = 0}) async {
+  Future<List<DDPost>> _fetchProfilePosts(String token, String path,
+      {int offset = 0}) async {
     final response = await _client.get(
       Uri.parse('${_api(path)}?offset=$offset&limit=30'),
       headers: {'Authorization': 'Bearer $token'},
@@ -947,7 +980,6 @@ class DDPostService {
         .toList();
   }
 
-
   Future<List<Map<String, dynamic>>> searchUsers(
       String token, String query) async {
     final uri = _api('/users/search').replace(queryParameters: {
@@ -1080,11 +1112,11 @@ class DDPostService {
   }
 
   Future<Map<String, dynamic>> updatePreferences(
-      String token, {
-      bool? antiHarassment,
-      bool? smartBlock,
-      bool? matchingEnabled,
-      }) async {
+    String token, {
+    bool? antiHarassment,
+    bool? smartBlock,
+    bool? matchingEnabled,
+  }) async {
     final response = await _client.patch(
       _api('/me/preferences'),
       headers: {
@@ -1192,8 +1224,8 @@ class DDPostService {
   Future<List<Map<String, dynamic>>> fetchMyUserGifts(String token) =>
       fetchObjectList(token, '/api/me/user-gifts', 'gifts');
 
-  Future<List<Map<String, dynamic>>> fetchGiftItems(
-      String token, {required String scope}) =>
+  Future<List<Map<String, dynamic>>> fetchGiftItems(String token,
+          {required String scope}) =>
       fetchObjectList(token, '/api/gifts?scope=$scope', 'gifts');
 
   Future<Map<String, dynamic>> sendUserGift({
@@ -1271,10 +1303,23 @@ class DDPostService {
     }
   }
 
-  Future<void> appealPost({required String token, required int postId, required String content}) async {
-    final response = await _client.post(_api('/posts/$postId/appeal'), headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'}, body: jsonEncode({'content': content})).timeout(const Duration(seconds: 15));
-    final decoded = response.body.trim().isEmpty ? <String,dynamic>{} : jsonDecode(response.body) as Map<String,dynamic>;
-    if (response.statusCode < 200 || response.statusCode >= 300) throw Exception('${decoded['error'] ?? '提交申诉失败'}');
+  Future<void> appealPost(
+      {required String token,
+      required int postId,
+      required String content}) async {
+    final response = await _client
+        .post(_api('/posts/$postId/appeal'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json'
+            },
+            body: jsonEncode({'content': content}))
+        .timeout(const Duration(seconds: 15));
+    final decoded = response.body.trim().isEmpty
+        ? <String, dynamic>{}
+        : jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300)
+      throw Exception('${decoded['error'] ?? '提交申诉失败'}');
   }
 
   Future<void> reportPost(

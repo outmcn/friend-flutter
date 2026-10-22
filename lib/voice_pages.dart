@@ -121,35 +121,159 @@ class VoiceMatchPage extends StatefulWidget {
 }
 
 class _VoiceMatchPageState extends State<VoiceMatchPage> {
-  bool matching = true;
+  DDPostService? _service;
+  Timer? _poll;
+  bool matching = false;
+  bool startingCall = false;
+  Map<String, dynamic>? peer;
+  String? conversationId;
+  String? token;
+  String error = '';
+  int waitingSeconds = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startMatching();
+  }
+
+  Future<void> _startMatching() async {
+    final prefs = await SharedPreferences.getInstance();
+    final authToken = prefs.getString('friend.auth.token') ?? '';
+    if (authToken.isEmpty) {
+      if (mounted) setState(() => error = '请先登录');
+      return;
+    }
+    _service?.dispose();
+    final service = DDPostService();
+    _service = service;
+    if (mounted)
+      setState(() {
+        token = authToken;
+        matching = true;
+        error = '';
+        peer = null;
+        conversationId = null;
+        waitingSeconds = 0;
+      });
+    try {
+      final result = await service.joinVoiceMatch(authToken);
+      _applyMatch(result);
+      if (mounted && peer == null) {
+        _poll = Timer.periodic(const Duration(seconds: 2), (_) => _pollMatch());
+      }
+    } catch (_) {
+      if (mounted)
+        setState(() {
+          matching = false;
+          error = '语音匹配失败';
+        });
+    }
+  }
+
+  void _applyMatch(Map<String, dynamic> result) {
+    if (!mounted) return;
+    final matched = result['status'] == 'matched' && result['peer'] is Map;
+    if (matched) {
+      _poll?.cancel();
+      setState(() {
+        matching = false;
+        peer = Map<String, dynamic>.from(result['peer'] as Map);
+        conversationId = '${result['conversationId'] ?? ''}';
+      });
+    }
+  }
+
+  Future<void> _pollMatch() async {
+    final service = _service;
+    final authToken = token;
+    if (service == null || authToken == null || !mounted) return;
+    waitingSeconds += 2;
+    try {
+      _applyMatch(await service.voiceMatchStatus(authToken));
+    } catch (_) {}
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _leave() async {
+    _poll?.cancel();
+    final service = _service;
+    final authToken = token;
+    if (service != null && authToken != null) {
+      try {
+        await service.leaveVoiceMatch(authToken);
+      } catch (_) {}
+    }
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _startCall() async {
+    if (startingCall ||
+        token == null ||
+        conversationId == null ||
+        conversationId!.isEmpty) return;
+    setState(() => startingCall = true);
+    try {
+      final result =
+          await ImSession.instance.startCall(token!, conversationId!);
+      if (!mounted) return;
+      final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
+      final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
+      await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token!)));
+    } catch (_) {
+      if (mounted) setState(() => error = '发起通话失败');
+    } finally {
+      if (mounted) setState(() => startingCall = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    _service?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: const Color(0xff0f0a1a),
         appBar: AppBar(
             backgroundColor: Colors.transparent,
             foregroundColor: Colors.white,
-            title: Text(matching ? '语音匹配' : '匹配成功')),
+            title: Text(peer == null ? '语音匹配' : '匹配成功')),
         body: Stack(children: [
-          Positioned.fill(
+          const Positioned.fill(
               child: DecoratedBox(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                       gradient: RadialGradient(
                           center: Alignment.topRight,
                           radius: 1.4,
                           colors: [Color(0xff673a8c), Color(0xff0f0a1a)])))),
           Center(
-              child: matching
+              child: peer == null
                   ? _VoiceMatchingContent(
-                      onSuccess: () => setState(() => matching = false))
+                      waitingSeconds: waitingSeconds,
+                      error: error,
+                      onCancel: _leave)
                   : _VoiceMatchSuccess(
-                      onRestart: () => setState(() => matching = true))),
+                      peer: peer!,
+                      startingCall: startingCall,
+                      error: error,
+                      onCall: _startCall,
+                      onRestart: _startMatching)),
         ]),
       );
 }
 
 class _VoiceMatchingContent extends StatelessWidget {
-  const _VoiceMatchingContent({required this.onSuccess});
-  final VoidCallback onSuccess;
+  const _VoiceMatchingContent(
+      {required this.waitingSeconds,
+      required this.error,
+      required this.onCancel});
+  final int waitingSeconds;
+  final String error;
+  final VoidCallback onCancel;
   @override
   Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.all(28),
@@ -181,60 +305,72 @@ class _VoiceMatchingContent extends StatelessWidget {
                 fontSize: 22,
                 fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
-        const Text('戴上耳机，和陌生人聊聊吧', style: TextStyle(color: Colors.white54)),
+        const Text('等待在线用户加入语音匹配', style: TextStyle(color: Colors.white54)),
         const SizedBox(height: 22),
-        const Text('等待 00:12', style: TextStyle(color: Colors.white70)),
+        Text(
+            '等待 ${waitingSeconds ~/ 60}:${(waitingSeconds % 60).toString().padLeft(2, '0')}',
+            style: const TextStyle(color: Colors.white70)),
+        if (error.isNotEmpty)
+          Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child:
+                  Text(error, style: const TextStyle(color: Colors.redAccent))),
         const SizedBox(height: 42),
-        FilledButton(onPressed: onSuccess, child: const Text('模拟匹配成功')),
-        const SizedBox(height: 12),
-        TextButton(
-            onPressed: () => Navigator.pop(context), child: const Text('取消匹配')),
+        TextButton(onPressed: onCancel, child: const Text('取消匹配')),
       ]));
 }
 
 class _VoiceMatchSuccess extends StatelessWidget {
-  const _VoiceMatchSuccess({required this.onRestart});
+  const _VoiceMatchSuccess(
+      {required this.peer,
+      required this.startingCall,
+      required this.error,
+      required this.onCall,
+      required this.onRestart});
+  final Map<String, dynamic> peer;
+  final bool startingCall;
+  final String error;
+  final VoidCallback onCall;
   final VoidCallback onRestart;
   @override
-  Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(28),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const _VoiceUiNotice(),
-        const SizedBox(height: 32),
-        const CircleAvatar(
-            radius: 66, child: Icon(Icons.face_3_outlined, size: 62)),
-        const SizedBox(height: 24),
-        const Text('林小满',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.w800)),
-        const SizedBox(height: 9),
-        const Text('已为你匹配到一位声音伙伴', style: TextStyle(color: Colors.white60)),
-        const SizedBox(height: 14),
-        Wrap(spacing: 8, children: const [
-          Chip(label: Text('音乐')),
-          Chip(label: Text('旅行')),
-          Chip(label: Text('在线'))
-        ]),
-        const SizedBox(height: 28),
-        const Text('通话 00:03', style: TextStyle(color: Colors.white70)),
-        const SizedBox(height: 26),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.mic_none, color: Colors.white)),
-          IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.volume_up_outlined, color: Colors.white)),
-          IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon:
-                  const Icon(Icons.call_end, color: Colors.redAccent, size: 34))
-        ]),
-        const SizedBox(height: 18),
-        TextButton(onPressed: onRestart, child: const Text('重新模拟匹配')),
-      ]));
+  Widget build(BuildContext context) {
+    final avatar = '${peer['avatarUrl'] ?? ''}';
+    return Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const _VoiceUiNotice(),
+          const SizedBox(height: 32),
+          CircleAvatar(
+              radius: 66,
+              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+              child:
+                  avatar.isEmpty ? const Icon(Icons.person, size: 62) : null),
+          const SizedBox(height: 24),
+          Text('${peer['nickname'] ?? '声音伙伴'}',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 9),
+          const Text('已为你匹配到一位声音伙伴', style: TextStyle(color: Colors.white60)),
+          const SizedBox(height: 14),
+          Wrap(spacing: 8, children: [
+            for (final tag
+                in (peer['tags'] is List ? peer['tags'] as List : const []))
+              Chip(label: Text('$tag'))
+          ]),
+          const SizedBox(height: 28),
+          if (error.isNotEmpty)
+            Text(error, style: const TextStyle(color: Colors.redAccent)),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+              onPressed: startingCall ? null : onCall,
+              icon: const Icon(Icons.phone_outlined),
+              label: Text(startingCall ? '连接中…' : '开始语音通话')),
+          const SizedBox(height: 12),
+          TextButton(onPressed: onRestart, child: const Text('重新匹配'))
+        ]));
+  }
 }
 
 class _VoiceUiNotice extends StatelessWidget {
