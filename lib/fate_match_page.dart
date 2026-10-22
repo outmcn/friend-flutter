@@ -185,7 +185,7 @@ class _FateWaiting extends StatelessWidget {
             style: TextStyle(color: Colors.white60, fontSize: 11)),
         const SizedBox(height: 36),
         Stack(alignment: Alignment.center, children: [
-          for (final size in [250.0, 190.0, 132.0])
+          for (final size in [290.0, 225.0, 160.0])
             Container(
                 width: size,
                 height: size,
@@ -193,10 +193,14 @@ class _FateWaiting extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(
                         color: Colors.pinkAccent.withValues(alpha: .36)))),
-          const CircleAvatar(
-              radius: 53,
-              backgroundColor: Color(0xffff5f8f),
-              child: Icon(Icons.auto_awesome, size: 48, color: Colors.white))
+          const SizedBox(
+              width: 108,
+              height: 108,
+              child: DecoratedBox(
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: Color(0xffff5f8f)),
+                  child:
+                      Icon(Icons.auto_awesome, size: 48, color: Colors.white)))
         ]),
         const SizedBox(height: 36),
         const Text('正在寻找有缘人…',
