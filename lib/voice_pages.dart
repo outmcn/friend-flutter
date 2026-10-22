@@ -318,7 +318,7 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
                     {'size': 160.0, 'factor': .42}
                   ])
                     Transform.scale(
-                        scale: 1 + pulse.value * item['factor'] as double,
+                        scale: 1 + pulse.value * (item['factor'] as double),
                         child: Container(
                             width: item['size'] as double,
                             height: item['size'] as double,
