@@ -323,7 +323,8 @@ class _WerewolfGamePageState extends State<WerewolfGamePage>
             ),
           ),
           // 星空
-          Positioned.fill(child: CustomPaint(painter: _StarsPainter())),
+          Positioned.fill(
+              child: CustomPaint(painter: _StarsPainter(animation: _eyeCtrl))),
           // 血月
           Positioned(
             top: size.height * 0.20,
@@ -434,62 +435,70 @@ class _WerewolfGamePageState extends State<WerewolfGamePage>
 
   // ===== 修复方形边缘的月亮 =====
   Widget _buildMoon() {
-    return SizedBox(
-      width: 210,
-      height: 210,
-      child: Stack(
-        clipBehavior: Clip.none, // 允许外层发光溢出
-        children: [
-          // 使用 RadialGradient 来做环境泛光，去除了容易引起 Bug 的 boxShadow
-          Positioned(
-            left: -80,
-            top: -80,
-            right: -80,
-            bottom: -80,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFFDC8C50).withValues(alpha: 0.35),
-                    const Color(0xFFC85032).withValues(alpha: 0.15),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.3, 0.65, 1.0],
+    return AnimatedBuilder(
+      animation: _eyeCtrl,
+      builder: (context, child) {
+        final t = _eyeCtrl.value * 2 * math.pi;
+        final glow = 0.88 + 0.12 * (0.5 + 0.5 * math.sin(t));
+        return Opacity(opacity: glow, child: child);
+      },
+      child: SizedBox(
+        width: 210,
+        height: 210,
+        child: Stack(
+          clipBehavior: Clip.none, // 允许外层发光溢出
+          children: [
+            // 使用 RadialGradient 来做环境泛光，去除了容易引起 Bug 的 boxShadow
+            Positioned(
+              left: -80,
+              top: -80,
+              right: -80,
+              bottom: -80,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFFDC8C50).withValues(alpha: 0.35),
+                      const Color(0xFFC85032).withValues(alpha: 0.15),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.3, 0.65, 1.0],
+                  ),
                 ),
               ),
             ),
-          ),
-          // 月亮本体
-          Container(
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                center: Alignment(-0.24, -0.36),
-                radius: 0.9,
-                colors: [
-                  Color(0xFFF5E6C8),
-                  Color(0xFFE8C99A),
-                  Color(0xFFD4A06B),
-                  Color(0xFFB87448),
-                  Color(0xFF8B4A30),
-                ],
-                stops: [0.0, 0.25, 0.5, 0.72, 1.0],
+            // 月亮本体
+            Container(
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  center: Alignment(-0.24, -0.36),
+                  radius: 0.9,
+                  colors: [
+                    Color(0xFFF5E6C8),
+                    Color(0xFFE8C99A),
+                    Color(0xFFD4A06B),
+                    Color(0xFFB87448),
+                    Color(0xFF8B4A30),
+                  ],
+                  stops: [0.0, 0.25, 0.5, 0.72, 1.0],
+                ),
+              ),
+              child: ClipOval(
+                child: Stack(
+                  children: [
+                    _crater(left: 40, top: 45, d: 44, a: 0.35),
+                    _crater(right: 40, top: 65, d: 32, a: 0.28),
+                    _crater(left: 70, top: 115, d: 56, a: 0.30),
+                    _crater(right: 55, top: 120, d: 24, a: 0.22),
+                    _crater(left: 26, top: 110, d: 20, a: 0.25),
+                  ],
+                ),
               ),
             ),
-            child: ClipOval(
-              child: Stack(
-                children: [
-                  _crater(left: 40, top: 45, d: 44, a: 0.35),
-                  _crater(right: 40, top: 65, d: 32, a: 0.28),
-                  _crater(left: 70, top: 115, d: 56, a: 0.30),
-                  _crater(right: 55, top: 120, d: 24, a: 0.22),
-                  _crater(left: 26, top: 110, d: 20, a: 0.25),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1300,6 +1309,9 @@ class _PawPainter extends CustomPainter {
 }
 
 class _StarsPainter extends CustomPainter {
+  _StarsPainter({required this.animation}) : super(repaint: animation);
+  final Animation<double> animation;
+
   @override
   void paint(Canvas canvas, Size size) {
     final rand = math.Random(42);
@@ -1308,12 +1320,14 @@ class _StarsPainter extends CustomPainter {
       final x = rand.nextDouble() * size.width;
       final y = rand.nextDouble() * size.height * 0.5;
       final r = 0.5 + rand.nextDouble() * 0.8;
-      paint.color =
-          Colors.white.withValues(alpha: 0.3 + rand.nextDouble() * 0.5);
-      canvas.drawCircle(Offset(x, y), r, paint);
+      final phase = (animation.value + i * 0.071) % 1.0;
+      final twinkle = 0.35 + 0.65 * (0.5 + 0.5 * math.sin(phase * 2 * math.pi));
+      paint.color = Colors.white.withValues(alpha: twinkle);
+      canvas.drawCircle(Offset(x, y), r * (0.85 + twinkle * 0.25), paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _StarsPainter oldDelegate) =>
+      oldDelegate.animation.value != animation.value;
 }
