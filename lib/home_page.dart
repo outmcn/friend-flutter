@@ -102,7 +102,7 @@ class HomePage extends StatelessWidget {
               _HomeCartoonCard(
                 icon: Icons.menu_book_outlined,
                 title: '视频狼人杀',
-                subtitle: '黑夜降临 点 谁是狼人',
+                subtitle: '黑 夜 降 临 · 谁 是 狼 人',
                 badge: 'GO',
                 colors: const [Color(0xff352b62), Color(0xff8b4e9f)],
                 onTap: () => Navigator.push(
