@@ -157,7 +157,8 @@ class _FateMatchPageState extends State<FateMatchPage> {
                       seconds: waitingSeconds,
                       error: error,
                       onCancel: _leave,
-                      onStart: _startMatching)
+                      onStart: _startMatching,
+                      matching: matching)
                   : _FateSuccess(
                       peer: peer!,
                       error: error,
@@ -172,11 +173,13 @@ class _FateWaiting extends StatefulWidget {
       {required this.seconds,
       required this.error,
       required this.onCancel,
-      required this.onStart});
+      required this.onStart,
+      required this.matching});
   final int seconds;
   final String error;
   final VoidCallback onCancel;
   final VoidCallback onStart;
+  final bool matching;
   @override
   State<_FateWaiting> createState() => _FateWaitingState();
 }
@@ -244,11 +247,13 @@ class _FateWaitingState extends State<_FateWaiting>
                   fontSize: 22,
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
-          const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white54)),
-          const SizedBox(height: 22),
-          Text(
-              '等待 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')}',
-              style: const TextStyle(color: Colors.white70)),
+          if (widget.matching) ...[
+            const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white54)),
+            const SizedBox(height: 22),
+            Text(
+                '等待 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')}',
+                style: const TextStyle(color: Colors.white70)),
+          ],
           if (widget.error.isNotEmpty)
             Padding(
                 padding: const EdgeInsets.only(top: 16),
@@ -259,8 +264,10 @@ class _FateWaitingState extends State<_FateWaiting>
               onPressed: widget.onStart,
               icon: const Icon(Icons.favorite_outline),
               label: const Text('开始匹配')),
-          const SizedBox(height: 12),
-          TextButton(onPressed: widget.onCancel, child: const Text('返回')),
+          if (widget.matching) ...[
+            const SizedBox(height: 12),
+            TextButton(onPressed: widget.onCancel, child: const Text('取消匹配')),
+          ],
         ]),
       );
 }
