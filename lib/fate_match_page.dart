@@ -179,11 +179,10 @@ class _FateWaiting extends StatelessWidget {
   final VoidCallback onStart;
   @override
   Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(26),
+      padding: const EdgeInsets.all(28),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Text('缘分匹配',
-            style: TextStyle(color: Colors.white60, fontSize: 11)),
-        const SizedBox(height: 36),
+        const _VoiceUiNotice(),
+        const SizedBox(height: 32),
         Stack(alignment: Alignment.center, children: [
           for (final size in [290.0, 225.0, 160.0])
             Container(
@@ -200,16 +199,16 @@ class _FateWaiting extends StatelessWidget {
                   decoration: BoxDecoration(
                       shape: BoxShape.circle, color: Color(0xffff5f8f)),
                   child:
-                      Icon(Icons.auto_awesome, size: 48, color: Colors.white)))
+                      Icon(Icons.auto_awesome, size: 45, color: Colors.white)))
         ]),
-        const SizedBox(height: 36),
+        const SizedBox(height: 48),
         const Text('正在寻找有缘人…',
             style: TextStyle(
                 color: Colors.white,
-                fontSize: 23,
+                fontSize: 22,
                 fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
-        const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white60)),
+        const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white54)),
         const SizedBox(height: 22),
         Text('等待 ${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}',
             style: const TextStyle(color: Colors.white70)),
@@ -218,13 +217,13 @@ class _FateWaiting extends StatelessWidget {
               padding: const EdgeInsets.only(top: 16),
               child:
                   Text(error, style: const TextStyle(color: Colors.redAccent))),
-        const SizedBox(height: 32),
+        const SizedBox(height: 42),
         FilledButton.icon(
             onPressed: onStart,
             icon: const Icon(Icons.favorite_outline),
             label: const Text('开始匹配')),
         const SizedBox(height: 12),
-        TextButton(onPressed: onCancel, child: const Text('返回'))
+        TextButton(onPressed: onCancel, child: const Text('返回')),
       ]));
 }
 
