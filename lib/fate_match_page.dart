@@ -87,15 +87,40 @@ class _FateMatchPageState extends State<FateMatchPage> {
   }
 
   Future<void> _openChat() async {
-    if (token == null || peer == null || conversationId == null) return;
+    if (token == null || peer == null) return;
     try {
-      final id =
-          await _service!.createDirectConversation(token!, '${peer!['id']}');
+      final id = await _service!.createDirectConversation(
+        token!,
+        '${peer!['id']}',
+      );
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserId = prefs.getString('friend.auth.userId') ?? '';
       if (!mounted) return;
-      final chats = await _service!.fetchImConversations(token!);
-      final found =
-          chats.where((x) => x.id == id).cast<DDConversation?>().firstOrNull;
-      if (found != null) Navigator.pop(context, {'conversation': found});
+      final chat = _ChatPreview(
+        '${peer!['nickname'] ?? '有缘人'}',
+        '开始一段新的聊天',
+        '${peer!['avatarUrl'] ?? ''}',
+        '${peer!['avatarKey'] ?? ''}',
+        '${peer!['id'] ?? ''}',
+        id,
+        0,
+        null,
+        null,
+        'dm',
+        false,
+        false,
+        true,
+        (peer!['latitude'] as num?)?.toDouble(),
+        (peer!['longitude'] as num?)?.toDouble(),
+      );
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => _ChatDetailPage(
+            chat: chat,
+            currentUserId: currentUserId,
+          ),
+        ),
+      );
     } catch (_) {
       if (mounted) setState(() => error = '打开聊天失败');
     }
