@@ -203,7 +203,15 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
         await service.leaveVoiceMatch(authToken);
       } catch (_) {}
     }
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      setState(() {
+        matching = false;
+        waitingSeconds = 0;
+        error = '';
+        peer = null;
+        conversationId = null;
+      });
+    }
   }
 
   Future<void> _startCall() async {

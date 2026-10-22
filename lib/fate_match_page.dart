@@ -77,12 +77,22 @@ class _FateMatchPageState extends State<FateMatchPage> {
 
   Future<void> _leave() async {
     _poll?.cancel();
-    if (_service != null && token != null) {
+    final service = _service;
+    final authToken = token;
+    if (service != null && authToken != null) {
       try {
-        await _service!.leaveFateMatch(token!);
+        await service.leaveFateMatch(authToken);
       } catch (_) {}
     }
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      setState(() {
+        matching = false;
+        waitingSeconds = 0;
+        error = '';
+        peer = null;
+        conversationId = null;
+      });
+    }
   }
 
   Future<void> _openChat() async {
