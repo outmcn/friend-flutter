@@ -293,6 +293,20 @@ class _FateWaitingState extends State<_FateWaiting>
               label: Text(widget.matching
                   ? '正在匹配 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')} 点击取消'
                   : '开始匹配')),
+          const SizedBox(height: 12),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            OutlinedButton.icon(
+                onPressed: () => _showTopNotice(
+                    context, const SnackBar(content: Text('同城匹配功能即将开放'))),
+                icon: const Icon(Icons.location_on_outlined),
+                label: const Text('同城匹配')),
+            const SizedBox(width: 10),
+            OutlinedButton.icon(
+                onPressed: () => _showTopNotice(
+                    context, const SnackBar(content: Text('加速匹配功能即将开放'))),
+                icon: const Icon(Icons.bolt_outlined),
+                label: const Text('加速匹配')),
+          ]),
         ]),
       );
 }
