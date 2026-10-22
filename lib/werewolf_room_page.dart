@@ -14,6 +14,16 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
   final service = DDPostService();
   final TextEditingController _notebookController = TextEditingController();
   late Map<String, dynamic> room;
+  final Map<String, bool> settings = {
+    '音乐': true,
+    '音效': true,
+    '开启视频': false,
+    '其他玩家视频': true,
+    '隐藏身份牌': false,
+    '屏蔽礼物': false,
+    '固定座位': true,
+    '狼人发言可自爆': false,
+  };
   bool ready = false;
   String? error;
 
@@ -77,20 +87,70 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
     }
   }
 
+  Widget _settingRow(String label, bool value, ValueChanged<bool> onChanged) {
+    return Container(
+      height: 48,
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0x19c8965a))),
+      ),
+      child: Row(children: [
+        Expanded(
+            child: Text(label,
+                style:
+                    const TextStyle(color: Color(0xffe3d0b2), fontSize: 14))),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          thumbColor: const WidgetStatePropertyAll(Color(0xffffc477)),
+          trackColor: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.selected)
+                  ? const Color(0xff874126)
+                  : const Color(0xff30282b)),
+        ),
+      ]),
+    );
+  }
+
   void _showSettings() {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: const Color(0xff151119),
+      barrierColor: Colors.black.withValues(alpha: .72),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('房间设置',
-              style: TextStyle(
-                  color: Color(0xffffe4b8),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700)),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 14, 22, 18),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: const Color(0xffc8965a).withValues(alpha: .35),
+                      borderRadius: BorderRadius.circular(4))),
+              const SizedBox(height: 18),
+              Row(children: [
+                const Expanded(
+                    child: Text('房间设置',
+                        style: TextStyle(
+                            color: Color(0xffffe4b8),
+                            fontSize: 19,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2))),
+                IconButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.close_rounded,
+                        color: Color(0xffb69a7b))),
+              ]),
+              const SizedBox(height: 8),
+              ...settings.keys.map((label) => _settingRow(
+                  label,
+                  settings[label]!,
+                  (value) => setSheetState(() => settings[label] = value))),
+            ]),
+          ),
         ),
       ),
     );
