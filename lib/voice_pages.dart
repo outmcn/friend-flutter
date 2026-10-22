@@ -333,29 +333,21 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
         AnimatedBuilder(
             animation: pulse,
             builder: (_, __) => Stack(alignment: Alignment.center, children: [
-                  for (final size in [290.0, 225.0, 160.0])
-                    Container(
-                        width: size,
-                        height: size,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: Colors.purpleAccent
-                                    .withValues(alpha: .35)))),
                   if (widget.matching)
-                    Opacity(
-                        opacity: 1 - pulse.value,
-                        child: Transform.scale(
-                            scale: .38 + pulse.value * .62,
-                            child: Container(
-                                width: 290,
-                                height: 290,
-                                decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: Colors.purpleAccent
-                                            .withValues(alpha: .65),
-                                        width: 1.5))))),
+                    for (final size in [290.0, 225.0, 160.0])
+                      Opacity(
+                          opacity: 1 - pulse.value,
+                          child: Transform.scale(
+                              scale: .38 + pulse.value * .62,
+                              child: Container(
+                                  width: size,
+                                  height: size,
+                                  decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.purpleAccent
+                                              .withValues(alpha: .65),
+                                          width: 1.5))))),
                   Container(
                       width: 108,
                       height: 108,
