@@ -44,6 +44,7 @@ part 'shared_clippers.dart';
 part 'shared_models.dart';
 part 'home_page.dart';
 part 'werewolf_game_page.dart';
+part 'werewolf_room_page.dart';
 part 'create_post_page.dart';
 part 'notifications_page.dart';
 part 'other_profile_page.dart';

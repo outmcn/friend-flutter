@@ -212,8 +212,8 @@ class _WerewolfGamePageState extends State<WerewolfGamePage>
     try {
       final d = await service.createWerewolfRoom(await _token());
       if (mounted) {
-        setState(() => roomCode = '${d['roomCode'] ?? ''}');
-        _showRoomCode();
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => WerewolfRoomPage(room: d)));
       }
     } catch (e) {
       if (mounted) setState(() => error = '$e');
@@ -263,11 +263,9 @@ class _WerewolfGamePageState extends State<WerewolfGamePage>
                         try {
                           final d = await service.joinWerewolfRoom(
                               await _token(), code, password);
-                          if (mounted) {
-                            setState(
-                                () => roomCode = '${d['roomCode'] ?? code}');
-                            _showRoomCode();
-                          }
+                          if (!mounted) return;
+                          Navigator.of(this.context).push(MaterialPageRoute(
+                              builder: (_) => WerewolfRoomPage(room: d)));
                         } catch (e) {
                           if (mounted) setState(() => error = '$e');
                         }
