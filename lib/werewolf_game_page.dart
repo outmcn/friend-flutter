@@ -941,7 +941,7 @@ class _WerewolfGamePageState extends State<WerewolfGamePage>
               const SizedBox(height: 10),
               _zoneItem('进阶区', '策略博弈 · 高手过招', '推荐'),
               const SizedBox(height: 10),
-              _zoneItem('狼王区', '巅峰对决 · 王者之争', '高难'),
+              _zoneItem('排位区', '巅峰对决 · 王者之争', '高难'),
               const SizedBox(height: 18),
               Container(
                 padding:
