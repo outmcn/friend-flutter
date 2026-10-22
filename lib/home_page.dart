@@ -101,8 +101,8 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 24),
               _HomeCartoonCard(
                 icon: Icons.menu_book_outlined,
-                title: '玩剧本',
-                subtitle: '拨开迷雾，寻找真相',
+                title: '视频狼人杀',
+                subtitle: '黑夜降临 点 谁是狼人',
                 badge: 'GO',
                 colors: const [Color(0xff352b62), Color(0xff8b4e9f)],
                 onTap: () => Navigator.push(
