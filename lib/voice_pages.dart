@@ -292,7 +292,7 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
     super.initState();
     pulse = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1800))
-      ..repeat(reverse: true);
+      ..repeat();
   }
 
   @override
