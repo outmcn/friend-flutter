@@ -227,8 +227,6 @@ class _FateWaitingState extends State<_FateWaiting>
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.all(28),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const _VoiceUiNotice(),
-          const SizedBox(height: 32),
           AnimatedBuilder(
               animation: pulse,
               builder: (_, __) {
