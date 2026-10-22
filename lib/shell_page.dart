@@ -1195,7 +1195,7 @@ class _RadarPainter extends CustomPainter {
     if (!hasPeer || bearing == null) return;
     final a = bearing! * math.pi / 180;
     final point = Offset(o.dx + math.sin(a) * r, o.dy - math.cos(a) * r);
-    c.drawCircle(point, 5, Paint()..color = const Color(0xFF59D9FF));
+    c.drawCircle(point, 3, Paint()..color = const Color(0xFF59D9FF));
   }
   @override bool shouldRepaint(covariant _RadarPainter old) => old.heading != heading || old.bearing != bearing || old.hasPeer != hasPeer;
 }
