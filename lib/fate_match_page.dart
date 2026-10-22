@@ -191,8 +191,20 @@ class _FateWaitingState extends State<_FateWaiting>
   void initState() {
     super.initState();
     pulse = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1800))
-      ..repeat();
+        vsync: this, duration: const Duration(milliseconds: 1800));
+    if (widget.matching) pulse.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FateWaiting oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.matching && !oldWidget.matching) {
+      pulse
+        ..reset()
+        ..repeat();
+    } else if (!widget.matching && oldWidget.matching) {
+      pulse.reset();
+    }
   }
 
   @override
@@ -208,38 +220,39 @@ class _FateWaitingState extends State<_FateWaiting>
           const _VoiceUiNotice(),
           const SizedBox(height: 32),
           AnimatedBuilder(
-            animation: pulse,
-            builder: (_, __) => Transform.scale(
-              scale: .96 + pulse.value * .04,
-              child: Stack(alignment: Alignment.center, children: [
-                for (final item in const [
-                  {'size': 290.0, 'factor': .22},
-                  {'size': 225.0, 'factor': .30},
-                  {'size': 160.0, 'factor': .42},
-                ])
-                  Transform.scale(
-                    scale: 1 + pulse.value * (item['factor'] as double),
-                    child: Container(
-                      width: item['size'] as double,
-                      height: item['size'] as double,
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: Colors.pinkAccent
-                                  .withValues(alpha: .36 - pulse.value * .12))),
-                    ),
-                  ),
-                const SizedBox(
-                    width: 108,
-                    height: 108,
-                    child: DecoratedBox(
-                        decoration: BoxDecoration(
+              animation: pulse,
+              builder: (_, __) => Stack(alignment: Alignment.center, children: [
+                    for (final size in [290.0, 225.0, 160.0])
+                      Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.pinkAccent
+                                      .withValues(alpha: .35)))),
+                    if (widget.matching)
+                      Opacity(
+                          opacity: 1 - pulse.value,
+                          child: Transform.scale(
+                              scale: .38 + pulse.value * .62,
+                              child: Container(
+                                  width: 290,
+                                  height: 290,
+                                  decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.pinkAccent
+                                              .withValues(alpha: .65),
+                                          width: 1.5))))),
+                    Container(
+                        width: 108,
+                        height: 108,
+                        decoration: const BoxDecoration(
                             shape: BoxShape.circle, color: Color(0xffff5f8f)),
-                        child: Icon(Icons.auto_awesome,
-                            size: 45, color: Colors.white))),
-              ]),
-            ),
-          ),
+                        child: const Icon(Icons.auto_awesome,
+                            color: Colors.white, size: 45))
+                  ])),
           const SizedBox(height: 48),
           const Text('正在寻找有缘人…',
               style: TextStyle(
