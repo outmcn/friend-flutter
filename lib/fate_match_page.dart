@@ -172,7 +172,9 @@ class _FateMatchPageState extends State<FateMatchPage> {
                       error: error,
                       onCancel: _leave,
                       onStart: matching ? _leave : _startMatching,
-                      matching: matching)
+                      onCityStart: () => _startMatching(mode: 'city'),
+                      matching: matching,
+                      remaining: fateRemaining)
                   : _FateSuccess(
                       peer: peer!,
                       error: error,
@@ -188,12 +190,16 @@ class _FateWaiting extends StatefulWidget {
       required this.error,
       required this.onCancel,
       required this.onStart,
-      required this.matching});
+      required this.onCityStart,
+      required this.matching,
+      required this.remaining});
   final int seconds;
   final String error;
   final VoidCallback onCancel;
   final VoidCallback onStart;
+  final VoidCallback onCityStart;
   final bool matching;
+  final int remaining;
   @override
   State<_FateWaiting> createState() => _FateWaitingState();
 }
@@ -289,7 +295,7 @@ class _FateWaitingState extends State<_FateWaiting>
                 padding: const EdgeInsets.only(top: 16),
                 child: Text(widget.error,
                     style: const TextStyle(color: Colors.redAccent))),
-          Text('今日剩余 $fateRemaining 次',
+          Text('今日剩余 ${widget.remaining} 次',
               style: const TextStyle(color: Colors.white70)),
           const SizedBox(height: 8),
           FilledButton.icon(
@@ -302,7 +308,7 @@ class _FateWaitingState extends State<_FateWaiting>
           const SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             OutlinedButton.icon(
-                onPressed: () => _startMatching(mode: 'city'),
+                onPressed: widget.onCityStart,
                 icon: const Icon(Icons.location_on_outlined),
                 label: const Text('同城匹配')),
             const SizedBox(width: 10),

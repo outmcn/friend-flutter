@@ -272,7 +272,9 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
                       error: error,
                       onCancel: _leave,
                       onStart: matching ? _leave : _startMatching,
-                      matching: matching)
+                      onCityStart: () => _startMatching(mode: 'city'),
+                      matching: matching,
+                      remaining: voiceRemaining)
                   : _VoiceMatchSuccess(
                       peer: peer!,
                       startingCall: startingCall,
@@ -289,12 +291,16 @@ class _VoiceMatchingContent extends StatefulWidget {
       required this.error,
       required this.onCancel,
       required this.onStart,
-      required this.matching});
+      required this.onCityStart,
+      required this.matching,
+      required this.remaining});
   final int waitingSeconds;
   final String error;
   final VoidCallback onCancel;
   final VoidCallback onStart;
+  final VoidCallback onCityStart;
   final bool matching;
+  final int remaining;
   @override
   State<_VoiceMatchingContent> createState() => _VoiceMatchingContentState();
 }
@@ -389,7 +395,7 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
               padding: const EdgeInsets.only(top: 16),
               child: Text(widget.error,
                   style: const TextStyle(color: Colors.redAccent))),
-        Text('今日剩余 $voiceRemaining 次',
+        Text('今日剩余 ${widget.remaining} 次',
             style: const TextStyle(color: Colors.white70)),
         const SizedBox(height: 8),
         FilledButton.icon(
@@ -403,7 +409,7 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             OutlinedButton.icon(
-              onPressed: () => _startMatching(mode: 'city'),
+              onPressed: widget.onCityStart,
               icon: const Icon(Icons.location_on_outlined),
               label: const Text('同城匹配'),
             ),
