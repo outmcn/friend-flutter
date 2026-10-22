@@ -390,6 +390,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           row.updatedAt,
           row.kind,
           _pinnedConversationIds.contains(row.id),
+          _mutedConversationIds.contains(row.id),
+          row.peer?.online ?? false,
+          row.peer?.latitude,
+          row.peer?.longitude,
         ));
       }
       mapped.sort((a, b) {
@@ -1029,6 +1033,8 @@ class _ChatPreview {
         pinned ?? this.pinned,
         muted ?? this.muted,
         online,
+        peerLatitude,
+        peerLongitude,
       );
 
   Map<String, dynamic> toCache() => {
