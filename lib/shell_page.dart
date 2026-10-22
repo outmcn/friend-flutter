@@ -1167,7 +1167,7 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
             alignment: Alignment.bottomCenter,
             child: CustomPaint(
               size: const Size(100, 100),
-              painter: _RadarPainter(bearing: bearing, heading: heading, hasPeer: bearing != null, avatar: widget.avatar),
+              painter: _RadarPainter(bearing: bearing, heading: heading, distanceKm: distance, hasPeer: bearing != null, avatar: widget.avatar),
             ),
           ),
         ],
@@ -1177,9 +1177,10 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
 }
 
 class _RadarPainter extends CustomPainter {
-  _RadarPainter({required this.bearing, required this.heading, required this.hasPeer, required this.avatar});
+  _RadarPainter({required this.bearing, required this.heading, required this.distanceKm, required this.hasPeer, required this.avatar});
   final double? bearing;
   final double heading;
+  final double? distanceKm;
   final bool hasPeer;
   final ImageProvider avatar;
   @override
@@ -1194,10 +1195,17 @@ class _RadarPainter extends CustomPainter {
     c.drawPath(sector, Paint()..color = const Color(0x334CFFD9));
     if (!hasPeer || bearing == null) return;
     final a = bearing! * math.pi / 180;
-    final point = Offset(o.dx + math.sin(a) * r, o.dy - math.cos(a) * r);
+    final ringRadius = distanceKm == null
+        ? r
+        : distanceKm! <= 10
+            ? r * .44
+            : distanceKm! <= 30
+                ? r * .72
+                : r;
+    final point = Offset(o.dx + math.sin(a) * ringRadius, o.dy - math.cos(a) * ringRadius);
     c.drawCircle(point, 3, Paint()..color = const Color(0xFF59D9FF));
   }
-  @override bool shouldRepaint(covariant _RadarPainter old) => old.heading != heading || old.bearing != bearing || old.hasPeer != hasPeer;
+  @override bool shouldRepaint(covariant _RadarPainter old) => old.heading != heading || old.bearing != bearing || old.distanceKm != distanceKm || old.hasPeer != hasPeer;
 }
 
 class _ChatDetailPageState extends State<_ChatDetailPage> {
