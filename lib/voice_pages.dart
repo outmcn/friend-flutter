@@ -130,6 +130,7 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
   String? token;
   String error = '';
   int waitingSeconds = 0;
+  int voiceRemaining = 5;
 
   @override
   void initState() {
@@ -157,6 +158,9 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
       });
     try {
       final result = await service.joinVoiceMatch(authToken, mode: mode);
+      voiceRemaining =
+          ((result['quota'] as Map?)?['remaining'] as num?)?.toInt() ??
+              voiceRemaining;
       _applyMatch(result);
       if (mounted && peer == null) {
         _poll = Timer.periodic(const Duration(seconds: 2), (_) => _pollMatch());
@@ -385,7 +389,9 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
               padding: const EdgeInsets.only(top: 16),
               child: Text(widget.error,
                   style: const TextStyle(color: Colors.redAccent))),
-        const SizedBox(height: 42),
+        Text('今日剩余 $voiceRemaining 次',
+            style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 8),
         FilledButton.icon(
             onPressed: widget.onStart,
             icon: Icon(widget.matching ? Icons.close : Icons.mic_none),

@@ -15,6 +15,7 @@ class _FateMatchPageState extends State<FateMatchPage> {
   Map<String, dynamic>? peer;
   bool matching = false;
   int waitingSeconds = 0;
+  int fateRemaining = 30;
   String error = '';
 
   @override
@@ -42,6 +43,9 @@ class _FateMatchPageState extends State<FateMatchPage> {
       });
     try {
       final result = await _service!.joinFateMatch(authToken, mode: mode);
+      fateRemaining =
+          ((result['quota'] as Map?)?['remaining'] as num?)?.toInt() ??
+              fateRemaining;
       _apply(result);
       if (mounted && peer == null)
         _poll =
@@ -285,7 +289,9 @@ class _FateWaitingState extends State<_FateWaiting>
                 padding: const EdgeInsets.only(top: 16),
                 child: Text(widget.error,
                     style: const TextStyle(color: Colors.redAccent))),
-          const SizedBox(height: 42),
+          Text('今日剩余 $fateRemaining 次',
+              style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 8),
           FilledButton.icon(
               onPressed: widget.onStart,
               icon:
