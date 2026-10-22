@@ -14,6 +14,18 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
   final service = DDPostService();
   final TextEditingController _notebookController = TextEditingController();
   late Map<String, dynamic> room;
+  static const List<String> _noticeLines = [
+    '系统提示：房间创建成功，等待玩家加入',
+    '系统提示：当前玩法为预女猎守',
+    '系统提示：请确认身份牌并准备',
+    '系统提示：请勿发送与游戏无关的信息',
+    '系统提示：房主准备后将开始游戏',
+    '系统提示：请保持麦克风清晰，轮到发言时再开启',
+    '系统提示：投票阶段请谨慎选择目标',
+    '系统提示：夜晚行动期间请耐心等待',
+    '系统提示：游戏中禁止透露身份信息',
+    '系统提示：祝各位玩家游戏愉快',
+  ];
   final Map<String, bool> settings = {
     '音乐': true,
     '音效': true,
@@ -278,25 +290,78 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
     );
   }
 
+  Widget _noticeLine(String text) => Row(children: [
+        const Icon(Icons.info_outline_rounded,
+            size: 13, color: Color(0xffd99a5e)),
+        const SizedBox(width: 7),
+        Expanded(
+            child: Text(text,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    const TextStyle(color: Color(0xffb9a28a), fontSize: 10))),
+      ]);
+
+  void _showAllNotices() {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: .72),
+      builder: (dialogContext) => Dialog(
+        backgroundColor: const Color(0xff16131b),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 26, vertical: 80),
+        child: Container(
+          height: MediaQuery.of(context).size.height * .62,
+          padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
+          child: Column(children: [
+            Row(children: [
+              const Expanded(
+                  child: Text('全部系统提示',
+                      style: TextStyle(
+                          color: Color(0xffffe4b8),
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700))),
+              IconButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  icon: const Icon(Icons.close_rounded,
+                      color: Color(0xffcbb49a))),
+            ]),
+            const Divider(color: Color(0x33c8965a), height: 1),
+            const SizedBox(height: 8),
+            Expanded(
+                child: SingleChildScrollView(
+                    child: Column(
+                        children: _noticeLines.map(_noticeLine).toList()))),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Widget _startedNotice() => Container(
         width: double.infinity,
-        height: 76,
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        height: 92,
+        padding: const EdgeInsets.fromLTRB(20, 7, 12, 7),
         decoration: const BoxDecoration(color: Color(0xd4141219)),
-        child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Text('系统提示：游戏已开始，请确认身份牌',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Color(0xffb9a28a), fontSize: 10)),
-              Text('系统提示：请勿发送与游戏无关的信息',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Color(0xffb9a28a), fontSize: 10)),
-              Text('系统提示：夜晚行动期间请耐心等待',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Color(0xffb9a28a), fontSize: 10)),
-            ]),
+        child: Stack(children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 30),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _noticeLines.take(5).map(_noticeLine).toList(),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              onPressed: _showAllNotices,
+              icon: const Icon(Icons.open_in_full_rounded,
+                  size: 17, color: Color(0xffd99a5e)),
+            ),
+          ),
+        ]),
       );
 
   Widget _bottomAction(IconData icon, String label, VoidCallback? onTap) {
