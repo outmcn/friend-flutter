@@ -20,7 +20,6 @@ class _FateMatchPageState extends State<FateMatchPage> {
   @override
   void initState() {
     super.initState();
-    _startMatching();
   }
 
   Future<void> _startMatching() async {
@@ -151,7 +150,10 @@ class _FateMatchPageState extends State<FateMatchPage> {
           Center(
               child: peer == null
                   ? _FateWaiting(
-                      seconds: waitingSeconds, error: error, onCancel: _leave)
+                      seconds: waitingSeconds,
+                      error: error,
+                      onCancel: _leave,
+                      onStart: _startMatching)
                   : _FateSuccess(
                       peer: peer!,
                       error: error,
@@ -163,10 +165,14 @@ class _FateMatchPageState extends State<FateMatchPage> {
 
 class _FateWaiting extends StatelessWidget {
   const _FateWaiting(
-      {required this.seconds, required this.error, required this.onCancel});
+      {required this.seconds,
+      required this.error,
+      required this.onCancel,
+      required this.onStart});
   final int seconds;
   final String error;
   final VoidCallback onCancel;
+  final VoidCallback onStart;
   @override
   Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.all(26),
@@ -205,7 +211,12 @@ class _FateWaiting extends StatelessWidget {
               child:
                   Text(error, style: const TextStyle(color: Colors.redAccent))),
         const SizedBox(height: 32),
-        TextButton(onPressed: onCancel, child: const Text('取消匹配'))
+        FilledButton.icon(
+            onPressed: onStart,
+            icon: const Icon(Icons.favorite_outline),
+            label: const Text('开始匹配')),
+        const SizedBox(height: 12),
+        TextButton(onPressed: onCancel, child: const Text('返回'))
       ]));
 }
 

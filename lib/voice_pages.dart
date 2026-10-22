@@ -134,7 +134,6 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
   @override
   void initState() {
     super.initState();
-    _startMatching();
   }
 
   Future<void> _startMatching() async {
@@ -255,7 +254,8 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
                   ? _VoiceMatchingContent(
                       waitingSeconds: waitingSeconds,
                       error: error,
-                      onCancel: _leave)
+                      onCancel: _leave,
+                      onStart: _startMatching)
                   : _VoiceMatchSuccess(
                       peer: peer!,
                       startingCall: startingCall,
@@ -270,10 +270,12 @@ class _VoiceMatchingContent extends StatelessWidget {
   const _VoiceMatchingContent(
       {required this.waitingSeconds,
       required this.error,
-      required this.onCancel});
+      required this.onCancel,
+      required this.onStart});
   final int waitingSeconds;
   final String error;
   final VoidCallback onCancel;
+  final VoidCallback onStart;
   @override
   Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.all(28),
@@ -316,7 +318,12 @@ class _VoiceMatchingContent extends StatelessWidget {
               child:
                   Text(error, style: const TextStyle(color: Colors.redAccent))),
         const SizedBox(height: 42),
-        TextButton(onPressed: onCancel, child: const Text('取消匹配')),
+        FilledButton.icon(
+            onPressed: onStart,
+            icon: const Icon(Icons.mic_none),
+            label: const Text('开始匹配')),
+        const SizedBox(height: 12),
+        TextButton(onPressed: onCancel, child: const Text('返回')),
       ]));
 }
 
