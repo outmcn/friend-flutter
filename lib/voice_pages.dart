@@ -259,7 +259,7 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
                       waitingSeconds: waitingSeconds,
                       error: error,
                       onCancel: _leave,
-                      onStart: _startMatching,
+                      onStart: matching ? _leave : _startMatching,
                       matching: matching)
                   : _VoiceMatchSuccess(
                       peer: peer!,
@@ -376,14 +376,10 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
         const SizedBox(height: 42),
         FilledButton.icon(
             onPressed: widget.onStart,
-            icon: Icon(widget.matching ? Icons.hourglass_top : Icons.mic_none),
+            icon: Icon(widget.matching ? Icons.close : Icons.mic_none),
             label: Text(widget.matching
-                ? '匹配中 ${widget.waitingSeconds ~/ 60}:${(widget.waitingSeconds % 60).toString().padLeft(2, '0')}'
+                ? '正在匹配 ${widget.waitingSeconds ~/ 60}:${(widget.waitingSeconds % 60).toString().padLeft(2, '0')} 点击取消'
                 : '开始匹配')),
-        if (widget.matching) ...[
-          const SizedBox(height: 12),
-          TextButton(onPressed: widget.onCancel, child: const Text('取消匹配')),
-        ],
       ]));
 }
 

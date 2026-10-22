@@ -157,7 +157,7 @@ class _FateMatchPageState extends State<FateMatchPage> {
                       seconds: waitingSeconds,
                       error: error,
                       onCancel: _leave,
-                      onStart: _startMatching,
+                      onStart: matching ? _leave : _startMatching,
                       matching: matching)
                   : _FateSuccess(
                       peer: peer!,
@@ -254,15 +254,13 @@ class _FateWaitingState extends State<_FateWaiting>
                             color: Colors.white, size: 45))
                   ])),
           const SizedBox(height: 48),
-          const Text('正在寻找有缘人…',
-              style: TextStyle(
+          Text(widget.matching ? '正在为您匹配……' : '寻找有缘人',
+              style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
-          if (widget.matching) ...[
-            const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white54)),
-          ],
+          if (widget.matching) ...[],
           if (widget.error.isNotEmpty)
             Padding(
                 padding: const EdgeInsets.only(top: 16),
@@ -271,16 +269,11 @@ class _FateWaitingState extends State<_FateWaiting>
           const SizedBox(height: 42),
           FilledButton.icon(
               onPressed: widget.onStart,
-              icon: Icon(widget.matching
-                  ? Icons.hourglass_top
-                  : Icons.favorite_outline),
+              icon:
+                  Icon(widget.matching ? Icons.close : Icons.favorite_outline),
               label: Text(widget.matching
-                  ? '匹配中 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')}'
+                  ? '正在匹配 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')} 点击取消'
                   : '开始匹配')),
-          if (widget.matching) ...[
-            const SizedBox(height: 12),
-            TextButton(onPressed: widget.onCancel, child: const Text('取消匹配')),
-          ],
         ]),
       );
 }
