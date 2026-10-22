@@ -136,7 +136,7 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
     super.initState();
   }
 
-  Future<void> _startMatching() async {
+  Future<void> _startMatching({String mode = 'all'}) async {
     final prefs = await SharedPreferences.getInstance();
     final authToken = prefs.getString('friend.auth.token') ?? '';
     if (authToken.isEmpty) {
@@ -156,7 +156,7 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
         waitingSeconds = 0;
       });
     try {
-      final result = await service.joinVoiceMatch(authToken);
+      final result = await service.joinVoiceMatch(authToken, mode: mode);
       _applyMatch(result);
       if (mounted && peer == null) {
         _poll = Timer.periodic(const Duration(seconds: 2), (_) => _pollMatch());
@@ -397,8 +397,7 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             OutlinedButton.icon(
-              onPressed: () => _showTopNotice(
-                  context, const SnackBar(content: Text('同城匹配功能即将开放'))),
+              onPressed: () => _startMatching(mode: 'city'),
               icon: const Icon(Icons.location_on_outlined),
               label: const Text('同城匹配'),
             ),

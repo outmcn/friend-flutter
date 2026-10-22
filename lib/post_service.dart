@@ -133,9 +133,14 @@ class DDPostService {
         .toList();
   }
 
-  Future<Map<String, dynamic>> joinFateMatch(String token) async {
+  Future<Map<String, dynamic>> joinFateMatch(String token,
+      {String mode = 'all'}) async {
     final response = await _client.post(_api('/fate-match/join'),
-        headers: {'Authorization': 'Bearer $token'});
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'mode': mode}));
     final data =
         response.body.trim().isEmpty ? null : jsonDecode(response.body);
     if (response.statusCode != 200 || data is! Map)
@@ -160,9 +165,14 @@ class DDPostService {
     if (response.statusCode != 200) throw Exception('取消匹配失败');
   }
 
-  Future<Map<String, dynamic>> joinVoiceMatch(String token) async {
+  Future<Map<String, dynamic>> joinVoiceMatch(String token,
+      {String mode = 'all'}) async {
     final response = await _client.post(_api('/voice-match/join'),
-        headers: {'Authorization': 'Bearer $token'});
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'mode': mode}));
     final data =
         response.body.trim().isEmpty ? null : jsonDecode(response.body);
     if (response.statusCode != 200 || data is! Map)

@@ -22,7 +22,7 @@ class _FateMatchPageState extends State<FateMatchPage> {
     super.initState();
   }
 
-  Future<void> _startMatching() async {
+  Future<void> _startMatching({String mode = 'all'}) async {
     final prefs = await SharedPreferences.getInstance();
     final authToken = prefs.getString('friend.auth.token') ?? '';
     if (authToken.isEmpty) {
@@ -41,7 +41,7 @@ class _FateMatchPageState extends State<FateMatchPage> {
         waitingSeconds = 0;
       });
     try {
-      final result = await _service!.joinFateMatch(authToken);
+      final result = await _service!.joinFateMatch(authToken, mode: mode);
       _apply(result);
       if (mounted && peer == null)
         _poll =
@@ -296,8 +296,7 @@ class _FateWaitingState extends State<_FateWaiting>
           const SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             OutlinedButton.icon(
-                onPressed: () => _showTopNotice(
-                    context, const SnackBar(content: Text('同城匹配功能即将开放'))),
+                onPressed: () => _startMatching(mode: 'city'),
                 icon: const Icon(Icons.location_on_outlined),
                 label: const Text('同城匹配')),
             const SizedBox(width: 10),
