@@ -1135,7 +1135,7 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   double? myLongitude;
   Timer? _magnetometer;
   @override
-  void initState() { super.initState(); _loadLocation(); _magnetometer = Timer.periodic(const Duration(milliseconds: 250), (_) async {
+  void initState() { super.initState(); _loadLocation(); _magnetometer = Timer.periodic(const Duration(milliseconds: 40), (_) async {
    final raw = await _compassChannel.invokeMethod<dynamic>('heading');
    final value = raw is num ? raw.toDouble() : null;
    if (value != null && mounted) setState(() => heading = value);
