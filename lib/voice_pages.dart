@@ -270,7 +270,7 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
       );
 }
 
-class _VoiceMatchingContent extends StatelessWidget {
+class _VoiceMatchingContent extends StatefulWidget {
   const _VoiceMatchingContent(
       {required this.waitingSeconds,
       required this.error,
@@ -281,29 +281,62 @@ class _VoiceMatchingContent extends StatelessWidget {
   final VoidCallback onCancel;
   final VoidCallback onStart;
   @override
+  State<_VoiceMatchingContent> createState() => _VoiceMatchingContentState();
+}
+
+class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController pulse;
+  @override
+  void initState() {
+    super.initState();
+    pulse = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1800))
+      ..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    pulse.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.all(28),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         const _VoiceUiNotice(),
         const SizedBox(height: 32),
-        Stack(alignment: Alignment.center, children: [
-          for (final size in [290.0, 225.0, 160.0])
-            Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: Colors.purpleAccent.withValues(alpha: .35)))),
-          Container(
-              width: 108,
-              height: 108,
-              decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                      colors: [Color(0xffa855f7), Color(0xffff6b9d)])),
-              child: const Icon(Icons.mic, color: Colors.white, size: 45))
-        ]),
+        AnimatedBuilder(
+            animation: pulse,
+            builder: (_, __) => Transform.scale(
+                scale: 0.96 + pulse.value * 0.04,
+                child: Stack(alignment: Alignment.center, children: [
+                  for (final item in [
+                    {'size': 290.0, 'factor': .22},
+                    {'size': 225.0, 'factor': .30},
+                    {'size': 160.0, 'factor': .42}
+                  ])
+                    Transform.scale(
+                        scale: 1 + pulse.value * item['factor'] as double,
+                        child: Container(
+                            width: item['size'] as double,
+                            height: item['size'] as double,
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: Colors.purpleAccent.withValues(
+                                        alpha: .35 - pulse.value * .12))))),
+                  Container(
+                      width: 108,
+                      height: 108,
+                      decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                              colors: [Color(0xffa855f7), Color(0xffff6b9d)])),
+                      child:
+                          const Icon(Icons.mic, color: Colors.white, size: 45))
+                ]))),
         const SizedBox(height: 48),
         const Text('正在寻找有趣的声音',
             style: TextStyle(
@@ -314,20 +347,20 @@ class _VoiceMatchingContent extends StatelessWidget {
         const Text('等待在线用户加入语音匹配', style: TextStyle(color: Colors.white54)),
         const SizedBox(height: 22),
         Text(
-            '等待 ${waitingSeconds ~/ 60}:${(waitingSeconds % 60).toString().padLeft(2, '0')}',
+            '等待 ${widget.waitingSeconds ~/ 60}:${(widget.waitingSeconds % 60).toString().padLeft(2, '0')}',
             style: const TextStyle(color: Colors.white70)),
-        if (error.isNotEmpty)
+        if (widget.error.isNotEmpty)
           Padding(
               padding: const EdgeInsets.only(top: 16),
-              child:
-                  Text(error, style: const TextStyle(color: Colors.redAccent))),
+              child: Text(widget.error,
+                  style: const TextStyle(color: Colors.redAccent))),
         const SizedBox(height: 42),
         FilledButton.icon(
-            onPressed: onStart,
+            onPressed: widget.onStart,
             icon: const Icon(Icons.mic_none),
             label: const Text('开始匹配')),
         const SizedBox(height: 12),
-        TextButton(onPressed: onCancel, child: const Text('返回')),
+        TextButton(onPressed: widget.onCancel, child: const Text('返回')),
       ]));
 }
 

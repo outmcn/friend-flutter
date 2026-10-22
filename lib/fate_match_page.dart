@@ -167,7 +167,7 @@ class _FateMatchPageState extends State<FateMatchPage> {
       );
 }
 
-class _FateWaiting extends StatelessWidget {
+class _FateWaiting extends StatefulWidget {
   const _FateWaiting(
       {required this.seconds,
       required this.error,
@@ -178,53 +178,91 @@ class _FateWaiting extends StatelessWidget {
   final VoidCallback onCancel;
   final VoidCallback onStart;
   @override
+  State<_FateWaiting> createState() => _FateWaitingState();
+}
+
+class _FateWaitingState extends State<_FateWaiting>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController pulse;
+  @override
+  void initState() {
+    super.initState();
+    pulse = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1800))
+      ..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    pulse.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(28),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const _VoiceUiNotice(),
-        const SizedBox(height: 32),
-        Stack(alignment: Alignment.center, children: [
-          for (final size in [290.0, 225.0, 160.0])
-            Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: Colors.pinkAccent.withValues(alpha: .36)))),
-          const SizedBox(
-              width: 108,
-              height: 108,
-              child: DecoratedBox(
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle, color: Color(0xffff5f8f)),
-                  child:
-                      Icon(Icons.auto_awesome, size: 45, color: Colors.white)))
+        padding: const EdgeInsets.all(28),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const _VoiceUiNotice(),
+          const SizedBox(height: 32),
+          AnimatedBuilder(
+            animation: pulse,
+            builder: (_, __) => Transform.scale(
+              scale: .96 + pulse.value * .04,
+              child: Stack(alignment: Alignment.center, children: [
+                for (final item in const [
+                  {'size': 290.0, 'factor': .22},
+                  {'size': 225.0, 'factor': .30},
+                  {'size': 160.0, 'factor': .42},
+                ])
+                  Transform.scale(
+                    scale: 1 + pulse.value * (item['factor'] as double),
+                    child: Container(
+                      width: item['size'] as double,
+                      height: item['size'] as double,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: Colors.pinkAccent
+                                  .withValues(alpha: .36 - pulse.value * .12))),
+                    ),
+                  ),
+                const SizedBox(
+                    width: 108,
+                    height: 108,
+                    child: DecoratedBox(
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle, color: Color(0xffff5f8f)),
+                        child: Icon(Icons.auto_awesome,
+                            size: 45, color: Colors.white))),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 48),
+          const Text('正在寻找有缘人…',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white54)),
+          const SizedBox(height: 22),
+          Text(
+              '等待 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')}',
+              style: const TextStyle(color: Colors.white70)),
+          if (widget.error.isNotEmpty)
+            Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Text(widget.error,
+                    style: const TextStyle(color: Colors.redAccent))),
+          const SizedBox(height: 42),
+          FilledButton.icon(
+              onPressed: widget.onStart,
+              icon: const Icon(Icons.favorite_outline),
+              label: const Text('开始匹配')),
+          const SizedBox(height: 12),
+          TextButton(onPressed: widget.onCancel, child: const Text('返回')),
         ]),
-        const SizedBox(height: 48),
-        const Text('正在寻找有缘人…',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w800)),
-        const SizedBox(height: 10),
-        const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white54)),
-        const SizedBox(height: 22),
-        Text('等待 ${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}',
-            style: const TextStyle(color: Colors.white70)),
-        if (error.isNotEmpty)
-          Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child:
-                  Text(error, style: const TextStyle(color: Colors.redAccent))),
-        const SizedBox(height: 42),
-        FilledButton.icon(
-            onPressed: onStart,
-            icon: const Icon(Icons.favorite_outline),
-            label: const Text('开始匹配')),
-        const SizedBox(height: 12),
-        TextButton(onPressed: onCancel, child: const Text('返回')),
-      ]));
+      );
 }
 
 class _FateSuccess extends StatelessWidget {
