@@ -332,32 +332,49 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
         const SizedBox(height: 32),
         AnimatedBuilder(
             animation: pulse,
-            builder: (_, __) => Stack(alignment: Alignment.center, children: [
-                  if (widget.matching)
-                    for (final size in [290.0, 225.0, 160.0])
-                      Opacity(
-                          opacity: 1 - pulse.value,
-                          child: Transform.scale(
-                              scale: .38 + pulse.value * .62,
-                              child: Container(
-                                  width: size,
-                                  height: size,
-                                  decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                          color: Colors.purpleAccent
-                                              .withValues(alpha: .65),
-                                          width: 1.5))))),
+            builder: (_, __) {
+              final rings = <Widget>[];
+              if (widget.matching) {
+                for (final index in [0, 1, 2]) {
+                  final phase = (pulse.value + index / 3) % 1.0;
+                  rings.add(
+                    Opacity(
+                      opacity: 1 - phase,
+                      child: Transform.scale(
+                        scale: .38 + phase * .62,
+                        child: Container(
+                          width: 290,
+                          height: 290,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.purpleAccent.withValues(alpha: .65),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              }
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  ...rings,
                   Container(
-                      width: 108,
-                      height: 108,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                              colors: [Color(0xffa855f7), Color(0xffff6b9d)])),
-                      child:
-                          const Icon(Icons.mic, color: Colors.white, size: 45))
-                ])),
+                    width: 108,
+                    height: 108,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                          colors: [Color(0xffa855f7), Color(0xffff6b9d)]),
+                    ),
+                    child: const Icon(Icons.mic, color: Colors.white, size: 45),
+                  ),
+                ],
+              );
+            }),
         const SizedBox(height: 48),
         const Text('正在寻找有趣的声音',
             style: TextStyle(
