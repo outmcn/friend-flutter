@@ -200,8 +200,9 @@ class DDPostService {
   Future<Map<String, dynamic>> createWerewolfRoom(String token) async =>
       _werewolfPost(token, '/werewolf/rooms', {});
   Future<Map<String, dynamic>> joinWerewolfRoom(
-          String token, String code) async =>
-      _werewolfPost(token, '/werewolf/rooms/join', {'roomCode': code});
+          String token, String code, String password) async =>
+      _werewolfPost(token, '/werewolf/rooms/join',
+          {'roomCode': code, 'password': password});
   Future<Map<String, dynamic>> takeWerewolfSeat(
           String token, String roomId, int seat) async =>
       _werewolfPost(token, '/werewolf/rooms/$roomId/seat', {'seat': seat});

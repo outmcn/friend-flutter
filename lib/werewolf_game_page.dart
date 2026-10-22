@@ -222,40 +222,62 @@ class _WerewolfGamePageState extends State<WerewolfGamePage>
 
   Future<void> _findRoom() async {
     roomController.clear();
-    await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-              backgroundColor: const Color(0xff19130f),
-              title: const Text('查找房间',
-                  style: TextStyle(color: Color(0xffe8d5b0))),
-              content: TextField(
-                  controller: roomController,
-                  autofocus: true,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: '输入房间号')),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('取消')),
-                FilledButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      try {
-                        final d = await service.joinWerewolfRoom(
-                            await _token(), roomController.text.trim());
-                        if (mounted) {
-                          setState(() => roomCode =
-                              '${d['roomCode'] ?? roomController.text.trim()}');
-                          _showRoomCode();
+    final passwordController = TextEditingController();
+    try {
+      await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+                backgroundColor: const Color(0xff19130f),
+                title: const Text('查找房间',
+                    style: TextStyle(color: Color(0xffe8d5b0))),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                        controller: roomController,
+                        autofocus: true,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(labelText: '房间号')),
+                    const SizedBox(height: 12),
+                    TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(labelText: '密码')),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('取消')),
+                  FilledButton(
+                      onPressed: () async {
+                        final code = roomController.text.trim();
+                        final password = passwordController.text;
+                        if (code.isEmpty || password.isEmpty) {
+                          setState(() => error = '请输入房间号和密码');
+                          return;
                         }
-                      } catch (e) {
-                        if (mounted) setState(() => error = '$e');
-                      }
-                    },
-                    child: const Text('进入房间'))
-              ],
-            ));
+                        Navigator.pop(context);
+                        try {
+                          final d = await service.joinWerewolfRoom(
+                              await _token(), code, password);
+                          if (mounted) {
+                            setState(
+                                () => roomCode = '${d['roomCode'] ?? code}');
+                            _showRoomCode();
+                          }
+                        } catch (e) {
+                          if (mounted) setState(() => error = '$e');
+                        }
+                      },
+                      child: const Text('进入房间'))
+                ],
+              ));
+    } finally {
+      passwordController.dispose();
+    }
   }
 
   void _showRoomCode() {
