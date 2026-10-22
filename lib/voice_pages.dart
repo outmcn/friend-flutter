@@ -367,10 +367,6 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
         const SizedBox(height: 10),
         if (widget.matching) ...[
           const Text('等待在线用户加入语音匹配', style: TextStyle(color: Colors.white54)),
-          const SizedBox(height: 22),
-          Text(
-              '等待 ${widget.waitingSeconds ~/ 60}:${(widget.waitingSeconds % 60).toString().padLeft(2, '0')}',
-              style: const TextStyle(color: Colors.white70)),
         ],
         if (widget.error.isNotEmpty)
           Padding(
@@ -380,8 +376,10 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
         const SizedBox(height: 42),
         FilledButton.icon(
             onPressed: widget.onStart,
-            icon: const Icon(Icons.mic_none),
-            label: const Text('开始匹配')),
+            icon: Icon(widget.matching ? Icons.hourglass_top : Icons.mic_none),
+            label: Text(widget.matching
+                ? '匹配中 ${widget.waitingSeconds ~/ 60}:${(widget.waitingSeconds % 60).toString().padLeft(2, '0')}'
+                : '开始匹配')),
         if (widget.matching) ...[
           const SizedBox(height: 12),
           TextButton(onPressed: widget.onCancel, child: const Text('取消匹配')),

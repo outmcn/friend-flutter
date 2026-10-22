@@ -262,10 +262,6 @@ class _FateWaitingState extends State<_FateWaiting>
           const SizedBox(height: 10),
           if (widget.matching) ...[
             const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white54)),
-            const SizedBox(height: 22),
-            Text(
-                '等待 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')}',
-                style: const TextStyle(color: Colors.white70)),
           ],
           if (widget.error.isNotEmpty)
             Padding(
@@ -275,8 +271,12 @@ class _FateWaitingState extends State<_FateWaiting>
           const SizedBox(height: 42),
           FilledButton.icon(
               onPressed: widget.onStart,
-              icon: const Icon(Icons.favorite_outline),
-              label: const Text('开始匹配')),
+              icon: Icon(widget.matching
+                  ? Icons.hourglass_top
+                  : Icons.favorite_outline),
+              label: Text(widget.matching
+                  ? '匹配中 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')}'
+                  : '开始匹配')),
           if (widget.matching) ...[
             const SizedBox(height: 12),
             TextButton(onPressed: widget.onCancel, child: const Text('取消匹配')),
