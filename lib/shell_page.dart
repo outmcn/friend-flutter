@@ -319,9 +319,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             .where((row) => row['muted'] == true)
             .map((row) => '${row['conversationId'] ?? ''}'));
       if (cachedRows.isNotEmpty && mounted) {
+        final cachedPreviews = cachedRows.map((row) => _ChatPreview.fromCache(row)).toList();
+        final cachedAvatarPaths = <String, String>{};
+        for (final chat in cachedPreviews) {
+          final key = chat.avatarKey ?? '';
+          if (key.isEmpty) continue;
+          final local = await ImLocalStore.avatarPath(key);
+          if (local != null) cachedAvatarPaths[key] = local;
+        }
+        if (!mounted) return;
         setState(() {
-          conversations =
-              cachedRows.map((row) => _ChatPreview.fromCache(row)).toList();
+          _avatarPaths.addAll(cachedAvatarPaths);
+          conversations = cachedPreviews;
           conversationCacheLoaded = true;
           loading = false;
         });
