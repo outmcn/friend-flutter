@@ -365,9 +365,6 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
                 fontSize: 22,
                 fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
-        if (widget.matching) ...[
-          const Text('等待在线用户加入语音匹配', style: TextStyle(color: Colors.white54)),
-        ],
         if (widget.error.isNotEmpty)
           Padding(
               padding: const EdgeInsets.only(top: 16),
