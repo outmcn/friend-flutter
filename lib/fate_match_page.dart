@@ -8,120 +8,232 @@ class FateMatchPage extends StatefulWidget {
 }
 
 class _FateMatchPageState extends State<FateMatchPage> {
+  DDPostService? _service;
+  Timer? _poll;
+  String? token;
+  String? conversationId;
+  Map<String, dynamic>? peer;
   bool matching = false;
-  bool matched = false;
+  int waitingSeconds = 0;
+  String error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _startMatching();
+  }
+
+  Future<void> _startMatching() async {
+    final prefs = await SharedPreferences.getInstance();
+    final authToken = prefs.getString('friend.auth.token') ?? '';
+    if (authToken.isEmpty) {
+      if (mounted) setState(() => error = '请先登录');
+      return;
+    }
+    _service?.dispose();
+    _service = DDPostService();
+    token = authToken;
+    if (mounted)
+      setState(() {
+        matching = true;
+        peer = null;
+        conversationId = null;
+        error = '';
+        waitingSeconds = 0;
+      });
+    try {
+      final result = await _service!.joinFateMatch(authToken);
+      _apply(result);
+      if (mounted && peer == null)
+        _poll =
+            Timer.periodic(const Duration(seconds: 2), (_) => _pollStatus());
+    } catch (_) {
+      if (mounted)
+        setState(() {
+          matching = false;
+          error = '缘分匹配失败';
+        });
+    }
+  }
+
+  void _apply(Map<String, dynamic> result) {
+    if (!mounted || result['status'] != 'matched' || result['peer'] is! Map)
+      return;
+    _poll?.cancel();
+    setState(() {
+      matching = false;
+      peer = Map<String, dynamic>.from(result['peer'] as Map);
+      conversationId = '${result['conversationId'] ?? ''}';
+    });
+  }
+
+  Future<void> _pollStatus() async {
+    if (_service == null || token == null) return;
+    waitingSeconds += 2;
+    try {
+      _apply(await _service!.fateMatchStatus(token!));
+    } catch (_) {}
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _leave() async {
+    _poll?.cancel();
+    if (_service != null && token != null) {
+      try {
+        await _service!.leaveFateMatch(token!);
+      } catch (_) {}
+    }
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _openChat() async {
+    if (token == null || peer == null || conversationId == null) return;
+    try {
+      final id =
+          await _service!.createDirectConversation(token!, '${peer!['id']}');
+      if (!mounted) return;
+      final chats = await _service!.fetchImConversations(token!);
+      final found =
+          chats.where((x) => x.id == id).cast<DDConversation?>().firstOrNull;
+      if (found != null) Navigator.pop(context, {'conversation': found});
+    } catch (_) {
+      if (mounted) setState(() => error = '打开聊天失败');
+    }
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    _service?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: const Color(0xff191019),
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          title: const Text('缘分匹配'),
-          actions: [
-            IconButton(
-              tooltip: '分享',
-              icon: const Icon(Icons.share_outlined),
-              onPressed: () {
-                _showTopNotice(
-                  context,
-                  const SnackBar(content: Text('分享功能暂未接入')),
-                );
-              },
-            ),
-          ],
-        ),
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            title: Text(peer == null ? '缘分匹配' : '匹配成功')),
         body: Stack(children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.topRight,
-                  radius: 1.4,
-                  colors: [Color(0xffff6f9a), Color(0xff191019)],
-                ),
-              ),
-            ),
-          ),
+          const Positioned.fill(
+              child: DecoratedBox(
+                  decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                          center: Alignment.topRight,
+                          radius: 1.4,
+                          colors: [Color(0xffff6f9a), Color(0xff191019)])))),
           Center(
-            child: Padding(
-              padding: const EdgeInsets.all(26),
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('缘分匹配',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white60, fontSize: 11)),
-                    const SizedBox(height: 36),
-                    Stack(alignment: Alignment.center, children: [
-                      for (final size in [250.0, 190.0, 132.0])
-                        Container(
-                          width: size,
-                          height: size,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color:
-                                    Colors.pinkAccent.withValues(alpha: .36)),
-                          ),
-                        ),
-                      CircleAvatar(
-                        radius: 53,
-                        backgroundColor: const Color(0xffff5f8f),
-                        child: Icon(
-                          matched ? Icons.favorite : Icons.auto_awesome,
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ]),
-                    const SizedBox(height: 36),
-                    Text(
-                      matched
-                          ? '遇见了 林小满'
-                          : (matching ? '正在寻找有缘人…' : '开启一段新的缘分'),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 23,
-                          fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      matched ? '音乐 · 旅行 · 聊得来' : '填写兴趣后，寻找默契的聊天伙伴',
-                      style: const TextStyle(color: Colors.white60),
-                    ),
-                    const SizedBox(height: 32),
-                    if (matched)
-                      Wrap(spacing: 10, children: [
-                        FilledButton(
-                          onPressed: () => ScaffoldMessenger.of(context)
-                              .showSnackBar(const SnackBar(content: Text(''))),
-                          child: const Text('开始聊天'),
-                        ),
-                        OutlinedButton(
-                          onPressed: () => setState(() {
-                            matched = false;
-                            matching = false;
-                          }),
-                          child: const Text('重新匹配'),
-                        ),
-                      ])
-                    else
-                      FilledButton.icon(
-                        onPressed: matching
-                            ? null
-                            : () => setState(() {
-                                  matching = true;
-                                  matched = true;
-                                }),
-                        icon: const Icon(Icons.favorite_outline),
-                        label: Text(matching ? '匹配中…' : '开始匹配'),
-                      ),
-                  ]),
-            ),
-          ),
+              child: peer == null
+                  ? _FateWaiting(
+                      seconds: waitingSeconds, error: error, onCancel: _leave)
+                  : _FateSuccess(
+                      peer: peer!,
+                      error: error,
+                      onChat: _openChat,
+                      onRestart: _startMatching)),
         ]),
       );
+}
+
+class _FateWaiting extends StatelessWidget {
+  const _FateWaiting(
+      {required this.seconds, required this.error, required this.onCancel});
+  final int seconds;
+  final String error;
+  final VoidCallback onCancel;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Text('缘分匹配',
+            style: TextStyle(color: Colors.white60, fontSize: 11)),
+        const SizedBox(height: 36),
+        Stack(alignment: Alignment.center, children: [
+          for (final size in [250.0, 190.0, 132.0])
+            Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: Colors.pinkAccent.withValues(alpha: .36)))),
+          const CircleAvatar(
+              radius: 53,
+              backgroundColor: Color(0xffff5f8f),
+              child: Icon(Icons.auto_awesome, size: 48, color: Colors.white))
+        ]),
+        const SizedBox(height: 36),
+        const Text('正在寻找有缘人…',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 23,
+                fontWeight: FontWeight.w800)),
+        const SizedBox(height: 10),
+        const Text('等待在线用户加入缘分匹配', style: TextStyle(color: Colors.white60)),
+        const SizedBox(height: 22),
+        Text('等待 ${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}',
+            style: const TextStyle(color: Colors.white70)),
+        if (error.isNotEmpty)
+          Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child:
+                  Text(error, style: const TextStyle(color: Colors.redAccent))),
+        const SizedBox(height: 32),
+        TextButton(onPressed: onCancel, child: const Text('取消匹配'))
+      ]));
+}
+
+class _FateSuccess extends StatelessWidget {
+  const _FateSuccess(
+      {required this.peer,
+      required this.error,
+      required this.onChat,
+      required this.onRestart});
+  final Map<String, dynamic> peer;
+  final String error;
+  final VoidCallback onChat;
+  final VoidCallback onRestart;
+  @override
+  Widget build(BuildContext context) {
+    final avatar = '${peer['avatarUrl'] ?? ''}';
+    return Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Text('缘分匹配',
+              style: TextStyle(color: Colors.white60, fontSize: 11)),
+          const SizedBox(height: 36),
+          CircleAvatar(
+              radius: 66,
+              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+              child:
+                  avatar.isEmpty ? const Icon(Icons.person, size: 62) : null),
+          const SizedBox(height: 24),
+          Text('${peer['nickname'] ?? '有缘人'}',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 9),
+          const Text('已为你匹配到一位有缘人', style: TextStyle(color: Colors.white60)),
+          const SizedBox(height: 14),
+          Wrap(spacing: 8, children: [
+            for (final tag
+                in (peer['tags'] is List ? peer['tags'] as List : const []))
+              Chip(label: Text('$tag'))
+          ]),
+          if (error.isNotEmpty)
+            Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Text(error,
+                    style: const TextStyle(color: Colors.redAccent))),
+          const SizedBox(height: 28),
+          Wrap(spacing: 10, children: [
+            FilledButton(onPressed: onChat, child: const Text('开始聊天')),
+            OutlinedButton(onPressed: onRestart, child: const Text('重新匹配'))
+          ])
+        ]));
+  }
 }
 
 class _GameFilterRow extends StatelessWidget {

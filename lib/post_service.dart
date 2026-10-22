@@ -133,6 +133,33 @@ class DDPostService {
         .toList();
   }
 
+  Future<Map<String, dynamic>> joinFateMatch(String token) async {
+    final response = await _client.post(_api('/fate-match/join'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map)
+      throw Exception(data is Map ? '${data['error'] ?? '缘分匹配失败'}' : '缘分匹配失败');
+    return data.cast<String, dynamic>();
+  }
+
+  Future<Map<String, dynamic>> fateMatchStatus(String token) async {
+    final response = await _client.get(_api('/fate-match/status'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data =
+        response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    if (response.statusCode != 200 || data is! Map)
+      throw Exception(
+          data is Map ? '${data['error'] ?? '匹配状态获取失败'}' : '匹配状态获取失败');
+    return data.cast<String, dynamic>();
+  }
+
+  Future<void> leaveFateMatch(String token) async {
+    final response = await _client.post(_api('/fate-match/leave'),
+        headers: {'Authorization': 'Bearer $token'});
+    if (response.statusCode != 200) throw Exception('取消匹配失败');
+  }
+
   Future<Map<String, dynamic>> joinVoiceMatch(String token) async {
     final response = await _client.post(_api('/voice-match/join'),
         headers: {'Authorization': 'Bearer $token'});
