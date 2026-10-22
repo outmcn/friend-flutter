@@ -236,8 +236,12 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        extendBodyBehindAppBar: true,
         backgroundColor: const Color(0xff0f0a1a),
         appBar: AppBar(
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            surfaceTintColor: Colors.transparent,
             backgroundColor: Colors.transparent,
             foregroundColor: Colors.white,
             title: Text(peer == null ? '语音匹配' : '匹配成功')),

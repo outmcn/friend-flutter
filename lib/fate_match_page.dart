@@ -134,8 +134,12 @@ class _FateMatchPageState extends State<FateMatchPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        extendBodyBehindAppBar: true,
         backgroundColor: const Color(0xff191019),
         appBar: AppBar(
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            surfaceTintColor: Colors.transparent,
             backgroundColor: Colors.transparent,
             foregroundColor: Colors.white,
             title: Text(peer == null ? '缘分匹配' : '匹配成功')),
