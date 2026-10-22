@@ -1199,15 +1199,6 @@ class _WerewolfGamePageState extends State<WerewolfGamePage>
                 ),
               ],
             ),
-            if (selected)
-              const Positioned(
-                top: 0,
-                right: 0,
-                child: Text(
-                  '✓',
-                  style: TextStyle(fontSize: 11, color: Color(0xFFFFCA8A)),
-                ),
-              ),
           ],
         ),
       ),
