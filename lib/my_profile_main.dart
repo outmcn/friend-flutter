@@ -739,17 +739,30 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (raw == null || raw.isEmpty) return;
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) await _applyProfileData(decoded);
+      if (decoded is Map<String, dynamic>) {
+        final cachedAt = decoded['_cachedAt'] as num?;
+        final age = cachedAt == null
+            ? null
+            : DateTime.now().millisecondsSinceEpoch - cachedAt.toInt();
+        if (age == null || age <= const Duration(minutes: 5).inMilliseconds) {
+          await _applyProfileData(
+              Map<String, dynamic>.from(decoded)..remove('_cachedAt'));
+        }
+      }
     } catch (_) {}
   }
 
   Future<Map<String, dynamic>> _fetchProfileOnce(String token) async {
-    if (_profileRequest != null)
+    if (_profileRequest != null) {
       return _profileRequest!.then((value) => value ?? <String, dynamic>{});
+    }
     final future = service.fetchMe(token);
     _profileRequest = future.then<Map<String, dynamic>?>((value) async {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_profileCacheKey, jsonEncode(value));
+      await prefs.setString(
+          _profileCacheKey,
+          jsonEncode(
+              {...value, '_cachedAt': DateTime.now().millisecondsSinceEpoch}));
       return value;
     });
     return _profileRequest!
@@ -777,8 +790,9 @@ class _DDProfilePageState extends State<DDProfilePage>
       charmCoins = int.tryParse('${loaded['charmCoins'] ?? 0}') ?? 0;
       final nextSonicUrl =
           DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
-      if (_sonicUrl != null && _sonicUrl != nextSonicUrl)
+      if (_sonicUrl != null && _sonicUrl != nextSonicUrl) {
         unawaited(_sonicPlayer.stop());
+      }
       _sonicUrl = nextSonicUrl;
       _avatarLocalPath = localAvatar;
       _avatarUrl = signedAvatar;
@@ -858,13 +872,13 @@ class _DDProfilePageState extends State<DDProfilePage>
         error = null;
       });
       if (feed.error != null && mounted) {
-        _showTopNotice(context, const Text('动态加载失败'));
+        _showTopNotice(context, Text('动态加载失败：${feed.error}'));
         feed.clearError();
       }
     } catch (e) {
       if (mounted) {
         setState(() => error = null);
-        _showTopNotice(context, const Text('动态加载失败'));
+        _showTopNotice(context, Text('动态加载失败：$e'));
       }
     } finally {
       if (mounted) {
@@ -997,7 +1011,9 @@ class _DDProfilePageState extends State<DDProfilePage>
     try {
       final followed = await service.toggleFollow(await _token(), post.userId!);
       final updated = post.copyWith(following: followed);
-      for (final feed in feeds) feed.updateFollowing(updated);
+      for (final feed in feeds) {
+        feed.updateFollowing(updated);
+      }
       if (mounted) _showTopNotice(context, Text(followed ? '已关注' : '已取消关注'));
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
@@ -1021,8 +1037,9 @@ class _DDProfilePageState extends State<DDProfilePage>
           builder: (_) =>
               ReportPostPage(postId: post.id, service: service, token: _token)),
     );
-    if (submitted == true && mounted)
+    if (submitted == true && mounted) {
       _showTopNotice(context, const Text('举报已提交'));
+    }
   }
 
   List<Widget> _allProfileFeedSlivers() {
