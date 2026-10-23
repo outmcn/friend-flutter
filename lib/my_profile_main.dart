@@ -402,6 +402,8 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _appActive = true;
   bool _presenceUpdating = false;
   bool _heartbeatRunning = false;
+  Future<Map<String, dynamic>?>? _profileRequest;
+  static const _profileCacheKey = 'dd.profile.self.cache.v1';
 
   @override
   void initState() {
@@ -483,7 +485,8 @@ class _DDProfilePageState extends State<DDProfilePage>
         }
       });
     }
-    load();
+    unawaited(_restoreProfileCache());
+    unawaited(load());
   }
 
   Future<String> _token() async {
@@ -604,7 +607,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 
   Future<void> _sendPresenceHeartbeat() async {
-    if (_heartbeatRunning || !_appActive || !mounted) return;
+    if (!_appActive || !mounted || _heartbeatRunning) return;
     _heartbeatRunning = true;
     try {
       final token = await _token();
@@ -730,6 +733,30 @@ class _DDProfilePageState extends State<DDProfilePage>
     });
   }
 
+  Future<void> _restoreProfileCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_profileCacheKey);
+    if (raw == null || raw.isEmpty) return;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) await _applyProfileData(decoded);
+    } catch (_) {}
+  }
+
+  Future<Map<String, dynamic>> _fetchProfileOnce(String token) async {
+    if (_profileRequest != null)
+      return _profileRequest!.then((value) => value ?? <String, dynamic>{});
+    final future = service.fetchMe(token);
+    _profileRequest = future.then<Map<String, dynamic>?>((value) async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_profileCacheKey, jsonEncode(value));
+      return value;
+    });
+    return _profileRequest!
+        .then((value) => value ?? <String, dynamic>{})
+        .whenComplete(() => _profileRequest = null);
+  }
+
   Future<void> _applyProfileData(Map<String, dynamic> loaded,
       {String? token}) async {
     final avatarKey = '${loaded['avatarKey'] ?? ''}'.trim();
@@ -769,7 +796,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     setState(() => _profileRefreshing = true);
     try {
       final token = await _token();
-      final loaded = await service.fetchMe(token);
+      final loaded = await _fetchProfileOnce(token);
       await _applyProfileData(loaded, token: token);
     } catch (_) {
       if (mounted) _showTopNotice(context, const Text('资料刷新失败'));
@@ -801,7 +828,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     try {
       final t = await _token();
       if (profile == null || tab == null || forceRefresh) {
-        final loadedProfile = await service.fetchMe(t);
+        final loadedProfile = await _fetchProfileOnce(t);
         await _applyProfileData(loadedProfile, token: t);
         final avatarKey = '${loadedProfile['avatarKey'] ?? ''}'.trim();
         final avatar = _avatarUrl;
