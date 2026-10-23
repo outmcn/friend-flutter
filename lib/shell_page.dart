@@ -1,6 +1,7 @@
 part of 'main.dart';
 
-final Map<String, ImageProvider> _avatarProviderCache = {};
+// ignore: prefer_const_declarations
+final _avatarProviderCache = <String, ImageProvider>{};
 final MethodChannel _compassChannel =
     const MethodChannel('com.outmcn.friend/compass');
 
@@ -534,15 +535,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ? const Center(child: CircularProgressIndicator())
           : loadError != null
               ? Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Text('会话加载失败'),
-                    const SizedBox(height: 8),
-                    FilledButton.icon(
-                      onPressed: _loadConversations,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('重新加载'),
-                    ),
-                  ]),
+                  child: FilledButton.icon(
+                    onPressed: _loadConversations,
+                    icon: const Icon(Icons.refresh),
+                    label: Text(loadError!),
+                  ),
                 )
               : _conversationList(context),
     );
@@ -639,26 +636,17 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-  Widget _conversationList(BuildContext context) {
-    final list = conversations.isEmpty
-        ? ListView(children: const [
-            SizedBox(height: 180),
-            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-            SizedBox(height: 12),
-            Center(child: Text('暂无消息')),
-            SizedBox(height: 6),
-            Center(
-                child: Text('去认识一些新朋友吧', style: TextStyle(color: Colors.grey))),
-          ])
-        : ListView.separated(
-            itemCount: conversations.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 2),
-            itemBuilder: (_, index) =>
-                _chatPreviewTile(context, conversations[index], index),
-          );
-    return RefreshIndicator(
-        onRefresh: () => _loadConversations(showLoading: false), child: list);
-  }
+  Widget _conversationList(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: ListView.separated(
+          itemCount: conversations.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 2),
+          itemBuilder: (_, index) {
+            final chat = conversations[index];
+            return _chatPreviewTile(context, chat, index);
+          },
+        ),
+      );
 
   ImageProvider _avatarFor(_ChatPreview chat) {
     final local = _avatarPaths[chat.avatarKey];
@@ -689,35 +677,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         if (ap != bp) return ap ? -1 : 1;
         return 0;
       });
-    });
-    final accountId = ImSession.instance.userId ??
-        (await SharedPreferences.getInstance())
-            .getString('friend.auth.userId') ??
-        '';
-    if (accountId.isNotEmpty) {
-      await ImLocalStore.saveConversations(
-        accountId: accountId,
-        conversations: conversations.map((item) => item.toCache()).toList(),
-      );
-    }
-  }
-
-  Future<void> _toggleMutedConversation(_ChatPreview chat) async {
-    final muted = !_mutedConversationIds.contains(chat.conversationId);
-    setState(() {
-      if (muted) {
-        _mutedConversationIds.add(chat.conversationId);
-      } else {
-        _mutedConversationIds.remove(chat.conversationId);
-      }
-      final index = conversations
-          .indexWhere((item) => item.conversationId == chat.conversationId);
-      if (index >= 0) {
-        conversations[index] = chat.copyWith(
-          muted: muted,
-          unreadCount: muted ? 0 : chat.unreadCount,
-        );
-      }
     });
     final accountId = ImSession.instance.userId ??
         (await SharedPreferences.getInstance())
@@ -1028,40 +987,6 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
   }
 }
 
-class _ConversationSwipeButton extends StatelessWidget {
-  const _ConversationSwipeButton({
-    required this.color,
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-  final Color color;
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: 72,
-        height: double.infinity,
-        child: Material(
-          color: color,
-          child: InkWell(
-            onTap: onTap,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: Colors.white, size: 19),
-                const SizedBox(height: 2),
-                Text(label,
-                    style: const TextStyle(color: Colors.white, fontSize: 11)),
-              ],
-            ),
-          ),
-        ),
-      );
-}
-
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.peerUserId, this.conversationId, this.unreadCount,
@@ -1263,7 +1188,9 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
     if (myLatitude == null ||
         myLongitude == null ||
         widget.peerLatitude == null ||
-        widget.peerLongitude == null) return null;
+        widget.peerLongitude == null) {
+      return null;
+    }
     const r = 6371.0;
     final a1 = myLatitude! * math.pi / 180,
         a2 = widget.peerLatitude! * math.pi / 180,
@@ -1278,7 +1205,9 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
     if (myLatitude == null ||
         myLongitude == null ||
         widget.peerLatitude == null ||
-        widget.peerLongitude == null) return null;
+        widget.peerLongitude == null) {
+      return null;
+    }
     final a1 = myLatitude! * math.pi / 180,
         a2 = widget.peerLatitude! * math.pi / 180,
         dl = (widget.peerLongitude! - myLongitude!) * math.pi / 180;
@@ -1352,7 +1281,9 @@ class _RadarPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = const Color(0x664C4CFF);
-    for (final k in [1.0, .72, .44]) c.drawCircle(o, r * k, ring);
+    for (final k in [1.0, .72, .44]) {
+      c.drawCircle(o, r * k, ring);
+    }
     c.drawCircle(o, 4, Paint()..color = const Color(0xFF34C759));
     final sectorHeading = (heading - 90) * math.pi / 180;
     final sector = Path()
@@ -2294,7 +2225,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           initiallyMuted: widget.chat.muted,
           onTogglePinned: () async {
             final accountId = currentUserId;
-            final prefs = await SharedPreferences.getInstance();
             final cached = await ImLocalStore.conversations(accountId);
             final rows = cached.map((row) {
               if ('${row['conversationId'] ?? ''}' ==
@@ -2497,7 +2427,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   Widget _sharedPostBody(Map<String, dynamic> message) {
     final metadata = Map<String, dynamic>.from(message['metadata'] as Map);
-    final postId = '${metadata['postId'] ?? metadata['post_id'] ?? ''}';
     final text =
         '${metadata['content'] ?? message['text'] ?? '分享了一条动态'}'.trim();
     final author = '${metadata['author'] ?? ''}'.trim();
