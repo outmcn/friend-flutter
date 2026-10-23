@@ -3,7 +3,10 @@ part of 'main.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  void _unavailable(BuildContext context, String feature) {}
+  void _unavailable(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('$feature功能暂未开放')));
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
