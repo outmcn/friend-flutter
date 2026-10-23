@@ -36,9 +36,55 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
     '固定座位': true,
     '狼人发言可自爆': false,
   };
+  final Map<String, String> _avatarUrls = {};
+  final Set<String> _avatarLoading = {};
   bool ready = false;
   bool talking = false;
   String? error;
+
+  Future<void> _loadAvatar(Map<String, dynamic> item) async {
+    final key = '${item['avatarKey'] ?? ''}'.trim();
+    if (key.isEmpty ||
+        _avatarUrls.containsKey(key) ||
+        _avatarLoading.contains(key)) {
+      return;
+    }
+    _avatarLoading.add(key);
+    try {
+      final url = await service.resolveAvatarUrl(await _token(), key);
+      if (mounted && url != null && url.isNotEmpty) {
+        setState(() => _avatarUrls[key] = url);
+      }
+    } catch (_) {
+      // 加载失败时保留默认头像
+    } finally {
+      _avatarLoading.remove(key);
+    }
+  }
+
+  Widget _occupiedAvatar(Map<String, dynamic> item) {
+    final key = '${item['avatarKey'] ?? ''}'.trim();
+    final url = _avatarUrls[key];
+    if (key.isNotEmpty) _loadAvatar(item);
+    return Container(
+      width: 48,
+      height: 48,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xff4c251f),
+        border: Border.all(color: const Color(0xffe3a24e)),
+      ),
+      child: url == null
+          ? const Icon(Icons.person_rounded, color: Color(0xffffc279), size: 24)
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded,
+                  color: Color(0xffffc279), size: 24),
+            ),
+    );
+  }
 
   @override
   void initState() {
@@ -198,10 +244,10 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
                     : const Color(0xff8b5a2a),
                 border: Border.all(color: const Color(0xffe3a24e)),
               ),
-              child: Icon(
-                  occupied ? Icons.person_rounded : Icons.shield_rounded,
-                  color: const Color(0xffffc279),
-                  size: 24),
+              child: occupied
+                  ? _occupiedAvatar(item)
+                  : const Icon(Icons.shield_rounded,
+                      color: Color(0xffffc279), size: 24),
             ),
             if (occupied) ...[
               const SizedBox(width: 5),
@@ -303,16 +349,17 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
             Container(
                 width: 48,
                 height: 48,
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: occupied
                         ? const Color(0xff4c251f)
                         : const Color(0xff8b5a2a),
                     border: Border.all(color: const Color(0xffe3a24e))),
-                child: Icon(
-                    occupied ? Icons.person_rounded : Icons.shield_rounded,
-                    color: const Color(0xffffc279),
-                    size: 24)),
+                child: occupied
+                    ? _occupiedAvatar(item)
+                    : const Icon(Icons.shield_rounded,
+                        color: Color(0xffffc279), size: 24)),
             if (occupied) ...[
               const SizedBox(width: 5),
               SizedBox(
