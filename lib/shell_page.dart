@@ -534,11 +534,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ? const Center(child: CircularProgressIndicator())
           : loadError != null
               ? Center(
-                  child: FilledButton.icon(
-                    onPressed: _loadConversations,
-                    icon: const Icon(Icons.refresh),
-                    label: Text(loadError!),
-                  ),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const Text('会话加载失败'),
+                    const SizedBox(height: 8),
+                    FilledButton.icon(
+                      onPressed: _loadConversations,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('重新加载'),
+                    ),
+                  ]),
                 )
               : _conversationList(context),
     );
@@ -635,17 +639,26 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-  Widget _conversationList(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: ListView.separated(
-          itemCount: conversations.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 2),
-          itemBuilder: (_, index) {
-            final chat = conversations[index];
-            return _chatPreviewTile(context, chat, index);
-          },
-        ),
-      );
+  Widget _conversationList(BuildContext context) {
+    final list = conversations.isEmpty
+        ? ListView(children: const [
+            SizedBox(height: 180),
+            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+            SizedBox(height: 12),
+            Center(child: Text('暂无消息')),
+            SizedBox(height: 6),
+            Center(
+                child: Text('去认识一些新朋友吧', style: TextStyle(color: Colors.grey))),
+          ])
+        : ListView.separated(
+            itemCount: conversations.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 2),
+            itemBuilder: (_, index) =>
+                _chatPreviewTile(context, conversations[index], index),
+          );
+    return RefreshIndicator(
+        onRefresh: () => _loadConversations(showLoading: false), child: list);
+  }
 
   ImageProvider _avatarFor(_ChatPreview chat) {
     final local = _avatarPaths[chat.avatarKey];
@@ -776,7 +789,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       ),
       child: Container(
         color: _pinnedConversationIds.contains(chat.conversationId)
-            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.28)
+            ? Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.28)
             : Theme.of(context).colorScheme.surface,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -2493,7 +2509,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         width: 230,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.55),
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(12),
           border:
               Border.all(color: Theme.of(context).colorScheme.outlineVariant),
