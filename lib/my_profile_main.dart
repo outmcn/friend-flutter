@@ -180,15 +180,6 @@ class _WalletPageState extends State<WalletPage> {
       );
 }
 
-String _giftAssetPath(int index) =>
-    'assets/gifts/gift_${index.toString().padLeft(2, '0')}.png';
-
-String _giftAssetFor(Map<String, dynamic> gift, int index) {
-  final raw = gift['assetIndex'] ?? gift['asset_index'];
-  final value = int.tryParse('$raw') ?? index + 1;
-  return _giftAssetPath(value.clamp(1, 20));
-}
-
 class GiftExhibitionPage extends StatefulWidget {
   const GiftExhibitionPage({super.key});
 
@@ -243,22 +234,17 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                       mainAxisSpacing: 12,
                       childAspectRatio: 1.2,
                     ),
-                    itemCount: gifts.isEmpty ? 20 : gifts.length,
+                    itemCount: gifts.length,
                     itemBuilder: (_, index) {
-                      final gift = gifts.isEmpty
-                          ? <String, dynamic>{
-                              'name': '礼物 ${index + 1}',
-                              'received_quantity': 0,
-                            }
-                          : gifts[index];
+                      final gift = gifts[index];
                       return Card(
                         child: Padding(
                           padding: const EdgeInsets.all(14),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Image.asset(_giftAssetFor(gift, index),
-                                  width: 72, height: 72, fit: BoxFit.contain),
+                              Text('${gift['icon'] ?? '🎁'}',
+                                  style: const TextStyle(fontSize: 34)),
                               const SizedBox(height: 8),
                               Text('${gift['name'] ?? '礼物'}',
                                   style: const TextStyle(
