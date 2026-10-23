@@ -539,7 +539,7 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      const Text('赤月庄园 · 预女猎守',
+                      const Text('预女猎守',
                           style: TextStyle(
                               color: Color(0xffffe4b8),
                               fontSize: 18,
