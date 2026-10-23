@@ -37,6 +37,7 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
     '狼人发言可自爆': false,
   };
   bool ready = false;
+  bool talking = false;
   String? error;
 
   @override
@@ -230,6 +231,56 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
     );
   }
 
+  Widget _inviteButton() => GestureDetector(
+        onTap: () => setState(() => error = '邀请功能暂未接入'),
+        child: Container(
+          width: 78,
+          height: 42,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: const Color(0xff21191a),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0x8cc8965a)),
+          ),
+          child: const Text('邀请',
+              style: TextStyle(
+                  color: Color(0xffe6c59c),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5)),
+        ),
+      );
+
+  Widget _holdTalkButton() => GestureDetector(
+        onLongPressStart: (_) => setState(() => talking = true),
+        onLongPressEnd: (_) => setState(() => talking = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          height: 42,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: talking ? const Color(0xff7e3825) : const Color(0xff21191a),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+                color: talking
+                    ? const Color(0xffffb26d)
+                    : const Color(0x8cc8965a)),
+            boxShadow: talking
+                ? [const BoxShadow(color: Color(0x59e26136), blurRadius: 16)]
+                : null,
+          ),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(talking ? Icons.mic_rounded : Icons.mic_none_rounded,
+                size: 17, color: const Color(0xffffd39d)),
+            const SizedBox(width: 6),
+            Text(talking ? '正在发言' : '按住发言',
+                style: const TextStyle(
+                    color: Color(0xffe6c59c),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      );
   Widget _startedSeatRow(int index, bool left) {
     final item = seat(index);
     final occupied = item != null;
@@ -618,13 +669,24 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
                 child: Text(error!,
                     style: const TextStyle(color: Colors.redAccent))),
           Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-              child: SizedBox(
-                  width: 124,
-                  height: 46,
-                  child: FilledButton(
-                      onPressed: _toggleReady,
-                      child: Text(ready ? '已准备 ✓' : '准备')))),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+            child: Row(children: [
+              _inviteButton(),
+              const SizedBox(width: 10),
+              Expanded(child: _holdTalkButton()),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+            child: SizedBox(
+              width: 124,
+              height: 46,
+              child: FilledButton(
+                onPressed: _toggleReady,
+                child: Text(ready ? '已准备 ✓' : '准备'),
+              ),
+            ),
+          ),
         ])),
       ]),
     );
