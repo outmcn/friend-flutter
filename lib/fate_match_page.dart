@@ -240,72 +240,102 @@ class _FateWaitingState extends State<_FateWaiting>
   @override
   Widget build(BuildContext context) => SizedBox.expand(
         child: Stack(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 28, 28, 106),
-            child:
-                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              AnimatedBuilder(
-                  animation: pulse,
-                  builder: (_, __) {
-                    final rings = <Widget>[];
-                    if (widget.matching) {
-                      for (final index in [0, 1, 2]) {
-                        final phase = (pulse.value + index / 3) % 1.0;
-                        rings.add(Opacity(
-                          opacity: 1 - phase,
-                          child: Transform.scale(
-                            scale: .38 + phase * .62,
-                            child: Container(
-                              width: 290,
-                              height: 290,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: Colors.pinkAccent
-                                        .withValues(alpha: .65),
-                                    width: 1.5),
-                              ),
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 28, 16, 106),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 430,
+                  child: Column(children: [
+                    SizedBox(
+                      height: 290,
+                      child: AnimatedBuilder(
+                        animation: pulse,
+                        builder: (_, __) {
+                          final rings = <Widget>[];
+                          if (widget.matching) {
+                            for (final index in [0, 1, 2]) {
+                              final phase = (pulse.value + index / 3) % 1.0;
+                              rings.add(Opacity(
+                                opacity: 1 - phase,
+                                child: Transform.scale(
+                                  scale: .38 + phase * .62,
+                                  child: Container(
+                                    width: 290,
+                                    height: 290,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.pinkAccent
+                                              .withValues(alpha: .65),
+                                          width: 1.5),
+                                    ),
+                                  ),
+                                ),
+                              ));
+                            }
+                          }
+                          return Stack(alignment: Alignment.center, children: [
+                            ...rings,
+                            Container(
+                              width: 108,
+                              height: 108,
+                              decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color(0xffff5f8f)),
+                              child: const Icon(Icons.auto_awesome,
+                                  color: Colors.white, size: 45),
                             ),
-                          ),
-                        ));
-                      }
-                    }
-                    return Stack(alignment: Alignment.center, children: [
-                      ...rings,
-                      Container(
-                        width: 108,
-                        height: 108,
-                        decoration: const BoxDecoration(
-                            shape: BoxShape.circle, color: Color(0xffff5f8f)),
-                        child: const Icon(Icons.auto_awesome,
-                            color: Colors.white, size: 45),
+                          ]);
+                        },
                       ),
-                    ]);
-                  }),
-              const SizedBox(height: 48),
-              Text(widget.matching ? '正在为您匹配……' : '寻找有缘人',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800)),
-              const SizedBox(height: 10),
-              if (widget.error.isNotEmpty)
-                Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Text(widget.error,
-                        style: const TextStyle(color: Colors.redAccent))),
-              Text('今日剩余 ${widget.remaining} 次',
-                  style: const TextStyle(color: Colors.white70)),
-              const SizedBox(height: 8),
-              FilledButton.icon(
-                onPressed: widget.onStart,
-                icon: Icon(
-                    widget.matching ? Icons.close : Icons.favorite_outline),
-                label: Text(widget.matching
-                    ? '正在匹配 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')} 点击取消'
-                    : '开始匹配'),
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(widget.matching ? '正在为您匹配……' : '寻找有缘人',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 24,
+                      child: Center(
+                          child: Text('今日剩余 ${widget.remaining} 次',
+                              style: const TextStyle(color: Colors.white70))),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 48,
+                      child: Center(
+                        child: FilledButton.icon(
+                          onPressed: widget.onStart,
+                          icon: Icon(widget.matching
+                              ? Icons.close
+                              : Icons.favorite_outline),
+                          label: Text(widget.matching
+                              ? '正在匹配 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')} 点击取消'
+                              : '开始匹配'),
+                        ),
+                      ),
+                    ),
+                    if (widget.error.isNotEmpty)
+                      SizedBox(
+                          height: 20,
+                          child: Center(
+                              child: Text(widget.error,
+                                  style: const TextStyle(
+                                      color: Colors.redAccent)))),
+                  ]),
+                ),
               ),
-            ]),
+            ),
           ),
           Positioned(
             left: 16,
