@@ -273,6 +273,8 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
                       onCancel: _leave,
                       onStart: matching ? _leave : _startMatching,
                       onCityStart: () => _startMatching(mode: 'city'),
+                      onSpeedStart: () => _showTopNotice(
+                          context, const SnackBar(content: Text('加速匹配功能即将开放'))),
                       matching: matching,
                       remaining: voiceRemaining)
                   : _VoiceMatchSuccess(
@@ -292,6 +294,7 @@ class _VoiceMatchingContent extends StatefulWidget {
       required this.onCancel,
       required this.onStart,
       required this.onCityStart,
+      required this.onSpeedStart,
       required this.matching,
       required this.remaining});
   final int waitingSeconds;
@@ -299,6 +302,7 @@ class _VoiceMatchingContent extends StatefulWidget {
   final VoidCallback onCancel;
   final VoidCallback onStart;
   final VoidCallback onCityStart;
+  final VoidCallback onSpeedStart;
   final bool matching;
   final int remaining;
   @override
@@ -335,94 +339,129 @@ class _VoiceMatchingContentState extends State<_VoiceMatchingContent>
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(28),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        AnimatedBuilder(
-            animation: pulse,
-            builder: (_, __) {
-              final rings = <Widget>[];
-              if (widget.matching) {
-                for (final index in [0, 1, 2]) {
-                  final phase = (pulse.value + index / 3) % 1.0;
-                  rings.add(
-                    Opacity(
-                      opacity: 1 - phase,
-                      child: Transform.scale(
-                        scale: .38 + phase * .62,
-                        child: Container(
-                          width: 290,
-                          height: 290,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.purpleAccent.withValues(alpha: .65),
-                              width: 1.5,
-                            ),
-                          ),
+  Widget build(BuildContext context) => SizedBox.expand(
+        child: Stack(children: [
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 118),
+              child: Align(
+                alignment: const Alignment(0, 0.16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 470,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 300,
+                        height: 290,
+                        child: AnimatedBuilder(
+                          animation: pulse,
+                          builder: (_, __) {
+                            final rings = <Widget>[];
+                            if (widget.matching) {
+                              for (final index in [0, 1, 2]) {
+                                final phase = (pulse.value + index / 3) % 1.0;
+                                rings.add(Opacity(
+                                  opacity: 1 - phase,
+                                  child: Transform.scale(
+                                    scale: .38 + phase * .62,
+                                    child: Container(
+                                      width: 290,
+                                      height: 290,
+                                      decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                              color: Colors.purpleAccent
+                                                  .withValues(alpha: .65),
+                                              width: 1.5)),
+                                    ),
+                                  ),
+                                ));
+                              }
+                            }
+                            return Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  ...rings,
+                                  Container(
+                                    width: 108,
+                                    height: 108,
+                                    decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(colors: [
+                                          Color(0xffa855f7),
+                                          Color(0xffff6b9d)
+                                        ])),
+                                    child: const Icon(Icons.mic,
+                                        color: Colors.white, size: 45),
+                                  ),
+                                ]);
+                          },
                         ),
                       ),
-                    ),
-                  );
-                }
-              }
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  ...rings,
-                  Container(
-                    width: 108,
-                    height: 108,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                          colors: [Color(0xffa855f7), Color(0xffff6b9d)]),
-                    ),
-                    child: const Icon(Icons.mic, color: Colors.white, size: 45),
+                      const SizedBox(height: 12),
+                      const SizedBox(
+                          height: 34,
+                          child: Center(
+                              child: Text('正在寻找有趣的声音',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800)))),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                          height: 24,
+                          child: Text('今日剩余 ${widget.remaining} 次',
+                              style: const TextStyle(color: Colors.white70))),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 48,
+                        child: FilledButton.icon(
+                          onPressed: widget.onStart,
+                          icon: Icon(
+                              widget.matching ? Icons.close : Icons.mic_none),
+                          label: Text(widget.matching
+                              ? '正在匹配 ${widget.waitingSeconds ~/ 60}:${(widget.waitingSeconds % 60).toString().padLeft(2, '0')} 点击取消'
+                              : '开始匹配'),
+                        ),
+                      ),
+                      if (widget.error.isNotEmpty)
+                        Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(widget.error,
+                                style:
+                                    const TextStyle(color: Colors.redAccent))),
+                    ],
                   ),
-                ],
-              );
-            }),
-        const SizedBox(height: 48),
-        const Text('正在寻找有趣的声音',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w800)),
-        const SizedBox(height: 10),
-        if (widget.error.isNotEmpty)
-          Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Text(widget.error,
-                  style: const TextStyle(color: Colors.redAccent))),
-        Text('今日剩余 ${widget.remaining} 次',
-            style: const TextStyle(color: Colors.white70)),
-        const SizedBox(height: 8),
-        FilledButton.icon(
-            onPressed: widget.onStart,
-            icon: Icon(widget.matching ? Icons.close : Icons.mic_none),
-            label: Text(widget.matching
-                ? '正在匹配 ${widget.waitingSeconds ~/ 60}:${(widget.waitingSeconds % 60).toString().padLeft(2, '0')} 点击取消'
-                : '开始匹配')),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            OutlinedButton.icon(
-              onPressed: widget.onCityStart,
-              icon: const Icon(Icons.location_on_outlined),
-              label: const Text('同城匹配'),
+                ),
+              ),
             ),
-            const SizedBox(width: 10),
-            OutlinedButton.icon(
-              onPressed: () => _showTopNotice(
-                  context, const SnackBar(content: Text('加速匹配功能即将开放'))),
-              icon: const Icon(Icons.bolt_outlined),
-              label: const Text('加速匹配'),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              top: false,
+              child: Row(children: [
+                Expanded(
+                    child: OutlinedButton.icon(
+                        onPressed: widget.onCityStart,
+                        icon: const Icon(Icons.location_on_outlined),
+                        label: const Text('同城匹配'))),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: OutlinedButton.icon(
+                        onPressed: widget.onSpeedStart,
+                        icon: const Icon(Icons.bolt_outlined),
+                        label: const Text('加速匹配'))),
+              ]),
             ),
-          ],
-        ),
-      ]));
+          ),
+        ]),
+      );
 }
 
 class _VoiceMatchSuccess extends StatelessWidget {
