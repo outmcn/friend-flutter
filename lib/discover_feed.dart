@@ -30,6 +30,7 @@ class DiscoverFeed extends ChangeNotifier {
     posts[index] = updated;
     postChanges.value = updated;
   }
+
   void updateFollowing(DDPost post) {
     final index = posts.indexWhere((item) => item.id == post.id);
     if (disposed || index < 0) return;
@@ -97,6 +98,7 @@ class DiscoverFeed extends ChangeNotifier {
     error = null;
     if (!disposed) notifyListeners();
   }
+
   Future<void> load({bool refresh = false}) async {
     if (disposed || busy || (!refresh && initialized && !hasMore)) return;
     busy = true;
@@ -106,9 +108,7 @@ class DiscoverFeed extends ChangeNotifier {
     try {
       final batch = await fetch(refresh ? 0 : offset);
       if (disposed) return;
-      final nextPosts = refresh
-          ? <DDPost>[]
-          : List<DDPost>.from(posts);
+      final nextPosts = refresh ? <DDPost>[] : List<DDPost>.from(posts);
       final nextOffset = refresh ? 0 : offset;
       // 分页游标按服务端返回数量推进，去重不能影响游标。
       final ids = nextPosts.map((post) => post.id).toSet();

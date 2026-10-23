@@ -388,7 +388,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   final AudioPlayer _sonicPlayer = AudioPlayer();
   final ScrollController _profileHeaderScroll = ScrollController();
   bool _showStickyNickname = false;
-  bool _sonicPlaying = false;
   String? _sonicUrl;
   String? _avatarUrl;
   String? _avatarLocalPath;
@@ -399,8 +398,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   bool _smartBlock = false;
   bool _matching = false;
   bool _profileRefreshing = false;
-  bool _locationRefreshing = false;
-  bool _tabSwitching = false;
   Timer? _presenceTimer;
   bool _appActive = true;
   bool _presenceUpdating = false;
@@ -414,9 +411,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     _presenceTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_appActive) _sendPresenceHeartbeat();
     });
-    _sonicPlayer.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _sonicPlaying = false);
-    });
+    _sonicPlayer.onPlayerComplete.listen((_) {});
     profileFeedTabs = List.generate(
       4,
       (tab) => FeedShellTab(
@@ -548,20 +543,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     super.dispose();
   }
 
-  Future<void> _refreshCityFromLocation() async {
-    if (_locationRefreshing) return;
-    setState(() => _locationRefreshing = true);
-    try {
-      final token = await _token();
-      await syncCachedLocation(service, token);
-      await _refreshProfileOnly();
-    } catch (e) {
-      if (mounted) _showTopNotice(context, const Text('定位更新失败'));
-    } finally {
-      if (mounted) setState(() => _locationRefreshing = false);
-    }
-  }
-
   String _formatCount(dynamic value) {
     final number = int.tryParse('$value') ?? 0;
     if (number >= 1000000) {
@@ -579,25 +560,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       MaterialPageRoute(builder: (_) => const EditProfilePage()),
     );
     if (mounted) await _refreshProfileOnly();
-  }
-
-  Future<void> _toggleSonic() async {
-    final url = _sonicUrl;
-    if (url == null || url.isEmpty) {
-      _showTopNotice(context, const Text('暂未设置语音'));
-      return;
-    }
-    try {
-      if (_sonicPlaying) {
-        await _sonicPlayer.pause();
-        if (mounted) setState(() => _sonicPlaying = false);
-      } else {
-        await _sonicPlayer.play(UrlSource(url));
-        if (mounted) setState(() => _sonicPlaying = true);
-      }
-    } catch (_) {
-      if (mounted) _showTopNotice(context, const Text('声音播放失败'));
-    }
   }
 
   Future<void> _editSonic() async {
@@ -790,7 +752,6 @@ class _DDProfilePageState extends State<DDProfilePage>
           DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
       if (_sonicUrl != null && _sonicUrl != nextSonicUrl)
         unawaited(_sonicPlayer.stop());
-      _sonicPlaying = false;
       _sonicUrl = nextSonicUrl;
       _avatarLocalPath = localAvatar;
       _avatarUrl = signedAvatar;
@@ -859,13 +820,6 @@ class _DDProfilePageState extends State<DDProfilePage>
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('friend.profile.avatarKey', avatarKey);
         await prefs.setString('friend.profile.avatarUrl', avatar ?? '');
-        final profileTags = loadedProfile['tags'];
-        final tags = profileTags is List
-            ? profileTags
-                .map((value) => '$value')
-                .where((value) => value.trim().isNotEmpty)
-                .toList()
-            : <String>[];
       }
       final feed = feeds[targetTab];
       if (forceRefresh || !feed.initialized) {
@@ -918,9 +872,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (mounted) _showTopNotice(context, const Text('删除失败'));
     }
   }
-
-  final _profilePendingLikes = <int>{};
-  final _profilePendingFavorites = <int>{};
 
   Future<void> _profileLike(DDPost post) async {
     if (!pendingLikes.add(post.id)) return;
@@ -1047,24 +998,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       _showTopNotice(context, const Text('举报已提交'));
   }
 
-  String _wrapSignature(String value) {
-    final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
-    final chars = normalized.characters.toList();
-    if (chars.length <= 60) {
-      final lines = <String>[];
-      for (var i = 0; i < chars.length; i += 20) {
-        lines.add(chars.skip(i).take(20).join());
-      }
-      return lines.join('\n');
-    }
-    return '${chars.take(20).join()}\n${chars.skip(20).take(20).join()}\n${chars.skip(40).take(20).join()}...更多';
-  }
-
-  String _displaySignature(Object? raw) {
-    final normalized = '${raw ?? ''}'.replaceAll(RegExp(r'\s+'), ' ').trim();
-    return normalized.isEmpty ? '设置个性签名' : _wrapSignature(normalized);
-  }
-
   List<Widget> _allProfileFeedSlivers() {
     final signature = feeds
         .map((feed) => feed.posts.map((post) => post.id).join(','))
@@ -1117,10 +1050,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     _cachedAllProfileSignature = signature;
     _cachedAllProfileSlivers = result;
     return result;
-  }
-
-  void _showProfileFeatureNotice(BuildContext context, String label) {
-    _showTopNotice(context, Text('$label功能即将开放'));
   }
 
   @override
