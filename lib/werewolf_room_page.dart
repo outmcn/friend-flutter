@@ -670,14 +670,6 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
                     style: const TextStyle(color: Colors.redAccent))),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-            child: Row(children: [
-              _inviteButton(),
-              const SizedBox(width: 10),
-              Expanded(child: _holdTalkButton()),
-            ]),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
             child: SizedBox(
               width: 124,
               height: 46,
@@ -686,6 +678,14 @@ class _WerewolfRoomPageState extends State<WerewolfRoomPage>
                 child: Text(ready ? '已准备 ✓' : '准备'),
               ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+            child: Row(children: [
+              _inviteButton(),
+              const SizedBox(width: 10),
+              Expanded(child: _holdTalkButton()),
+            ]),
           ),
         ])),
       ]),
