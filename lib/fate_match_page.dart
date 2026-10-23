@@ -173,6 +173,8 @@ class _FateMatchPageState extends State<FateMatchPage> {
                       onCancel: _leave,
                       onStart: matching ? _leave : _startMatching,
                       onCityStart: () => _startMatching(mode: 'city'),
+                      onSpeedStart: () => _showTopNotice(
+                          context, const SnackBar(content: Text('加速匹配功能即将开放'))),
                       matching: matching,
                       remaining: fateRemaining)
                   : _FateSuccess(
@@ -191,6 +193,7 @@ class _FateWaiting extends StatefulWidget {
       required this.onCancel,
       required this.onStart,
       required this.onCityStart,
+      required this.onSpeedStart,
       required this.matching,
       required this.remaining});
   final int seconds;
@@ -198,6 +201,7 @@ class _FateWaiting extends StatefulWidget {
   final VoidCallback onCancel;
   final VoidCallback onStart;
   final VoidCallback onCityStart;
+  final VoidCallback onSpeedStart;
   final bool matching;
   final int remaining;
   @override
@@ -234,90 +238,96 @@ class _FateWaitingState extends State<_FateWaiting>
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          AnimatedBuilder(
-              animation: pulse,
-              builder: (_, __) {
-                final rings = <Widget>[];
-                if (widget.matching) {
-                  for (final index in [0, 1, 2]) {
-                    final phase = (pulse.value + index / 3) % 1.0;
-                    rings.add(
-                      Opacity(
-                        opacity: 1 - phase,
-                        child: Transform.scale(
-                          scale: .38 + phase * .62,
-                          child: Container(
-                            width: 290,
-                            height: 290,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.pinkAccent.withValues(alpha: .65),
-                                width: 1.5,
+  Widget build(BuildContext context) => SizedBox.expand(
+        child: Stack(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 28, 28, 106),
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              AnimatedBuilder(
+                  animation: pulse,
+                  builder: (_, __) {
+                    final rings = <Widget>[];
+                    if (widget.matching) {
+                      for (final index in [0, 1, 2]) {
+                        final phase = (pulse.value + index / 3) % 1.0;
+                        rings.add(Opacity(
+                          opacity: 1 - phase,
+                          child: Transform.scale(
+                            scale: .38 + phase * .62,
+                            child: Container(
+                              width: 290,
+                              height: 290,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: Colors.pinkAccent
+                                        .withValues(alpha: .65),
+                                    width: 1.5),
                               ),
                             ),
                           ),
-                        ),
+                        ));
+                      }
+                    }
+                    return Stack(alignment: Alignment.center, children: [
+                      ...rings,
+                      Container(
+                        width: 108,
+                        height: 108,
+                        decoration: const BoxDecoration(
+                            shape: BoxShape.circle, color: Color(0xffff5f8f)),
+                        child: const Icon(Icons.auto_awesome,
+                            color: Colors.white, size: 45),
                       ),
-                    );
-                  }
-                }
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    ...rings,
-                    Container(
-                      width: 108,
-                      height: 108,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xffff5f8f),
-                      ),
-                      child: const Icon(Icons.auto_awesome,
-                          color: Colors.white, size: 45),
-                    ),
-                  ],
-                );
-              }),
-          const SizedBox(height: 48),
-          Text(widget.matching ? '正在为您匹配……' : '寻找有缘人',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          if (widget.matching) ...[],
-          if (widget.error.isNotEmpty)
-            Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(widget.error,
-                    style: const TextStyle(color: Colors.redAccent))),
-          Text('今日剩余 ${widget.remaining} 次',
-              style: const TextStyle(color: Colors.white70)),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-              onPressed: widget.onStart,
-              icon:
-                  Icon(widget.matching ? Icons.close : Icons.favorite_outline),
-              label: Text(widget.matching
-                  ? '正在匹配 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')} 点击取消'
-                  : '开始匹配')),
-          const SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            OutlinedButton.icon(
-                onPressed: widget.onCityStart,
-                icon: const Icon(Icons.location_on_outlined),
-                label: const Text('同城匹配')),
-            const SizedBox(width: 10),
-            OutlinedButton.icon(
-                onPressed: () => _showTopNotice(
-                    context, const SnackBar(content: Text('加速匹配功能即将开放'))),
-                icon: const Icon(Icons.bolt_outlined),
-                label: const Text('加速匹配')),
-          ]),
+                    ]);
+                  }),
+              const SizedBox(height: 48),
+              Text(widget.matching ? '正在为您匹配……' : '寻找有缘人',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 10),
+              if (widget.error.isNotEmpty)
+                Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(widget.error,
+                        style: const TextStyle(color: Colors.redAccent))),
+              Text('今日剩余 ${widget.remaining} 次',
+                  style: const TextStyle(color: Colors.white70)),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: widget.onStart,
+                icon: Icon(
+                    widget.matching ? Icons.close : Icons.favorite_outline),
+                label: Text(widget.matching
+                    ? '正在匹配 ${widget.seconds ~/ 60}:${(widget.seconds % 60).toString().padLeft(2, '0')} 点击取消'
+                    : '开始匹配'),
+              ),
+            ]),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              top: false,
+              child: Row(children: [
+                Expanded(
+                    child: OutlinedButton.icon(
+                        onPressed: widget.onCityStart,
+                        icon: const Icon(Icons.location_on_outlined),
+                        label: const Text('同城匹配'))),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: OutlinedButton.icon(
+                        onPressed: widget.onSpeedStart,
+                        icon: const Icon(Icons.bolt_outlined),
+                        label: const Text('加速匹配'))),
+              ]),
+            ),
+          ),
         ]),
       );
 }
