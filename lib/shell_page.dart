@@ -1,7 +1,8 @@
 part of 'main.dart';
 
 final Map<String, ImageProvider> _avatarProviderCache = {};
-final MethodChannel _compassChannel = const MethodChannel('com.outmcn.friend/compass');
+final MethodChannel _compassChannel =
+    const MethodChannel('com.outmcn.friend/compass');
 
 /// Shows recoverable chat errors at the top of the current page instead of
 /// placing them over the composer as a bottom SnackBar.
@@ -262,7 +263,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       if (accepted == 'answer') {
         if (mounted) _showTopErrorBanner(context, '实时语音通话暂未开放');
         return;
-      }      final service = DDPostService();
+      }
+      final service = DDPostService();
       try {
         final result =
             await ImSession.instance.updateCall(token, callId, accepted);
@@ -295,7 +297,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (local != null && mounted) {
       setState(() => _avatarPaths[key] = local);
     }
-    // 聊天页面只读取本地头像，不在这里联网刷新。
+    if (local != null) return;
+    final url = chat.avatarUrl;
+    if (url == null || url.isEmpty) return;
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          response.bodyBytes.isNotEmpty) {
+        final saved = await ImLocalStore.saveAvatar(key, response.bodyBytes);
+        if (mounted) setState(() => _avatarPaths[key] = saved);
+      }
+    } catch (_) {
+      // 网络头像缓存失败不影响消息列表，保留网络 provider 回退。
+    }
   }
 
   Future<void> _loadConversations({bool showLoading = true}) async {
@@ -319,7 +334,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             .where((row) => row['muted'] == true)
             .map((row) => '${row['conversationId'] ?? ''}'));
       if (cachedRows.isNotEmpty && mounted) {
-        final cachedPreviews = cachedRows.map((row) => _ChatPreview.fromCache(row)).toList();
+        final cachedPreviews =
+            cachedRows.map((row) => _ChatPreview.fromCache(row)).toList();
         final cachedAvatarPaths = <String, String>{};
         for (final chat in cachedPreviews) {
           final key = chat.avatarKey ?? '';
@@ -628,8 +644,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       } else {
         _pinnedConversationIds.remove(chat.conversationId);
       }
-      final index = conversations.indexWhere(
-          (item) => item.conversationId == chat.conversationId);
+      final index = conversations
+          .indexWhere((item) => item.conversationId == chat.conversationId);
       if (index >= 0) {
         conversations[index] = chat.copyWith(pinned: pinned);
       }
@@ -641,7 +657,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       });
     });
     final accountId = ImSession.instance.userId ??
-        (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
+        (await SharedPreferences.getInstance())
+            .getString('friend.auth.userId') ??
+        '';
     if (accountId.isNotEmpty) {
       await ImLocalStore.saveConversations(
         accountId: accountId,
@@ -658,8 +676,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       } else {
         _mutedConversationIds.remove(chat.conversationId);
       }
-      final index = conversations.indexWhere(
-          (item) => item.conversationId == chat.conversationId);
+      final index = conversations
+          .indexWhere((item) => item.conversationId == chat.conversationId);
       if (index >= 0) {
         conversations[index] = chat.copyWith(
           muted: muted,
@@ -668,7 +686,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       }
     });
     final accountId = ImSession.instance.userId ??
-        (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
+        (await SharedPreferences.getInstance())
+            .getString('friend.auth.userId') ??
+        '';
     if (accountId.isNotEmpty) {
       await ImLocalStore.saveConversations(
         accountId: accountId,
@@ -678,10 +698,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _hideConversationPreview(_ChatPreview chat) async {
-    setState(() => conversations.removeWhere(
-        (item) => item.conversationId == chat.conversationId));
+    setState(() => conversations
+        .removeWhere((item) => item.conversationId == chat.conversationId));
     final accountId = ImSession.instance.userId ??
-        (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
+        (await SharedPreferences.getInstance())
+            .getString('friend.auth.userId') ??
+        '';
     if (accountId.isNotEmpty) {
       await ImLocalStore.saveConversations(
         accountId: accountId,
@@ -693,7 +715,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Future<void> _deleteConversationPreview(_ChatPreview chat) async {
     await _hideConversationPreview(chat);
     final accountId = ImSession.instance.userId ??
-        (await SharedPreferences.getInstance()).getString('friend.auth.userId') ?? '';
+        (await SharedPreferences.getInstance())
+            .getString('friend.auth.userId') ??
+        '';
     if (accountId.isNotEmpty) {
       await ImLocalStore.clearConversation(
         accountId: accountId,
@@ -731,121 +755,131 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       ),
       child: Container(
         color: _pinnedConversationIds.contains(chat.conversationId)
-              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.28)
-              : Theme.of(context).colorScheme.surface,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: InkWell(
-              onTap: () async {
-          final prefs = await SharedPreferences.getInstance();
-          final currentUserId = prefs.getString('friend.auth.userId') ?? '';
-          if (!context.mounted) return;
-          await _stopListSocket();
-          if (!context.mounted) return;
-          await _pushChatDetail(chat, currentUserId);
-          if (mounted) {
-            unawaited(_loadConversations(showLoading: false));
-            unawaited(_restartListSocket());
-          }
-        },
+            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.28)
+            : Theme.of(context).colorScheme.surface,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: InkWell(
+            onTap: () async {
+              final prefs = await SharedPreferences.getInstance();
+              final currentUserId = prefs.getString('friend.auth.userId') ?? '';
+              if (!context.mounted) return;
+              await _stopListSocket();
+              if (!context.mounted) return;
+              await _pushChatDetail(chat, currentUserId);
+              if (mounted) {
+                unawaited(_loadConversations(showLoading: false));
+                unawaited(_restartListSocket());
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
                 children: [
-                  CircleAvatar(radius: 24, backgroundImage: _avatarFor(chat)),
-                  if (chat.online) Positioned(
-                    right: -1,
-                    bottom: -1,
-                    child: Container(
-                      width: 48 * .30,
-                      height: 48 * .30,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF34C759),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1),
-                      ),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      CircleAvatar(
+                          radius: 24, backgroundImage: _avatarFor(chat)),
+                      if (chat.online)
+                        Positioned(
+                          right: -1,
+                          bottom: -1,
+                          child: Container(
+                            width: 48 * .30,
+                            height: 48 * .30,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF34C759),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color:
+                                      Theme.of(context).scaffoldBackgroundColor,
+                                  width: 1),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(chat.name,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(formatDDTime(chat.updatedAt ?? ''),
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: Theme.of(context).hintColor)),
+                              ],
+                            ),
+                            if (chat.unreadCount > 0) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                constraints: const BoxConstraints(minWidth: 18),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.error,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  chat.unreadCount > 99
+                                      ? '99+'
+                                      : '${chat.unreadCount}',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 10),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(chat.preview,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      color: Theme.of(context).hintColor)),
+                            ),
+                            if (_pinnedConversationIds
+                                .contains(chat.conversationId))
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Icon(
+                                  Icons.lock_outline,
+                                  size: 13,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: Text(chat.name,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodyLarge),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(formatDDTime(chat.updatedAt ?? ''),
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: Theme.of(context).hintColor)),
-                          ],
-                        ),
-                        if (chat.unreadCount > 0) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            constraints: const BoxConstraints(minWidth: 18),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.error,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              chat.unreadCount > 99 ? '99+' : '${chat.unreadCount}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(chat.preview,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: Theme.of(context).hintColor)),
-                        ),
-                        if (_pinnedConversationIds.contains(chat.conversationId))
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Icon(
-                              Icons.lock_outline,
-                              size: 13,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
             ),
           ),
         ),
@@ -982,7 +1016,8 @@ class _ConversationSwipeButton extends StatelessWidget {
               children: [
                 Icon(icon, color: Colors.white, size: 19),
                 const SizedBox(height: 2),
-                Text(label, style: const TextStyle(color: Colors.white, fontSize: 11)),
+                Text(label,
+                    style: const TextStyle(color: Colors.white, fontSize: 11)),
               ],
             ),
           ),
@@ -993,7 +1028,14 @@ class _ConversationSwipeButton extends StatelessWidget {
 class _ChatPreview {
   _ChatPreview(this.name, this.preview, this.avatarUrl, this.avatarKey,
       this.peerUserId, this.conversationId, this.unreadCount,
-      [this.peerReadMessageId, this.updatedAt, this.kind = 'dm', this.pinned = false, this.muted = false, this.online = false, this.peerLatitude, this.peerLongitude]);
+      [this.peerReadMessageId,
+      this.updatedAt,
+      this.kind = 'dm',
+      this.pinned = false,
+      this.muted = false,
+      this.online = false,
+      this.peerLatitude,
+      this.peerLongitude]);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -1028,7 +1070,8 @@ class _ChatPreview {
         (row['peerLongitude'] as num?)?.toDouble(),
       );
 
-  _ChatPreview copyWith({bool? pinned, bool? muted, int? unreadCount}) => _ChatPreview(
+  _ChatPreview copyWith({bool? pinned, bool? muted, int? unreadCount}) =>
+      _ChatPreview(
         name,
         preview,
         avatarUrl,
@@ -1137,11 +1180,15 @@ class _ChatDetailPage extends StatefulWidget {
 }
 
 class _ChatRadarPanel extends StatefulWidget {
-  const _ChatRadarPanel({required this.avatar, required this.peerLatitude, required this.peerLongitude});
+  const _ChatRadarPanel(
+      {required this.avatar,
+      required this.peerLatitude,
+      required this.peerLongitude});
   final ImageProvider avatar;
   final double? peerLatitude;
   final double? peerLongitude;
-  @override State<_ChatRadarPanel> createState() => _ChatRadarPanelState();
+  @override
+  State<_ChatRadarPanel> createState() => _ChatRadarPanelState();
 }
 
 class _ChatRadarPanelState extends State<_ChatRadarPanel> {
@@ -1150,43 +1197,111 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   double? myLongitude;
   Timer? _magnetometer;
   @override
-  void initState() { super.initState(); _loadLocation(); _magnetometer = Timer.periodic(const Duration(milliseconds: 40), (_) async {
-   final raw = await _compassChannel.invokeMethod<dynamic>('heading');
-   final value = raw is num ? raw.toDouble() : null;
-   if (value != null && mounted) setState(() => heading = value);
- }); }
-  Future<void> _loadLocation() async { final p=await SharedPreferences.getInstance(); if(!mounted)return; setState(() { myLatitude=p.getDouble('dd.location.latitude'); myLongitude=p.getDouble('dd.location.longitude'); }); }
-  @override void dispose(){_magnetometer?.cancel();super.dispose();}
-  double? get distance { if(myLatitude==null||myLongitude==null||widget.peerLatitude==null||widget.peerLongitude==null)return null; const r=6371.0; final a1=myLatitude!*math.pi/180,a2=widget.peerLatitude!*math.pi/180, da=(widget.peerLatitude!-myLatitude!)*math.pi/180,dl=(widget.peerLongitude!-myLongitude!)*math.pi/180; final h=math.sin(da/2)*math.sin(da/2)+math.cos(a1)*math.cos(a2)*math.sin(dl/2)*math.sin(dl/2); return 2*r*math.asin(math.sqrt(h)); }
-  double? get bearing { if(myLatitude==null||myLongitude==null||widget.peerLatitude==null||widget.peerLongitude==null)return null; final a1=myLatitude!*math.pi/180,a2=widget.peerLatitude!*math.pi/180, dl=(widget.peerLongitude!-myLongitude!)*math.pi/180; return (math.atan2(math.sin(dl)*math.cos(a2),math.cos(a1)*math.sin(a2)-math.sin(a1)*math.cos(a2)*math.cos(dl))*180/math.pi+360)%360; }
+  void initState() {
+    super.initState();
+    _loadLocation();
+    _magnetometer = Timer.periodic(const Duration(milliseconds: 40), (_) async {
+      final raw = await _compassChannel.invokeMethod<dynamic>('heading');
+      final value = raw is num ? raw.toDouble() : null;
+      if (value != null && mounted) setState(() => heading = value);
+    });
+  }
+
+  Future<void> _loadLocation() async {
+    final p = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      myLatitude = p.getDouble('dd.location.latitude');
+      myLongitude = p.getDouble('dd.location.longitude');
+    });
+  }
+
+  @override
+  void dispose() {
+    _magnetometer?.cancel();
+    super.dispose();
+  }
+
+  double? get distance {
+    if (myLatitude == null ||
+        myLongitude == null ||
+        widget.peerLatitude == null ||
+        widget.peerLongitude == null) return null;
+    const r = 6371.0;
+    final a1 = myLatitude! * math.pi / 180,
+        a2 = widget.peerLatitude! * math.pi / 180,
+        da = (widget.peerLatitude! - myLatitude!) * math.pi / 180,
+        dl = (widget.peerLongitude! - myLongitude!) * math.pi / 180;
+    final h = math.sin(da / 2) * math.sin(da / 2) +
+        math.cos(a1) * math.cos(a2) * math.sin(dl / 2) * math.sin(dl / 2);
+    return 2 * r * math.asin(math.sqrt(h));
+  }
+
+  double? get bearing {
+    if (myLatitude == null ||
+        myLongitude == null ||
+        widget.peerLatitude == null ||
+        widget.peerLongitude == null) return null;
+    final a1 = myLatitude! * math.pi / 180,
+        a2 = widget.peerLatitude! * math.pi / 180,
+        dl = (widget.peerLongitude! - myLongitude!) * math.pi / 180;
+    return (math.atan2(
+                    math.sin(dl) * math.cos(a2),
+                    math.cos(a1) * math.sin(a2) -
+                        math.sin(a1) * math.cos(a2) * math.cos(dl)) *
+                180 /
+                math.pi +
+            360) %
+        360;
+  }
+
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: 100,
-    height: 120,
-    child: DecoratedBox(
-      decoration: BoxDecoration(color: const Color(0xE6101020), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0x554C4CFF))),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 20,
-            width: 100,
-            child: Center(child: Text(distance == null ? '位置未知' : '相距 ${distance!.toStringAsFixed(1)}km', style: const TextStyle(color: Colors.white, fontSize: 11))),
+        width: 100,
+        height: 120,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+              color: const Color(0xE6101020),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0x554C4CFF))),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 20,
+                width: 100,
+                child: Center(
+                    child: Text(
+                        distance == null
+                            ? '位置未知'
+                            : '相距 ${distance!.toStringAsFixed(1)}km',
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 11))),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: CustomPaint(
+                  size: const Size(100, 100),
+                  painter: _RadarPainter(
+                      bearing: bearing,
+                      heading: heading,
+                      distanceKm: distance,
+                      hasPeer: bearing != null,
+                      avatar: widget.avatar),
+                ),
+              ),
+            ],
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: CustomPaint(
-              size: const Size(100, 100),
-              painter: _RadarPainter(bearing: bearing, heading: heading, distanceKm: distance, hasPeer: bearing != null, avatar: widget.avatar),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 class _RadarPainter extends CustomPainter {
-  _RadarPainter({required this.bearing, required this.heading, required this.distanceKm, required this.hasPeer, required this.avatar});
+  _RadarPainter(
+      {required this.bearing,
+      required this.heading,
+      required this.distanceKm,
+      required this.hasPeer,
+      required this.avatar});
   final double? bearing;
   final double heading;
   final double? distanceKm;
@@ -1196,11 +1311,20 @@ class _RadarPainter extends CustomPainter {
   void paint(Canvas c, Size s) {
     final o = Offset(s.width / 2, s.height / 2);
     final r = s.shortestSide * .42;
-    final ring = Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = const Color(0x664C4CFF);
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0x664C4CFF);
     for (final k in [1.0, .72, .44]) c.drawCircle(o, r * k, ring);
     c.drawCircle(o, 4, Paint()..color = const Color(0xFF34C759));
     final sectorHeading = (heading - 90) * math.pi / 180;
-    final sector = Path()..moveTo(o.dx, o.dy)..lineTo(o.dx + math.cos(sectorHeading - .524) * r, o.dy + math.sin(sectorHeading - .524) * r)..arcTo(Rect.fromCircle(center: o, radius: r), sectorHeading - .524, 1.048, false)..close();
+    final sector = Path()
+      ..moveTo(o.dx, o.dy)
+      ..lineTo(o.dx + math.cos(sectorHeading - .524) * r,
+          o.dy + math.sin(sectorHeading - .524) * r)
+      ..arcTo(Rect.fromCircle(center: o, radius: r), sectorHeading - .524,
+          1.048, false)
+      ..close();
     c.drawPath(sector, Paint()..color = const Color(0x334CFFD9));
     if (!hasPeer || bearing == null) return;
     final a = bearing! * math.pi / 180;
@@ -1211,10 +1335,17 @@ class _RadarPainter extends CustomPainter {
             : distanceKm! <= 30
                 ? r * .72
                 : r;
-    final point = Offset(o.dx + math.sin(a) * ringRadius, o.dy - math.cos(a) * ringRadius);
+    final point = Offset(
+        o.dx + math.sin(a) * ringRadius, o.dy - math.cos(a) * ringRadius);
     c.drawCircle(point, 3, Paint()..color = const Color(0xFF59D9FF));
   }
-  @override bool shouldRepaint(covariant _RadarPainter old) => old.heading != heading || old.bearing != bearing || old.distanceKm != distanceKm || old.hasPeer != hasPeer;
+
+  @override
+  bool shouldRepaint(covariant _RadarPainter old) =>
+      old.heading != heading ||
+      old.bearing != bearing ||
+      old.distanceKm != distanceKm ||
+      old.hasPeer != hasPeer;
 }
 
 class _ChatDetailPageState extends State<_ChatDetailPage> {
@@ -2129,7 +2260,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             final prefs = await SharedPreferences.getInstance();
             final cached = await ImLocalStore.conversations(accountId);
             final rows = cached.map((row) {
-              if ('${row['conversationId'] ?? ''}' == widget.chat.conversationId) {
+              if ('${row['conversationId'] ?? ''}' ==
+                  widget.chat.conversationId) {
                 return {...row, 'pinned': !(row['pinned'] == true)};
               }
               return row;
@@ -2141,7 +2273,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             final accountId = currentUserId;
             final cached = await ImLocalStore.conversations(accountId);
             final rows = cached.map((row) {
-              if ('${row['conversationId'] ?? ''}' == widget.chat.conversationId) {
+              if ('${row['conversationId'] ?? ''}' ==
+                  widget.chat.conversationId) {
                 return {...row, 'muted': !(row['muted'] == true)};
               }
               return row;
@@ -2316,19 +2449,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
-
   bool _isSharedPost(Map<String, dynamic> message) {
     final metadata = message['metadata'];
     if (metadata is! Map) return false;
     final type = '${metadata['type'] ?? ''}';
-    final postId = int.tryParse('${metadata['postId'] ?? metadata['post_id'] ?? ''}');
+    final postId =
+        int.tryParse('${metadata['postId'] ?? metadata['post_id'] ?? ''}');
     return type == 'post_share' && postId != null && postId > 0;
   }
 
   Widget _sharedPostBody(Map<String, dynamic> message) {
     final metadata = Map<String, dynamic>.from(message['metadata'] as Map);
     final postId = '${metadata['postId'] ?? metadata['post_id'] ?? ''}';
-    final text = '${metadata['content'] ?? message['text'] ?? '分享了一条动态'}'.trim();
+    final text =
+        '${metadata['content'] ?? message['text'] ?? '分享了一条动态'}'.trim();
     final author = '${metadata['author'] ?? ''}'.trim();
     final thumbnailUrl = '${metadata['thumbnailUrl'] ?? ''}'.trim();
     return InkWell(
@@ -2340,7 +2474,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface.withOpacity(0.55),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Row(
           children: [
@@ -2380,7 +2515,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                       style: Theme.of(context).textTheme.labelLarge),
                   const SizedBox(height: 3),
                   Text(text.isEmpty ? '分享了一条动态' : text,
-                      maxLines: 2, overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 3),
                   const Text('点击查看动态',
@@ -2397,7 +2533,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Future<void> _openSharedPost(Map<String, dynamic> message) async {
     final metadata = message['metadata'];
     if (metadata is! Map) return;
-    final postId = int.tryParse('${metadata['postId'] ?? metadata['post_id'] ?? ''}');
+    final postId =
+        int.tryParse('${metadata['postId'] ?? metadata['post_id'] ?? ''}');
     if (postId == null || postId <= 0 || !mounted) return;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
@@ -2406,9 +2543,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     try {
       final post = await service.fetchPost(token, postId);
       if (!mounted) return;
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => DynamicDetailPage(postId: postId, initialPost: post),
-      ));
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                DynamicDetailPage(postId: postId, initialPost: post),
+          ));
     } catch (error) {
       if (mounted) _showTopErrorBanner(context, '动态加载失败：$error');
     } finally {
@@ -2541,18 +2681,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  CircleAvatar(radius: 15, backgroundImage: _chatAvatarFor(widget.chat)),
+                  CircleAvatar(
+                      radius: 15, backgroundImage: _chatAvatarFor(widget.chat)),
                   if (widget.chat.online)
                     Positioned(
                       right: -1,
                       bottom: -1,
                       child: Container(
                         width: 30 * .30,
-                          height: 30 * .30,
+                        height: 30 * .30,
                         decoration: BoxDecoration(
                           color: const Color(0xFF34C759),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1),
+                          border: Border.all(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              width: 1),
                         ),
                       ),
                     ),
@@ -2619,7 +2762,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                 if (peerTyping && index == 0) {
                                   return _TypingBubble();
                                 }
-                                final message = _timeline[peerTyping ? index - 1 : index];
+                                final message =
+                                    _timeline[peerTyping ? index - 1 : index];
                                 final isCall =
                                     message['_timelineKind'] == 'call';
                                 final isMine = currentUserId.isNotEmpty &&
@@ -2918,10 +3062,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                                       color: Colors
                                                                           .grey),
                                                                 )
-                                                              : _isSharedPost(message)
-                                                                  ? _sharedPostBody(message)
+                                                              : _isSharedPost(
+                                                                      message)
+                                                                  ? _sharedPostBody(
+                                                                      message)
                                                                   : message['kind'] ==
-                                                                      'image'
+                                                                          'image'
                                                                       ? _imageMessageBody(
                                                                           message)
                                                                       : message['kind'] ==
@@ -3072,8 +3218,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                               voiceMode = !voiceMode;
                               emojiExpanded = false;
                             }),
-                            icon: Icon(
-                                voiceMode ? Icons.keyboard : TIcons.microphone_1),
+                            icon: Icon(voiceMode
+                                ? Icons.keyboard
+                                : TIcons.microphone_1),
                           ),
                           Expanded(
                             child: voiceMode
@@ -3207,7 +3354,10 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             Positioned(
               top: 8,
               right: 8,
-              child: _ChatRadarPanel(avatar: _chatAvatarFor(widget.chat), peerLatitude: widget.chat.peerLatitude, peerLongitude: widget.chat.peerLongitude),
+              child: _ChatRadarPanel(
+                  avatar: _chatAvatarFor(widget.chat),
+                  peerLatitude: widget.chat.peerLatitude,
+                  peerLongitude: widget.chat.peerLongitude),
             ),
             if (moreExpanded)
               Positioned(
@@ -3237,7 +3387,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                           unawaited(_pickAndSendImage());
                         },
                       ),
-
                     ],
                   ),
                 ),
@@ -3999,7 +4148,8 @@ class _DDShellState extends State<DDShell> {
 }
 
 class _PageErrorState extends StatefulWidget {
-  const _PageErrorState({required this.title, required this.subtitle, this.onRetry});
+  const _PageErrorState(
+      {required this.title, required this.subtitle, this.onRetry});
   final String title;
   final String subtitle;
   final VoidCallback? onRetry;
@@ -4020,7 +4170,8 @@ class _PageErrorStateState extends State<_PageErrorState> {
   @override
   void didUpdateWidget(covariant _PageErrorState oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.title != widget.title || oldWidget.subtitle != widget.subtitle) {
+    if (oldWidget.title != widget.title ||
+        oldWidget.subtitle != widget.subtitle) {
       _showAfterBuild();
     }
   }
