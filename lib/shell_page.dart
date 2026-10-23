@@ -95,6 +95,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   BuildContext? incomingDialogContext;
   bool outgoingCallStarting = false;
   String? activeCallId;
+  bool _conversationRequestRunning = false;
+  Timer? _conversationRefreshDebounce;
 
   @override
   void initState() {
@@ -117,7 +119,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   void _handleListEvent(Map<String, dynamic> event) {
     if (event['type'] == 'message:new' || event['type'] == 'message:recalled') {
-      unawaited(_loadConversations(showLoading: false));
+      _conversationRefreshDebounce?.cancel();
+      _conversationRefreshDebounce =
+          Timer(const Duration(milliseconds: 350), () {
+        if (mounted) unawaited(_loadConversations(showLoading: false));
+      });
     }
     if (event['type'] == 'call:update' || event['type'] == 'call:incoming') {
       final call = event['call'];
@@ -314,6 +320,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _loadConversations({bool showLoading = true}) async {
+    if (_conversationRequestRunning) return;
+    _conversationRequestRunning = true;
+    try {
+      await _loadConversationsInternal(showLoading: showLoading);
+    } finally {
+      _conversationRequestRunning = false;
+    }
+  }
+
+  Future<void> _loadConversationsInternal({required bool showLoading}) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) {
@@ -337,12 +353,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         final cachedPreviews =
             cachedRows.map((row) => _ChatPreview.fromCache(row)).toList();
         final cachedAvatarPaths = <String, String>{};
-        for (final chat in cachedPreviews) {
+        await Future.wait(cachedPreviews.map((chat) async {
           final key = chat.avatarKey ?? '';
-          if (key.isEmpty) continue;
+          if (key.isEmpty) return;
           final local = await ImLocalStore.avatarPath(key);
           if (local != null) cachedAvatarPaths[key] = local;
-        }
+        }));
         if (!mounted) return;
         setState(() {
           _avatarPaths.addAll(cachedAvatarPaths);
@@ -422,10 +438,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         ));
       }
       mapped.sort((a, b) {
-        final ap = _pinnedConversationIds.contains(a.conversationId);
-        final bp = _pinnedConversationIds.contains(b.conversationId);
-        if (ap != bp) return ap ? -1 : 1;
-        return 0;
+        if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+        final at = DateTime.tryParse(a.updatedAt ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final bt = DateTime.tryParse(b.updatedAt ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final byTime = bt.compareTo(at);
+        return byTime != 0
+            ? byTime
+            : a.conversationId.compareTo(b.conversationId);
       });
       if (mounted) {
         setState(() {
