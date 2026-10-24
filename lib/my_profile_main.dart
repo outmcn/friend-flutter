@@ -805,25 +805,28 @@ class _CpBlessingCard extends StatelessWidget {
             const Text('暂无祝福礼物', style: TextStyle(color: Colors.white60))
           else
             SizedBox(
-                height: 92,
-                child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
+                height: 248,
+                child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: names.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (_, i) => SizedBox(
-                        width: 66,
-                        child: Column(children: [
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 5,
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 6,
+                            childAspectRatio: .9),
+                    itemBuilder: (_, i) => Column(children: [
                           Image.asset('assets/cp_blessings/gift_${i + 1}.png',
-                              width: 50, height: 50),
+                              width: 40, height: 40),
                           Text(names[i],
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                   color: Colors.white, fontSize: 10)),
-                          const Text('×0',
+                          const Text('暂无资料',
                               style: TextStyle(
                                   color: Colors.white70, fontSize: 11))
-                        ]))))
+                        ])))
         ]),
       );
 }
@@ -923,17 +926,20 @@ class _CpGiftCardState extends State<_CpGiftCard> {
             const Text('暂无CP礼物', style: TextStyle(color: Colors.white60))
           else
             SizedBox(
-                height: 92,
-                child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: gifts.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                height: 248,
+                child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: gifts.length > 9 ? 9 : gifts.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: .95),
                     itemBuilder: (_, i) {
                       final g = gifts[i];
                       return InkWell(
-                        onTap: sending ? null : () => _sendGift(g),
-                        child: SizedBox(
-                          width: 62,
+                          onTap: sending ? null : () => _sendGift(g),
                           child: Column(children: [
                             Image.asset('assets/cp_gifts/gift_${i + 1}.png',
                                 width: 48, height: 48),
@@ -945,9 +951,7 @@ class _CpGiftCardState extends State<_CpGiftCard> {
                             Text('×${g['receivedQuantity'] ?? 0}',
                                 style: const TextStyle(
                                     color: Colors.white70, fontSize: 11))
-                          ]),
-                        ),
-                      );
+                          ]));
                     }))
         ]),
       );
