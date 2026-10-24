@@ -1316,7 +1316,16 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
               .getString('friend.auth.token') ??
           '';
       final response = await service.fetchVoiceRooms(token);
-      if (mounted) setState(() => rooms = response);
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserId = prefs.getString('friend.auth.userId');
+      final owned = currentUserId == null
+          ? response
+          : response
+              .where((room) =>
+                  '${room['ownerUserId'] ?? room['owner_user_id']}' ==
+                  currentUserId)
+              .toList();
+      if (mounted) setState(() => rooms = owned.take(1).toList());
     } catch (e) {
       if (mounted) setState(() => loadError = '$e');
     } finally {
@@ -1402,44 +1411,63 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                             ),
                           ),
                           const SizedBox(height: 28),
-                          _ChannelProfileCard(
-                              room: rooms.isEmpty ? null : rooms.first),
+                          const _ChannelProfileCard(),
                         ],
                       )
                     : RefreshIndicator(
                         onRefresh: _load,
-                        child: ListView.builder(
-                          itemCount: rooms.length,
-                          itemBuilder: (_, i) {
-                            final room = rooms[i];
-                            return ListTile(
-                              leading:
-                                  const CircleAvatar(child: Icon(Icons.mic)),
-                              title: Text('${room['title'] ?? '语音频道'}'),
-                              subtitle: Text('${room['nickname'] ?? '用户'} 创建'),
-                              trailing: FilledButton(
-                                onPressed: () async {
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 84, 16, 28),
+                          children: [
+                            _ChannelSummaryCard(
+                                room: rooms.first,
+                                onEnter: () async {
                                   final token =
                                       (await SharedPreferences.getInstance())
                                               .getString('friend.auth.token') ??
                                           '';
                                   final joined = await service.joinVoiceRoom(
-                                      token, '${room['id']}');
-                                  if (context.mounted) {
+                                      token, '${rooms.first['id']}');
+                                  if (context.mounted)
                                     Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) =>
-                                              VoiceRoomPage(room: joined)),
-                                    );
-                                  }
-                                },
-                                child: const Text('加入'),
-                              ),
-                            );
-                          },
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                VoiceRoomPage(room: joined)));
+                                }),
+                            const SizedBox(height: 16),
+                            _ChannelProfileCard(room: rooms.first),
+                          ],
                         ),
                       ),
+      );
+}
+
+class _ChannelSummaryCard extends StatelessWidget {
+  const _ChannelSummaryCard({required this.room, required this.onEnter});
+  final Map<String, dynamic> room;
+  final VoidCallback onEnter;
+  @override
+  Widget build(BuildContext context) => Card(
+        color: const Color(0xff241936),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(children: [
+            const CircleAvatar(radius: 30, child: Icon(Icons.mic)),
+            const SizedBox(width: 14),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('${room['title'] ?? '语音频道'}',
+                      style: const TextStyle(
+                          fontSize: 19, fontWeight: FontWeight.w800)),
+                  Text('创建者：${room['nickname'] ?? '暂无资料'}',
+                      style: const TextStyle(color: Colors.white60)),
+                ])),
+            FilledButton(onPressed: onEnter, child: const Text('进入频道')),
+          ]),
+        ),
       );
 }
 
