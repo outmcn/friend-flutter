@@ -3032,29 +3032,89 @@ class _DDProfilePageState extends State<DDProfilePage>
   }
 }
 
-class _AvatarDressupPage extends StatelessWidget {
+class _AvatarDressupPage extends StatefulWidget {
   const _AvatarDressupPage();
+
+  @override
+  State<_AvatarDressupPage> createState() => _AvatarDressupPageState();
+}
+
+class _AvatarDressupPageState extends State<_AvatarDressupPage> {
+  String? selected;
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('头像装扮')),
         body: ListView(
           padding: const EdgeInsets.all(20),
-          children: const [
-            Text('头像框选择功能已接入，选择后将应用到头像。'),
-            SizedBox(height: 20),
+          children: [
+            const Text('选择头像框',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            const Text('点击头像框即可选择，未选择时使用默认渐变圆环。'),
+            const SizedBox(height: 20),
+            _frameOption(
+              context,
+              id: 'male',
+              title: '男生头像框',
+              asset: 'assets/avatar_frames/男_frame.png',
+            ),
+            const SizedBox(height: 14),
+            _frameOption(
+              context,
+              id: 'female',
+              title: '女生头像框',
+              asset: 'assets/avatar_frames/女_frame.png',
+            ),
+            const SizedBox(height: 18),
             ListTile(
-              leading: Icon(Icons.circle, color: Colors.blue),
-              title: Text('默认蓝色渐变圆环'),
-              subtitle: Text('未选择头像框时使用'),
+              leading: const Icon(Icons.circle_outlined, color: Colors.blue),
+              title: const Text('默认蓝色渐变圆环'),
+              subtitle: const Text('未选择头像框时使用'),
+              onTap: () => setState(() => selected = 'default-male'),
             ),
             ListTile(
-              leading: Icon(Icons.circle, color: Colors.pink),
-              title: Text('默认粉色渐变圆环'),
-              subtitle: Text('未选择头像框时使用'),
+              leading: const Icon(Icons.circle_outlined, color: Colors.pink),
+              title: const Text('默认粉色渐变圆环'),
+              subtitle: const Text('未选择头像框时使用'),
+              onTap: () => setState(() => selected = 'default-female'),
             ),
           ],
         ),
       );
+
+  Widget _frameOption(BuildContext context,
+      {required String id, required String title, required String asset}) {
+    final active = selected == id;
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () => setState(() => selected = id),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: active
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outlineVariant,
+            width: active ? 2 : 1,
+          ),
+        ),
+        child: Row(children: [
+          Image.asset(asset, width: 104, height: 104, fit: BoxFit.contain),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
+          if (active)
+            Icon(Icons.check_circle,
+                color: Theme.of(context).colorScheme.primary),
+        ]),
+      ),
+    );
+  }
 }
 
 class _ProfileActionButton extends StatelessWidget {
