@@ -2665,40 +2665,17 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                 Container(
                                                   width: 96,
                                                   height: 96,
-                                                  padding:
-                                                      const EdgeInsets.all(3),
                                                   decoration: BoxDecoration(
                                                     shape: BoxShape.circle,
-                                                    gradient: p?['gender'] ==
-                                                            '男'
-                                                        ? const LinearGradient(
-                                                            colors: [
-                                                                Color(
-                                                                    0xFF69B7FF),
-                                                                Color(
-                                                                    0xFF1677FF),
-                                                                Color(
-                                                                    0xFF0B3D91)
-                                                              ])
-                                                        : p?['gender'] == '女'
-                                                            ? const LinearGradient(
-                                                                colors: [
-                                                                    Color(
-                                                                        0xFFFFB6D5),
-                                                                    Color(
-                                                                        0xFFFF6FAE),
-                                                                    Color(
-                                                                        0xFFC2185B)
-                                                                  ])
-                                                            : null,
-                                                    color: p?['gender'] ==
-                                                                '男' ||
-                                                            p?['gender'] == '女'
-                                                        ? null
-                                                        : Colors.white24,
+                                                    border: Border.all(
+                                                      color: p?['gender'] == '女'
+                                                          ? const Color(
+                                                              0xFFFF82B7)
+                                                          : const Color(
+                                                              0xFF4E9BFF),
+                                                      width: 3,
+                                                    ),
                                                   ),
-                                                  child:
-                                                      const SizedBox.expand(),
                                                 ),
                                               ],
                                             ),
@@ -2725,7 +2702,21 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 36),
+                                  const SizedBox(height: 18),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: _ProfileActionButton(
+                                      icon: Icons.auto_awesome,
+                                      label: '装扮',
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const _AvatarDressupPage()),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
                                   Row(
                                     children: [
                                       Expanded(
@@ -2799,6 +2790,31 @@ class _DDProfilePageState extends State<DDProfilePage>
             ),
     );
   }
+}
+
+class _AvatarDressupPage extends StatelessWidget {
+  const _AvatarDressupPage();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('头像装扮')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: const [
+            Text('头像框选择功能已接入，选择后将应用到头像。'),
+            SizedBox(height: 20),
+            ListTile(
+              leading: Icon(Icons.circle, color: Colors.blue),
+              title: Text('默认蓝色渐变圆环'),
+              subtitle: Text('未选择头像框时使用'),
+            ),
+            ListTile(
+              leading: Icon(Icons.circle, color: Colors.pink),
+              title: Text('默认粉色渐变圆环'),
+              subtitle: Text('未选择头像框时使用'),
+            ),
+          ],
+        ),
+      );
 }
 
 class _ProfileActionButton extends StatelessWidget {
