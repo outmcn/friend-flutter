@@ -736,6 +736,11 @@ class CpSpaceDetailPage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 74, 16, 28),
               children: [
+                _CpCastleCard(
+                    experience: checkin?['experience'] is int
+                        ? checkin!['experience'] as int
+                        : int.tryParse('${checkin?['experience']}') ?? 0),
+                const SizedBox(height: 14),
                 _CpSpaceLevelCard(
                     experience: checkin?['experience'] is int
                         ? checkin!['experience'] as int
@@ -1051,6 +1056,35 @@ class _CpCheckinCard extends StatelessWidget {
   }
 }
 
+class _CpCastleCard extends StatelessWidget {
+  const _CpCastleCard({required this.experience});
+  final int experience;
+
+  @override
+  Widget build(BuildContext context) {
+    final safe = experience < 0 ? 0 : experience;
+    var index = 0;
+    const thresholds = [0, 100, 300, 650, 1200, 2000, 3100, 4600, 6600, 9200];
+    for (var i = 0; i < thresholds.length; i++) {
+      if (safe >= thresholds[i]) index = i;
+    }
+    return Container(
+      height: 230,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0x443B2184),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x887E5CC9)),
+      ),
+      child: Image.asset(
+        'assets/cp_levels/level_${index + 1}.png',
+        width: double.infinity,
+        fit: BoxFit.contain,
+      ),
+    );
+  }
+}
+
 class _CpSpaceLevelCard extends StatelessWidget {
   const _CpSpaceLevelCard({this.experience = 0});
   final int experience;
@@ -1097,12 +1131,6 @@ class _CpSpaceLevelCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: const Color(0x887E5CC9))),
       child: Row(children: [
-        Image.asset(
-          'assets/cp_levels/level_${index + 1}.png',
-          width: 34,
-          height: 34,
-          fit: BoxFit.contain,
-        ),
         const SizedBox(width: 10),
         Text('Lv.${index + 1} · ${titles[index]}',
             style: const TextStyle(
