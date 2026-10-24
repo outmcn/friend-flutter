@@ -539,23 +539,35 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
         child: Scaffold(
           backgroundColor: const Color(0xff1a1224),
           appBar: AppBar(
-            backgroundColor: Colors.transparent,
+            toolbarHeight: 56,
+            centerTitle: true,
+            backgroundColor: const Color(0xff24152f),
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             scrolledUnderElevation: 0,
             foregroundColor: Colors.white,
-            title: Text(widget.roomTitle),
+            title: Text(widget.roomTitle,
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+            actionsPadding: const EdgeInsets.only(right: 8),
             actions: [
               IconButton(
+                constraints:
+                    const BoxConstraints.tightFor(width: 40, height: 40),
+                padding: EdgeInsets.zero,
                 tooltip: '分享',
                 onPressed: _shareRoom,
-                icon: const Icon(TIcons.share_1),
+                icon: const Icon(TIcons.share_1, size: 21),
               ),
               IconButton(
-                  onPressed: _confirmExit, icon: const Icon(Icons.close)),
+                constraints:
+                    const BoxConstraints.tightFor(width: 40, height: 40),
+                padding: EdgeInsets.zero,
+                tooltip: '关闭',
+                onPressed: _confirmExit,
+                icon: const Icon(Icons.close, size: 22),
+              ),
             ],
           ),
-          extendBodyBehindAppBar: true,
           body: Stack(children: [
             Positioned.fill(
                 child: DecoratedBox(
@@ -565,7 +577,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                             radius: 1.4,
                             colors: [Color(0xff673a8c), Color(0xff1a1224)])))),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 78, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
