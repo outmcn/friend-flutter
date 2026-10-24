@@ -700,28 +700,68 @@ class CpSpaceDetailPage extends StatelessWidget {
 class _CpSpaceLevelCard extends StatelessWidget {
   const _CpSpaceLevelCard();
 
+  static const levels = [
+    ['Lv.1', '初遇', '100', '0', '0 - 99'],
+    ['Lv.2', '心动', '200', '100', '100 - 299'],
+    ['Lv.3', '暧昧', '350', '300', '300 - 649'],
+    ['Lv.4', '热恋', '550', '650', '650 - 1199'],
+    ['Lv.5', '默契', '800', '1200', '1200 - 1999'],
+    ['Lv.6', '守护', '1100', '2000', '2000 - 3099'],
+    ['Lv.7', '相知', '1500', '3100', '3100 - 4599'],
+    ['Lv.8', '挚爱', '2000', '4600', '4600 - 6599'],
+    ['Lv.9', '永恒', '2600', '6600', '6600 - 9199'],
+    ['Lv.10', '传奇', '满级', '9200', '9200+'],
+  ];
+
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: const Color(0x443B2184),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0x887E5CC9)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.workspace_premium,
-                color: Color(0xffd3b5ff), size: 28),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text('空间等级',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w700)),
-            ),
-            Text('Lv.X',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.65))),
-          ],
-        ),
+  Widget build(BuildContext context) {
+    final current = levels.first;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0x443B2184),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x887E5CC9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(children: [
+            Icon(Icons.workspace_premium, color: Color(0xffd3b5ff), size: 28),
+            SizedBox(width: 12),
+            Text('Lv.X · 等级称号待接入',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w800)),
+          ]),
+          const SizedBox(height: 16),
+          _levelRow('升到下一级所需经验', '暂无经验数据'),
+          _levelRow('累计经验', '暂无经验数据'),
+          _levelRow('当前等级经验区间', '暂无经验数据'),
+          const SizedBox(height: 14),
+          const Text('等级规则',
+              style: TextStyle(
+                  color: Colors.white70, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          ...levels.map((level) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                    '${level[0]}  ${level[1]}    升级 ${level[2]}    累计 ${level[3]}    ${level[4]}',
+                    style:
+                        const TextStyle(color: Colors.white60, fontSize: 12)),
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _levelRow(String label, String value) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(children: [
+          Expanded(
+              child:
+                  Text(label, style: const TextStyle(color: Colors.white70))),
+          Text(value, style: const TextStyle(color: Colors.white)),
+        ]),
       );
 }
 
