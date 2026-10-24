@@ -440,13 +440,6 @@ class _SpaceLayout extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
-                Center(
-                  child: Text(
-                    isOwner ? '邀请好友，组成你的专属空间' : '空间关系暂未开放',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ),
               ],
             ),
           ),
