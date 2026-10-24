@@ -743,7 +743,8 @@ class _CpCheckinCard extends StatelessWidget {
     final owner = checkin?['ownerCheckedIn'] == true;
     final partner = checkin?['partnerCheckedIn'] == true;
     final rewarded = checkin?['rewarded'] == true;
-    final exp = checkin?['experience'] ?? 0;
+    final streak = checkin?['streakDays'] ?? 0;
+    final bonus = checkin?['bonusExperience'] ?? 0;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -758,7 +759,7 @@ class _CpCheckinCard extends StatelessWidget {
               child: Text('每日签到',
                   style: TextStyle(
                       color: Colors.white, fontWeight: FontWeight.w800))),
-          Text('CP经验 $exp', style: const TextStyle(color: Colors.white70)),
+          Text('连续 $streak 天', style: const TextStyle(color: Colors.white70)),
         ]),
         const SizedBox(height: 10),
         Text('我：${checked ? '已签到' : '未签到'}    对方：${partner ? '已签到' : '未签到'}',
@@ -766,7 +767,7 @@ class _CpCheckinCard extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
             rewarded
-                ? '双方已签到，今日已增加10经验'
+                ? '双方已签到，今日已增加10经验${bonus > 0 ? '，连续7天额外+30经验' : ''}'
                 : owner && partner
                     ? '今日已完成签到'
                     : '双方都签到后增加10点CP经验',
