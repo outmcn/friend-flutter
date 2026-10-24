@@ -324,38 +324,34 @@ class _VoiceRoomSeats extends StatelessWidget {
 }
 
 class _VoiceRoomMessages extends StatelessWidget {
-  const _VoiceRoomMessages({required this.room});
-  final Map<String, dynamic>? room;
+  const _VoiceRoomMessages({required this.messages});
+  final List<Map<String, dynamic>> messages;
 
   static const _platformNotice =
       '平台将24小时巡查违规内容，对私下交易、发布广告信息、从事任何金融违法犯罪活动等违规行为予以严肃处理，并上报相关部门。如您发现上述不正当行为，请及时向平台举报。让我们共同营造善意、平等、真实的氛围。';
 
   @override
-  Widget build(BuildContext context) {
-    final raw = room?['messages'];
-    final messages = raw is List ? raw.whereType<Map>().toList() : const [];
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: messages.length + 1,
-      itemBuilder: (_, index) {
-        if (index == 0) {
-          return const Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: Text('平台公告：$_platformNotice',
-                style: TextStyle(color: Colors.white70, height: 1.45)),
+  Widget build(BuildContext context) => ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: messages.length + 1,
+        itemBuilder: (_, index) {
+          if (index == 0) {
+            return const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text('平台公告：$_platformNotice',
+                  style: TextStyle(color: Colors.white70, height: 1.45)),
+            );
+          }
+          final message = messages[index - 1];
+          final name = message['nickname']?.toString() ?? '用户';
+          final text = message['text']?.toString() ?? '';
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text('$name：$text',
+                style: const TextStyle(color: Colors.white70)),
           );
-        }
-        final message = messages[index - 1];
-        final name = message['nickname']?.toString() ?? '用户';
-        final text = message['text']?.toString() ?? '';
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text('$name：$text',
-              style: const TextStyle(color: Colors.white70)),
-        );
-      },
-    );
-  }
+        },
+      );
 }
 
 class VoiceRoomPage extends StatefulWidget {
@@ -380,6 +376,10 @@ class VoiceRoomPage extends StatefulWidget {
 
 class _VoiceRoomPageState extends State<VoiceRoomPage> {
   final messageController = TextEditingController();
+  final messageService = DDPostService();
+  List<Map<String, dynamic>> roomMessages = const [];
+  bool messagesLoading = true;
+  bool messageSending = false;
   bool muted = false;
   bool joined = false;
   bool _leaving = false;
@@ -389,6 +389,50 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   void initState() {
     super.initState();
     _joinRtc();
+    _loadRoomMessages();
+  }
+
+  Future<String> _messageToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) throw Exception('请先登录');
+    return token;
+  }
+
+  String? get _roomId => widget.roomData['id']?.toString();
+
+  Future<void> _loadRoomMessages() async {
+    final roomId = _roomId;
+    if (roomId == null || roomId.isEmpty) {
+      if (mounted) setState(() => messagesLoading = false);
+      return;
+    }
+    try {
+      final messages = await messageService.fetchVoiceRoomMessages(
+          await _messageToken(), roomId);
+      if (mounted) setState(() => roomMessages = messages);
+    } catch (e) {
+      if (mounted) _showRoomNotice('$e');
+    } finally {
+      if (mounted) setState(() => messagesLoading = false);
+    }
+  }
+
+  Future<void> _sendRoomMessage() async {
+    final text = messageController.text.trim();
+    final roomId = _roomId;
+    if (text.isEmpty || roomId == null || messageSending) return;
+    setState(() => messageSending = true);
+    try {
+      final message = await messageService.sendVoiceRoomMessage(
+          token: await _messageToken(), roomId: roomId, text: text);
+      messageController.clear();
+      if (mounted) setState(() => roomMessages = [...roomMessages, message]);
+    } catch (e) {
+      if (mounted) _showRoomNotice('$e');
+    } finally {
+      if (mounted) setState(() => messageSending = false);
+    }
   }
 
   Future<void> _joinRtc() async {
@@ -538,6 +582,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   @override
   void dispose() {
     messageController.dispose();
+    messageService.dispose();
     if (!_leaving) {
       // 返回或右滑进入浮窗时保留 RTC，不在此处离开频道。
     }
@@ -611,7 +656,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
                         Expanded(
-                            child: _VoiceRoomMessages(room: widget.roomData)),
+                            child: _VoiceRoomMessages(messages: roomMessages)),
                       ],
                     ),
                   ),
@@ -642,6 +687,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                       child: TextField(
                         controller: messageController,
                         style: const TextStyle(color: Colors.white),
+                        onSubmitted: (_) => _sendRoomMessage(),
                         decoration: InputDecoration(
                           hintText: '输入消息',
                           hintStyle: const TextStyle(color: Colors.white54),
@@ -657,12 +703,12 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                     ),
                     const SizedBox(width: 6),
                     FilledButton(
-                      onPressed: () {},
+                      onPressed: messageSending ? null : _sendRoomMessage,
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(62, 38),
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                       ),
-                      child: Text(joined ? '已上麦' : '申请上麦'),
+                      child: Text(messageSending ? '发送中' : '发送'),
                     ),
                   ]))),
         ),
