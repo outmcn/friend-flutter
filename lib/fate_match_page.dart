@@ -99,52 +99,6 @@ class _FateMatchPageState extends State<FateMatchPage> {
     }
   }
 
-  Future<void> _openGiftMenu() async {
-    if (peer == null || token == null || _service == null) return;
-    try {
-      final gifts = await _service!.fetchGiftItems(token!, scope: 'user');
-      if (!mounted || gifts.isEmpty) return;
-      final gift = await showModalBottomSheet<Map<String, dynamic>>(
-        context: context,
-        builder: (c) => SafeArea(
-            child: Wrap(
-                children: gifts
-                    .map((g) => ListTile(
-                          leading: Text('${g['icon'] ?? '🎁'}'),
-                          title: Text('${g['name']}'),
-                          subtitle: Text(
-                              '${g['coinPrice'] ?? g['coin_price'] ?? 0}金币'),
-                          onTap: () => Navigator.pop(c, g),
-                        ))
-                    .toList())),
-      );
-      if (gift == null || !mounted) return;
-      final ok = await showDialog<bool>(
-        context: context,
-        builder: (c) => AlertDialog(
-          title: const Text('确认送礼'),
-          content: Text('送出「${gift['name']}」给 ${peer!['nickname'] ?? '有缘人'}？'),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(c, false),
-                child: const Text('取消')),
-            FilledButton(
-                onPressed: () => Navigator.pop(c, true),
-                child: const Text('确认送出')),
-          ],
-        ),
-      );
-      if (ok != true) return;
-      await _service!.sendUserGift(
-          token: token!,
-          userId: int.parse('${peer!['id']}'),
-          giftId: int.parse('${gift['id']}'));
-      if (mounted) setState(() => error = '礼物已送出');
-    } catch (e) {
-      if (mounted) setState(() => error = '$e');
-    }
-  }
-
   Future<void> _openChat() async {
     if (token == null || peer == null) return;
     try {
@@ -227,7 +181,6 @@ class _FateMatchPageState extends State<FateMatchPage> {
                       peer: peer!,
                       error: error,
                       onChat: _openChat,
-                      onGift: _openGiftMenu,
                       onRestart: _startMatching)),
         ]),
       );
@@ -415,12 +368,10 @@ class _FateSuccess extends StatelessWidget {
       {required this.peer,
       required this.error,
       required this.onChat,
-      required this.onGift,
       required this.onRestart});
   final Map<String, dynamic> peer;
   final String error;
   final VoidCallback onChat;
-  final VoidCallback onGift;
   final VoidCallback onRestart;
   @override
   Widget build(BuildContext context) {
@@ -458,10 +409,6 @@ class _FateSuccess extends StatelessWidget {
           const SizedBox(height: 28),
           Wrap(spacing: 10, children: [
             FilledButton(onPressed: onChat, child: const Text('开始聊天')),
-            OutlinedButton.icon(
-                onPressed: onGift,
-                icon: const Icon(Icons.card_giftcard_outlined),
-                label: const Text('送礼物')),
             OutlinedButton(onPressed: onRestart, child: const Text('重新匹配'))
           ])
         ]));
