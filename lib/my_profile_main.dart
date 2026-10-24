@@ -618,10 +618,6 @@ class _FriendSlotCard extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 4)),
               child: const Text('邀请'),
             ),
-            const Align(
-                alignment: Alignment.bottomRight,
-                child: Text('限时',
-                    style: TextStyle(color: Colors.white70, fontSize: 11))),
           ],
         ),
       );
