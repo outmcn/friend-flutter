@@ -90,6 +90,7 @@ flutter:
     - assets/icons/
     - assets/cp_gifts/
     - assets/cp_levels/
+    - assets/cp_love_tree/
     - assets/cp_blessings/
     - assets/profile_gifts/
     - assets/voice_gifts/

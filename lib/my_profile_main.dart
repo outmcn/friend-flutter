@@ -453,12 +453,14 @@ class ProfileSpacePage extends StatefulWidget {
 class _ProfileSpacePageState extends State<ProfileSpacePage> {
   Map<String, dynamic>? partner;
   Map<String, dynamic>? checkin;
+  Map<String, dynamic>? loveTree;
 
   @override
   void initState() {
     super.initState();
     _loadPartner();
     _loadCheckin();
+    _loadLoveTree();
   }
 
   Future<void> _loadCheckin() async {
@@ -469,6 +471,18 @@ class _ProfileSpacePageState extends State<ProfileSpacePage> {
     try {
       final data = await DDPostService().fetchCpCheckin(token, widget.userId!);
       if (mounted) setState(() => checkin = data);
+    } catch (_) {}
+  }
+
+  Future<void> _loadLoveTree() async {
+    if (widget.userId == null) return;
+    final token = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    if (token.isEmpty) return;
+    try {
+      final data = await DDPostService().fetchCpLoveTree(token, widget.userId!);
+      if (mounted) setState(() => loveTree = data);
     } catch (_) {}
   }
 
@@ -508,6 +522,7 @@ class _ProfileSpacePageState extends State<ProfileSpacePage> {
         userId: widget.userId,
         partner: partner,
         checkin: checkin,
+        loveTree: loveTree,
         onCheckin: _doCheckin,
       );
 }
@@ -521,6 +536,7 @@ class _SpaceLayout extends StatelessWidget {
     this.userId,
     this.partner,
     this.checkin,
+    this.loveTree,
     required this.onCheckin,
   });
 
@@ -531,6 +547,7 @@ class _SpaceLayout extends StatelessWidget {
   final int? userId;
   final Map<String, dynamic>? partner;
   final Map<String, dynamic>? checkin;
+  final Map<String, dynamic>? loveTree;
   final VoidCallback onCheckin;
 
   @override
@@ -614,6 +631,9 @@ class _SpaceLayout extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 18),
+                      _CpLoveTreeCard(
+                          experience:
+                              int.tryParse('${loveTree?['experience']}') ?? 0),
                       const SizedBox(height: 14),
                     ],
                   ),
@@ -623,6 +643,75 @@ class _SpaceLayout extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _CpLoveTreeCard extends StatelessWidget {
+  const _CpLoveTreeCard({required this.experience});
+  final int experience;
+  static const thresholds = [
+    0,
+    100,
+    300,
+    650,
+    1200,
+    2000,
+    3100,
+    4600,
+    6600,
+    9200
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final safe = experience.clamp(0, 1000000);
+    var level = 0;
+    for (var i = 0; i < thresholds.length; i++) {
+      if (safe >= thresholds[i]) level = i;
+    }
+    final max = level == thresholds.length - 1;
+    final start = thresholds[level];
+    final next = max ? start : thresholds[level + 1];
+    final progress =
+        max ? 1.0 : ((safe - start) / (next - start)).clamp(0.0, 1.0);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0x443B2184),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x887E5CC9)),
+      ),
+      child: Row(children: [
+        Image.asset('assets/cp_love_tree/level_${level + 1}.png',
+            width: 96, height: 96, fit: BoxFit.contain),
+        const SizedBox(width: 12),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('爱情树',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text('Lv.${level + 1}',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: const Color(0x553B2184),
+              valueColor: const AlwaysStoppedAnimation(Color(0xffffc1e1))),
+          const SizedBox(height: 5),
+          Text(max ? '$safe / MAX' : '$safe / $next 经验',
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          const SizedBox(height: 3),
+          const Text('祝福礼物按金币价格增加经验',
+              style: TextStyle(color: Colors.white54, fontSize: 11)),
+        ])),
+      ]),
+    );
+  }
 }
 
 class _CpHouseCard extends StatelessWidget {
@@ -856,7 +945,9 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
                         : int.tryParse('${widget.checkin?['experience']}') ??
                             0),
                 const SizedBox(height: 14),
-                _CpBlessingCard(partnerExists: widget.partner != null),
+                _CpBlessingCard(
+                    userId: widget.userId,
+                    partnerExists: widget.partner != null),
                 const SizedBox(height: 14),
                 _CpTaskCard(
                     checkin: widget.checkin,
@@ -881,9 +972,16 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
       );
 }
 
-class _CpBlessingCard extends StatelessWidget {
-  const _CpBlessingCard({required this.partnerExists});
+class _CpBlessingCard extends StatefulWidget {
+  const _CpBlessingCard({required this.userId, required this.partnerExists});
+  final int? userId;
   final bool partnerExists;
+
+  @override
+  State<_CpBlessingCard> createState() => _CpBlessingCardState();
+}
+
+class _CpBlessingCardState extends State<_CpBlessingCard> {
   static const names = [
     '双燕同心',
     '幸福碰杯',
@@ -894,8 +992,35 @@ class _CpBlessingCard extends StatelessWidget {
     '好运双灯',
     '彩虹相守',
     '甜蜜成双',
-    '喜庆相伴'
+    '喜庆相伴',
   ];
+  List<Map<String, dynamic>> gifts = const [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (!widget.partnerExists || widget.userId == null) {
+      if (mounted) setState(() => loading = false);
+      return;
+    }
+    try {
+      final token = (await SharedPreferences.getInstance())
+              .getString('friend.auth.token') ??
+          '';
+      final data =
+          await DDPostService().fetchCpBlessings(token, widget.userId!);
+      if (mounted) setState(() => gifts = data);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(18),
@@ -908,32 +1033,40 @@ class _CpBlessingCard extends StatelessWidget {
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          if (!partnerExists)
+          if (!widget.partnerExists)
             const Text('暂无祝福礼物', style: TextStyle(color: Colors.white60))
+          else if (loading)
+            const Center(child: CircularProgressIndicator())
           else
             SizedBox(
-                height: 248,
-                child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: names.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            crossAxisSpacing: 6,
-                            mainAxisSpacing: 6,
-                            childAspectRatio: .9),
-                    itemBuilder: (_, i) => Column(children: [
-                          Image.asset('assets/cp_blessings/gift_${i + 1}.png',
-                              width: 40, height: 40),
-                          Text(names[i],
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10)),
-                          const Text('暂无资料',
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 11))
-                        ])))
+              height: 210,
+              child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: gifts.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
+                    childAspectRatio: .9),
+                itemBuilder: (_, i) {
+                  final gift = gifts[i];
+                  return Column(children: [
+                    Image.asset(
+                        'assets/cp_blessings/gift_${(int.tryParse('${gift['index']}') ?? i + 1)}.png',
+                        width: 40,
+                        height: 40),
+                    Text('${gift['name'] ?? names[i]}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 10)),
+                    Text('收到 ${gift['receivedQuantity'] ?? 0} 个',
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 11)),
+                  ]);
+                },
+              ),
+            ),
         ]),
       );
 }

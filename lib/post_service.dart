@@ -1079,6 +1079,44 @@ class DDPostService {
     return _decodeResponse(response, 'CP礼物发送失败');
   }
 
+  Future<Map<String, dynamic>> fetchCpLoveTree(String token, int userId) async {
+    final response = await _client.get(
+        _api('/users/$userId/cp-space/love-tree'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '爱情树加载失败');
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCpBlessings(
+      String token, int userId) async {
+    final response = await _client.get(
+        _api('/users/$userId/cp-space/blessings'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data = await _decodeResponse(response, '祝福礼物加载失败');
+    final rows = data['gifts'];
+    if (rows is! List) throw Exception('祝福礼物数据格式错误');
+    return rows.whereType<Map>().map((x) => x.cast<String, dynamic>()).toList();
+  }
+
+  Future<Map<String, dynamic>> sendCpBlessing({
+    required String token,
+    required int userId,
+    required int receiverUserId,
+    required int giftIndex,
+  }) async {
+    final response = await _client.post(
+      _api('/users/$userId/cp-space/blessings'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'receiverUserId': receiverUserId,
+        'giftIndex': giftIndex,
+      }),
+    );
+    return _decodeResponse(response, '祝福礼物发送失败');
+  }
+
   Future<Map<String, dynamic>> fetchCpSpace(String token, int userId) async {
     final response = await _client.get(_api('/users/$userId/cp-space'),
         headers: {'Authorization': 'Bearer $token'});
