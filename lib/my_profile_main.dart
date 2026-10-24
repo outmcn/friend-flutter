@@ -958,7 +958,7 @@ class _CpCheckinCard extends StatelessWidget {
                 ? '双方已签到，今日已增加10经验${bonus > 0 ? '，连续7天额外+30经验' : ''}'
                 : owner && partner
                     ? '今日已完成签到'
-                    : '双方都签到后增加10点CP经验',
+                    : '今日签到状态',
             style: const TextStyle(color: Colors.white60, fontSize: 12)),
         const SizedBox(height: 12),
         FilledButton(
