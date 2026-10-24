@@ -283,20 +283,48 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                     itemCount: gifts.length,
                     itemBuilder: (_, index) {
                       final gift = gifts[index];
+                      final received = int.tryParse(
+                              '${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0}') ??
+                          0;
+                      final image = Image.asset(
+                        _giftAsset(gift, index),
+                        width: 58,
+                        height: 58,
+                        fit: BoxFit.contain,
+                      );
                       return Card(
                         child: Padding(
                           padding: const EdgeInsets.all(14),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.asset(
-                                  _giftAsset(gift, index),
-                                  width: 58,
-                                  height: 58,
-                                  fit: BoxFit.contain,
-                                ),
+                              ColorFiltered(
+                                colorFilter: received > 0
+                                    ? const ColorFilter.mode(
+                                        Colors.transparent, BlendMode.dst)
+                                    : const ColorFilter.matrix([
+                                        0.2126,
+                                        0.7152,
+                                        0.0722,
+                                        0,
+                                        0,
+                                        0.2126,
+                                        0.7152,
+                                        0.0722,
+                                        0,
+                                        0,
+                                        0.2126,
+                                        0.7152,
+                                        0.0722,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        1,
+                                        0,
+                                      ]),
+                                child: image,
                               ),
                               const SizedBox(height: 8),
                               Text('${gift['name'] ?? '礼物'}',
