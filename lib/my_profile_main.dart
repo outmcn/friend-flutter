@@ -768,6 +768,8 @@ class _CpGiftCardState extends State<_CpGiftCard> {
   bool loading = true;
   bool sending = false;
 
+  String _giftAsset(int index) => 'assets/cp_gifts/gift_${index + 1}.png';
+
   @override
   void initState() {
     super.initState();
@@ -839,7 +841,14 @@ class _CpGiftCardState extends State<_CpGiftCard> {
                 runSpacing: 8,
                 children: gifts
                     .map((gift) => ActionChip(
-                        avatar: Text('${gift['icon'] ?? '礼'}'),
+                        avatar: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.asset(
+                              _giftAsset(gifts.indexOf(gift)),
+                              width: 34,
+                              height: 34,
+                              fit: BoxFit.cover,
+                            )),
                         label: Text('${gift['name']} ${gift['coinPrice']}'),
                         onPressed: gift['sentToday'] == true || sending
                             ? null
