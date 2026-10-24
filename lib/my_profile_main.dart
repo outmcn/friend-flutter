@@ -278,7 +278,7 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                       crossAxisCount: 3,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.9,
+                      childAspectRatio: 0.72,
                     ),
                     itemCount: gifts.length,
                     itemBuilder: (_, index) {
@@ -300,8 +300,11 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                               ),
                               const SizedBox(height: 8),
                               Text('${gift['name'] ?? '礼物'}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w700)),
                               const SizedBox(height: 6),
                               Text('收到 ${gift['received_quantity'] ?? 0} 个'),
