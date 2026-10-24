@@ -139,6 +139,79 @@ class _ShareAction extends StatelessWidget {
       );
 }
 
+class _VoiceRoomSeats extends StatelessWidget {
+  const _VoiceRoomSeats({required this.room});
+  final Map<String, dynamic>? room;
+
+  @override
+  Widget build(BuildContext context) {
+    final raw = room?['members'] ?? room?['participants'] ?? room?['speakers'];
+    final members = raw is List ? raw.whereType<Map>().toList() : const [];
+    final owner = <String, dynamic>{
+      'nickname': room?['owner_nickname'] ??
+          room?['ownerNickname'] ??
+          room?['nickname'] ??
+          '房主',
+      'avatar':
+          room?['owner_avatar'] ?? room?['ownerAvatar'] ?? room?['avatar'],
+      'owner': true,
+    };
+    final seats = [
+      owner,
+      ...members.where((member) {
+        final id = member['user_id'] ?? member['userId'];
+        final ownerId = room?['owner_user_id'] ?? room?['ownerUserId'];
+        return id == null || ownerId == null || '$id' != '$ownerId';
+      })
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('上麦',
+            style:
+                TextStyle(color: Colors.white70, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        Expanded(
+          child: seats.length == 1 && members.isEmpty
+              ? const Center(
+                  child:
+                      Text('暂无上麦成员', style: TextStyle(color: Colors.white54)))
+              : ListView.builder(
+                  itemCount: seats.length,
+                  itemBuilder: (_, index) {
+                    final member = seats[index];
+                    final isOwner = index == 0;
+                    final avatar = member['avatar']?.toString();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: isOwner ? 32 : 25,
+                            backgroundImage: avatar != null && avatar.isNotEmpty
+                                ? NetworkImage(avatar)
+                                : null,
+                            child: avatar == null || avatar.isEmpty
+                                ? const Icon(Icons.person)
+                                : null,
+                          ),
+                          const SizedBox(height: 5),
+                          Text(member['nickname']?.toString() ?? '用户',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 12)),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
 class _VoiceRoomMessages extends StatelessWidget {
   const _VoiceRoomMessages({required this.room});
   final Map<String, dynamic>? room;
@@ -416,15 +489,33 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('房间消息',
-                        style: TextStyle(
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w700)),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _VoiceRoomSeats(room: widget.room),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('房间消息',
+                                  style: TextStyle(
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 8),
+                              Expanded(
+                                  child: _VoiceRoomMessages(room: widget.room)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Expanded(child: _VoiceRoomMessages(room: widget.room)),
                 ],
               ),
             ),
