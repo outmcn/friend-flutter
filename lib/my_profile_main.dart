@@ -576,7 +576,7 @@ class _SpaceLayout extends StatelessWidget {
                               avatarLocalPath: avatarLocalPath,
                               userId: userId,
                               partner: partner,
-                              checkin: checkin,
+                              checkin: widget.checkin,
                               onCheckin: onCheckin,
                             ),
                           ),
@@ -818,10 +818,9 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
               padding: const EdgeInsets.fromLTRB(16, 74, 16, 28),
               children: [
                 _CpCastleCard(
-                    experience: widget.widget.checkin?['experience'] is int
-                        ? widget.widget.checkin!['experience'] as int
-                        : int.tryParse(
-                                '${widget.widget.checkin?['experience']}') ??
+                    experience: widget.checkin?['experience'] is int
+                        ? widget.checkin!['experience'] as int
+                        : int.tryParse('${widget.checkin?['experience']}') ??
                             0),
                 const SizedBox(height: 14),
                 _CpSpaceLevelCard(
@@ -833,7 +832,7 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
                 _CpBlessingCard(partnerExists: widget.partner != null),
                 const SizedBox(height: 14),
                 _CpTaskCard(
-                    checkin: checkin,
+                    checkin: widget.checkin,
                     userId: widget.userId,
                     partnerId: int.tryParse('${widget.partner?['userId']}'),
                     partnerExists: widget.partner != null),
@@ -844,7 +843,8 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
                     partnerExists: widget.partner != null),
                 const SizedBox(height: 14),
                 _CpCheckinCard(
-                    checkin: checkin, onCheckin: widget.onCheckin ?? () {}),
+                    checkin: widget.checkin,
+                    onCheckin: widget.onCheckin ?? () {}),
                 const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
