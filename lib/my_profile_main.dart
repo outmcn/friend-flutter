@@ -921,11 +921,104 @@ class _FriendSlotCard extends StatelessWidget {
       );
 }
 
-class ProfileChannelPage extends StatelessWidget {
+class ProfileChannelPage extends StatefulWidget {
   const ProfileChannelPage({super.key});
   @override
-  Widget build(BuildContext context) => const _ProfileFeaturePage(
-      title: '频道', icon: TIcons.browse_gallery, description: '关注和创建的频道将在这里展示。');
+  State<ProfileChannelPage> createState() => _ProfileChannelPageState();
+}
+
+class _ProfileChannelPageState extends State<ProfileChannelPage> {
+  final service = DDPostService();
+  List<Map<String, dynamic>> rooms = const [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final token = (await SharedPreferences.getInstance())
+              .getString('friend.auth.token') ??
+          '';
+      final response = await service.fetchVoiceRooms(token);
+      if (mounted) setState(() => rooms = response);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _create() async {
+    try {
+      final token = (await SharedPreferences.getInstance())
+              .getString('friend.auth.token') ??
+          '';
+      final data = await service.createVoiceRoom(token, title: '语音频道');
+      if (!mounted) return;
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => VoiceRoomPage(room: data)));
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('频道'),
+          actions: [
+            IconButton(onPressed: _create, icon: const Icon(Icons.add))
+          ],
+        ),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : rooms.isEmpty
+                ? Center(
+                    child: FilledButton.icon(
+                      onPressed: _create,
+                      icon: const Icon(Icons.mic),
+                      label: const Text('创建语音频道'),
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView.builder(
+                      itemCount: rooms.length,
+                      itemBuilder: (_, i) {
+                        final room = rooms[i];
+                        return ListTile(
+                          leading: const CircleAvatar(child: Icon(Icons.mic)),
+                          title: Text('${room['title'] ?? '语音频道'}'),
+                          subtitle: Text('${room['nickname'] ?? '用户'} 创建'),
+                          trailing: FilledButton(
+                            onPressed: () async {
+                              final token =
+                                  (await SharedPreferences.getInstance())
+                                          .getString('friend.auth.token') ??
+                                      '';
+                              final joined = await service.joinVoiceRoom(
+                                  token, '${room['id']}');
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          VoiceRoomPage(room: joined)),
+                                );
+                              }
+                            },
+                            child: const Text('加入'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+      );
 }
 
 class DDProfilePage extends StatefulWidget {

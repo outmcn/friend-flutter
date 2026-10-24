@@ -116,6 +116,38 @@ class DDPostService {
     return token;
   }
 
+  Future<List<Map<String, dynamic>>> fetchVoiceRooms(String token) async {
+    final response = await _client.get(_api('/im/voice-rooms'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data = await _decodeResponse(response, '语音频道加载失败');
+    final rows = data['rooms'];
+    if (rows is! List) throw Exception('语音频道数据格式错误');
+    return rows.whereType<Map>().map((x) => x.cast<String, dynamic>()).toList();
+  }
+
+  Future<Map<String, dynamic>> createVoiceRoom(String token,
+      {required String title}) async {
+    final response = await _client.post(_api('/im/voice-rooms'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'title': title}));
+    return _decodeResponse(response, '创建语音频道失败');
+  }
+
+  Future<Map<String, dynamic>> joinVoiceRoom(String token, String id) async {
+    final response = await _client.post(_api('/im/voice-rooms/$id/join'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '加入语音频道失败');
+  }
+
+  Future<Map<String, dynamic>> endVoiceRoom(String token, String id) async {
+    final response = await _client.post(_api('/im/voice-rooms/$id/end'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '结束语音频道失败');
+  }
+
   Future<List<DDConversation>> fetchImConversations(String token) async {
     final response = await _client.get(
       _api('/im/conversations'),

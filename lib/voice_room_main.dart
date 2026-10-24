@@ -1,7 +1,8 @@
 part of 'main.dart';
 
 class VoiceRoomPage extends StatefulWidget {
-  const VoiceRoomPage({super.key});
+  const VoiceRoomPage({super.key, this.room});
+  final Map<String, dynamic>? room;
   @override
   State<VoiceRoomPage> createState() => _VoiceRoomPageState();
 }
