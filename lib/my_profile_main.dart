@@ -2688,80 +2688,96 @@ class _DDProfilePageState extends State<DDProfilePage>
                                             const EdgeInsets.only(bottom: 23),
                                         child: Column(
                                           children: [
-                                            Stack(
-                                              alignment: Alignment.center,
-                                              clipBehavior: Clip.none,
-                                              children: [
-                                                Container(
-                                                  width: 90,
-                                                  height: 90,
-                                                  clipBehavior: Clip.antiAlias,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                          shape:
-                                                              BoxShape.circle),
-                                                  child: _avatarReviewRejected
-                                                      ? const ColoredBox(
-                                                          color: Colors.black12,
-                                                          child: Center(
-                                                              child: Text(
-                                                                  '图片涉嫌违规',
-                                                                  textAlign:
-                                                                      TextAlign
-                                                                          .center,
-                                                                  style: TextStyle(
-                                                                      fontSize:
-                                                                          11,
-                                                                      color: Colors
-                                                                          .black54))),
-                                                        )
-                                                      : _avatarLocalPath != null
-                                                          ? Image.file(
-                                                              File(
-                                                                  _avatarLocalPath!),
-                                                              fit: BoxFit.cover)
-                                                          : _avatarUrl == null ||
-                                                                  _avatarUrl!
-                                                                      .isEmpty
-                                                              ? const ColoredBox(
-                                                                  color: Colors
-                                                                      .black12,
-                                                                  child: Icon(
-                                                                      Icons
-                                                                          .person,
-                                                                      size: 40))
-                                                              : _PermanentCachedImage(
-                                                                  url:
-                                                                      _avatarUrl!,
-                                                                  width: 90,
-                                                                  height: 90,
-                                                                  fit: BoxFit
-                                                                      .cover,
-                                                                  placeholder: const ColoredBox(
-                                                                      color: Colors
-                                                                          .black12,
-                                                                      child: Icon(
-                                                                          Icons
-                                                                              .person,
-                                                                          size:
-                                                                              40))),
+                                            GestureDetector(
+                                              onTap: () => Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      const _AvatarDressupPage(),
                                                 ),
-                                                Container(
-                                                  width: 96,
-                                                  height: 96,
-                                                  decoration: BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(
-                                                      color: p?['gender'] == '女'
-                                                          ? const Color(
-                                                              0xFFFF82B7)
-                                                          : const Color(
-                                                              0xFF4E9BFF),
-                                                      width: 3,
+                                              ),
+                                              child: Stack(
+                                                alignment: Alignment.center,
+                                                clipBehavior: Clip.none,
+                                                children: [
+                                                  Container(
+                                                    width: 90,
+                                                    height: 90,
+                                                    clipBehavior:
+                                                        Clip.antiAlias,
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                            shape: BoxShape
+                                                                .circle),
+                                                    child: _avatarReviewRejected
+                                                        ? const ColoredBox(
+                                                            color:
+                                                                Colors.black12,
+                                                            child: Center(
+                                                                child: Text(
+                                                                    '图片涉嫌违规',
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                            11,
+                                                                        color: Colors
+                                                                            .black54))),
+                                                          )
+                                                        : _avatarLocalPath !=
+                                                                null
+                                                            ? Image.file(
+                                                                File(
+                                                                    _avatarLocalPath!),
+                                                                fit: BoxFit
+                                                                    .cover)
+                                                            : _avatarUrl ==
+                                                                        null ||
+                                                                    _avatarUrl!
+                                                                        .isEmpty
+                                                                ? const ColoredBox(
+                                                                    color: Colors
+                                                                        .black12,
+                                                                    child: Icon(
+                                                                        Icons
+                                                                            .person,
+                                                                        size:
+                                                                            40))
+                                                                : _PermanentCachedImage(
+                                                                    url:
+                                                                        _avatarUrl!,
+                                                                    width: 90,
+                                                                    height: 90,
+                                                                    fit: BoxFit
+                                                                        .cover,
+                                                                    placeholder: const ColoredBox(
+                                                                        color: Colors
+                                                                            .black12,
+                                                                        child: Icon(
+                                                                            Icons
+                                                                                .person,
+                                                                            size:
+                                                                                40))),
+                                                  ),
+                                                  Container(
+                                                    width: 96,
+                                                    height: 96,
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                        color:
+                                                            p?['gender'] == '女'
+                                                                ? const Color(
+                                                                    0xFFFF82B7)
+                                                                : const Color(
+                                                                    0xFF4E9BFF),
+                                                        width: 3,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -2787,19 +2803,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     ],
                                   ),
                                   const SizedBox(height: 18),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: _ProfileActionButton(
-                                      icon: Icons.auto_awesome,
-                                      label: '装扮',
-                                      onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const _AvatarDressupPage()),
-                                      ),
-                                    ),
-                                  ),
                                   const SizedBox(height: 12),
                                   Row(
                                     children: [
