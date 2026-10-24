@@ -667,7 +667,7 @@ class CpSpaceDetailPage extends StatelessWidget {
     this.userId,
     this.partner,
     this.checkin,
-    required this.onCheckin,
+    this.onCheckin,
   });
 
   final String nickname;
@@ -676,7 +676,7 @@ class CpSpaceDetailPage extends StatelessWidget {
   final int? userId;
   final Map<String, dynamic>? partner;
   final Map<String, dynamic>? checkin;
-  final VoidCallback onCheckin;
+  final VoidCallback? onCheckin;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -741,7 +741,7 @@ class CpSpaceDetailPage extends StatelessWidget {
                     partnerId: int.tryParse('${partner?['userId']}'),
                     partnerExists: partner != null),
                 const SizedBox(height: 14),
-                _CpCheckinCard(checkin: checkin, onCheckin: onCheckin),
+                _CpCheckinCard(checkin: checkin, onCheckin: onCheckin ?? () {}),
                 const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
