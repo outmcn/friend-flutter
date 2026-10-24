@@ -1293,7 +1293,9 @@ class _FriendSlotCard extends StatelessWidget {
 }
 
 class ProfileChannelPage extends StatefulWidget {
-  const ProfileChannelPage({super.key});
+  const ProfileChannelPage({super.key, this.userId, this.isOwner = true});
+  final int? userId;
+  final bool isOwner;
   @override
   State<ProfileChannelPage> createState() => _ProfileChannelPageState();
 }
@@ -1316,14 +1318,16 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
               .getString('friend.auth.token') ??
           '';
       final response = await service.fetchVoiceRooms(token);
-      final prefs = await SharedPreferences.getInstance();
-      final currentUserId = prefs.getString('friend.auth.userId');
-      final owned = currentUserId == null
+      final targetId = widget.userId ??
+          int.tryParse((await SharedPreferences.getInstance())
+                  .getString('friend.auth.userId') ??
+              '');
+      final owned = targetId == null
           ? response
           : response
               .where((room) =>
                   '${room['ownerUserId'] ?? room['owner_user_id']}' ==
-                  currentUserId)
+                  '$targetId')
               .toList();
       if (mounted) setState(() => rooms = owned.take(1).toList());
     } catch (e) {
@@ -1382,7 +1386,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
           elevation: 0,
           scrolledUnderElevation: 0,
           title: const Text('频道'),
-          actions: rooms.isNotEmpty
+          actions: widget.isOwner && rooms.isNotEmpty
               ? [IconButton(onPressed: _create, icon: const Icon(Icons.add))]
               : const [],
         ),
@@ -1400,17 +1404,15 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                     ? ListView(
                         padding: const EdgeInsets.fromLTRB(20, 96, 20, 32),
                         children: [
-                          FilledButton.icon(
-                            onPressed: _create,
-                            icon: const Icon(Icons.add),
-                            label: const Text('创建频道'),
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(52),
-                              textStyle: const TextStyle(
-                                  fontSize: 17, fontWeight: FontWeight.w700),
+                          if (widget.isOwner)
+                            FilledButton.icon(
+                              onPressed: _create,
+                              icon: const Icon(Icons.add),
+                              label: const Text('创建频道'),
+                              style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(52)),
                             ),
-                          ),
-                          const SizedBox(height: 28),
+                          if (widget.isOwner) const SizedBox(height: 28),
                           const _ChannelProfileCard(),
                         ],
                       )

@@ -551,11 +551,16 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                          child: _ProfileActionButton(
-                              icon: TIcons.browse_gallery,
-                              label: '频道',
-                              onTap: () => _showTopNotice(
-                                  context, const Text('频道功能即将开放')))),
+                        child: _ProfileActionButton(
+                          icon: TIcons.browse_gallery,
+                          label: '频道',
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => ProfileChannelPage(
+                                      userId: widget.userId, isOwner: false))),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
