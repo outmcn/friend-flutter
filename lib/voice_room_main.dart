@@ -17,9 +17,12 @@ class _VoiceRoomFloatingOverlay {
             onTap: () {
               entry.remove();
               _entry = null;
-              Navigator.of(context, rootNavigator: true).push(
-                MaterialPageRoute(builder: (_) => VoiceRoomPage(room: room)),
-              );
+              final navigator = _appNavigatorKey.currentState;
+              if (navigator != null) {
+                navigator.push(
+                  MaterialPageRoute(builder: (_) => VoiceRoomPage(room: room)),
+                );
+              }
             },
             child: Container(
               width: 58,
