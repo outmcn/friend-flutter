@@ -1393,7 +1393,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                     ]))
                   : rooms.isEmpty
                       ? ListView(
-                          padding: const EdgeInsets.fromLTRB(20, 96, 20, 32),
+                          padding: const EdgeInsets.fromLTRB(20, 116, 20, 32),
                           children: [
                             if (widget.isOwner)
                               FilledButton.icon(
@@ -1410,7 +1410,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                       : RefreshIndicator(
                           onRefresh: _load,
                           child: ListView(
-                            padding: const EdgeInsets.fromLTRB(16, 84, 16, 28),
+                            padding: const EdgeInsets.fromLTRB(16, 116, 16, 28),
                             children: [
                               _ChannelSummaryCard(
                                   room: rooms.first,
