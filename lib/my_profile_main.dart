@@ -366,10 +366,239 @@ class ProfileCollectionPage extends StatelessWidget {
 }
 
 class ProfileSpacePage extends StatelessWidget {
-  const ProfileSpacePage({super.key});
+  const ProfileSpacePage({super.key, this.nickname, this.avatarUrl});
+
+  final String? nickname;
+  final String? avatarUrl;
+
   @override
-  Widget build(BuildContext context) => const _ProfileFeaturePage(
-      title: '空间', icon: TIcons.space, description: '个人空间内容将在这里展示。');
+  Widget build(BuildContext context) => _SpaceLayout(
+        nickname: nickname ?? '我',
+        avatarUrl: avatarUrl,
+        isOwner: true,
+      );
+}
+
+class _SpaceLayout extends StatelessWidget {
+  const _SpaceLayout(
+      {required this.nickname, this.avatarUrl, required this.isOwner});
+
+  final String nickname;
+  final String? avatarUrl;
+  final bool isOwner;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xFF160D3B),
+        appBar: AppBar(
+          title: const Text('空间'),
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+        ),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF5E36B5), Color(0xFF160D3B)],
+            ),
+          ),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 28),
+              children: [
+                const _SpaceTitlePlate(),
+                const SizedBox(height: 22),
+                _CpHouseCard(nickname: nickname, avatarUrl: avatarUrl),
+                const SizedBox(height: 24),
+                Row(
+                  children: List.generate(
+                    3,
+                    (index) => Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(left: index == 0 ? 0 : 5),
+                        child: _FriendSlotCard(
+                          onInvite: () => _showSpaceNotice(context),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Center(
+                  child: Text(
+                    isOwner ? '邀请好友，组成你的专属空间' : '空间关系暂未开放',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  void _showSpaceNotice(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('邀请功能暂未接入')),
+    );
+  }
+}
+
+class _SpaceTitlePlate extends StatelessWidget {
+  const _SpaceTitlePlate();
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+                colors: [Color(0xFFA66BFF), Color(0xFF5B2BA5)]),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFDDBBFF), width: 1.5),
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0xAA8D5CFF), blurRadius: 16, spreadRadius: 2)
+            ],
+          ),
+          child: const Text('虚位以待',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800)),
+        ),
+      );
+}
+
+class _CpHouseCard extends StatelessWidget {
+  const _CpHouseCard({required this.nickname, this.avatarUrl});
+
+  final String nickname;
+  final String? avatarUrl;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(12, 18, 12, 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              colors: [Color(0x886F42D8), Color(0x553A1C91)]),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFB991FF), width: 1.4),
+          boxShadow: const [
+            BoxShadow(color: Color(0x884F2AAB), blurRadius: 20, spreadRadius: 2)
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _SpaceAvatar(label: nickname, url: avatarUrl),
+                const _HeartPulse(),
+                const _SpaceAvatar(label: '虚位以待'),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 42, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C42D4),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFDAB8FF)),
+              ),
+              child: const Text('CP小屋',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800)),
+            ),
+          ],
+        ),
+      );
+}
+
+class _HeartPulse extends StatelessWidget {
+  const _HeartPulse();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Icon(Icons.favorite, color: Color(0xFFFF9DD8), size: 34);
+}
+
+class _SpaceAvatar extends StatelessWidget {
+  const _SpaceAvatar({required this.label, this.url});
+
+  final String label;
+  final String? url;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Container(
+            width: 78,
+            height: 78,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFE4C7FF), width: 2)),
+            child: ClipOval(
+              child: url == null || url!.isEmpty
+                  ? const ColoredBox(
+                      color: Color(0xFF24164E),
+                      child: Icon(Icons.add, color: Colors.white70, size: 32))
+                  : _PermanentCachedImage(
+                      url: url!, width: 72, height: 72, fit: BoxFit.cover),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(label,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              overflow: TextOverflow.ellipsis),
+        ],
+      );
+}
+
+class _FriendSlotCard extends StatelessWidget {
+  const _FriendSlotCard({required this.onInvite});
+
+  final VoidCallback onInvite;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0x885A36B7), Color(0x44301972)]),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF9C73E9)),
+        ),
+        child: Column(
+          children: [
+            const Text('挚友位',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            const Icon(Icons.add_circle_outline,
+                color: Colors.white70, size: 36),
+            const SizedBox(height: 10),
+            OutlinedButton(
+              onPressed: onInvite,
+              style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFFD5B8FF)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4)),
+              child: const Text('邀请'),
+            ),
+            const Align(
+                alignment: Alignment.bottomRight,
+                child: Text('限时',
+                    style: TextStyle(color: Colors.white70, fontSize: 11))),
+          ],
+        ),
+      );
 }
 
 class ProfileChannelPage extends StatelessWidget {
@@ -1459,13 +1688,19 @@ class _DDProfilePageState extends State<DDProfilePage>
                                       const SizedBox(width: 6),
                                       Expanded(
                                           child: _ProfileActionButton(
-                                              icon: TIcons.space,
-                                              label: '空间',
-                                              onTap: () => Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (_) =>
-                                                          const ProfileSpacePage())))),
+                                        icon: TIcons.space,
+                                        label: '空间',
+                                        onTap: () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ProfileSpacePage(
+                                              nickname:
+                                                  '${profile?['nickname'] ?? '我'}',
+                                              avatarUrl: _avatarUrl,
+                                            ),
+                                          ),
+                                        ),
+                                      )),
                                       const SizedBox(width: 6),
                                       Expanded(
                                           child: _ProfileActionButton(

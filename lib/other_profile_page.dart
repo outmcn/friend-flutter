@@ -532,11 +532,21 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                               onTap: _openGiftExhibition)),
                       const SizedBox(width: 6),
                       Expanded(
-                          child: _ProfileActionButton(
-                              icon: TIcons.space,
-                              label: '空间',
-                              onTap: () => _showTopNotice(
-                                  context, const Text('空间功能即将开放')))),
+                        child: _ProfileActionButton(
+                          icon: TIcons.space,
+                          label: '空间',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProfileSpacePage(
+                                nickname:
+                                    '${profile?['nickname'] ?? widget.name}',
+                                avatarUrl: _avatarUrl,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                           child: _ProfileActionButton(
