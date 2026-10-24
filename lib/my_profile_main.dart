@@ -576,7 +576,7 @@ class _SpaceLayout extends StatelessWidget {
                               avatarLocalPath: avatarLocalPath,
                               userId: userId,
                               partner: partner,
-                              checkin: widget.checkin,
+                              checkin: checkin,
                               onCheckin: onCheckin,
                             ),
                           ),
