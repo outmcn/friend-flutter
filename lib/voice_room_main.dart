@@ -47,6 +47,98 @@ class _VoiceRoomFloatingOverlay {
   }
 }
 
+class _VoiceRoomShareSheet extends StatelessWidget {
+  const _VoiceRoomShareSheet({
+    required this.room,
+    required this.onDirectChat,
+    required this.onFollow,
+    required this.onGift,
+    required this.onReport,
+  });
+
+  final Map<String, dynamic>? room;
+  final VoidCallback onDirectChat;
+  final VoidCallback onFollow;
+  final VoidCallback onGift;
+  final VoidCallback onReport;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = room?['title']?.toString() ?? '语音频道';
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: Text('更多操作',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 88,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.mic, color: Color(0xff9b6cff), size: 34),
+                    const SizedBox(height: 6),
+                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(height: 24),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _ShareAction(
+                    label: '私聊', icon: TIcons.chat, onTap: onDirectChat),
+                _ShareAction(
+                    label: '关注', icon: TIcons.user_add, onTap: onFollow),
+                _ShareAction(label: '送礼', icon: TIcons.gift, onTap: onGift),
+                _ShareAction(
+                    label: '举报', icon: TIcons.bug_report, onTap: onReport),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareAction extends StatelessWidget {
+  const _ShareAction(
+      {required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 68,
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: Icon(icon),
+              ),
+              const SizedBox(height: 6),
+              Text(label),
+            ],
+          ),
+        ),
+      );
+}
+
 class VoiceRoomPage extends StatefulWidget {
   const VoiceRoomPage({super.key, this.room});
   final Map<String, dynamic>? room;
@@ -80,11 +172,101 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   }
 
   Future<void> _shareRoom() async {
-    final channelId = widget.room?['channel_id']?.toString() ??
-        widget.room?['channelId']?.toString() ??
-        '';
-    final suffix = channelId.isEmpty ? '' : '\n频道ID：$channelId';
-    await Share.share('语音频道：${widget.roomTitle}$suffix');
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _VoiceRoomShareSheet(
+        room: widget.room,
+        onDirectChat: _openOwnerChat,
+        onFollow: _followOwner,
+        onGift: _showGiftUnavailable,
+        onReport: _showReportUnavailable,
+      ),
+    );
+  }
+
+  int? get _ownerId {
+    final raw = widget.room?['owner_user_id'] ??
+        widget.room?['ownerUserId'] ??
+        widget.room?['owner_id'];
+    return int.tryParse('$raw');
+  }
+
+  String get _ownerName =>
+      widget.room?['owner_nickname']?.toString() ??
+      widget.room?['ownerNickname']?.toString() ??
+      widget.room?['nickname']?.toString() ??
+      '房主';
+
+  Future<String> _authToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) throw Exception('请先登录');
+    return token;
+  }
+
+  Future<void> _openOwnerChat() async {
+    final ownerId = _ownerId;
+    if (ownerId == null) {
+      if (mounted) _showRoomNotice('房主资料暂不可用');
+      return;
+    }
+    try {
+      final service = DDPostService();
+      final conversationId = await service.createDirectConversation(
+          await _authToken(), '$ownerId');
+      service.dispose();
+      if (!mounted) return;
+      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _ChatDetailPage(
+            chat: _ChatPreview(_ownerName, '开始聊天', null, null, '$ownerId',
+                conversationId, 0, null, null, 'dm', false, false),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) _showRoomNotice('$e');
+    }
+  }
+
+  Future<void> _followOwner() async {
+    final ownerId = _ownerId;
+    if (ownerId == null) {
+      if (mounted) _showRoomNotice('房主资料暂不可用');
+      return;
+    }
+    try {
+      final service = DDPostService();
+      final followed = await service.toggleFollow(await _authToken(), ownerId);
+      service.dispose();
+      if (mounted) {
+        Navigator.pop(context);
+        _showRoomNotice(followed ? '已关注房主' : '已取消关注房主');
+      }
+    } catch (e) {
+      if (mounted) _showRoomNotice('$e');
+    }
+  }
+
+  void _showGiftUnavailable() {
+    Navigator.pop(context);
+    _showRoomNotice('语音房送礼暂未接入');
+  }
+
+  void _showReportUnavailable() {
+    Navigator.pop(context);
+    _showRoomNotice('举报语音房（频道）暂未接入');
+  }
+
+  void _showRoomNotice(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message.replaceFirst('Exception: ', ''))),
+    );
   }
 
   Future<void> _exitRoom() async {
