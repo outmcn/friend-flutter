@@ -1097,7 +1097,12 @@ class _CpSpaceLevelCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: const Color(0x887E5CC9))),
       child: Row(children: [
-        const Icon(Icons.workspace_premium, color: Color(0xffd3b5ff), size: 25),
+        Image.asset(
+          'assets/cp_levels/level_${index + 1}.png',
+          width: 34,
+          height: 34,
+          fit: BoxFit.contain,
+        ),
         const SizedBox(width: 10),
         Text('Lv.${index + 1} · ${titles[index]}',
             style: const TextStyle(
