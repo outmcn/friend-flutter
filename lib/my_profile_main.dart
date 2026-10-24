@@ -2463,18 +2463,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                         sliver: SliverToBoxAdapter(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                            ),
-                          ),
+                          child: const SizedBox.shrink(),
                         ),
                       ),
                       SliverPadding(
@@ -2531,6 +2520,16 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                     .colorScheme
                                                     .onSurface
                                                     .withValues(alpha: .65),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
                                               ),
                                             ),
                                             Container(
