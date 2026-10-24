@@ -2227,6 +2227,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                   '${profile?['nickname'] ?? '我'}',
                                               avatarUrl: _avatarUrl,
                                               avatarLocalPath: _avatarLocalPath,
+                                              userId: _currentUserId,
                                             ),
                                           ),
                                         ),
