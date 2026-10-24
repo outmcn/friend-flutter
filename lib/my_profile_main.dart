@@ -1008,6 +1008,11 @@ class _CpSpaceLevelCard extends StatelessWidget {
     for (var i = 0; i < thresholds.length; i++) {
       if (safe >= thresholds[i]) index = i;
     }
+    final isMax = index == thresholds.length - 1;
+    final start = thresholds[index];
+    final required = isMax ? 0 : thresholds[index + 1] - start;
+    final current = safe - start;
+    final progress = isMax ? 1.0 : (current / required).clamp(0.0, 1.0);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
@@ -1020,8 +1025,19 @@ class _CpSpaceLevelCard extends StatelessWidget {
         Text('Lv.${index + 1} · ${titles[index]}',
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.w800)),
-        const Spacer(),
-        Text('$safe经验', style: const TextStyle(color: Colors.white70)),
+        const SizedBox(width: 12),
+        Expanded(
+            child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: const Color(0x553B2184),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xffd3b5ff))))),
+        const SizedBox(width: 8),
+        Text(isMax ? '$safe/9200+' : '$current/$required',
+            style: const TextStyle(color: Colors.white70, fontSize: 12)),
       ]),
     );
   }
