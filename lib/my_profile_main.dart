@@ -592,6 +592,8 @@ class _SpaceLayout extends StatelessWidget {
                               borderRadius: BorderRadius.circular(22)),
                         ),
                       ),
+                      const SizedBox(height: 14),
+                      _CpBlessingCard(partnerExists: partner != null),
                     ],
                   ),
                 ),
