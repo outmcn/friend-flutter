@@ -2645,18 +2645,44 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                                           size:
                                                                               40))),
                                                 ),
-                                                if (p?['gender'] == '男' ||
-                                                    p?['gender'] == '女')
-                                                  IgnorePointer(
-                                                    child: Image.asset(
-                                                      p?['gender'] == '男'
-                                                          ? 'assets/avatar_frames/男_frame.png'
-                                                          : 'assets/avatar_frames/女_frame.png',
-                                                      width: 104,
-                                                      height: 104,
-                                                      fit: BoxFit.contain,
-                                                    ),
+                                                Container(
+                                                  width: 96,
+                                                  height: 96,
+                                                  padding:
+                                                      const EdgeInsets.all(3),
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    gradient: p?['gender'] ==
+                                                            '男'
+                                                        ? const LinearGradient(
+                                                            colors: [
+                                                                Color(
+                                                                    0xFF69B7FF),
+                                                                Color(
+                                                                    0xFF1677FF),
+                                                                Color(
+                                                                    0xFF0B3D91)
+                                                              ])
+                                                        : p?['gender'] == '女'
+                                                            ? const LinearGradient(
+                                                                colors: [
+                                                                    Color(
+                                                                        0xFFFFB6D5),
+                                                                    Color(
+                                                                        0xFFFF6FAE),
+                                                                    Color(
+                                                                        0xFFC2185B)
+                                                                  ])
+                                                            : null,
+                                                    color: p?['gender'] ==
+                                                                '男' ||
+                                                            p?['gender'] == '女'
+                                                        ? null
+                                                        : Colors.white24,
                                                   ),
+                                                  child:
+                                                      const SizedBox.expand(),
+                                                ),
                                               ],
                                             ),
                                           ],
