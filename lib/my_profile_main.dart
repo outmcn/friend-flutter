@@ -635,6 +635,9 @@ class _SpaceLayout extends StatelessWidget {
                           experience:
                               int.tryParse('${loveTree?['experience']}') ?? 0),
                       const SizedBox(height: 14),
+                      _CpBlessingCard(
+                          userId: userId, partnerExists: partner != null),
+                      const SizedBox(height: 14),
                     ],
                   ),
                 ),
