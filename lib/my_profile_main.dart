@@ -595,7 +595,7 @@ class _FriendSlotCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            const Text('挚友位',
+            const Text('朋友空间',
                 style: TextStyle(
                     color: Colors.white, fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
