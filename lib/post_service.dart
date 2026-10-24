@@ -1055,6 +1055,29 @@ class DDPostService {
     return _decodeResponse(response, 'CP空间加载失败');
   }
 
+  Future<Map<String, dynamic>> fetchCpDissolution(
+      String token, int userId) async {
+    final response = await _client.get(
+        _api('/users/$userId/cp-space/dissolution'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '解除状态加载失败');
+  }
+
+  Future<Map<String, dynamic>> requestCpDissolution(
+      String token, int userId) async {
+    final response = await _client.post(
+        _api('/users/$userId/cp-space/dissolution'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '解除CP关系失败');
+  }
+
+  Future<void> cancelCpDissolution(String token, int userId) async {
+    final response = await _client.delete(
+        _api('/users/$userId/cp-space/dissolution'),
+        headers: {'Authorization': 'Bearer $token'});
+    _decodeResponse(response, '取消解除失败');
+  }
+
   Future<Map<String, dynamic>> fetchCpCheckin(String token, int userId) async {
     final response = await _client.get(_api('/users/$userId/cp-space/checkin'),
         headers: {'Authorization': 'Bearer $token'});

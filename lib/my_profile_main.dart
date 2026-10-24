@@ -698,7 +698,7 @@ class _CpHouseCard extends StatelessWidget {
       );
 }
 
-class CpSpaceDetailPage extends StatelessWidget {
+class CpSpaceDetailPage extends StatefulWidget {
   const CpSpaceDetailPage({
     super.key,
     required this.nickname,
@@ -709,7 +709,6 @@ class CpSpaceDetailPage extends StatelessWidget {
     this.checkin,
     this.onCheckin,
   });
-
   final String nickname;
   final String? avatarUrl;
   final String? avatarLocalPath;
@@ -717,6 +716,74 @@ class CpSpaceDetailPage extends StatelessWidget {
   final Map<String, dynamic>? partner;
   final Map<String, dynamic>? checkin;
   final VoidCallback? onCheckin;
+  @override
+  State<CpSpaceDetailPage> createState() => _CpSpaceDetailPageState();
+}
+
+class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
+  Map<String, dynamic>? dissolution;
+  @override
+  void initState() {
+    super.initState();
+    _loadDissolution();
+  }
+
+  Future<void> _loadDissolution() async {
+    if (widget.userId == null) return;
+    final token = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    try {
+      final value =
+          await DDPostService().fetchCpDissolution(token, widget.userId!);
+      if (mounted) setState(() => dissolution = value);
+    } catch (_) {}
+  }
+
+  Future<void> _requestDissolution() async {
+    final ok = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+                title: const Text('解除CP关系'),
+                content: const Text(
+                    '确认解除吗？确认后将进入7天倒计时，期间可以取消。倒计时结束后会删除CP经验、签到和礼物数据。'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(c, false),
+                      child: const Text('取消')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(c, true),
+                      child: const Text('确认解除'))
+                ]));
+    if (ok != true || widget.userId == null) return;
+    final token = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    try {
+      final value =
+          await DDPostService().requestCpDissolution(token, widget.userId!);
+      if (mounted) setState(() => dissolution = value);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _cancelDissolution() async {
+    if (widget.userId == null) return;
+    final token = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    try {
+      await DDPostService().cancelCpDissolution(token, widget.userId!);
+      if (mounted) setState(() => dissolution = null);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -728,6 +795,15 @@ class CpSpaceDetailPage extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           foregroundColor: Colors.white,
+          actions: [
+            TextButton(
+              onPressed: dissolution != null
+                  ? _cancelDissolution
+                  : _requestDissolution,
+              child: Text(dissolution != null ? '取消解除' : '解除关系',
+                  style: const TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
         body: Container(
           decoration: const BoxDecoration(
@@ -742,29 +818,33 @@ class CpSpaceDetailPage extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 74, 16, 28),
               children: [
                 _CpCastleCard(
-                    experience: checkin?['experience'] is int
-                        ? checkin!['experience'] as int
-                        : int.tryParse('${checkin?['experience']}') ?? 0),
+                    experience: widget.widget.checkin?['experience'] is int
+                        ? widget.widget.checkin!['experience'] as int
+                        : int.tryParse(
+                                '${widget.widget.checkin?['experience']}') ??
+                            0),
                 const SizedBox(height: 14),
                 _CpSpaceLevelCard(
-                    experience: checkin?['experience'] is int
-                        ? checkin!['experience'] as int
-                        : int.tryParse('${checkin?['experience']}') ?? 0),
+                    experience: widget.checkin?['experience'] is int
+                        ? widget.checkin!['experience'] as int
+                        : int.tryParse('${widget.checkin?['experience']}') ??
+                            0),
                 const SizedBox(height: 14),
-                _CpBlessingCard(partnerExists: partner != null),
+                _CpBlessingCard(partnerExists: widget.partner != null),
                 const SizedBox(height: 14),
                 _CpTaskCard(
                     checkin: checkin,
-                    userId: userId,
-                    partnerId: int.tryParse('${partner?['userId']}'),
-                    partnerExists: partner != null),
+                    userId: widget.userId,
+                    partnerId: int.tryParse('${widget.partner?['userId']}'),
+                    partnerExists: widget.partner != null),
                 const SizedBox(height: 14),
                 _CpGiftCard(
-                    userId: userId,
-                    partnerId: int.tryParse('${partner?['userId']}'),
-                    partnerExists: partner != null),
+                    userId: widget.userId,
+                    partnerId: int.tryParse('${widget.partner?['userId']}'),
+                    partnerExists: widget.partner != null),
                 const SizedBox(height: 14),
-                _CpCheckinCard(checkin: checkin, onCheckin: onCheckin ?? () {}),
+                _CpCheckinCard(
+                    checkin: checkin, onCheckin: widget.onCheckin ?? () {}),
                 const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
@@ -1094,19 +1174,11 @@ class _CpCastleCard extends StatelessWidget {
     for (var i = 0; i < thresholds.length; i++) {
       if (safe >= thresholds[i]) index = i;
     }
-    return Container(
+    return Image.asset(
+      'assets/cp_levels/level_${index + 1}.png',
+      width: double.infinity,
       height: 230,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0x443B2184),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0x887E5CC9)),
-      ),
-      child: Image.asset(
-        'assets/cp_levels/level_${index + 1}.png',
-        width: double.infinity,
-        fit: BoxFit.contain,
-      ),
+      fit: BoxFit.contain,
     );
   }
 }
