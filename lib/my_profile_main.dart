@@ -365,20 +365,55 @@ class ProfileCollectionPage extends StatelessWidget {
       title: '典藏', icon: TIcons.collection, description: '收藏的内容和作品将在这里展示。');
 }
 
-class ProfileSpacePage extends StatelessWidget {
+class ProfileSpacePage extends StatefulWidget {
   const ProfileSpacePage(
-      {super.key, this.nickname, this.avatarUrl, this.avatarLocalPath});
+      {super.key,
+      this.nickname,
+      this.avatarUrl,
+      this.avatarLocalPath,
+      this.userId,
+      this.isOwner = true});
 
   final String? nickname;
   final String? avatarUrl;
   final String? avatarLocalPath;
+  final int? userId;
+  final bool isOwner;
+
+  @override
+  State<ProfileSpacePage> createState() => _ProfileSpacePageState();
+}
+
+class _ProfileSpacePageState extends State<ProfileSpacePage> {
+  Map<String, dynamic>? partner;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPartner();
+  }
+
+  Future<void> _loadPartner() async {
+    if (widget.userId == null) return;
+    final token = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    if (token.isEmpty) return;
+    try {
+      final data = await DDPostService().fetchCpSpace(token, widget.userId!);
+      if (mounted)
+        setState(() => partner = data['partner'] as Map<String, dynamic>?);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) => _SpaceLayout(
-        nickname: nickname ?? '我',
-        avatarUrl: avatarUrl,
-        avatarLocalPath: avatarLocalPath,
-        isOwner: true,
+        nickname: widget.nickname ?? '我',
+        avatarUrl: widget.avatarUrl,
+        avatarLocalPath: widget.avatarLocalPath,
+        isOwner: widget.isOwner,
+        userId: widget.userId,
+        partner: partner,
       );
 }
 
@@ -388,12 +423,16 @@ class _SpaceLayout extends StatelessWidget {
     this.avatarUrl,
     this.avatarLocalPath,
     required this.isOwner,
+    this.userId,
+    this.partner,
   });
 
   final String nickname;
   final String? avatarUrl;
   final String? avatarLocalPath;
   final bool isOwner;
+  final int? userId;
+  final Map<String, dynamic>? partner;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -424,6 +463,9 @@ class _SpaceLayout extends StatelessWidget {
                   nickname: nickname,
                   avatarUrl: avatarUrl,
                   avatarLocalPath: avatarLocalPath,
+                  partner: partner,
+                  userId: userId,
+                  isOwner: isOwner,
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -454,15 +496,33 @@ class _SpaceLayout extends StatelessWidget {
 
 class _CpHouseCard extends StatelessWidget {
   const _CpHouseCard(
-      {required this.nickname, this.avatarUrl, this.avatarLocalPath});
+      {required this.nickname,
+      this.avatarUrl,
+      this.avatarLocalPath,
+      this.partner,
+      this.userId,
+      required this.isOwner});
 
   final String nickname;
   final String? avatarUrl;
   final String? avatarLocalPath;
+  final Map<String, dynamic>? partner;
+  final int? userId;
+  final bool isOwner;
+
+  void _openPartnerAction(BuildContext context) {
+    if (partner != null) return;
+    if (isOwner) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const CpApplicationListPage()));
+    } else if (userId != null) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => CpApplyPage(ownerId: userId!)));
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.fromLTRB(12, 18, 12, 14),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
               colors: [Color(0x886F42D8), Color(0x553A1C91)]),
@@ -483,7 +543,13 @@ class _CpHouseCard extends StatelessWidget {
                   localPath: avatarLocalPath,
                 ),
                 const _HeartPulse(),
-                const _SpaceAvatar(label: '虚位以待'),
+                _SpaceAvatar(
+                  label: partner?['nickname']?.toString() ?? '虚位以待',
+                  url: partner?['avatar']?.toString(),
+                  localPath: null,
+                  isEmpty: partner == null,
+                  onTap: () => _openPartnerAction(context),
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -640,32 +706,45 @@ class _HeartPulse extends StatelessWidget {
 }
 
 class _SpaceAvatar extends StatelessWidget {
-  const _SpaceAvatar({required this.label, this.url, this.localPath});
+  const _SpaceAvatar(
+      {required this.label,
+      this.url,
+      this.localPath,
+      this.isEmpty = false,
+      this.onTap});
 
   final String label;
   final String? url;
   final String? localPath;
+  final bool isEmpty;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => Column(
         children: [
-          Container(
-            width: 78,
-            height: 78,
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(50),
+            child: Container(
+              width: 78,
+              height: 78,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFE4C7FF), width: 2)),
-            child: ClipOval(
-              child: localPath != null && localPath!.isNotEmpty
-                  ? Image.file(File(localPath!), fit: BoxFit.cover)
-                  : url == null || url!.isEmpty
-                      ? const ColoredBox(
-                          color: Color(0xFF24164E),
-                          child: Icon(Icons.person,
-                              color: Colors.white70, size: 32))
-                      : _PermanentCachedImage(
-                          url: url!, width: 72, height: 72, fit: BoxFit.cover),
+                border: Border.all(color: const Color(0xFFE4C7FF), width: 2),
+              ),
+              child: ClipOval(
+                child: localPath != null && localPath!.isNotEmpty
+                    ? Image.file(File(localPath!), fit: BoxFit.cover)
+                    : url != null && url!.isNotEmpty
+                        ? _PermanentCachedImage(
+                            url: url!, width: 72, height: 72, fit: BoxFit.cover)
+                        : ColoredBox(
+                            color: const Color(0xFF24164E),
+                            child: Icon(isEmpty ? Icons.add : Icons.person,
+                                color: Colors.white70, size: 32),
+                          ),
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -674,6 +753,132 @@ class _SpaceAvatar extends StatelessWidget {
               overflow: TextOverflow.ellipsis),
         ],
       );
+}
+
+class CpApplyPage extends StatefulWidget {
+  const CpApplyPage({super.key, required this.ownerId});
+  final int ownerId;
+  @override
+  State<CpApplyPage> createState() => _CpApplyPageState();
+}
+
+class _CpApplyPageState extends State<CpApplyPage> {
+  bool busy = false;
+  Future<void> _apply() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final token = (await SharedPreferences.getInstance())
+              .getString('friend.auth.token') ??
+          '';
+      await DDPostService().applyCpSpace(token, widget.ownerId);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: const Text('申请CP空间')),
+      body: Center(
+          child: Card(
+              margin: const EdgeInsets.all(24),
+              child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.card_giftcard,
+                        size: 56, color: Color(0xFF8E52D8)),
+                    const SizedBox(height: 12),
+                    const Text('送出戒指，申请加入CP空间',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 8),
+                    const Text('戒指 · 999金币'),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                        onPressed: busy ? null : _apply,
+                        child: Text(busy ? '提交中…' : '送出戒指并申请')),
+                  ])))));
+}
+
+class CpApplicationListPage extends StatefulWidget {
+  const CpApplicationListPage({super.key});
+  @override
+  State<CpApplicationListPage> createState() => _CpApplicationListPageState();
+}
+
+class _CpApplicationListPageState extends State<CpApplicationListPage> {
+  List<Map<String, dynamic>> rows = [];
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final t = (await SharedPreferences.getInstance())
+              .getString('friend.auth.token') ??
+          '';
+      final r = await DDPostService().fetchCpApplications(t);
+      if (mounted) setState(() => rows = r);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _act(Map<String, dynamic> row, bool accept) async {
+    final t = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    try {
+      if (accept)
+        await DDPostService().acceptCpApplication(t, int.parse('${row['id']}'));
+      else
+        await DDPostService().rejectCpApplication(t, int.parse('${row['id']}'));
+      await _load();
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: const Text('申请列表')),
+      body: rows.isEmpty
+          ? const Center(child: Text('暂无申请'))
+          : ListView.builder(
+              itemCount: rows.length,
+              itemBuilder: (_, i) {
+                final r = rows[i];
+                return ListTile(
+                    leading: CircleAvatar(
+                        backgroundImage: (r['avatar'] ?? '').toString().isEmpty
+                            ? null
+                            : NetworkImage('${r['avatar']}'),
+                        child: (r['avatar'] ?? '').toString().isEmpty
+                            ? const Icon(Icons.person)
+                            : null),
+                    title: Text('${r['nickname'] ?? '用户'}'),
+                    subtitle: const Text('戒指 · 999金币'),
+                    trailing: Wrap(spacing: 4, children: [
+                      TextButton(
+                          onPressed: () => _act(r, false),
+                          child: const Text('拒绝')),
+                      FilledButton(
+                          onPressed: () => _act(r, true),
+                          child: const Text('同意'))
+                    ]));
+              }));
 }
 
 class _FriendSlotCard extends StatelessWidget {

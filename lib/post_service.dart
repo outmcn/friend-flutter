@@ -965,6 +965,44 @@ class DDPostService {
     await prefs.remove('friend.auth.token');
   }
 
+  Future<Map<String, dynamic>> fetchCpSpace(String token, int userId) async {
+    final response = await _client.get(_api('/users/$userId/cp-space'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, 'CP空间加载失败');
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCpApplications(String token) async {
+    final response = await _client.get(_api('/me/cp-space/applications'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data = await _decodeResponse(response, '申请列表加载失败');
+    final rows = data['applications'];
+    if (rows is! List) throw Exception('申请列表数据格式错误');
+    return rows.whereType<Map>().map((x) => x.cast<String, dynamic>()).toList();
+  }
+
+  Future<Map<String, dynamic>> applyCpSpace(String token, int ownerId) async {
+    final response = await _client.post(_api('/users/$ownerId/cp-space/apply'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        });
+    return _decodeResponse(response, 'CP申请失败');
+  }
+
+  Future<Map<String, dynamic>> acceptCpApplication(String token, int id) async {
+    final response = await _client.post(
+        _api('/me/cp-space/applications/$id/accept'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '同意申请失败');
+  }
+
+  Future<Map<String, dynamic>> rejectCpApplication(String token, int id) async {
+    final response = await _client.post(
+        _api('/me/cp-space/applications/$id/reject'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '拒绝申请失败');
+  }
+
   Future<Map<String, dynamic>> fetchUserProfile(
       String token, int userId) async {
     final response = await _client.get(
