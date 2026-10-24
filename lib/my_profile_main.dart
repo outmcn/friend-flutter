@@ -2512,25 +2512,29 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                 ),
                                               ],
                                             ),
-                                            Text(
-                                              'ID：${p?['id'] ?? p?['userId'] ?? ''}',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurface
-                                                    .withValues(alpha: .65),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurfaceVariant,
-                                              ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'ID：${p?['id'] ?? p?['userId'] ?? ''}',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withValues(alpha: .65),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 14),
+                                                Text(
+                                                  '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                             Container(
                                               padding: const EdgeInsets.only(
