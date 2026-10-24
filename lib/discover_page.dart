@@ -29,20 +29,24 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Future<void> _loadCurrentUserId() async {
     try {
       final user = await DDPostService().fetchMe(await _token());
-      if (mounted) setState(() => _currentUserId = int.tryParse('${user['id'] ?? user['userId'] ?? ''}'));
+      if (mounted)
+        setState(() => _currentUserId =
+            int.tryParse('${user['id'] ?? user['userId'] ?? ''}'));
     } catch (_) {}
   }
 
   Future<void> _loadNotificationUnread() async {
     try {
       final rows = await service.fetchNotifications(await _token());
-      if (mounted) setState(() {
-        _unreadNotificationIds
-          ..clear()
-          ..addAll(rows.where((x) => !x.read).map((x) => x.id));
-      });
+      if (mounted)
+        setState(() {
+          _unreadNotificationIds
+            ..clear()
+            ..addAll(rows.where((x) => !x.read).map((x) => x.id));
+        });
     } catch (_) {}
   }
+
   Future<void> _restoreDiscoverCityLabel() async {
     final prefs = await SharedPreferences.getInstance();
     final cached = (prefs.getString('dd.location.city') ?? '').trim();
@@ -68,7 +72,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
     unawaited(_loadNotificationUnread());
     _notificationEvents = ImSession.instance.events.listen((event) {
       if (event['type'] == 'notification:new' && mounted) {
-        setState(() => _unreadNotificationIds.add(int.tryParse('${event['notification']?['id'] ?? event['id'] ?? ''}') ?? DateTime.now().microsecondsSinceEpoch));
+        setState(() => _unreadNotificationIds.add(int.tryParse(
+                '${event['notification']?['id'] ?? event['id'] ?? ''}') ??
+            DateTime.now().microsecondsSinceEpoch));
       }
     });
     unawaited(_loadCurrentUserId());
@@ -115,7 +121,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
       if (mounted) {
-        _showTopNotice(context, const Text('操作失败'));
+        _showTopNotice(context, Text('点赞失败：$e'));
       }
     } finally {
       pendingLikes.remove(post.id);
@@ -136,7 +142,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       }
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
-      if (mounted) _showTopNotice(context, const Text('操作失败'));
+      if (mounted) _showTopNotice(context, Text('收藏失败：$e'));
     } finally {
       pendingFavorites.remove(post.id);
     }
@@ -150,7 +156,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   Future<void> _sendPostToFriend(String peerId, DDPost post) async {
     try {
-      final conversationId = await service.createDirectConversation(await _token(), peerId);
+      final conversationId =
+          await service.createDirectConversation(await _token(), peerId);
       await _sendSharedPostMessage(
         conversationId: conversationId,
         postId: post.id,
@@ -168,7 +175,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Future<void> _openPostDirectChat(DDPost post) async {
     if (post.userId == null) return;
     try {
-      final conversationId = await service.createDirectConversation(await _token(), '${post.userId}');
+      final conversationId = await service.createDirectConversation(
+          await _token(), '${post.userId}');
       if (!mounted) return;
       Navigator.push(
         context,
@@ -212,7 +220,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   void _openPostGift(DDPost post) {
     if (!mounted) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => DynamicDetailPage(postId: post.id, initialPost: post)));
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) =>
+                DynamicDetailPage(postId: post.id, initialPost: post)));
   }
 
   Future<void> _report(DDPost post) async {
@@ -340,11 +352,24 @@ class _DiscoverPageState extends State<DiscoverPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(entry.value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: selectedTab == entry.key ? null : Theme.of(context).hintColor)),
-            const SizedBox(height: 5),
-            AnimatedContainer(duration: const Duration(milliseconds: 160), curve: Curves.easeOutCubic, width: selectedTab == entry.key ? 24 : 0, height: 3, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(99))),
-          ],
+            children: [
+              Text(entry.value,
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: selectedTab == entry.key
+                          ? null
+                          : Theme.of(context).hintColor)),
+              const SizedBox(height: 5),
+              AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  curve: Curves.easeOutCubic,
+                  width: selectedTab == entry.key ? 24 : 0,
+                  height: 3,
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(99))),
+            ],
           ),
         ),
       ),
@@ -352,7 +377,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   Future<void> _createPost() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostPage()));
+    await Navigator.push(
+        context, MaterialPageRoute(builder: (_) => const CreatePostPage()));
     if (mounted) await feeds[selectedTab].load(refresh: true);
   }
 
@@ -369,62 +395,75 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
-        titleSpacing: 0,
-        leading: SizedBox(
-          width: 48,
-          height: 48,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                tooltip: '通知',
-                onPressed: () async {
-                  await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage()));
-                  _loadNotificationUnread();
-                },
-                icon: const Icon(TIcons.notification),
-              ),
-              if (_unreadNotifications > 0)
-                const Positioned(
-                  right: 6,
-                  top: 6,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    child: SizedBox(width: 8, height: 8),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: ['推荐', _discoverLocalTabLabel, '关注']
-              .asMap()
-              .entries
-              .map((entry) => _discoverTabButton(context, entry))
-              .toList(),
-        ),
-        centerTitle: true,
-        leadingWidth: 48,
-        actions: [
-          SizedBox(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          surfaceTintColor: Colors.transparent,
+          titleSpacing: 0,
+          leading: SizedBox(
             width: 48,
             height: 48,
-            child: IconButton(
-              tooltip: '创建动态',
-              onPressed: _createPost,
-              icon: const Icon(TIcons.logo_instagram),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  tooltip: '通知',
+                  onPressed: () async {
+                    await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const NotificationsPage()));
+                    _loadNotificationUnread();
+                  },
+                  icon: const Icon(TIcons.notification),
+                ),
+                if (_unreadNotifications > 0)
+                  const Positioned(
+                    right: 6,
+                    top: 6,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                          color: Colors.red, shape: BoxShape.circle),
+                      child: SizedBox(width: 8, height: 8),
+                    ),
+                  ),
+              ],
             ),
           ),
-        ],
-      ),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: ['推荐', _discoverLocalTabLabel, '关注']
+                .asMap()
+                .entries
+                .map((entry) => _discoverTabButton(context, entry))
+                .toList(),
+          ),
+          centerTitle: true,
+          leadingWidth: 48,
+          actions: [
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: IconButton(
+                tooltip: '创建动态',
+                onPressed: _createPost,
+                icon: const Icon(TIcons.logo_instagram),
+              ),
+            ),
+          ],
+        ),
         body: FeedShell(
           tabs: const [
-            FeedShellTab(title: '推荐', cacheKey: 'dd.discover.feed.0', fetch: _feedShellUnusedFetch),
-            FeedShellTab(title: '本地', cacheKey: 'dd.discover.feed.1', fetch: _feedShellUnusedFetch),
-            FeedShellTab(title: '关注', cacheKey: 'dd.discover.feed.2', fetch: _feedShellUnusedFetch),
+            FeedShellTab(
+                title: '推荐',
+                cacheKey: 'dd.discover.feed.0',
+                fetch: _feedShellUnusedFetch),
+            FeedShellTab(
+                title: '本地',
+                cacheKey: 'dd.discover.feed.1',
+                fetch: _feedShellUnusedFetch),
+            FeedShellTab(
+                title: '关注',
+                cacheKey: 'dd.discover.feed.2',
+                fetch: _feedShellUnusedFetch),
           ],
           externalFeeds: feeds,
           showTabs: false,
@@ -553,9 +592,8 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
           : (peerId) => widget.onSendToFriend!(peerId, post),
       onReport: () => widget.onReport(post),
       onDelete: widget.onDelete == null ? null : () => widget.onDelete!(post),
-      onDirectChat: widget.onDirectChat == null
-          ? null
-          : () => widget.onDirectChat!(post),
+      onDirectChat:
+          widget.onDirectChat == null ? null : () => widget.onDirectChat!(post),
       onFollow: widget.onFollow == null ? null : () => widget.onFollow!(post),
       onGift: widget.onGift == null ? null : () => widget.onGift!(post),
       onOpen: () => widget.onOpen(post),
