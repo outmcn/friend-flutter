@@ -318,20 +318,25 @@ class _VoiceRoomMessages extends StatelessWidget {
   const _VoiceRoomMessages({required this.room});
   final Map<String, dynamic>? room;
 
+  static const _platformNotice =
+      '平台将24小时巡查违规内容，对私下交易、发布广告信息、从事任何金融违法犯罪活动等违规行为予以严肃处理，并上报相关部门。如您发现上述不正当行为，请及时向平台举报。让我们共同营造善意、平等、真实的氛围。';
+
   @override
   Widget build(BuildContext context) {
     final raw = room?['messages'];
     final messages = raw is List ? raw.whereType<Map>().toList() : const [];
-    if (messages.isEmpty) {
-      return const Center(
-        child: Text('暂无房间消息', style: TextStyle(color: Colors.white54)),
-      );
-    }
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: messages.length,
+      itemCount: messages.length + 1,
       itemBuilder: (_, index) {
-        final message = messages[index];
+        if (index == 0) {
+          return const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text('平台公告：$_platformNotice',
+                style: TextStyle(color: Colors.white70, height: 1.45)),
+          );
+        }
+        final message = messages[index - 1];
         final name = message['nickname']?.toString() ?? '用户';
         final text = message['text']?.toString() ?? '';
         return Padding(
