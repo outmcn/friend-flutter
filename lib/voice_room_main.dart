@@ -95,12 +95,13 @@ class _VoiceRoomShareSheet extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: [
-                _ShareAction(
+                _VoiceRoomShareAction(
                     label: '私聊', icon: TIcons.chat, onTap: onDirectChat),
-                _ShareAction(
+                _VoiceRoomShareAction(
                     label: '关注', icon: TIcons.user_add, onTap: onFollow),
-                _ShareAction(label: '送礼', icon: TIcons.gift, onTap: onGift),
-                _ShareAction(
+                _VoiceRoomShareAction(
+                    label: '送礼', icon: TIcons.gift, onTap: onGift),
+                _VoiceRoomShareAction(
                     label: '举报', icon: TIcons.bug_report, onTap: onReport),
               ],
             ),
@@ -111,8 +112,8 @@ class _VoiceRoomShareSheet extends StatelessWidget {
   }
 }
 
-class _ShareAction extends StatelessWidget {
-  const _ShareAction(
+class _VoiceRoomShareAction extends StatelessWidget {
+  const _VoiceRoomShareAction(
       {required this.label, required this.icon, required this.onTap});
   final String label;
   final IconData icon;
