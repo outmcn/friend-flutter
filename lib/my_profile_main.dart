@@ -536,7 +536,7 @@ class _SpaceLayout extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        partner == null ? '点击加号申请加入CP空间' : '你们的CP空间已开启',
+                        partner == null ? '点击加号申请加入CP空间' : '',
                         style: const TextStyle(color: Colors.white70),
                       ),
                     ],
