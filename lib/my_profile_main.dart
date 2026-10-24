@@ -543,9 +543,16 @@ class _SpaceLayout extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-                _CpTaskCard(checkin: checkin),
+                _CpTaskCard(
+                    checkin: checkin,
+                    userId: userId,
+                    partnerId: int.tryParse('${partner?['userId']}'),
+                    partnerExists: partner != null),
                 const SizedBox(height: 14),
-                _CpGiftCard(userId: userId, partnerExists: partner != null),
+                _CpGiftCard(
+                    userId: userId,
+                    partnerId: int.tryParse('${partner?['userId']}'),
+                    partnerExists: partner != null),
                 const SizedBox(height: 14),
                 _CpCheckinCard(checkin: checkin, onCheckin: onCheckin),
                 const SizedBox(height: 14),
@@ -737,8 +744,12 @@ class CpSpaceDetailPage extends StatelessWidget {
 }
 
 class _CpGiftCard extends StatefulWidget {
-  const _CpGiftCard({required this.userId, required this.partnerExists});
+  const _CpGiftCard(
+      {required this.userId,
+      required this.partnerId,
+      required this.partnerExists});
   final int? userId;
+  final int? partnerId;
   final bool partnerExists;
   @override
   State<_CpGiftCard> createState() => _CpGiftCardState();
@@ -760,7 +771,9 @@ class _CpGiftCardState extends State<_CpGiftCard> {
       '';
 
   Future<void> _load() async {
-    if (widget.userId == null || !widget.partnerExists) {
+    if (widget.userId == null ||
+        widget.partnerId == null ||
+        !widget.partnerExists) {
       if (mounted) setState(() => loading = false);
       return;
     }
@@ -780,7 +793,7 @@ class _CpGiftCardState extends State<_CpGiftCard> {
     try {
       await DDPostService().sendCpGift(
           token: await _token(),
-          userId: widget.userId!,
+          userId: widget.partnerId!,
           name: '${gift['name']}');
       await _load();
       if (mounted)
@@ -828,9 +841,86 @@ class _CpGiftCardState extends State<_CpGiftCard> {
       );
 }
 
-class _CpTaskCard extends StatelessWidget {
-  const _CpTaskCard({this.checkin});
+class _CpTaskCard extends StatefulWidget {
+  const _CpTaskCard(
+      {this.checkin, this.userId, this.partnerId, this.partnerExists});
   final Map<String, dynamic>? checkin;
+  final int? userId;
+  final int? partnerId;
+  final bool? partnerExists;
+  @override
+  State<_CpTaskCard> createState() => _CpTaskCardState();
+}
+
+class _CpTaskCardState extends State<_CpTaskCard> {
+  List<Map<String, dynamic>> gifts = const [];
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (widget.userId == null ||
+        widget.partnerId == null ||
+        widget.partnerExists != true) return;
+    final token = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    try {
+      final data = await DDPostService().fetchCpGifts(token, widget.partnerId!);
+      if (mounted) setState(() => gifts = data);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final both = widget.checkin?['ownerCheckedIn'] == true &&
+        widget.checkin?['partnerCheckedIn'] == true;
+    final streak = widget.checkin?['streakDays'] ?? 0;
+    final giftDone = gifts.any((gift) => gift['sentToday'] == true);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+          color: const Color(0x443B2184),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0x887E5CC9))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('CP任务',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 12),
+        _taskRow('双方每日签到', both ? '已完成 · +10经验' : '双方签到后 +10经验', both),
+        _taskRow('连续签到7天', '当前连续 $streak 天 · 达成后额外 +30经验', streak >= 7),
+        _taskRow(
+            '每日赠送CP礼物',
+            giftDone ? '今日已完成 · 经验 +10～+90' : '每人每天1个 · 礼物经验 +10～+90',
+            giftDone),
+      ]),
+    );
+  }
+
+  Widget _taskRow(String title, String detail, bool done) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(children: [
+          Icon(done ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: done ? Colors.greenAccent : Colors.white54, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(title, style: const TextStyle(color: Colors.white70)),
+                Text(detail,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12))
+              ])),
+        ]),
+      );
+}
+
+class _CpCheckinCard extends StatelessWidget {
+  const _CpCheckinCard({this.checkin, required this.onCheckin});
+  final Map<String, dynamic>? checkin;
+  final VoidCallback onCheckin;
 
   @override
   Widget build(BuildContext context) {
@@ -849,7 +939,12 @@ class _CpTaskCard extends StatelessWidget {
         const SizedBox(height: 12),
         _taskRow('双方每日签到', both ? '已完成 · +10经验' : '双方签到后 +10经验', both),
         _taskRow('连续签到7天', '当前连续 $streak 天 · 达成后额外 +30经验', streak >= 7),
-        _taskRow('每日赠送CP礼物', '每人每天1个 · 礼物经验 +10～+90', false),
+        _taskRow(
+            '每日赠送CP礼物',
+            (gifts?.any((gift) => gift['sentToday'] == true) ?? false)
+                ? '今日已完成 · 经验 +10～+90'
+                : '每人每天1个 · 礼物经验 +10～+90',
+            gifts?.any((gift) => gift['sentToday'] == true) ?? false),
       ]),
     );
   }
