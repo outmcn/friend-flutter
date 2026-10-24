@@ -2759,12 +2759,13 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                 ),
                                                 const SizedBox(width: 14),
                                                 Text(
-                                                  '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
+                                                  'IP：${p?['ip'] ?? p?['ipAddress'] ?? '未知'}',
                                                   style: TextStyle(
-                                                    fontSize: 14,
+                                                    fontSize: 16,
                                                     color: Theme.of(context)
                                                         .colorScheme
-                                                        .onSurfaceVariant,
+                                                        .onSurface
+                                                        .withValues(alpha: .65),
                                                   ),
                                                 ),
                                               ],
