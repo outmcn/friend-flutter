@@ -931,6 +931,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
   final service = DDPostService();
   List<Map<String, dynamic>> rooms = const [];
   bool loading = true;
+  String? loadError;
 
   @override
   void initState() {
@@ -945,7 +946,8 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
           '';
       final response = await service.fetchVoiceRooms(token);
       if (mounted) setState(() => rooms = response);
-    } catch (_) {
+    } catch (e) {
+      if (mounted) setState(() => loadError = '$e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -977,47 +979,55 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
         ),
         body: loading
             ? const Center(child: CircularProgressIndicator())
-            : rooms.isEmpty
+            : loadError != null && rooms.isEmpty
                 ? Center(
-                    child: FilledButton.icon(
-                      onPressed: _create,
-                      icon: const Icon(Icons.mic),
-                      label: const Text('创建语音频道'),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _load,
-                    child: ListView.builder(
-                      itemCount: rooms.length,
-                      itemBuilder: (_, i) {
-                        final room = rooms[i];
-                        return ListTile(
-                          leading: const CircleAvatar(child: Icon(Icons.mic)),
-                          title: Text('${room['title'] ?? '语音频道'}'),
-                          subtitle: Text('${room['nickname'] ?? '用户'} 创建'),
-                          trailing: FilledButton(
-                            onPressed: () async {
-                              final token =
-                                  (await SharedPreferences.getInstance())
-                                          .getString('friend.auth.token') ??
-                                      '';
-                              final joined = await service.joinVoiceRoom(
-                                  token, '${room['id']}');
-                              if (context.mounted) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          VoiceRoomPage(room: joined)),
-                                );
-                              }
-                            },
-                            child: const Text('加入'),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text('频道加载失败：$loadError'),
+                    const SizedBox(height: 12),
+                    FilledButton(onPressed: _load, child: const Text('重试'))
+                  ]))
+                : rooms.isEmpty
+                    ? Center(
+                        child: FilledButton.icon(
+                          onPressed: _create,
+                          icon: const Icon(Icons.mic),
+                          label: const Text('创建语音频道'),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _load,
+                        child: ListView.builder(
+                          itemCount: rooms.length,
+                          itemBuilder: (_, i) {
+                            final room = rooms[i];
+                            return ListTile(
+                              leading:
+                                  const CircleAvatar(child: Icon(Icons.mic)),
+                              title: Text('${room['title'] ?? '语音频道'}'),
+                              subtitle: Text('${room['nickname'] ?? '用户'} 创建'),
+                              trailing: FilledButton(
+                                onPressed: () async {
+                                  final token =
+                                      (await SharedPreferences.getInstance())
+                                              .getString('friend.auth.token') ??
+                                          '';
+                                  final joined = await service.joinVoiceRoom(
+                                      token, '${room['id']}');
+                                  if (context.mounted) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) =>
+                                              VoiceRoomPage(room: joined)),
+                                    );
+                                  }
+                                },
+                                child: const Text('加入'),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
       );
 }
 
