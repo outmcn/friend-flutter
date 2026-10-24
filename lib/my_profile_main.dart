@@ -997,11 +997,16 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
           title: const Text('频道'),
-          actions: [
-            IconButton(onPressed: _create, icon: const Icon(Icons.add))
-          ],
+          actions: rooms.isNotEmpty
+              ? [IconButton(onPressed: _create, icon: const Icon(Icons.add))]
+              : const [],
         ),
+        extendBodyBehindAppBar: true,
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : loadError != null && rooms.isEmpty
@@ -1012,12 +1017,22 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                     FilledButton(onPressed: _load, child: const Text('重试'))
                   ]))
                 : rooms.isEmpty
-                    ? Center(
-                        child: FilledButton.icon(
-                          onPressed: _create,
-                          icon: const Icon(Icons.mic),
-                          label: const Text('创建语音频道'),
-                        ),
+                    ? ListView(
+                        padding: const EdgeInsets.fromLTRB(20, 96, 20, 32),
+                        children: [
+                          FilledButton.icon(
+                            onPressed: _create,
+                            icon: const Icon(Icons.add),
+                            label: const Text('创建频道'),
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                              textStyle: const TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                          _ChannelProfileCard(),
+                        ],
                       )
                     : RefreshIndicator(
                         onRefresh: _load,
@@ -1053,6 +1068,58 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                           },
                         ),
                       ),
+      );
+}
+
+class _ChannelProfileCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Card(
+        color: const Color(0xff241936),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('频道资料',
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 18),
+              _ChannelInfoRow(
+                  icon: Icons.workspace_premium, title: '频道等级', value: 'Lv.1'),
+              const Divider(height: 24),
+              _ChannelInfoRow(
+                  icon: Icons.auto_awesome,
+                  title: '频道特权',
+                  value: '创建专属语音房、管理房间状态'),
+              const Divider(height: 24),
+              _ChannelInfoRow(
+                  icon: Icons.groups_rounded,
+                  title: '多人语音',
+                  value: '支持多人加入同一语音频道'),
+            ],
+          ),
+        ),
+      );
+}
+
+class _ChannelInfoRow extends StatelessWidget {
+  const _ChannelInfoRow(
+      {required this.icon, required this.title, required this.value});
+  final IconData icon;
+  final String title;
+  final String value;
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Icon(icon, color: const Color(0xffc9a7ff)),
+          const SizedBox(width: 12),
+          Expanded(
+              child: Text(title,
+                  style: const TextStyle(fontWeight: FontWeight.w700))),
+          Flexible(
+              child: Text(value,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(color: Colors.white70))),
+        ],
       );
 }
 
