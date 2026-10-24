@@ -478,7 +478,7 @@ class _SpaceLayout extends StatelessWidget {
           scrolledUnderElevation: 0,
           foregroundColor: Colors.white,
         ),
-        extendBodyBehindAppBar: true,
+        extendBodyBehindAppBar: false,
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -490,7 +490,7 @@ class _SpaceLayout extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 56, 18, 28),
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
               children: [
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 30, 20, 26),
