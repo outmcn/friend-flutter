@@ -718,7 +718,7 @@ class _CpSpaceLevelCard extends StatelessWidget {
                   style: TextStyle(
                       color: Colors.white, fontWeight: FontWeight.w700)),
             ),
-            Text('暂无资料',
+            Text('Lv.X',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.65))),
           ],
         ),
