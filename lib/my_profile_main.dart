@@ -675,41 +675,36 @@ class _CpLoveTreeCard extends StatelessWidget {
     final progress =
         max ? 1.0 : ((safe - start) / (next - start)).clamp(0.0, 1.0);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
         color: const Color(0x443B2184),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0x887E5CC9)),
       ),
-      child: Row(children: [
+      child: Column(children: [
+        const Text('爱情树',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
         Image.asset('assets/cp_love_tree/level_${level + 1}.png',
-            width: 96, height: 96, fit: BoxFit.contain),
-        const SizedBox(width: 12),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('爱情树',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 6),
-          Text('Lv.${level + 1}',
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: const Color(0x553B2184),
-              valueColor: const AlwaysStoppedAnimation(Color(0xffffc1e1))),
-          const SizedBox(height: 5),
-          Text(max ? '$safe / MAX' : '$safe / $next 经验',
-              style: const TextStyle(color: Colors.white70, fontSize: 12)),
-          const SizedBox(height: 3),
-          const Text('祝福礼物按金币价格增加经验',
-              style: TextStyle(color: Colors.white54, fontSize: 11)),
-        ])),
+            width: double.infinity, height: 190, fit: BoxFit.contain),
+        const SizedBox(height: 8),
+        Text('Lv.${level + 1}',
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            backgroundColor: const Color(0x553B2184),
+            valueColor: const AlwaysStoppedAnimation(Color(0xffffc1e1))),
+        const SizedBox(height: 6),
+        Text(max ? '$safe / MAX 经验' : '$safe / $next 经验',
+            style: const TextStyle(color: Colors.white70, fontSize: 13)),
       ]),
     );
   }
