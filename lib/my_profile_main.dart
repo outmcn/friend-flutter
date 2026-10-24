@@ -438,7 +438,7 @@ class _SpaceLayout extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: const Color(0xFF160D3B),
         appBar: AppBar(
-          title: const Text('空间'),
+          title: const Text('CP空间'),
           backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
@@ -456,28 +456,68 @@ class _SpaceLayout extends StatelessWidget {
           ),
           child: SafeArea(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(14, 56, 14, 28),
+              padding: const EdgeInsets.fromLTRB(18, 78, 18, 28),
               children: [
-                const SizedBox(height: 22),
-                _CpHouseCard(
-                  nickname: nickname,
-                  avatarUrl: avatarUrl,
-                  avatarLocalPath: avatarLocalPath,
-                  partner: partner,
-                  userId: userId,
-                  isOwner: isOwner,
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 26),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        colors: [Color(0x886F42D8), Color(0x553A1C91)]),
+                    borderRadius: BorderRadius.circular(28),
+                    border:
+                        Border.all(color: const Color(0xFFB991FF), width: 1.4),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _SpaceAvatar(
+                              label: nickname,
+                              url: avatarUrl,
+                              localPath: avatarLocalPath),
+                          const _HeartPulse(),
+                          _SpaceAvatar(
+                            label: partner?['nickname']?.toString() ?? '虚位以待',
+                            url: partner?['avatar']?.toString(),
+                            localPath: null,
+                            isEmpty: partner == null,
+                            onTap: () => _CpHouseCard(
+                              nickname: nickname,
+                              avatarUrl: avatarUrl,
+                              avatarLocalPath: avatarLocalPath,
+                              partner: partner,
+                              userId: userId,
+                              isOwner: isOwner,
+                            )._openPartnerAction(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      Text(
+                        partner == null ? 'CP搭档暂未建立' : 'CP搭档已建立',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        partner == null ? '点击加号申请加入CP空间' : '你们的CP空间已开启',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 18),
+                const _SpaceDetailEmptyCard(title: '空间动态'),
+                const SizedBox(height: 12),
+                const _SpaceDetailEmptyCard(title: '空间相册'),
               ],
             ),
           ),
         ),
       );
-
-  void _showSpaceNotice(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('邀请功能暂未接入')),
-    );
-  }
 }
 
 class _CpHouseCard extends StatelessWidget {
