@@ -803,8 +803,6 @@ class _CpGiftCardState extends State<_CpGiftCard> {
   bool loading = true;
   bool sending = false;
 
-  String _giftAsset(int index) => 'assets/cp_gifts/gift_${index + 1}.png';
-
   @override
   void initState() {
     super.initState();
@@ -814,7 +812,6 @@ class _CpGiftCardState extends State<_CpGiftCard> {
   Future<String> _token() async =>
       (await SharedPreferences.getInstance()).getString('friend.auth.token') ??
       '';
-
   Future<void> _load() async {
     if (widget.userId == null ||
         widget.partnerId == null ||
@@ -832,8 +829,64 @@ class _CpGiftCardState extends State<_CpGiftCard> {
     }
   }
 
-  Future<void> _send(Map<String, dynamic> gift) async {
-    if (sending || gift['sentToday'] == true || widget.userId == null) return;
+  Future<void> _sendGift() async {
+    if (sending || widget.partnerId == null) return;
+    final available = gifts.where((g) => g['sentToday'] != true).toList();
+    if (available.isEmpty) return;
+    final gift = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      showDragHandle: true,
+      enableDrag: false,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: 235,
+          child: PageView.builder(
+            itemCount: (available.length / 10).ceil(),
+            itemBuilder: (_, page) {
+              final items = available.skip(page * 10).take(10).toList();
+              return GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(12),
+                itemCount: items.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5, childAspectRatio: .72),
+                itemBuilder: (_, index) => InkWell(
+                  onTap: () => Navigator.pop(sheetContext, items[index]),
+                  child: Column(children: [
+                    Image.asset(
+                        'assets/cp_gifts/gift_${gifts.indexOf(items[index]) + 1}.png',
+                        width: 44,
+                        height: 44),
+                    Text('${items[index]['name']}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11)),
+                    Text('${items[index]['coinPrice']}金币',
+                        style: const TextStyle(fontSize: 10))
+                  ]),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    if (gift == null || !mounted) return;
+    final ok = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+                title: const Text('确认送礼'),
+                content: Text(
+                    '送出「${gift['name']}」需要 ${gift['coinPrice']} 金币，确认送出吗？'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(c, false),
+                      child: const Text('取消')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(c, true),
+                      child: const Text('确认送出'))
+                ]));
+    if (ok != true) return;
     setState(() => sending = true);
     try {
       await DDPostService().sendCpGift(
@@ -841,13 +894,6 @@ class _CpGiftCardState extends State<_CpGiftCard> {
           userId: widget.partnerId!,
           name: '${gift['name']}');
       await _load();
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('CP礼物已送出，经验已增加')));
-    } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
     } finally {
       if (mounted) setState(() => sending = false);
     }
@@ -861,34 +907,45 @@ class _CpGiftCardState extends State<_CpGiftCard> {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: const Color(0x887E5CC9))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('CP空间礼物',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
+          Row(children: [
+            const Expanded(
+                child: Text('CP空间礼物',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w800))),
+            if (widget.partnerExists)
+              TextButton(
+                  onPressed: sending ? null : _sendGift,
+                  child: const Text('送礼'))
+          ]),
+          const SizedBox(height: 8),
           if (loading)
             const Center(child: CircularProgressIndicator())
           else if (!widget.partnerExists)
-            const Text('建立CP搭档后可赠送CP礼物',
-                style: TextStyle(color: Colors.white60))
+            const Text('暂无CP礼物', style: TextStyle(color: Colors.white60))
           else
-            Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: gifts
-                    .map((gift) => ActionChip(
-                        avatar: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset(
-                              _giftAsset(gifts.indexOf(gift)),
-                              width: 34,
-                              height: 34,
-                              fit: BoxFit.cover,
-                            )),
-                        label: Text('${gift['name']} ${gift['coinPrice']}'),
-                        onPressed: gift['sentToday'] == true || sending
-                            ? null
-                            : () => _send(gift)))
-                    .toList()),
+            SizedBox(
+                height: 92,
+                child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: gifts.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, i) {
+                      final g = gifts[i];
+                      return SizedBox(
+                          width: 62,
+                          child: Column(children: [
+                            Image.asset('assets/cp_gifts/gift_${i + 1}.png',
+                                width: 48, height: 48),
+                            Text('${g['name']}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 10)),
+                            Text('×${g['receivedQuantity'] ?? 0}',
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 11))
+                          ]));
+                    }))
         ]),
       );
 }
