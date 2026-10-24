@@ -419,7 +419,6 @@ class _SpaceLayout extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(14, 56, 14, 28),
               children: [
-                const _SpaceTitlePlate(),
                 const SizedBox(height: 22),
                 _CpHouseCard(
                   nickname: nickname,
@@ -451,32 +450,6 @@ class _SpaceLayout extends StatelessWidget {
       const SnackBar(content: Text('邀请功能暂未接入')),
     );
   }
-}
-
-class _SpaceTitlePlate extends StatelessWidget {
-  const _SpaceTitlePlate();
-
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                colors: [Color(0xFFA66BFF), Color(0xFF5B2BA5)]),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFDDBBFF), width: 1.5),
-            boxShadow: const [
-              BoxShadow(
-                  color: Color(0xAA8D5CFF), blurRadius: 16, spreadRadius: 2)
-            ],
-          ),
-          child: const Text('虚位以待',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800)),
-        ),
-      );
 }
 
 class _CpHouseCard extends StatelessWidget {
@@ -521,7 +494,7 @@ class _CpHouseCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: const Color(0xFFDAB8FF)),
               ),
-              child: const Text('CP小屋',
+              child: const Text('CP空间',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
