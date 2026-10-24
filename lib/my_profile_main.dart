@@ -543,6 +543,11 @@ class _SpaceLayout extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
+                _CpSpaceLevelCard(
+                    experience: checkin?['experience'] is int
+                        ? checkin!['experience'] as int
+                        : int.tryParse('${checkin?['experience']}') ?? 0),
+                const SizedBox(height: 14),
                 _CpTaskCard(
                     checkin: checkin,
                     userId: userId,
@@ -972,7 +977,6 @@ class _CpCheckinCard extends StatelessWidget {
 class _CpSpaceLevelCard extends StatelessWidget {
   const _CpSpaceLevelCard({this.experience = 0});
   final int experience;
-
   static const thresholds = [
     0,
     100,
@@ -997,63 +1001,28 @@ class _CpSpaceLevelCard extends StatelessWidget {
     '永恒',
     '传奇'
   ];
-  static const nextRequired = [100, 200, 350, 550, 800, 1100, 1500, 2000, 2600];
-
   @override
   Widget build(BuildContext context) {
-    final safeExperience = experience < 0 ? 0 : experience;
-    var levelIndex = 0;
+    final safe = experience < 0 ? 0 : experience;
+    var index = 0;
     for (var i = 0; i < thresholds.length; i++) {
-      if (safeExperience >= thresholds[i]) levelIndex = i;
+      if (safe >= thresholds[i]) index = i;
     }
-    final isMax = levelIndex == thresholds.length - 1;
-    final currentStart = thresholds[levelIndex];
-    final required = isMax ? 0 : nextRequired[levelIndex];
-    final progress = isMax
-        ? 1.0
-        : ((safeExperience - currentStart) / required).clamp(0.0, 1.0);
-    final currentInLevel = safeExperience - currentStart;
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0x443B2184),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0x887E5CC9)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            const Icon(Icons.workspace_premium,
-                color: Color(0xffd3b5ff), size: 28),
-            const SizedBox(width: 12),
-            Text('Lv.${levelIndex + 1} · ${titles[levelIndex]}',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w800)),
-            const Spacer(),
-            Text('$safeExperience 经验',
-                style: const TextStyle(color: Colors.white70)),
-          ]),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 10,
-              backgroundColor: const Color(0x553B2184),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xffd3b5ff)),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isMax
-                ? '已达满级 · 9200经验以上'
-                : '$currentInLevel / $required · 距离Lv.${levelIndex + 2}还需${required - currentInLevel}经验',
-            style: const TextStyle(color: Colors.white60, fontSize: 12),
-          ),
-        ],
-      ),
+          color: const Color(0x443B2184),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0x887E5CC9))),
+      child: Row(children: [
+        const Icon(Icons.workspace_premium, color: Color(0xffd3b5ff), size: 25),
+        const SizedBox(width: 10),
+        Text('Lv.${index + 1} · ${titles[index]}',
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w800)),
+        const Spacer(),
+        Text('$safe经验', style: const TextStyle(color: Colors.white70)),
+      ]),
     );
   }
 }
