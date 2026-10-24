@@ -527,6 +527,29 @@ class _SpaceLayout extends StatelessWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 18),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CpSpaceDetailPage(
+                              nickname: nickname,
+                              avatarUrl: avatarUrl,
+                              avatarLocalPath: avatarLocalPath,
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.home_work_outlined),
+                        label: const Text('进入小窝'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Color(0xFFDAB8FF)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 11),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22)),
+                        ),
+                      ),
                     ],
                   ),
                 ),
