@@ -523,6 +523,7 @@ class _CpHouseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 26, 20, 20),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
               colors: [Color(0x886F42D8), Color(0x553A1C91)]),
@@ -554,7 +555,7 @@ class _CpHouseCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 42, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFF7C42D4),
                 borderRadius: BorderRadius.circular(20),
@@ -573,7 +574,7 @@ class _CpHouseCard extends StatelessWidget {
                   ),
                 ),
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 42, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 18, vertical: 4),
                   child: Text('CP空间',
                       style: TextStyle(
                           color: Colors.white,
