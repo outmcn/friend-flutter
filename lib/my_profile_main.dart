@@ -478,7 +478,7 @@ class _SpaceLayout extends StatelessWidget {
           scrolledUnderElevation: 0,
           foregroundColor: Colors.white,
         ),
-        extendBodyBehindAppBar: false,
+        extendBodyBehindAppBar: true,
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -1378,7 +1378,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
               ? [IconButton(onPressed: _create, icon: const Icon(Icons.add))]
               : const [],
         ),
-        extendBodyBehindAppBar: false,
+        extendBodyBehindAppBar: true,
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
