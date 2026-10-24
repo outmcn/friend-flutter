@@ -1032,6 +1032,18 @@ class DDPostService {
     return _decodeResponse(response, 'CP空间加载失败');
   }
 
+  Future<Map<String, dynamic>> fetchCpCheckin(String token, int userId) async {
+    final response = await _client.get(_api('/users/$userId/cp-space/checkin'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '签到状态加载失败');
+  }
+
+  Future<Map<String, dynamic>> checkinCpSpace(String token, int userId) async {
+    final response = await _client.post(_api('/users/$userId/cp-space/checkin'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '签到失败');
+  }
+
   Future<List<Map<String, dynamic>>> fetchCpApplications(String token) async {
     final response = await _client.get(_api('/me/cp-space/applications'),
         headers: {'Authorization': 'Bearer $token'});

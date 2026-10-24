@@ -386,11 +386,38 @@ class ProfileSpacePage extends StatefulWidget {
 
 class _ProfileSpacePageState extends State<ProfileSpacePage> {
   Map<String, dynamic>? partner;
+  Map<String, dynamic>? checkin;
 
   @override
   void initState() {
     super.initState();
     _loadPartner();
+    _loadCheckin();
+  }
+
+  Future<void> _loadCheckin() async {
+    if (widget.userId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    try {
+      final data = await DDPostService().fetchCpCheckin(token, widget.userId!);
+      if (mounted) setState(() => checkin = data);
+    } catch (_) {}
+  }
+
+  Future<void> _doCheckin() async {
+    if (widget.userId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    try {
+      final data = await DDPostService().checkinCpSpace(token, widget.userId!);
+      if (mounted) setState(() => checkin = data);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   Future<void> _loadPartner() async {
@@ -414,6 +441,8 @@ class _ProfileSpacePageState extends State<ProfileSpacePage> {
         isOwner: widget.isOwner,
         userId: widget.userId,
         partner: partner,
+        checkin: checkin,
+        onCheckin: _doCheckin,
       );
 }
 
@@ -425,6 +454,8 @@ class _SpaceLayout extends StatelessWidget {
     required this.isOwner,
     this.userId,
     this.partner,
+    this.checkin,
+    required this.onCheckin,
   });
 
   final String nickname;
@@ -433,6 +464,8 @@ class _SpaceLayout extends StatelessWidget {
   final bool isOwner;
   final int? userId;
   final Map<String, dynamic>? partner;
+  final Map<String, dynamic>? checkin;
+  final VoidCallback onCheckin;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -510,6 +543,8 @@ class _SpaceLayout extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
+                _CpCheckinCard(checkin: checkin, onCheckin: onCheckin),
+                const SizedBox(height: 14),
                 const _CpSpaceLevelCard(),
                 const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
@@ -697,6 +732,54 @@ class CpSpaceDetailPage extends StatelessWidget {
       );
 }
 
+class _CpCheckinCard extends StatelessWidget {
+  const _CpCheckinCard({this.checkin, required this.onCheckin});
+  final Map<String, dynamic>? checkin;
+  final VoidCallback onCheckin;
+
+  @override
+  Widget build(BuildContext context) {
+    final checked = checkin?['checkedIn'] == true;
+    final owner = checkin?['ownerCheckedIn'] == true;
+    final partner = checkin?['partnerCheckedIn'] == true;
+    final rewarded = checkin?['rewarded'] == true;
+    final exp = checkin?['experience'] ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+          color: const Color(0x443B2184),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0x887E5CC9))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.calendar_month, color: Color(0xffd3b5ff)),
+          const SizedBox(width: 10),
+          const Expanded(
+              child: Text('每日签到',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w800))),
+          Text('CP经验 $exp', style: const TextStyle(color: Colors.white70)),
+        ]),
+        const SizedBox(height: 10),
+        Text('我：${checked ? '已签到' : '未签到'}    对方：${partner ? '已签到' : '未签到'}',
+            style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 10),
+        Text(
+            rewarded
+                ? '双方已签到，今日已增加10经验'
+                : owner && partner
+                    ? '今日已完成签到'
+                    : '双方都签到后增加10点CP经验',
+            style: const TextStyle(color: Colors.white60, fontSize: 12)),
+        const SizedBox(height: 12),
+        FilledButton(
+            onPressed: checked ? null : onCheckin,
+            child: Text(checked ? '今日已签到' : '签到')),
+      ]),
+    );
+  }
+}
+
 class _CpSpaceLevelCard extends StatelessWidget {
   const _CpSpaceLevelCard();
 
@@ -715,7 +798,6 @@ class _CpSpaceLevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = levels.first;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
