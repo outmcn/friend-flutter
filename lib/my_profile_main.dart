@@ -527,19 +527,6 @@ class _SpaceLayout extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 22),
-                      Text(
-                        partner == null ? 'CP搭档暂未建立' : 'CP搭档已建立',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        partner == null ? '点击加号申请加入CP空间' : '',
-                        style: const TextStyle(color: Colors.white70),
-                      ),
                     ],
                   ),
                 ),
