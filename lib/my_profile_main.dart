@@ -543,6 +543,26 @@ class _SpaceLayout extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              tooltip: '进入小窝',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CpSpaceDetailPage(
+                    nickname: nickname,
+                    avatarUrl: avatarUrl,
+                    avatarLocalPath: avatarLocalPath,
+                    userId: userId,
+                    partner: partner,
+                    checkin: checkin,
+                    onCheckin: onCheckin,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.home_work_outlined),
+            ),
+          ],
         ),
         extendBodyBehindAppBar: true,
         body: Container(
@@ -594,34 +614,7 @@ class _SpaceLayout extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 18),
-                      OutlinedButton.icon(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CpSpaceDetailPage(
-                              nickname: nickname,
-                              avatarUrl: avatarUrl,
-                              avatarLocalPath: avatarLocalPath,
-                              userId: userId,
-                              partner: partner,
-                              checkin: checkin,
-                              onCheckin: onCheckin,
-                            ),
-                          ),
-                        ),
-                        icon: const Icon(Icons.home_work_outlined),
-                        label: const Text('进入小窝'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Color(0xFFDAB8FF)),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 11),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22)),
-                        ),
-                      ),
                       const SizedBox(height: 14),
-                      _CpBlessingCard(partnerExists: partner != null),
                     ],
                   ),
                 ),
