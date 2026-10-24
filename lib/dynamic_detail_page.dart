@@ -94,6 +94,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   bool deleting = false;
   bool submitting = false;
   bool giftSubmitting = false;
+  int _giftPage = 0;
   bool refreshing = false;
   final pendingActions = <String>{};
   final scroll = ScrollController();
@@ -660,12 +661,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                          fontSize: 11,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.55),
-                        ),
+                            fontSize: 11,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.55),
+                          ),
                         ),
                       ],
                       const Spacer(),
@@ -833,8 +834,13 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   }
 
   Future<void> _openViolationAppeal() async {
-    final submitted = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => PostAppealPage(postId: widget.postId, service: service, token: token)));
-    if (submitted == true && mounted) _showTopNotice(context, const Text('申诉已提交'));
+    final submitted = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+            builder: (_) => PostAppealPage(
+                postId: widget.postId, service: service, token: token)));
+    if (submitted == true && mounted)
+      _showTopNotice(context, const Text('申诉已提交'));
   }
 
   Future<void> _shareToSystem(DDPost item) async {
@@ -843,7 +849,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   }
 
   Future<void> _sendPostToFriend(String peerId) async {
-    final conversationId = await service.createDirectConversation(await token(), peerId);
+    final conversationId =
+        await service.createDirectConversation(await token(), peerId);
     await _sendSharedPostMessage(
       conversationId: conversationId,
       postId: itemId,
@@ -859,11 +866,27 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   Future<void> _openDirectChat(DDPost item) async {
     if (item.userId == null) return;
-    final conversationId = await service.createDirectConversation(await token(), '${item.userId}');
+    final conversationId =
+        await service.createDirectConversation(await token(), '${item.userId}');
     if (!mounted) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => _ChatDetailPage(
-      chat: _ChatPreview(item.nickname, '开始聊天', item.avatar, null, '${item.userId}', conversationId, 0, null, null, 'dm', false, false),
-    )));
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => _ChatDetailPage(
+                  chat: _ChatPreview(
+                      item.nickname,
+                      '开始聊天',
+                      item.avatar,
+                      null,
+                      '${item.userId}',
+                      conversationId,
+                      0,
+                      null,
+                      null,
+                      'dm',
+                      false,
+                      false),
+                )));
   }
 
   Future<void> _toggleFollow(DDPost item) async {
@@ -915,24 +938,66 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       await showModalBottomSheet<void>(
         context: context,
         showDragHandle: true,
-        builder: (sheetContext) => SafeArea(
-          child: Wrap(
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('动态礼物', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        enableDrag: false,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (context, setSheetState) {
+            final pageCount = (gifts.length / 10).ceil();
+            return SafeArea(
+              child: SizedBox(
+                height: 215,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: PageView.builder(
+                        itemCount: pageCount,
+                        onPageChanged: (page) =>
+                            setSheetState(() => _giftPage = page),
+                        itemBuilder: (_, page) {
+                          final pageGifts =
+                              gifts.skip(page * 10).take(10).toList();
+                          return GridView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.all(12),
+                            itemCount: pageGifts.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 5, childAspectRatio: .78),
+                            itemBuilder: (_, index) {
+                              final gift = pageGifts[index];
+                              final assetIndex = page * 10 + index;
+                              return InkWell(
+                                onTap: () {
+                                  Navigator.pop(sheetContext);
+                                  unawaited(_sendSelectedGift(gift));
+                                },
+                                child: Column(children: [
+                                  Image.asset(
+                                      'assets/dynamic_gifts/gift_${assetIndex + 1}.png',
+                                      width: 48,
+                                      height: 48,
+                                      fit: BoxFit.contain),
+                                  Text('${gift['name'] ?? '礼物'}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 11)),
+                                  Text(
+                                      '${gift['coin_price'] ?? gift['coinPrice'] ?? 0}金币',
+                                      style: const TextStyle(fontSize: 10)),
+                                ]),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    if (pageCount > 1)
+                      Text('${_giftPage + 1}/$pageCount',
+                          style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
               ),
-              ...gifts.map((gift) => ListTile(
-                    leading: Text('${gift['icon'] ?? '🎁'}', style: const TextStyle(fontSize: 24)),
-                    title: Text('${gift['name'] ?? '礼物'}'),
-                    subtitle: Text('${gift['coin_price'] ?? 0} 金币'),
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      unawaited(_sendSelectedGift(gift));
-                    },
-                  )),
-            ],
-          ),
+            );
+          },
         ),
       );
     } catch (e) {
@@ -1028,191 +1093,211 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     }
     final item = post;
     return Material(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              surfaceTintColor: Colors.transparent,
-              toolbarHeight: kToolbarHeight,
-              titleSpacing: 16,
-              automaticallyImplyLeading: false,
-              leadingWidth: 56,
-              leading: Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: IconButton(
-                  tooltip: '返回',
-                  onPressed: _closeWithTransition,
-                  icon: const Icon(TIcons.rollback),
-                ),
-              ),
-              title: item == null
-                  ? const Text('动态详情')
-                  : InkWell(
-                      onTap: item.userId == null
-                          ? null
-                          : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => OtherProfilePage(
-                                    userId: item.userId,
-                                    name: item.nickname,
-                                  ),
-                                ),
-                              ),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Row(
-                        children: [
-                          ClipOval(
-                            child: SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: _PermanentCachedImage(
-                                url: item.avatar,
-                                fit: BoxFit.cover,
-                                placeholder: const _AvatarRetryPlaceholder(),
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          surfaceTintColor: Colors.transparent,
+          toolbarHeight: kToolbarHeight,
+          titleSpacing: 16,
+          automaticallyImplyLeading: false,
+          leadingWidth: 56,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: IconButton(
+              tooltip: '返回',
+              onPressed: _closeWithTransition,
+              icon: const Icon(TIcons.rollback),
+            ),
+          ),
+          title: item == null
+              ? const Text('动态详情')
+              : InkWell(
+                  onTap: item.userId == null
+                      ? null
+                      : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => OtherProfilePage(
+                                userId: item.userId,
+                                name: item.nickname,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(item.nickname,
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Row(
+                    children: [
+                      ClipOval(
+                        child: SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: _PermanentCachedImage(
+                            url: item.avatar,
+                            fit: BoxFit.cover,
+                            placeholder: const _AvatarRetryPlaceholder(),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-              actions: [
-                IconButton(
-                  tooltip: '分享',
-                  onPressed: item == null || deleting
-                      ? null
-                      : item?.reviewStatus == 'rejected' && isOwner
-                          ? _openViolationAppeal
-                          : () => _openShareMenu(item),
-                  icon: Icon(item?.reviewStatus == 'rejected' && isOwner ? TIcons.error_triangle_filled : TIcons.share_1, color: item?.reviewStatus == 'rejected' && isOwner ? Colors.red : null),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(item.nickname,
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+          actions: [
+            IconButton(
+              tooltip: '分享',
+              onPressed: item == null || deleting
+                  ? null
+                  : item?.reviewStatus == 'rejected' && isOwner
+                      ? _openViolationAppeal
+                      : () => _openShareMenu(item),
+              icon: Icon(
+                  item?.reviewStatus == 'rejected' && isOwner
+                      ? TIcons.error_triangle_filled
+                      : TIcons.share_1,
+                  color: item?.reviewStatus == 'rejected' && isOwner
+                      ? Colors.red
+                      : null),
             ),
-            body: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: item == null && loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : RefreshIndicator(
-                      onRefresh: load,
-                      child: ListView(
-                        controller: scroll,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero,
-                        children: [
-                          if (error != null)
-                            _PageErrorState(
-                                title: '加载失败', subtitle: error!, onRetry: load),
-                          if (item != null) ...[
-                            if (item.reviewStatus == 'rejected' && isOwner) ...[
-                              if (item.reviewStatus != 'rejected' && item.content.isNotEmpty) Padding(padding: const EdgeInsets.fromLTRB(16,16,16,0), child: Text(item.content.characters.map((_) => '*').join(), style: const TextStyle(fontSize:18,height:1.5))),
-                              if (item.imageUrl?.isNotEmpty == true || item.videoUrl?.isNotEmpty == true) const Padding(padding: EdgeInsets.all(16), child: _ViolationMediaPlaceholder()),
-                            ] else if (item.imageUrl?.isNotEmpty == true) ...[
-                              _PostImageHolder(
-                                url: item.imageUrl!,
-                              ),
-                            ],
-                            if (item.videoUrl?.isNotEmpty == true) ...[
-                              _NetworkVideoPreview(
-                                url: item.videoUrl!,
-                                thumbnailUrl: item.thumbnailUrl,
-                              ),
-                            ],
-                            if (item.content.isNotEmpty)
-                              Padding(
+          ],
+        ),
+        body: Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: item == null && loading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: load,
+                  child: ListView(
+                    controller: scroll,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    children: [
+                      if (error != null)
+                        _PageErrorState(
+                            title: '加载失败', subtitle: error!, onRetry: load),
+                      if (item != null) ...[
+                        if (item.reviewStatus == 'rejected' && isOwner) ...[
+                          if (item.reviewStatus != 'rejected' &&
+                              item.content.isNotEmpty)
+                            Padding(
                                 padding:
                                     const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                                child: Text(item.content,
+                                child: Text(
+                                    item.content.characters
+                                        .map((_) => '*')
+                                        .join(),
                                     style: const TextStyle(
-                                        fontSize: 18, height: 1.5)),
-                              ),
-                            if (receivedGifts.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: ActionChip(
-                                        avatar: const Text('🎁'),
-                                        label: const Text('送出第一份礼物'),
-                                        onPressed: _openGiftMenu,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _detailPublishTime(context, item),
-                                  ],
-                                ),
-                              )
-                            else
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: receivedGifts
-                                          .map((gift) => InkWell(
-                                                onTap: () => _sendSelectedGift(gift),
-                                                borderRadius: BorderRadius.circular(16),
-                                                child: Chip(
-                                                  avatar: Text('${gift['icon'] ?? '🎁'}'),
-                                                  label: Text('${gift['name'] ?? '礼物'} ×${gift['quantity'] ?? 1}'),
-                                                ),
-                                              ))
-                                          .toList(),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _detailPublishTime(context, item),
-                                  ],
-                                ),
-                              ),
-                            const SizedBox(height: 1),
-                            const Divider(height: 32),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: [
-                                  Text('评论',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${item.comments}条',
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (comments.isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
-                                child: Text('暂无评论'),
-                              )
-                            else
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                                child: Column(
-                                  children: _buildCommentTree(comments),
-                                ),
-                              ),
-                          ],
+                                        fontSize: 18, height: 1.5))),
+                          if (item.imageUrl?.isNotEmpty == true ||
+                              item.videoUrl?.isNotEmpty == true)
+                            const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: _ViolationMediaPlaceholder()),
+                        ] else if (item.imageUrl?.isNotEmpty == true) ...[
+                          _PostImageHolder(
+                            url: item.imageUrl!,
+                          ),
                         ],
-                      )),
-            ),
-            bottomNavigationBar: item == null ? null : _composer(item),
-          ),
+                        if (item.videoUrl?.isNotEmpty == true) ...[
+                          _NetworkVideoPreview(
+                            url: item.videoUrl!,
+                            thumbnailUrl: item.thumbnailUrl,
+                          ),
+                        ],
+                        if (item.content.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: Text(item.content,
+                                style:
+                                    const TextStyle(fontSize: 18, height: 1.5)),
+                          ),
+                        if (receivedGifts.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: ActionChip(
+                                    avatar: const Text('🎁'),
+                                    label: const Text('送出第一份礼物'),
+                                    onPressed: _openGiftMenu,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                _detailPublishTime(context, item),
+                              ],
+                            ),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: receivedGifts
+                                      .map((gift) => InkWell(
+                                            onTap: () =>
+                                                _sendSelectedGift(gift),
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            child: Chip(
+                                              avatar: Text(
+                                                  '${gift['icon'] ?? '🎁'}'),
+                                              label: Text(
+                                                  '${gift['name'] ?? '礼物'} ×${gift['quantity'] ?? 1}'),
+                                            ),
+                                          ))
+                                      .toList(),
+                                ),
+                                const SizedBox(height: 8),
+                                _detailPublishTime(context, item),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 1),
+                        const Divider(height: 32),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Text('评论',
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${item.comments}条',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (comments.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(16, 24, 16, 24),
+                            child: Text('暂无评论'),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                            child: Column(
+                              children: _buildCommentTree(comments),
+                            ),
+                          ),
+                      ],
+                    ],
+                  )),
+        ),
+        bottomNavigationBar: item == null ? null : _composer(item),
+      ),
     );
   }
 }
