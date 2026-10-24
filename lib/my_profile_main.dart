@@ -393,8 +393,12 @@ class _SpaceLayout extends StatelessWidget {
         appBar: AppBar(
           title: const Text('空间'),
           backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
           foregroundColor: Colors.white,
         ),
+        extendBodyBehindAppBar: true,
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -405,7 +409,7 @@ class _SpaceLayout extends StatelessWidget {
           ),
           child: SafeArea(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 28),
+              padding: const EdgeInsets.fromLTRB(14, 56, 14, 28),
               children: [
                 const _SpaceTitlePlate(),
                 const SizedBox(height: 22),
