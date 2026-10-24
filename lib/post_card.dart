@@ -95,9 +95,9 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
           overflow: TextOverflow.clip,
           text: TextSpan(children: [
             TextSpan(text: '$prefix… ', style: bodyStyle),
-                TextSpan(
-                  text: '展开全部',
-                  style: actionStyle,
+            TextSpan(
+              text: '展开全部',
+              style: actionStyle,
               recognizer: TapGestureRecognizer()
                 ..onTap = () => setState(() => expanded = true),
             ),
@@ -155,7 +155,11 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
         _loading = false;
         _failed = true;
         _failureMessage = '图片下载失败，请检查网络后点击重试';
-        unawaited(_DiscoverMetrics.record('image.failure', _loadStartedAt == null ? null : DateTime.now().difference(_loadStartedAt!).inMilliseconds));
+        unawaited(_DiscoverMetrics.record(
+            'image.failure',
+            _loadStartedAt == null
+                ? null
+                : DateTime.now().difference(_loadStartedAt!).inMilliseconds));
       });
       return;
     }
@@ -220,7 +224,10 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
                     onTap: _failed ? _loadAuthenticatedImage : null,
                     child: Center(
                       child: _loading
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -243,7 +250,8 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
         final availableWidth = constraints.maxWidth;
         final naturalHeight = availableWidth / ratio;
         final displayHeight = naturalHeight > 500 ? 500.0 : naturalHeight;
-        final displayWidth = naturalHeight > 500 ? displayHeight * ratio : availableWidth;
+        final displayWidth =
+            naturalHeight > 500 ? displayHeight * ratio : availableWidth;
         return Align(
           alignment: Alignment.topLeft,
           child: ClipRRect(
@@ -261,7 +269,6 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
     );
   }
 }
-
 
 String _formatMyPostDateTime(String raw) {
   final parsed = DateTime.tryParse(raw);
@@ -346,10 +353,11 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
         loading = false;
       });
     } catch (e) {
-      if (mounted) setState(() {
-        loading = false;
-        error = '$e';
-      });
+      if (mounted)
+        setState(() {
+          loading = false;
+          error = '$e';
+        });
     }
   }
 
@@ -398,13 +406,15 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
             children: [
               const Center(
                 child: Text('更多操作',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 20),
               SizedBox(
                 height: 88,
                 child: loading
-                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2))
                     : error != null
                         ? Center(child: Text(error!))
                         : ListView(
@@ -425,42 +435,74 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                           ),
               ),
               const Divider(height: 24),
-              if (widget.post.reviewStatus == 'rejected' && widget.onDelete != null)
+              if (widget.post.reviewStatus == 'rejected' &&
+                  widget.onDelete != null)
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    _ShareAction(label: '删除', icon: TIcons.delete, onTap: () {
-                      Navigator.pop(context);
-                      widget.onDelete!.call();
-                    }),
-                    _ShareAction(label: '申诉', icon: TIcons.shield_error, onTap: widget.onReport),
+                    _ShareAction(
+                        label: '删除',
+                        icon: TIcons.delete,
+                        onTap: () {
+                          Navigator.pop(context);
+                          widget.onDelete!.call();
+                        }),
+                    _ShareAction(
+                        label: '申诉',
+                        icon: TIcons.shield_error,
+                        onTap: widget.onReport),
                   ],
                 )
-              else Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  if (widget.onDelete != null) ...[
-                    _ShareAction(label: '置顶', icon: Icons.push_pin_outlined, onTap: () => Navigator.pop(context)),
-                    _ShareAction(label: '权限', icon: TIcons.browse, onTap: () => Navigator.pop(context)),
-                    _ShareAction(label: '私密', icon: Icons.lock_outline, onTap: () => Navigator.pop(context)),
-                    _ShareAction(label: '删除', icon: Icons.delete_outline, onTap: () {
-                      Navigator.pop(context);
-                      widget.onDelete!.call();
-                    }),
-                  ] else ...[
-                    _ShareAction(label: '私聊', icon: TIcons.chat, onTap: widget.onDirectChat ?? () => _openDirectChat(context)),
-                    _ShareAction(
-                      label: widget.post.following ? '已关注' : '关注',
-                      icon: widget.post.following ? TIcons.user_checked : TIcons.user_add,
-                      onTap: widget.onFollow ?? () => _toggleFollow(context),
-                    ),
-                    _ShareAction(label: '送礼', icon: TIcons.gift, onTap: widget.onGift ?? () => _openGift(context)),
-                    _ShareAction(label: '举报', icon: TIcons.bug_report, onTap: widget.onReport),
+              else
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    if (widget.onDelete != null) ...[
+                      _ShareAction(
+                          label: '置顶',
+                          icon: Icons.push_pin_outlined,
+                          onTap: () => Navigator.pop(context)),
+                      _ShareAction(
+                          label: '权限',
+                          icon: TIcons.browse,
+                          onTap: () => Navigator.pop(context)),
+                      _ShareAction(
+                          label: '私密',
+                          icon: Icons.lock_outline,
+                          onTap: () => Navigator.pop(context)),
+                      _ShareAction(
+                          label: '删除',
+                          icon: Icons.delete_outline,
+                          onTap: () {
+                            Navigator.pop(context);
+                            widget.onDelete!.call();
+                          }),
+                    ] else ...[
+                      _ShareAction(
+                          label: '私聊',
+                          icon: TIcons.chat,
+                          onTap: widget.onDirectChat ??
+                              () => _openDirectChat(context)),
+                      _ShareAction(
+                        label: widget.post.following ? '已关注' : '关注',
+                        icon: widget.post.following
+                            ? TIcons.user_checked
+                            : TIcons.user_add,
+                        onTap: widget.onFollow ?? () => _toggleFollow(context),
+                      ),
+                      _ShareAction(
+                          label: '送礼',
+                          icon: TIcons.gift,
+                          onTap: widget.onGift ?? () => _openGift(context)),
+                      _ShareAction(
+                          label: '举报',
+                          icon: TIcons.bug_report,
+                          onTap: widget.onReport),
+                    ],
                   ],
-                ],
-              ),
+                ),
             ],
           ),
         ),
@@ -535,11 +577,13 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
       ),
     );
   }
-
 }
 
 class _ConversationShareTile extends StatelessWidget {
-  const _ConversationShareTile({required this.conversation, required this.sending, required this.onSend});
+  const _ConversationShareTile(
+      {required this.conversation,
+      required this.sending,
+      required this.onSend});
   final DDConversation conversation;
   final bool sending;
   final VoidCallback onSend;
@@ -590,7 +634,11 @@ class _ConversationShareTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text(peer?.nickname ?? '好友', maxLines: 1, overflow: TextOverflow.ellipsis, ),
+            Text(
+              peer?.nickname ?? '好友',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -599,7 +647,8 @@ class _ConversationShareTile extends StatelessWidget {
 }
 
 class _ShareFriendTile extends StatelessWidget {
-  const _ShareFriendTile({required this.label, required this.icon, required this.onTap});
+  const _ShareFriendTile(
+      {required this.label, required this.icon, required this.onTap});
   final String label;
   final IconData icon;
   final VoidCallback onTap;
@@ -614,7 +663,8 @@ class _ShareFriendTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 25,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                backgroundColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Icon(icon, size: 23),
               ),
               const SizedBox(height: 6),
@@ -646,6 +696,9 @@ class _PostGiftSheetState extends State<_PostGiftSheet> {
   List<Map<String, dynamic>> gifts = const [];
   bool loading = true;
   bool sending = false;
+  int _page = 0;
+
+  String _asset(int index) => 'assets/dynamic_gifts/gift_${index + 1}.png';
 
   @override
   void initState() {
@@ -685,8 +738,12 @@ class _PostGiftSheetState extends State<_PostGiftSheet> {
         title: const Text('确认送礼'),
         content: Text('确定送出 ${gift['name'] ?? '这份礼物'} 吗？'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('送出')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('取消')),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('送出')),
         ],
       ),
     );
@@ -714,24 +771,64 @@ class _PostGiftSheetState extends State<_PostGiftSheet> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
           child: loading
-              ? const SizedBox(height: 140, child: Center(child: CircularProgressIndicator()))
+              ? const SizedBox(
+                  height: 140,
+                  child: Center(child: CircularProgressIndicator()))
               : gifts.isEmpty
-                  ? const SizedBox(height: 120, child: Center(child: Text('暂无可送出的礼物')))
-                  : Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: gifts.map((gift) => ActionChip(
-                            avatar: Text('${gift['icon'] ?? '🎁'}'),
-                            label: Text('${gift['name'] ?? '礼物'} · ${gift['coin_price'] ?? 0}金币'),
-                            onPressed: sending ? null : () => _send(gift),
-                          )).toList(),
+                  ? const SizedBox(
+                      height: 120, child: Center(child: Text('暂无可送出的礼物')))
+                  : SizedBox(
+                      height: 220,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: PageView.builder(
+                              itemCount: (gifts.length / 10).ceil(),
+                              onPageChanged: (page) =>
+                                  setState(() => _page = page),
+                              itemBuilder: (_, page) {
+                                final pageGifts =
+                                    gifts.skip(page * 10).take(10).toList();
+                                return GridView.builder(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: pageGifts.length,
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 5,
+                                          childAspectRatio: .78),
+                                  itemBuilder: (_, index) => InkWell(
+                                    onTap: sending
+                                        ? null
+                                        : () => _send(pageGifts[index]),
+                                    child: Column(children: [
+                                      Image.asset(_asset(page * 10 + index),
+                                          width: 48, height: 48),
+                                      Text(
+                                          '${pageGifts[index]['name'] ?? '礼物'}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 11)),
+                                      Text(
+                                          '${pageGifts[index]['coin_price'] ?? pageGifts[index]['coinPrice'] ?? 0}金币',
+                                          style: const TextStyle(fontSize: 10))
+                                    ]),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          Text('${_page + 1}/${(gifts.length / 10).ceil()}',
+                              style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
                     ),
         ),
       );
 }
 
 class _ShareAction extends StatelessWidget {
-  const _ShareAction({required this.label, required this.icon, required this.onTap});
+  const _ShareAction(
+      {required this.label, required this.icon, required this.onTap});
   final String label;
   final IconData icon;
   final VoidCallback onTap;
@@ -747,7 +844,8 @@ class _ShareAction extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 25,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                backgroundColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Icon(icon, size: 23),
               ),
               const SizedBox(height: 6),
@@ -758,7 +856,8 @@ class _ShareAction extends StatelessWidget {
       );
 }
 
-String _maskViolationText(String text) => text.characters.map((_) => '*').join();
+String _maskViolationText(String text) =>
+    text.characters.map((_) => '*').join();
 
 class _ViolationMediaPlaceholder extends StatelessWidget {
   const _ViolationMediaPlaceholder();
@@ -821,7 +920,8 @@ class _DiscoverProfileCard extends StatelessWidget {
     required String label,
     required VoidCallback? onTap,
     bool active = false,
-  }) => Expanded(
+  }) =>
+      Expanded(
         child: InkWell(
           onTap: onTap,
           child: Padding(
@@ -831,9 +931,8 @@ class _DiscoverProfileCard extends StatelessWidget {
               children: [
                 Icon(icon,
                     size: 20,
-                    color: active
-                        ? Theme.of(context).colorScheme.primary
-                        : null),
+                    color:
+                        active ? Theme.of(context).colorScheme.primary : null),
                 const SizedBox(width: 4),
                 Text(label),
               ],
@@ -860,9 +959,23 @@ class _DiscoverProfileCard extends StatelessWidget {
     );
   }
 
-  Widget _avatarFrame({required Widget child, required String gender, double size = 40}) {
-    final color = gender == '男' ? const Color(0xFF1677FF) : gender == '女' ? const Color(0xFFFF6FAE) : Colors.transparent;
-    return Container(width: size, height: size, padding: EdgeInsets.all(color == Colors.transparent ? 0 : 2), decoration: BoxDecoration(shape: BoxShape.circle, border: color == Colors.transparent ? null : Border.all(color: color, width: 2)), child: ClipOval(child: child));
+  Widget _avatarFrame(
+      {required Widget child, required String gender, double size = 40}) {
+    final color = gender == '男'
+        ? const Color(0xFF1677FF)
+        : gender == '女'
+            ? const Color(0xFFFF6FAE)
+            : Colors.transparent;
+    return Container(
+        width: size,
+        height: size,
+        padding: EdgeInsets.all(color == Colors.transparent ? 0 : 2),
+        decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: color == Colors.transparent
+                ? null
+                : Border.all(color: color, width: 2)),
+        child: ClipOval(child: child));
   }
 
   @override
@@ -893,19 +1006,22 @@ class _DiscoverProfileCard extends StatelessWidget {
                             ),
                     ),
                   ),
-                  if (post.authorOnline) Positioned(
-                    right: -1,
-                    bottom: -1,
-                    child: Container(
-                      width: 40 * .30,
-                      height: 40 * .30,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF34C759),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1),
+                  if (post.authorOnline)
+                    Positioned(
+                      right: -1,
+                      bottom: -1,
+                      child: Container(
+                        width: 40 * .30,
+                        height: 40 * .30,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF34C759),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              width: 1),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(width: 10),
@@ -920,16 +1036,25 @@ class _DiscoverProfileCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             _formatMyPostDateTime(post.createdAt),
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
+                            style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.55)),
                           ),
                         ),
                         IconButton(
                           tooltip: '分享',
                           onPressed: () => _showDiscoverMore(context),
-                          icon: Icon(violation ? TIcons.error_triangle_filled : TIcons.share_1, color: violation ? Colors.red : null),
+                          icon: Icon(
+                              violation
+                                  ? TIcons.error_triangle_filled
+                                  : TIcons.share_1,
+                              color: violation ? Colors.red : null),
                           iconSize: 20,
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                          constraints: const BoxConstraints.tightFor(
+                              width: 32, height: 32),
                         ),
                       ],
                     )
@@ -937,90 +1062,99 @@ class _DiscoverProfileCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Flexible(
-                                  child: Text(post.nickname,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                      )),
-                                ),
-                                if (post.distanceKm != null &&
-                                    post.distanceKm! <= 30)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 6),
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        color: const Color(0x2234C759),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 5, vertical: 2),
-                                        child: Text(
-                                          '${post.distanceKm!.toStringAsFixed(2)}km',
-                                          style: const TextStyle(
-                                            color: Color(0xFF34C759),
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(post.nickname,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                        )),
+                                  ),
+                                  if (post.distanceKm != null &&
+                                      post.distanceKm! <= 30)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 6),
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: const Color(0x2234C759),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 5, vertical: 2),
+                                          child: Text(
+                                            '${post.distanceKm!.toStringAsFixed(2)}km',
+                                            style: const TextStyle(
+                                              color: Color(0xFF34C759),
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
+                                ],
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  '${_formatDiscoverDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.55),
                                   ),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                '${_formatDiscoverDate(post.createdAt)}${(post.authorCity ?? '').trim().isNotEmpty ? ' · ${post.authorCity!.trim()}' : ''}',
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.55),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        tooltip: '分享',
-                        onPressed: () => _showDiscoverMore(context),
-                        icon: Icon(violation ? TIcons.error_triangle_filled : TIcons.share_1, color: violation ? Colors.red : null),
-                        iconSize: 20,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints.tightFor(
-                          width: 32,
-                          height: 32,
+                        IconButton(
+                          tooltip: '分享',
+                          onPressed: () => _showDiscoverMore(context),
+                          icon: Icon(
+                              violation
+                                  ? TIcons.error_triangle_filled
+                                  : TIcons.share_1,
+                              color: violation ? Colors.red : null),
+                          iconSize: 20,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints.tightFor(
+                            width: 32,
+                            height: 32,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   if (post.content.trim().isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 1, bottom: 5),
                       child: _DiscoverPostContent(
-                        text: violation ? _maskViolationText(post.content) : post.content.trim(),
+                        text: violation
+                            ? _maskViolationText(post.content)
+                            : post.content.trim(),
                         maxLines: hasMedia ? 3 : 10,
                       ),
                     ),
-                  if (post.imageUrl?.trim().isNotEmpty == true && violation) ...[
+                  if (post.imageUrl?.trim().isNotEmpty == true &&
+                      violation) ...[
                     const SizedBox(height: 10),
                     _ViolationMediaPlaceholder(),
                   ] else if (post.imageUrl?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 10),
                     _media(url: post.imageUrl!.trim(), thumbnail: false),
-                  ] else if (post.videoUrl?.trim().isNotEmpty == true && violation) ...[
+                  ] else if (post.videoUrl?.trim().isNotEmpty == true &&
+                      violation) ...[
                     const SizedBox(height: 10),
                     _ViolationMediaPlaceholder(),
                   ] else if (post.videoUrl?.trim().isNotEmpty == true) ...[
@@ -1028,8 +1162,14 @@ class _DiscoverProfileCard extends StatelessWidget {
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        _media(url: post.thumbnailUrl?.trim().isNotEmpty == true ? post.thumbnailUrl!.trim() : post.videoUrl!.trim(), thumbnail: post.thumbnailUrl?.trim().isNotEmpty == true),
-                        const Icon(Icons.play_circle_outline, size: 48, color: Colors.white),
+                        _media(
+                            url: post.thumbnailUrl?.trim().isNotEmpty == true
+                                ? post.thumbnailUrl!.trim()
+                                : post.videoUrl!.trim(),
+                            thumbnail:
+                                post.thumbnailUrl?.trim().isNotEmpty == true),
+                        const Icon(Icons.play_circle_outline,
+                            size: 48, color: Colors.white),
                       ],
                     ),
                   ],
@@ -1045,16 +1185,24 @@ class _DiscoverProfileCard extends StatelessWidget {
                       ),
                       _action(
                         context: context,
-                        icon: post.favorited ? TIcons.bookmark_filled : TIcons.bookmark,
+                        icon: post.favorited
+                            ? TIcons.bookmark_filled
+                            : TIcons.bookmark,
                         label: '${post.favorites}',
                         onTap: onFavorite,
                         active: post.favorited,
                       ),
-                      _action(context: context, icon: TIcons.chat_bubble_1,
-                          label: '${post.comments}', onTap: onOpen),
+                      _action(
+                          context: context,
+                          icon: TIcons.chat_bubble_1,
+                          label: '${post.comments}',
+                          onTap: onOpen),
                       if (showViews)
-                        _action(context: context, icon: TIcons.browse,
-                            label: '${post.views}', onTap: onOpen),
+                        _action(
+                            context: context,
+                            icon: TIcons.browse,
+                            label: '${post.views}',
+                            onTap: onOpen),
                     ],
                   ),
                 ],

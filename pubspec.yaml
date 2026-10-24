@@ -91,6 +91,7 @@ flutter:
     - assets/cp_gifts/
     - assets/cp_levels/
     - assets/profile_gifts/
+    - assets/dynamic_gifts/
     - assets/figma/
   #   - images/a_dot_ham.jpeg
 
