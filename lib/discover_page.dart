@@ -89,7 +89,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 : await service.fetchFollowingPosts(token, offset: offset);
         return Future.wait(
             posts.map((post) => service.resolvePostMedia(token, post)));
-      }, cacheKey: 'dd.discover.feed.$tab');
+      }, cacheKey: tab == 2 ? null : 'dd.discover.feed.$tab');
       feed.scroll.addListener(() {
         if (feed.scroll.hasClients &&
             feed.scroll.position.extentAfter < 500 &&
@@ -476,6 +476,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
             setState(() => selectedTab = tab);
             if (tab == 1 && _discoverLocalTabLabel == '本地') {
               unawaited(_loadDiscoverCity());
+            }
+            if (tab == 2) {
+              unawaited(feeds[2].load(refresh: true));
             }
             final feed = feeds[tab];
             if (!feed.initialized) {
