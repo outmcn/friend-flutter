@@ -743,6 +743,13 @@ class CpSpaceDetailPage extends StatefulWidget {
 
 class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
   Map<String, dynamic>? dissolution;
+
+  bool get dissolutionPending {
+    final effectiveAt =
+        dissolution?['effectiveAt'] ?? dissolution?['dissolution_effective_at'];
+    return effectiveAt != null && '$effectiveAt'.trim().isNotEmpty;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -818,10 +825,9 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
           foregroundColor: Colors.white,
           actions: [
             TextButton(
-              onPressed: dissolution != null
-                  ? _cancelDissolution
-                  : _requestDissolution,
-              child: Text(dissolution != null ? '取消解除' : '解除关系',
+              onPressed:
+                  dissolutionPending ? _cancelDissolution : _requestDissolution,
+              child: Text(dissolutionPending ? '取消解除' : '解除关系',
                   style: const TextStyle(color: Colors.white)),
             ),
           ],
