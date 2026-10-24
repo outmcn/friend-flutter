@@ -2591,8 +2591,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               clipBehavior: Clip.none,
                                               children: [
                                                 Container(
-                                                  width: 108,
-                                                  height: 108,
+                                                  width: 96,
+                                                  height: 96,
                                                   padding:
                                                       const EdgeInsets.all(3),
                                                   decoration: BoxDecoration(
@@ -2635,8 +2635,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                   ),
                                                   child: ClipOval(
                                                     child: SizedBox(
-                                                      width: 102,
-                                                      height: 102,
+                                                      width: 90,
+                                                      height: 90,
                                                       child:
                                                           _avatarReviewRejected
                                                               ? const ColoredBox(
