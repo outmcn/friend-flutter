@@ -144,68 +144,131 @@ class _VoiceRoomSeats extends StatelessWidget {
   const _VoiceRoomSeats({required this.room});
   final Map<String, dynamic>? room;
 
+  String _text(Map member, String key) => member[key]?.toString() ?? '';
+
+  Widget _memberTile(Map member, {required bool owner, required bool manager}) {
+    final avatar = _text(member, 'avatar');
+    final name = _text(member, 'nickname').isEmpty
+        ? (_text(member, 'name').isEmpty ? '用户' : _text(member, 'name'))
+        : _text(member, 'nickname');
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CircleAvatar(
+          radius: owner ? 30 : 23,
+          backgroundImage: avatar.isEmpty ? null : NetworkImage(avatar),
+          child: avatar.isEmpty ? const Icon(Icons.person) : null,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Colors.white70, fontSize: 11),
+        ),
+        if (owner || manager)
+          Text(
+            owner ? '房主' : '管理',
+            style: const TextStyle(color: Color(0xffd3b5ff), fontSize: 10),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final raw = room?['members'] ?? room?['participants'] ?? room?['speakers'];
-    final members = raw is List ? raw.whereType<Map>().toList() : const [];
+    final members = raw is List ? raw.whereType<Map>().toList() : <Map>[];
     final owner = <String, dynamic>{
+      'user_id': room?['owner_user_id'] ?? room?['ownerUserId'],
       'nickname': room?['owner_nickname'] ??
           room?['ownerNickname'] ??
-          room?['nickname'] ??
-          '房主',
+          room?['nickname'],
       'avatar':
           room?['owner_avatar'] ?? room?['ownerAvatar'] ?? room?['avatar'],
-      'owner': true,
+      'role': 'owner',
     };
-    final seats = [
-      owner,
-      ...members.where((member) {
-        final id = member['user_id'] ?? member['userId'];
-        final ownerId = room?['owner_user_id'] ?? room?['ownerUserId'];
-        return id == null || ownerId == null || '$id' != '$ownerId';
-      })
-    ];
+    final ownerId = owner['user_id'];
+    final others = members.where((member) {
+      final id = member['user_id'] ?? member['userId'];
+      return id == null || ownerId == null || '$id' != '$ownerId';
+    }).toList();
+    final managers = others.where((member) {
+      final role =
+          '${member['role'] ?? member['user_role'] ?? member['userRole']}'
+              .toLowerCase();
+      return role == 'admin' ||
+          role == 'manager' ||
+          role == '管理员' ||
+          role == '管理';
+    }).toList();
+    final normal =
+        others.where((member) => !managers.contains(member)).toList();
+    final hasOwner = owner['user_id'] != null ||
+        owner['nickname'] != null ||
+        owner['avatar'] != null;
+    final online = room?['online_count'] ?? room?['onlineCount'];
+    final onlineText = online == null ? '在线人数暂无' : '$online人在线';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('上麦',
-            style:
-                TextStyle(color: Colors.white70, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
+        Text(onlineText,
+            style: const TextStyle(
+                color: Colors.white70, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
         Expanded(
-          child: seats.length == 1 && members.isEmpty
+          child: !hasOwner && members.isEmpty
               ? const Center(
                   child:
-                      Text('暂无上麦成员', style: TextStyle(color: Colors.white54)))
-              : ListView.builder(
-                  itemCount: seats.length,
-                  itemBuilder: (_, index) {
-                    final member = seats[index];
-                    final isOwner = index == 0;
-                    final avatar = member['avatar']?.toString();
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: isOwner ? 32 : 25,
-                            backgroundImage: avatar != null && avatar.isNotEmpty
-                                ? NetworkImage(avatar)
-                                : null,
-                            child: avatar == null || avatar.isEmpty
-                                ? const Icon(Icons.person)
-                                : null,
-                          ),
-                          const SizedBox(height: 5),
-                          Text(member['nickname']?.toString() ?? '用户',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Colors.white70, fontSize: 12)),
-                        ],
+                      Text('暂无在线成员资料', style: TextStyle(color: Colors.white54)))
+              : ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    _memberTile(owner, owner: true, manager: false),
+                    if (managers.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      const Text('管理',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 11)),
+                      const SizedBox(height: 8),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: managers.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisExtent: 78,
+                          crossAxisSpacing: 6,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemBuilder: (_, index) => _memberTile(managers[index],
+                            owner: false, manager: true),
                       ),
-                    );
-                  },
+                    ],
+                    if (normal.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      const Text('成员',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 11)),
+                      const SizedBox(height: 8),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: normal.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisExtent: 72,
+                          crossAxisSpacing: 6,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemBuilder: (_, index) => _memberTile(normal[index],
+                            owner: false, manager: false),
+                      ),
+                    ],
+                  ],
                 ),
         ),
       ],
