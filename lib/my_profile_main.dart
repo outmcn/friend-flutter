@@ -549,11 +549,6 @@ class _SpaceLayout extends StatelessWidget {
                 const SizedBox(height: 14),
                 _CpCheckinCard(checkin: checkin, onCheckin: onCheckin),
                 const SizedBox(height: 14),
-                _CpSpaceLevelCard(
-                    experience: checkin?['experience'] is int
-                        ? checkin!['experience'] as int
-                        : int.tryParse('${checkin?['experience']}') ?? 0),
-                const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
             ),
