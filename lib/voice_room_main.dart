@@ -57,6 +57,7 @@ class VoiceRoomPage extends StatefulWidget {
 }
 
 class _VoiceRoomPageState extends State<VoiceRoomPage> {
+  final messageController = TextEditingController();
   bool muted = false;
   bool joined = false;
   bool _leaving = false;
@@ -76,6 +77,14 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
       await AliyunRtcBridge.subscribeRemoteAudio(true);
       _rtcJoined = true;
     } catch (_) {}
+  }
+
+  Future<void> _shareRoom() async {
+    final channelId = widget.room?['channel_id']?.toString() ??
+        widget.room?['channelId']?.toString() ??
+        '';
+    final suffix = channelId.isEmpty ? '' : '\n频道ID：$channelId';
+    await Share.share('语音频道：${widget.roomTitle}$suffix');
   }
 
   Future<void> _exitRoom() async {
@@ -116,6 +125,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
 
   @override
   void dispose() {
+    messageController.dispose();
     if (!_leaving) {
       // 返回或右滑进入浮窗时保留 RTC，不在此处离开频道。
     }
@@ -138,7 +148,11 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
             foregroundColor: Colors.white,
             title: Text(widget.roomTitle),
             actions: [
-              IconButton(onPressed: () {}, icon: const Icon(Icons.ios_share)),
+              IconButton(
+                tooltip: '分享',
+                onPressed: _shareRoom,
+                icon: const Icon(TIcons.share_1),
+              ),
               IconButton(
                   onPressed: _confirmExit, icon: const Icon(Icons.close)),
             ],
@@ -190,20 +204,47 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
               top: false,
               child: Container(
                   color: const Color(0xff21172e),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                   child: Row(children: [
                     IconButton(
-                        onPressed: () => setState(() => muted = !muted),
-                        icon: Icon(muted ? Icons.mic_off : Icons.mic_none,
+                        tooltip: muted ? '开启语音输入' : '关闭语音输入',
+                        onPressed: () async {
+                          final next = !muted;
+                          if (_rtcJoined) {
+                            try {
+                              await AliyunRtcBridge.setMuted(next);
+                            } catch (_) {}
+                          }
+                          if (mounted) setState(() => muted = next);
+                        },
+                        icon: Icon(muted ? Icons.mic_off : TIcons.microphone_1,
                             color: Colors.white)),
                     Expanded(
-                        child: FilledButton(
-                            onPressed: () => setState(() => joined = !joined),
-                            child: Text(joined ? '已上麦' : '申请上麦'))),
-                    IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.card_giftcard_outlined,
-                            color: Colors.white))
+                      child: TextField(
+                        controller: messageController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: '输入消息',
+                          hintStyle: const TextStyle(color: Colors.white54),
+                          filled: true,
+                          fillColor: const Color(0xff342347),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(22),
+                              borderSide: BorderSide.none),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    FilledButton(
+                      onPressed: () {},
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(62, 38),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                      child: Text(joined ? '已上麦' : '申请上麦'),
+                    ),
                   ]))),
         ),
       );
