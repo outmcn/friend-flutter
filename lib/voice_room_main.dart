@@ -3,6 +3,8 @@ part of 'main.dart';
 class VoiceRoomPage extends StatefulWidget {
   const VoiceRoomPage({super.key, this.room});
   final Map<String, dynamic>? room;
+  String get roomTitle =>
+      '${room?['room']?['title'] ?? room?['title'] ?? '语音频道'}';
   @override
   State<VoiceRoomPage> createState() => _VoiceRoomPageState();
 }
@@ -14,13 +16,18 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: const Color(0xff1a1224),
         appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            foregroundColor: Colors.white,
-            title: const Text('深夜电台 · 一起听'),
-            actions: [
-              IconButton(onPressed: () {}, icon: const Icon(Icons.ios_share)),
-              IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
-            ]),
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          foregroundColor: Colors.white,
+          title: Text(widget.roomTitle),
+          actions: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.ios_share)),
+            IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz)),
+          ],
+        ),
+        extendBodyBehindAppBar: true,
         body: Stack(children: [
           Positioned.fill(
               child: DecoratedBox(
@@ -30,10 +37,9 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                           radius: 1.4,
                           colors: [Color(0xff673a8c), Color(0xff1a1224)])))),
           ListView(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+              padding: const EdgeInsets.fromLTRB(16, 78, 16, 100),
               children: [
-                const _VoiceRoomNotice(),
-                const SizedBox(height: 18),
+                const SizedBox(height: 28),
                 Center(
                     child: Column(children: [
                   Stack(alignment: Alignment.center, children: [
@@ -49,15 +55,14 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                         radius: 41, child: Icon(Icons.mic, size: 38)),
                   ]),
                   const SizedBox(height: 12),
-                  const Text('苏念  房主',
-                      style: TextStyle(
+                  Text(
+                      widget.room?['room']?['title']?.toString() ??
+                          widget.room?['title']?.toString() ??
+                          '语音频道',
+                      style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
                           color: Colors.white)),
-                  const SizedBox(height: 5),
-                  const Chip(
-                      label: Text('正在说话'),
-                      avatar: Icon(Icons.graphic_eq, size: 15))
                 ])),
                 const SizedBox(height: 28),
                 const Text('麦位  ·  128 人在听',

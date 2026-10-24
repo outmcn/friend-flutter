@@ -954,11 +954,36 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
   }
 
   Future<void> _create() async {
+    final controller = TextEditingController(text: '语音频道');
+    final title = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('创建语音频道'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 40,
+          decoration:
+              const InputDecoration(labelText: '房间名字', hintText: '请输入房间名字'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('取消')),
+          FilledButton(
+              onPressed: () =>
+                  Navigator.pop(dialogContext, controller.text.trim()),
+              child: const Text('创建')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (title == null || title.trim().isEmpty) return;
     try {
       final token = (await SharedPreferences.getInstance())
               .getString('friend.auth.token') ??
           '';
-      final data = await service.createVoiceRoom(token, title: '语音频道');
+      final data = await service.createVoiceRoom(token, title: title.trim());
       if (!mounted) return;
       Navigator.push(context,
           MaterialPageRoute(builder: (_) => VoiceRoomPage(room: data)));
