@@ -1026,6 +1026,29 @@ class DDPostService {
     await prefs.remove('friend.auth.token');
   }
 
+  Future<List<Map<String, dynamic>>> fetchCpGifts(
+      String token, int userId) async {
+    final response = await _client.get(_api('/users/$userId/cp-space/gifts'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data = await _decodeResponse(response, 'CP礼物加载失败');
+    final rows = data['gifts'];
+    if (rows is! List) throw Exception('CP礼物数据格式错误');
+    return rows.whereType<Map>().map((x) => x.cast<String, dynamic>()).toList();
+  }
+
+  Future<Map<String, dynamic>> sendCpGift(
+      {required String token,
+      required int userId,
+      required String name}) async {
+    final response = await _client.post(_api('/users/$userId/cp-space/gifts'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'name': name}));
+    return _decodeResponse(response, 'CP礼物发送失败');
+  }
+
   Future<Map<String, dynamic>> fetchCpSpace(String token, int userId) async {
     final response = await _client.get(_api('/users/$userId/cp-space'),
         headers: {'Authorization': 'Bearer $token'});

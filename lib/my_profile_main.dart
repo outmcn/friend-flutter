@@ -543,6 +543,8 @@ class _SpaceLayout extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
+                _CpGiftCard(userId: userId, partnerExists: partner != null),
+                const SizedBox(height: 14),
                 _CpCheckinCard(checkin: checkin, onCheckin: onCheckin),
                 const SizedBox(height: 14),
                 const _CpSpaceLevelCard(),
@@ -729,6 +731,98 @@ class CpSpaceDetailPage extends StatelessWidget {
             ),
           ),
         ),
+      );
+}
+
+class _CpGiftCard extends StatefulWidget {
+  const _CpGiftCard({required this.userId, required this.partnerExists});
+  final int? userId;
+  final bool partnerExists;
+  @override
+  State<_CpGiftCard> createState() => _CpGiftCardState();
+}
+
+class _CpGiftCardState extends State<_CpGiftCard> {
+  List<Map<String, dynamic>> gifts = const [];
+  bool loading = true;
+  bool sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<String> _token() async =>
+      (await SharedPreferences.getInstance()).getString('friend.auth.token') ??
+      '';
+
+  Future<void> _load() async {
+    if (widget.userId == null || !widget.partnerExists) {
+      if (mounted) setState(() => loading = false);
+      return;
+    }
+    try {
+      final data =
+          await DDPostService().fetchCpGifts(await _token(), widget.userId!);
+      if (mounted) setState(() => gifts = data);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _send(Map<String, dynamic> gift) async {
+    if (sending || gift['sentToday'] == true || widget.userId == null) return;
+    setState(() => sending = true);
+    try {
+      await DDPostService().sendCpGift(
+          token: await _token(),
+          userId: widget.userId!,
+          name: '${gift['name']}');
+      await _load();
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('CP礼物已送出，经验已增加')));
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+            color: const Color(0x443B2184),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0x887E5CC9))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('CP空间礼物',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          if (loading)
+            const Center(child: CircularProgressIndicator())
+          else if (!widget.partnerExists)
+            const Text('建立CP搭档后可赠送CP礼物',
+                style: TextStyle(color: Colors.white60))
+          else
+            Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: gifts
+                    .map((gift) => ActionChip(
+                        avatar: Text('${gift['icon'] ?? '礼'}'),
+                        label: Text('${gift['name']} ${gift['coinPrice']}'),
+                        onPressed: gift['sentToday'] == true || sending
+                            ? null
+                            : () => _send(gift)))
+                    .toList()),
+        ]),
       );
 }
 
