@@ -139,6 +139,36 @@ class _ShareAction extends StatelessWidget {
       );
 }
 
+class _VoiceRoomMessages extends StatelessWidget {
+  const _VoiceRoomMessages({required this.room});
+  final Map<String, dynamic>? room;
+
+  @override
+  Widget build(BuildContext context) {
+    final raw = room?['messages'];
+    final messages = raw is List ? raw.whereType<Map>().toList() : const [];
+    if (messages.isEmpty) {
+      return const Center(
+        child: Text('暂无房间消息', style: TextStyle(color: Colors.white54)),
+      );
+    }
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: messages.length,
+      itemBuilder: (_, index) {
+        final message = messages[index];
+        final name = message['nickname']?.toString() ?? '用户';
+        final text = message['text']?.toString() ?? '';
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text('$name：$text',
+              style: const TextStyle(color: Colors.white70)),
+        );
+      },
+    );
+  }
+}
+
 class VoiceRoomPage extends StatefulWidget {
   const VoiceRoomPage({super.key, this.room});
   final Map<String, dynamic>? room;
@@ -348,39 +378,56 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                             center: Alignment.topRight,
                             radius: 1.4,
                             colors: [Color(0xff673a8c), Color(0xff1a1224)])))),
-            ListView(
-                padding: const EdgeInsets.fromLTRB(16, 78, 16, 100),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 78, 16, 12),
+              child: Column(
                 children: [
                   const SizedBox(height: 28),
                   Center(
-                      child: Column(children: [
-                    Stack(alignment: Alignment.center, children: [
-                      Container(
-                        width: 118,
-                        height: 118,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: Colors.purpleAccent, width: 2)),
-                      ),
-                      const CircleAvatar(
-                          radius: 41, child: Icon(Icons.mic, size: 38)),
-                    ]),
-                    const SizedBox(height: 12),
-                    Text(
-                        widget.room?['room']?['title']?.toString() ??
-                            widget.room?['title']?.toString() ??
-                            '暂无频道名称',
-                        style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white)),
-                  ])),
-                  const SizedBox(height: 32),
-                  const Center(
-                      child: Text('暂无实时成员资料',
-                          style: TextStyle(color: Colors.white70))),
-                ]),
+                    child: Column(
+                      children: [
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: 118,
+                              height: 118,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: Colors.purpleAccent, width: 2),
+                              ),
+                            ),
+                            const CircleAvatar(
+                                radius: 41, child: Icon(Icons.mic, size: 38)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          widget.room?['room']?['title']?.toString() ??
+                              widget.room?['title']?.toString() ??
+                              '暂无频道名称',
+                          style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('房间消息',
+                        style: TextStyle(
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(child: _VoiceRoomMessages(room: widget.room)),
+                ],
+              ),
+            ),
           ]),
           bottomNavigationBar: SafeArea(
               top: false,
