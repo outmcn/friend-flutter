@@ -92,6 +92,7 @@ flutter:
     - assets/cp_levels/
     - assets/cp_blessings/
     - assets/profile_gifts/
+    - assets/voice_gifts/
     - assets/avatar_frames/
     - assets/dynamic_gifts/
     - assets/figma/

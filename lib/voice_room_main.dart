@@ -354,6 +354,235 @@ class _VoiceRoomMessages extends StatelessWidget {
       );
 }
 
+class _VoiceGiftSheet extends StatefulWidget {
+  const _VoiceGiftSheet({
+    required this.room,
+    required this.roomId,
+    required this.service,
+    required this.token,
+  });
+  final Map<String, dynamic> room;
+  final String roomId;
+  final DDPostService service;
+  final String token;
+
+  @override
+  State<_VoiceGiftSheet> createState() => _VoiceGiftSheetState();
+}
+
+class _VoiceGiftSheetState extends State<_VoiceGiftSheet> {
+  static const _names = [
+    '聊天泡泡',
+    '游戏时光',
+    '星愿纸飞机',
+    '梦幻故事书',
+    '观影入场券',
+    '欢乐爆米花',
+    '聚光时刻',
+    '泡泡派对',
+    '彩虹风车',
+    '旋转彩星',
+    '缤纷拼图',
+    '环球旅行',
+    '灵感笔尖',
+    '彩虹键盘',
+    '游戏摇杆',
+    '星光风铃',
+    '快乐悠悠',
+    '星空望远镜',
+    '闪耀滑板',
+    '爱情信封',
+  ];
+  late final List<Map<String, dynamic>> recipients;
+  List<Map<String, dynamic>> gifts = const [];
+  int? selectedRecipient;
+  bool loading = true;
+  bool sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final owner = <String, dynamic>{
+      'user_id': widget.room['owner_user_id'] ?? widget.room['ownerUserId'],
+      'nickname': widget.room['owner_nickname'] ??
+          widget.room['ownerNickname'] ??
+          widget.room['nickname'] ??
+          '房主',
+      'avatar': widget.room['owner_avatar'] ??
+          widget.room['ownerAvatar'] ??
+          widget.room['avatar'],
+    };
+    final raw = widget.room['members'] ??
+        widget.room['participants'] ??
+        widget.room['speakers'];
+    final all = <Map<String, dynamic>>[owner];
+    if (raw is List) {
+      for (final item in raw.whereType<Map>()) {
+        final member = item.cast<String, dynamic>();
+        final id = member['user_id'] ?? member['userId'];
+        if (id != null && !all.any((x) => '${x['user_id']}' == '$id')) {
+          all.add(member);
+        }
+      }
+    }
+    recipients = all
+        .where((x) => int.tryParse('${x['user_id'] ?? x['userId']}') != null)
+        .toList();
+    selectedRecipient = recipients.isEmpty
+        ? null
+        : int.tryParse(
+            '${recipients.first['user_id'] ?? recipients.first['userId']}');
+    _loadGifts();
+  }
+
+  Future<void> _loadGifts() async {
+    try {
+      final rows =
+          await widget.service.fetchVoiceRoomGifts(widget.token, widget.roomId);
+      if (mounted) setState(() => gifts = rows);
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _send(Map<String, dynamic> gift) async {
+    final receiver = selectedRecipient;
+    if (receiver == null || sending) return;
+    final name = gift['name']?.toString() ?? '礼物';
+    final price = gift['coinPrice'] ?? 0;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认送礼'),
+        content: Text('送出$name（$price金币）？'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('取消')),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('送出')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => sending = true);
+    try {
+      await widget.service.sendVoiceRoomGift(
+        token: widget.token,
+        roomId: widget.roomId,
+        receiverUserId: receiver,
+        giftIndex: int.parse('${gift['index']}'),
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('送礼成功')));
+      }
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('频道礼物',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 78,
+              child: recipients.isEmpty
+                  ? const Center(child: Text('暂无麦上成员资料'))
+                  : ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: recipients.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 14),
+                      itemBuilder: (_, index) {
+                        final member = recipients[index];
+                        final id = int.parse(
+                            '${member['user_id'] ?? member['userId']}');
+                        final avatar = member['avatar']?.toString() ?? '';
+                        final name = member['nickname']?.toString() ??
+                            member['name']?.toString() ??
+                            '用户';
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedRecipient = id),
+                          child: Column(children: [
+                            CircleAvatar(
+                              radius: selectedRecipient == id ? 27 : 23,
+                              backgroundImage:
+                                  avatar.isEmpty ? null : NetworkImage(avatar),
+                              child: avatar.isEmpty
+                                  ? const Icon(Icons.person)
+                                  : null,
+                            ),
+                            const SizedBox(height: 3),
+                            SizedBox(
+                                width: 58,
+                                child: Text(name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center)),
+                          ]),
+                        );
+                      },
+                    ),
+            ),
+            const SizedBox(height: 8),
+            if (loading)
+              const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator())
+            else
+              SizedBox(
+                height: 230,
+                child: GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: gifts.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 4,
+                    mainAxisExtent: 108,
+                  ),
+                  itemBuilder: (_, index) {
+                    final gift = gifts[index];
+                    final giftIndex =
+                        int.tryParse('${gift['index']}') ?? index + 1;
+                    return GestureDetector(
+                      onTap: () => _send(gift),
+                      child: Column(children: [
+                        Image.asset('assets/voice_gifts/gift_$giftIndex.png',
+                            width: 54, height: 54, fit: BoxFit.contain),
+                        Text(gift['name']?.toString() ?? _names[index],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11)),
+                        Text('${gift['coinPrice'] ?? 0}金币',
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.orange)),
+                      ]),
+                    );
+                  },
+                ),
+              ),
+          ]),
+        ),
+      );
+}
+
 class VoiceRoomPage extends StatefulWidget {
   const VoiceRoomPage({super.key, this.room});
   final Map<String, dynamic>? room;
@@ -445,6 +674,29 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
     } catch (_) {}
   }
 
+  String? _pendingGiftToken;
+
+  Future<void> _showVoiceGiftSheet() async {
+    final roomId = _roomId;
+    if (roomId == null || roomId.isEmpty) {
+      _showRoomNotice('频道资料暂不可用');
+      return;
+    }
+    _pendingGiftToken = await _authToken();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _VoiceGiftSheet(
+        room: widget.roomData,
+        roomId: roomId,
+        service: messageService,
+        token: _pendingGiftToken!,
+      ),
+    );
+    _pendingGiftToken = null;
+  }
+
   Future<void> _shareRoom() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -528,7 +780,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
 
   void _showGiftUnavailable() {
     Navigator.pop(context);
-    _showRoomNotice('语音房送礼暂未接入');
+    _showVoiceGiftSheet();
   }
 
   void _showReportUnavailable() {
@@ -683,6 +935,10 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                         },
                         icon: Icon(muted ? Icons.mic_off : TIcons.microphone_1,
                             color: Colors.white)),
+                    IconButton(
+                        tooltip: '送礼',
+                        onPressed: _showVoiceGiftSheet,
+                        icon: const Icon(TIcons.gift, color: Colors.white)),
                     Expanded(
                       child: TextField(
                         controller: messageController,
