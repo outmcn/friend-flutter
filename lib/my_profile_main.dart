@@ -556,7 +556,10 @@ class _SpaceLayout extends StatelessWidget {
                 const SizedBox(height: 14),
                 _CpCheckinCard(checkin: checkin, onCheckin: onCheckin),
                 const SizedBox(height: 14),
-                const _CpSpaceLevelCard(),
+                _CpSpaceLevelCard(
+                    experience: checkin?['experience'] is int
+                        ? checkin!['experience'] as int
+                        : int.tryParse('${checkin?['experience']}') ?? 0),
                 const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
@@ -967,23 +970,49 @@ class _CpCheckinCard extends StatelessWidget {
 }
 
 class _CpSpaceLevelCard extends StatelessWidget {
-  const _CpSpaceLevelCard();
+  const _CpSpaceLevelCard({this.experience = 0});
+  final int experience;
 
-  static const levels = [
-    ['Lv.1', '初遇', '100', '0', '0 - 99'],
-    ['Lv.2', '心动', '200', '100', '100 - 299'],
-    ['Lv.3', '暧昧', '350', '300', '300 - 649'],
-    ['Lv.4', '热恋', '550', '650', '650 - 1199'],
-    ['Lv.5', '默契', '800', '1200', '1200 - 1999'],
-    ['Lv.6', '守护', '1100', '2000', '2000 - 3099'],
-    ['Lv.7', '相知', '1500', '3100', '3100 - 4599'],
-    ['Lv.8', '挚爱', '2000', '4600', '4600 - 6599'],
-    ['Lv.9', '永恒', '2600', '6600', '6600 - 9199'],
-    ['Lv.10', '传奇', '满级', '9200', '9200+'],
+  static const thresholds = [
+    0,
+    100,
+    300,
+    650,
+    1200,
+    2000,
+    3100,
+    4600,
+    6600,
+    9200
   ];
+  static const titles = [
+    '初遇',
+    '心动',
+    '暧昧',
+    '热恋',
+    '默契',
+    '守护',
+    '相知',
+    '挚爱',
+    '永恒',
+    '传奇'
+  ];
+  static const nextRequired = [100, 200, 350, 550, 800, 1100, 1500, 2000, 2600];
 
   @override
   Widget build(BuildContext context) {
+    final safeExperience = experience < 0 ? 0 : experience;
+    var levelIndex = 0;
+    for (var i = 0; i < thresholds.length; i++) {
+      if (safeExperience >= thresholds[i]) levelIndex = i;
+    }
+    final isMax = levelIndex == thresholds.length - 1;
+    final currentStart = thresholds[levelIndex];
+    final required = isMax ? 0 : nextRequired[levelIndex];
+    final progress = isMax
+        ? 1.0
+        : ((safeExperience - currentStart) / required).clamp(0.0, 1.0);
+    final currentInLevel = safeExperience - currentStart;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -994,43 +1023,39 @@ class _CpSpaceLevelCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(children: [
-            Icon(Icons.workspace_premium, color: Color(0xffd3b5ff), size: 28),
-            SizedBox(width: 12),
-            Text('Lv.X · 等级称号待接入',
-                style: TextStyle(
+          Row(children: [
+            const Icon(Icons.workspace_premium,
+                color: Color(0xffd3b5ff), size: 28),
+            const SizedBox(width: 12),
+            Text('Lv.${levelIndex + 1} · ${titles[levelIndex]}',
+                style: const TextStyle(
                     color: Colors.white, fontWeight: FontWeight.w800)),
+            const Spacer(),
+            Text('$safeExperience 经验',
+                style: const TextStyle(color: Colors.white70)),
           ]),
-          const SizedBox(height: 16),
-          _levelRow('升到下一级所需经验', '暂无经验数据'),
-          _levelRow('累计经验', '暂无经验数据'),
-          _levelRow('当前等级经验区间', '暂无经验数据'),
           const SizedBox(height: 14),
-          const Text('等级规则',
-              style: TextStyle(
-                  color: Colors.white70, fontWeight: FontWeight.w700)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 10,
+              backgroundColor: const Color(0x553B2184),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(Color(0xffd3b5ff)),
+            ),
+          ),
           const SizedBox(height: 8),
-          ...levels.map((level) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Text(
-                    '${level[0]}  ${level[1]}    升级 ${level[2]}    累计 ${level[3]}    ${level[4]}',
-                    style:
-                        const TextStyle(color: Colors.white60, fontSize: 12)),
-              )),
+          Text(
+            isMax
+                ? '已达满级 · 9200经验以上'
+                : '$currentInLevel / $required · 距离Lv.${levelIndex + 2}还需${required - currentInLevel}经验',
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
         ],
       ),
     );
   }
-
-  Widget _levelRow(String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(children: [
-          Expanded(
-              child:
-                  Text(label, style: const TextStyle(color: Colors.white70))),
-          Text(value, style: const TextStyle(color: Colors.white)),
-        ]),
-      );
 }
 
 class _SpaceDetailEmptyCard extends StatelessWidget {
