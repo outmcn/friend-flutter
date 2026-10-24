@@ -347,8 +347,19 @@ class _VoiceRoomMessages extends StatelessWidget {
 class VoiceRoomPage extends StatefulWidget {
   const VoiceRoomPage({super.key, this.room});
   final Map<String, dynamic>? room;
-  String get roomTitle =>
-      '${room?['room']?['title'] ?? room?['title'] ?? '语音频道'}';
+  Map<String, dynamic> get roomData {
+    final nested = room?['room'];
+    return nested is Map
+        ? nested.cast<String, dynamic>()
+        : (room ?? const <String, dynamic>{});
+  }
+
+  Map<String, dynamic>? get rtcData {
+    final rtc = room?['rtc'];
+    return rtc is Map ? rtc.cast<String, dynamic>() : null;
+  }
+
+  String get roomTitle => '${roomData['title'] ?? '语音频道'}';
   @override
   State<VoiceRoomPage> createState() => _VoiceRoomPageState();
 }
@@ -367,10 +378,10 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   }
 
   Future<void> _joinRtc() async {
-    final rtc = widget.room?['rtc'];
-    if (rtc is! Map || '${rtc['token'] ?? ''}'.isEmpty) return;
+    final rtc = widget.rtcData;
+    if (rtc == null || '${rtc['token'] ?? ''}'.isEmpty) return;
     try {
-      await AliyunRtcBridge.join(rtc.cast<String, dynamic>());
+      await AliyunRtcBridge.join(rtc);
       await AliyunRtcBridge.subscribeRemoteAudio(true);
       _rtcJoined = true;
     } catch (_) {}
@@ -382,7 +393,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => _VoiceRoomShareSheet(
-        room: widget.room,
+        room: widget.roomData,
         onDirectChat: _openOwnerChat,
         onFollow: _followOwner,
         onGift: _showGiftUnavailable,
@@ -392,16 +403,16 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   }
 
   int? get _ownerId {
-    final raw = widget.room?['owner_user_id'] ??
-        widget.room?['ownerUserId'] ??
-        widget.room?['owner_id'];
-    return int.tryParse('$raw');
+    final ownerId = widget.roomData['owner_user_id'] ??
+        widget.roomData['ownerUserId'] ??
+        widget.roomData['owner_id'];
+    return int.tryParse('$ownerId');
   }
 
   String get _ownerName =>
-      widget.room?['owner_nickname']?.toString() ??
-      widget.room?['ownerNickname']?.toString() ??
-      widget.room?['nickname']?.toString() ??
+      widget.roomData['owner_nickname']?.toString() ??
+      widget.roomData['ownerNickname']?.toString() ??
+      widget.roomData['nickname']?.toString() ??
       '房主';
 
   Future<String> _authToken() async {
@@ -579,8 +590,8 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          widget.room?['room']?['title']?.toString() ??
-                              widget.room?['title']?.toString() ??
+                          widget.roomData['room']?['title']?.toString() ??
+                              widget.roomData['title']?.toString() ??
                               '暂无频道名称',
                           style: const TextStyle(
                               fontSize: 17,
@@ -597,7 +608,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                       children: [
                         Expanded(
                           flex: 2,
-                          child: _VoiceRoomSeats(room: widget.room),
+                          child: _VoiceRoomSeats(room: widget.roomData),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -611,7 +622,8 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                                       fontWeight: FontWeight.w700)),
                               const SizedBox(height: 8),
                               Expanded(
-                                  child: _VoiceRoomMessages(room: widget.room)),
+                                  child: _VoiceRoomMessages(
+                                      room: widget.roomData)),
                             ],
                           ),
                         ),
