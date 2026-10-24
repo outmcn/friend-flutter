@@ -366,25 +366,33 @@ class ProfileCollectionPage extends StatelessWidget {
 }
 
 class ProfileSpacePage extends StatelessWidget {
-  const ProfileSpacePage({super.key, this.nickname, this.avatarUrl});
+  const ProfileSpacePage(
+      {super.key, this.nickname, this.avatarUrl, this.avatarLocalPath});
 
   final String? nickname;
   final String? avatarUrl;
+  final String? avatarLocalPath;
 
   @override
   Widget build(BuildContext context) => _SpaceLayout(
         nickname: nickname ?? '我',
         avatarUrl: avatarUrl,
+        avatarLocalPath: avatarLocalPath,
         isOwner: true,
       );
 }
 
 class _SpaceLayout extends StatelessWidget {
-  const _SpaceLayout(
-      {required this.nickname, this.avatarUrl, required this.isOwner});
+  const _SpaceLayout({
+    required this.nickname,
+    this.avatarUrl,
+    this.avatarLocalPath,
+    required this.isOwner,
+  });
 
   final String nickname;
   final String? avatarUrl;
+  final String? avatarLocalPath;
   final bool isOwner;
 
   @override
@@ -413,7 +421,11 @@ class _SpaceLayout extends StatelessWidget {
               children: [
                 const _SpaceTitlePlate(),
                 const SizedBox(height: 22),
-                _CpHouseCard(nickname: nickname, avatarUrl: avatarUrl),
+                _CpHouseCard(
+                  nickname: nickname,
+                  avatarUrl: avatarUrl,
+                  avatarLocalPath: avatarLocalPath,
+                ),
                 const SizedBox(height: 24),
                 Row(
                   children: List.generate(
@@ -475,10 +487,12 @@ class _SpaceTitlePlate extends StatelessWidget {
 }
 
 class _CpHouseCard extends StatelessWidget {
-  const _CpHouseCard({required this.nickname, this.avatarUrl});
+  const _CpHouseCard(
+      {required this.nickname, this.avatarUrl, this.avatarLocalPath});
 
   final String nickname;
   final String? avatarUrl;
+  final String? avatarLocalPath;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -497,7 +511,11 @@ class _CpHouseCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _SpaceAvatar(label: nickname, url: avatarUrl),
+                _SpaceAvatar(
+                  label: nickname,
+                  url: avatarUrl,
+                  localPath: avatarLocalPath,
+                ),
                 const _HeartPulse(),
                 const _SpaceAvatar(label: '虚位以待'),
               ],
@@ -530,10 +548,11 @@ class _HeartPulse extends StatelessWidget {
 }
 
 class _SpaceAvatar extends StatelessWidget {
-  const _SpaceAvatar({required this.label, this.url});
+  const _SpaceAvatar({required this.label, this.url, this.localPath});
 
   final String label;
   final String? url;
+  final String? localPath;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -546,12 +565,15 @@ class _SpaceAvatar extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFFE4C7FF), width: 2)),
             child: ClipOval(
-              child: url == null || url!.isEmpty
-                  ? const ColoredBox(
-                      color: Color(0xFF24164E),
-                      child: Icon(Icons.add, color: Colors.white70, size: 32))
-                  : _PermanentCachedImage(
-                      url: url!, width: 72, height: 72, fit: BoxFit.cover),
+              child: localPath != null && localPath!.isNotEmpty
+                  ? Image.file(File(localPath!), fit: BoxFit.cover)
+                  : url == null || url!.isEmpty
+                      ? const ColoredBox(
+                          color: Color(0xFF24164E),
+                          child: Icon(Icons.person,
+                              color: Colors.white70, size: 32))
+                      : _PermanentCachedImage(
+                          url: url!, width: 72, height: 72, fit: BoxFit.cover),
             ),
           ),
           const SizedBox(height: 6),
@@ -1701,6 +1723,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                               nickname:
                                                   '${profile?['nickname'] ?? '我'}',
                                               avatarUrl: _avatarUrl,
+                                              avatarLocalPath: _avatarLocalPath,
                                             ),
                                           ),
                                         ),
