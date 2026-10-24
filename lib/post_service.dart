@@ -1407,10 +1407,12 @@ class DDPostService {
     final data = await _fetchObject(token, path);
     final raw = data[key];
     if (raw is! List) return const [];
-    return raw
+    final items = raw
         .whereType<Map>()
-        .map((item) => item.cast<String, dynamic>())
+        .map((x) => x.cast<String, dynamic>())
+        .where((gift) => gift['name']?.toString() != '戒指')
         .toList();
+    return items;
   }
 
   Future<Map<String, dynamic>> _fetchObject(String token, String path) async {
