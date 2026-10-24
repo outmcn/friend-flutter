@@ -542,6 +542,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 nickname:
                                     '${profile?['nickname'] ?? widget.name}',
                                 avatarUrl: _avatarUrl,
+                                userId: widget.userId,
+                                isOwner: false,
                               ),
                             ),
                           ),
