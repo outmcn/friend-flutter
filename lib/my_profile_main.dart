@@ -494,12 +494,138 @@ class _CpHouseCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: const Color(0xFFDAB8FF)),
               ),
-              child: const Text('CP空间',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800)),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CpSpaceDetailPage(
+                      nickname: nickname,
+                      avatarUrl: avatarUrl,
+                      avatarLocalPath: avatarLocalPath,
+                    ),
+                  ),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 42, vertical: 8),
+                  child: Text('CP空间',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800)),
+                ),
+              ),
             ),
+          ],
+        ),
+      );
+}
+
+class CpSpaceDetailPage extends StatelessWidget {
+  const CpSpaceDetailPage({
+    super.key,
+    required this.nickname,
+    this.avatarUrl,
+    this.avatarLocalPath,
+  });
+
+  final String nickname;
+  final String? avatarUrl;
+  final String? avatarLocalPath;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xFF160D3B),
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          title: const Text('CP空间详情'),
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.white,
+        ),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF6A3BC4), Color(0xFF160D3B)],
+            ),
+          ),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 74, 16, 28),
+              children: [
+                const Text('CP空间',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 28),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0x553B2184),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFB991FF)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _SpaceAvatar(
+                              label: nickname,
+                              url: avatarUrl,
+                              localPath: avatarLocalPath),
+                          const _HeartPulse(),
+                          const _SpaceAvatar(label: '虚位以待'),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      const Text('CP搭档暂未建立',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+                      const Text('当前空间暂无更多内容',
+                          style: TextStyle(color: Colors.white70)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const _SpaceDetailEmptyCard(title: '空间动态'),
+                const SizedBox(height: 12),
+                const _SpaceDetailEmptyCard(title: '空间相册'),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _SpaceDetailEmptyCard extends StatelessWidget {
+  const _SpaceDetailEmptyCard({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0x443B2184),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0x887E5CC9)),
+        ),
+        child: Column(
+          children: [
+            Text(title,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            const Text('暂无内容', style: TextStyle(color: Colors.white60)),
           ],
         ),
       );
