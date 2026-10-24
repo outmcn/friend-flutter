@@ -148,8 +148,15 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text('${gift['icon'] ?? '🎁'}',
-                                        style: const TextStyle(fontSize: 28)),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.asset(
+                                        'assets/profile_gifts/gift_${index + 1}.png',
+                                        width: 52,
+                                        height: 52,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                     const SizedBox(height: 4),
                                     Text('${gift['name'] ?? '礼物'}',
                                         maxLines: 1,

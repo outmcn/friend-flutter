@@ -89,6 +89,7 @@ flutter:
     - assets/mystory.jpg
     - assets/icons/
     - assets/cp_gifts/
+    - assets/profile_gifts/
     - assets/figma/
   #   - images/a_dot_ham.jpeg
 
