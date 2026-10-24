@@ -566,67 +566,26 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                             colors: [Color(0xff673a8c), Color(0xff1a1224)])))),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 78, 16, 12),
-              child: Column(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 28),
-                  Center(
-                    child: Column(
-                      children: [
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Container(
-                              width: 118,
-                              height: 118,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: Colors.purpleAccent, width: 2),
-                              ),
-                            ),
-                            const CircleAvatar(
-                                radius: 41, child: Icon(Icons.mic, size: 38)),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.roomData['room']?['title']?.toString() ??
-                              widget.roomData['title']?.toString() ??
-                              '暂无频道名称',
-                          style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
                   Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                    flex: 2,
+                    child: _VoiceRoomSeats(room: widget.roomData),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Text('房间消息',
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
                         Expanded(
-                          flex: 2,
-                          child: _VoiceRoomSeats(room: widget.roomData),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          flex: 3,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('房间消息',
-                                  style: TextStyle(
-                                      color: Colors.white70,
-                                      fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 8),
-                              Expanded(
-                                  child: _VoiceRoomMessages(
-                                      room: widget.roomData)),
-                            ],
-                          ),
-                        ),
+                            child: _VoiceRoomMessages(room: widget.roomData)),
                       ],
                     ),
                   ),
