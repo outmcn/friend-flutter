@@ -448,9 +448,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                   : tab == 2
                       ? await service.fetchLikedPosts(token, offset: offset)
                       : await service.fetchPrivatePosts(token, offset: offset);
-          return Future.wait(loaded
-              .where((post) => post.reviewStatus == 'approved')
-              .map((post) => service.resolvePostMedia(token, post)));
+          return Future.wait(
+              loaded.map((post) => service.resolvePostMedia(token, post)));
         },
       ),
     );
