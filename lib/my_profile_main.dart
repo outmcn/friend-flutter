@@ -736,30 +736,6 @@ class CpSpaceDetailPage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 74, 16, 28),
               children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0x553B2184),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFFB991FF)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _SpaceAvatar(
-                          label: nickname,
-                          url: avatarUrl,
-                          localPath: avatarLocalPath),
-                      const _HeartPulse(),
-                      _SpaceAvatar(
-                        label: partner?['nickname']?.toString() ?? '虚位以待',
-                        url: partner?['avatar']?.toString(),
-                        isEmpty: partner == null,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
                 _CpSpaceLevelCard(
                     experience: checkin?['experience'] is int
                         ? checkin!['experience'] as int
