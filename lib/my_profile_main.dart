@@ -467,20 +467,6 @@ class _SpaceLayout extends StatelessWidget {
                   userId: userId,
                   isOwner: isOwner,
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  children: List.generate(
-                    3,
-                    (index) => Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(left: index == 0 ? 0 : 5),
-                        child: _FriendSlotCard(
-                          onInvite: () => _showSpaceNotice(context),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
