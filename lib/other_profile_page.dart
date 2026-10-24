@@ -93,8 +93,31 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   }
 
   bool _giftSubmitting = false;
-
   int _giftPage = 0;
+
+  Future<void> _confirmAndSendGift(
+      BuildContext sheetContext, Map<String, dynamic> gift) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认送礼'),
+        content: Text(
+            '送出「${gift['name'] ?? '礼物'}」需要 ${gift['coinPrice'] ?? gift['coin_price'] ?? 0} 金币，确认送出吗？'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('取消')),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('确认送出')),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      Navigator.pop(sheetContext);
+      unawaited(_sendUserGift(gift));
+    }
+  }
 
   Future<void> _openGiftMenu() async {
     if (widget.userId == null || _giftSubmitting || !mounted) return;
@@ -103,11 +126,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       final token = prefs.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       final gifts = await service.fetchGiftItems(token, scope: 'user');
-      if (!mounted) return;
       _giftPage = 0;
       await showModalBottomSheet<void>(
         context: context,
         showDragHandle: true,
+        enableDrag: false,
         builder: (sheetContext) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -129,47 +152,42 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       )
                     : StatefulBuilder(builder: (context, setSheetState) {
                         final pageCount = (gifts.length / 10).ceil();
-                        final start = _giftPage * 10;
-                        final pageGifts = gifts.skip(start).take(10).toList();
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            GridView.builder(
-                              shrinkWrap: true,
-                              itemCount: pageGifts.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 5,
-                                crossAxisSpacing: 6,
-                                mainAxisSpacing: 6,
-                                childAspectRatio: .72,
-                              ),
-                              itemBuilder: (_, index) {
-                                final gift = pageGifts[index];
-                                final assetIndex = start + index;
-                                return InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () {
-                                    Navigator.pop(sheetContext);
-                                    unawaited(_sendUserGift(gift));
-                                  },
-                                  child: Card(
+                        return SizedBox(
+                          height: 190,
+                          child: PageView.builder(
+                            itemCount: pageCount,
+                            onPageChanged: (_) {},
+                            itemBuilder: (_, page) {
+                              final pageGifts =
+                                  gifts.skip(page * 10).take(10).toList();
+                              return GridView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                padding: EdgeInsets.zero,
+                                itemCount: pageGifts.length,
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 5,
+                                  crossAxisSpacing: 6,
+                                  mainAxisSpacing: 6,
+                                  childAspectRatio: .72,
+                                ),
+                                itemBuilder: (_, index) {
+                                  final gift = pageGifts[index];
+                                  final assetIndex = page * 10 + index;
+                                  return InkWell(
+                                    onTap: () =>
+                                        _confirmAndSendGift(sheetContext, gift),
                                     child: Padding(
                                       padding: const EdgeInsets.all(4),
                                       child: Column(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                            child: Image.asset(
+                                          Image.asset(
                                               'assets/profile_gifts/gift_${assetIndex + 1}.png',
                                               width: 42,
                                               height: 42,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
+                                              fit: BoxFit.contain),
                                           const SizedBox(height: 2),
                                           Text('${gift['name'] ?? '礼物'}',
                                               maxLines: 1,
@@ -178,41 +196,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                                   fontSize: 11)),
                                           Text(
                                               '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
-                                              style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: Theme.of(context)
-                                                      .hintColor)),
+                                              style: const TextStyle(
+                                                  fontSize: 10)),
                                         ],
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                            if (pageCount > 1)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                    onPressed: _giftPage == 0
-                                        ? null
-                                        : () =>
-                                            setSheetState(() => _giftPage--),
-                                    icon: const Icon(Icons.chevron_left),
-                                  ),
-                                  Text('${_giftPage + 1}/$pageCount'),
-                                  IconButton(
-                                    onPressed: _giftPage >= pageCount - 1
-                                        ? null
-                                        : () =>
-                                            setSheetState(() => _giftPage++),
-                                    icon: const Icon(Icons.chevron_right),
-                                  ),
-                                ],
-                              ),
-                          ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         );
-                      }),
+                      })
               ],
             ),
           ),

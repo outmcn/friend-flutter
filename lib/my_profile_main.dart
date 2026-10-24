@@ -195,6 +195,34 @@ class GiftExhibitionPage extends StatefulWidget {
 class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
   final DDPostService service = DDPostService();
   List<Map<String, dynamic>> gifts = const [];
+
+  String _giftAsset(Map<String, dynamic> gift, int index) {
+    const names = [
+      '心动之心',
+      '彩虹甜甜圈',
+      '缤纷糖果',
+      '甜蜜比心',
+      '梦幻棒棒糖',
+      '心愿奶茶',
+      '粉色玫瑰',
+      '甜心蛋糕',
+      '抱抱小熊',
+      '幸运星',
+      '爱心气球',
+      '梦幻皇冠',
+      '星愿魔法棒',
+      '星空许愿瓶',
+      '梦幻音乐盒',
+      '幸福摩天轮',
+      '星河钻石',
+      '梦幻城堡',
+      '心动火箭',
+      '流星心愿',
+    ];
+    final byName = names.indexOf('${gift['name']}');
+    return 'assets/profile_gifts/gift_${(byName >= 0 ? byName : index).clamp(0, 19) + 1}.png';
+  }
+
   bool loading = true;
   String? error;
 
@@ -247,10 +275,10 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                     padding: const EdgeInsets.all(16),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
+                      crossAxisCount: 4,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 1.2,
+                      childAspectRatio: 0.9,
                     ),
                     itemCount: gifts.length,
                     itemBuilder: (_, index) {
@@ -261,8 +289,15 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('${gift['icon'] ?? '🎁'}',
-                                  style: const TextStyle(fontSize: 34)),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.asset(
+                                  _giftAsset(gift, index),
+                                  width: 58,
+                                  height: 58,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
                               const SizedBox(height: 8),
                               Text('${gift['name'] ?? '礼物'}',
                                   style: const TextStyle(
