@@ -1380,6 +1380,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xFF160D3B),
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
@@ -1391,57 +1392,67 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
               : const [],
         ),
         extendBodyBehindAppBar: true,
-        body: loading
-            ? const Center(child: CircularProgressIndicator())
-            : loadError != null && rooms.isEmpty
-                ? Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text('频道加载失败：$loadError'),
-                    const SizedBox(height: 12),
-                    FilledButton(onPressed: _load, child: const Text('重试'))
-                  ]))
-                : rooms.isEmpty
-                    ? ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 96, 20, 32),
-                        children: [
-                          if (widget.isOwner)
-                            FilledButton.icon(
-                              onPressed: _create,
-                              icon: const Icon(Icons.add),
-                              label: const Text('创建频道'),
-                              style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(52)),
-                            ),
-                          if (widget.isOwner) const SizedBox(height: 28),
-                          const _ChannelProfileCard(),
-                        ],
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(16, 84, 16, 28),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF5E36B5), Color(0xFF160D3B)],
+            ),
+          ),
+          child: loading
+              ? const Center(child: CircularProgressIndicator())
+              : loadError != null && rooms.isEmpty
+                  ? Center(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Text('频道加载失败：$loadError'),
+                      const SizedBox(height: 12),
+                      FilledButton(onPressed: _load, child: const Text('重试'))
+                    ]))
+                  : rooms.isEmpty
+                      ? ListView(
+                          padding: const EdgeInsets.fromLTRB(20, 96, 20, 32),
                           children: [
-                            _ChannelSummaryCard(
-                                room: rooms.first,
-                                onEnter: () async {
-                                  final token =
-                                      (await SharedPreferences.getInstance())
-                                              .getString('friend.auth.token') ??
-                                          '';
-                                  final joined = await service.joinVoiceRoom(
-                                      token, '${rooms.first['id']}');
-                                  if (context.mounted)
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                VoiceRoomPage(room: joined)));
-                                }),
-                            const SizedBox(height: 16),
-                            _ChannelProfileCard(room: rooms.first),
+                            if (widget.isOwner)
+                              FilledButton.icon(
+                                onPressed: _create,
+                                icon: const Icon(Icons.add),
+                                label: const Text('创建频道'),
+                                style: FilledButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(52)),
+                              ),
+                            if (widget.isOwner) const SizedBox(height: 28),
+                            const _ChannelProfileCard(),
                           ],
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          child: ListView(
+                            padding: const EdgeInsets.fromLTRB(16, 84, 16, 28),
+                            children: [
+                              _ChannelSummaryCard(
+                                  room: rooms.first,
+                                  onEnter: () async {
+                                    final token =
+                                        (await SharedPreferences.getInstance())
+                                                .getString(
+                                                    'friend.auth.token') ??
+                                            '';
+                                    final joined = await service.joinVoiceRoom(
+                                        token, '${rooms.first['id']}');
+                                    if (context.mounted)
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  VoiceRoomPage(room: joined)));
+                                  }),
+                              const SizedBox(height: 16),
+                              _ChannelProfileCard(room: rooms.first),
+                            ],
+                          ),
                         ),
-                      ),
+        ),
       );
 }
 
