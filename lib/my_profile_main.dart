@@ -510,6 +510,8 @@ class _SpaceLayout extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
+                const _CpSpaceLevelCard(),
+                const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
             ),
@@ -691,6 +693,34 @@ class CpSpaceDetailPage extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      );
+}
+
+class _CpSpaceLevelCard extends StatelessWidget {
+  const _CpSpaceLevelCard();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0x443B2184),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0x887E5CC9)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.workspace_premium,
+                color: Color(0xffd3b5ff), size: 28),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('空间等级',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w700)),
+            ),
+            Text('暂无资料',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.65))),
+          ],
         ),
       );
 }
