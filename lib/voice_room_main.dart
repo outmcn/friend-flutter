@@ -175,6 +175,42 @@ class _VoiceRoomSeats extends StatelessWidget {
     );
   }
 
+  Widget _applySeatButton(BuildContext context) => GestureDetector(
+        onTap: () => showDialog<void>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('申请上麦'),
+            content: const Text('是否申请上麦？'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('取消')),
+              FilledButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('上麦申请暂未接入')));
+                  },
+                  child: const Text('申请')),
+            ],
+          ),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+                radius: 23,
+                backgroundColor: Color(0xff493365),
+                child: Icon(Icons.add, color: Colors.white70)),
+            SizedBox(height: 4),
+            Text('申请上麦',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.white70, fontSize: 11)),
+          ],
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final raw = room?['members'] ?? room?['participants'] ?? room?['speakers'];
@@ -268,6 +304,8 @@ class _VoiceRoomSeats extends StatelessWidget {
                             owner: false, manager: false),
                       ),
                     ],
+                    const SizedBox(height: 14),
+                    Center(child: _applySeatButton(context)),
                   ],
                 ),
         ),
