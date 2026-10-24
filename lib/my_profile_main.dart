@@ -907,7 +907,7 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
         backgroundColor: const Color(0xFF160D3B),
         extendBodyBehindAppBar: true,
         appBar: AppBar(
-          title: const Text('CP空间详情'),
+          title: const Text('CP 小窝'),
           backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
@@ -944,10 +944,6 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
                         ? widget.checkin!['experience'] as int
                         : int.tryParse('${widget.checkin?['experience']}') ??
                             0),
-                const SizedBox(height: 14),
-                _CpBlessingCard(
-                    userId: widget.userId,
-                    partnerExists: widget.partner != null),
                 const SizedBox(height: 14),
                 _CpTaskCard(
                     checkin: widget.checkin,
@@ -1155,7 +1151,7 @@ class _CpGiftCardState extends State<_CpGiftCard> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             const Expanded(
-                child: Text('CP空间礼物',
+                child: Text('小窝礼物',
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.w800))),
           ]),
@@ -1166,16 +1162,16 @@ class _CpGiftCardState extends State<_CpGiftCard> {
             const Text('暂无CP礼物', style: TextStyle(color: Colors.white60))
           else
             SizedBox(
-                height: 248,
+                height: 260,
                 child: GridView.builder(
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: gifts.length > 9 ? 9 : gifts.length,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: .95),
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 3,
+                            childAspectRatio: 1.02),
                     itemBuilder: (_, i) {
                       final g = gifts[i];
                       return InkWell(
