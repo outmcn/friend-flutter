@@ -153,58 +153,67 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                     : StatefulBuilder(builder: (context, setSheetState) {
                         final pageCount = (gifts.length / 10).ceil();
                         return SizedBox(
-                          height: 190,
-                          child: PageView.builder(
-                            itemCount: pageCount,
-                            onPageChanged: (_) {},
-                            itemBuilder: (_, page) {
-                              final pageGifts =
-                                  gifts.skip(page * 10).take(10).toList();
-                              return GridView.builder(
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: EdgeInsets.zero,
-                                itemCount: pageGifts.length,
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 5,
-                                  crossAxisSpacing: 6,
-                                  mainAxisSpacing: 6,
-                                  childAspectRatio: .72,
+                          height: 215,
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: PageView.builder(
+                                  itemCount: pageCount,
+                                  onPageChanged: (page) => setSheetState(() {}),
+                                  itemBuilder: (_, page) {
+                                    final pageGifts =
+                                        gifts.skip(page * 10).take(10).toList();
+                                    return GridView.builder(
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      padding: EdgeInsets.zero,
+                                      itemCount: pageGifts.length,
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: 5,
+                                              crossAxisSpacing: 6,
+                                              mainAxisSpacing: 6,
+                                              childAspectRatio: .72),
+                                      itemBuilder: (_, index) {
+                                        final gift = pageGifts[index];
+                                        final assetIndex = page * 10 + index;
+                                        return InkWell(
+                                          onTap: () => _confirmAndSendGift(
+                                              sheetContext, gift),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(4),
+                                            child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Image.asset(
+                                                      'assets/profile_gifts/gift_${assetIndex + 1}.png',
+                                                      width: 42,
+                                                      height: 42,
+                                                      fit: BoxFit.contain),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                      '${gift['name'] ?? '礼物'}',
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                          fontSize: 11)),
+                                                  Text(
+                                                      '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
+                                                      style: const TextStyle(
+                                                          fontSize: 10)),
+                                                ]),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
                                 ),
-                                itemBuilder: (_, index) {
-                                  final gift = pageGifts[index];
-                                  final assetIndex = page * 10 + index;
-                                  return InkWell(
-                                    onTap: () =>
-                                        _confirmAndSendGift(sheetContext, gift),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(4),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Image.asset(
-                                              'assets/profile_gifts/gift_${assetIndex + 1}.png',
-                                              width: 42,
-                                              height: 42,
-                                              fit: BoxFit.contain),
-                                          const SizedBox(height: 2),
-                                          Text('${gift['name'] ?? '礼物'}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                  fontSize: 11)),
-                                          Text(
-                                              '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
-                                              style: const TextStyle(
-                                                  fontSize: 10)),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                              ),
+                              Text('${_giftPage + 1}/$pageCount',
+                                  style: const TextStyle(fontSize: 12)),
+                            ],
                           ),
                         );
                       })
