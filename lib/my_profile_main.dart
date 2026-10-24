@@ -746,13 +746,13 @@ class CpSpaceDetailPage extends StatelessWidget {
                         ? checkin!['experience'] as int
                         : int.tryParse('${checkin?['experience']}') ?? 0),
                 const SizedBox(height: 14),
+                _CpBlessingCard(partnerExists: partner != null),
+                const SizedBox(height: 14),
                 _CpTaskCard(
                     checkin: checkin,
                     userId: userId,
                     partnerId: int.tryParse('${partner?['userId']}'),
                     partnerExists: partner != null),
-                const SizedBox(height: 14),
-                _CpBlessingCard(partnerExists: partner != null),
                 const SizedBox(height: 14),
                 _CpGiftCard(
                     userId: userId,
