@@ -1031,7 +1031,8 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                             ),
                           ),
                           const SizedBox(height: 28),
-                          _ChannelProfileCard(),
+                          _ChannelProfileCard(
+                              room: rooms.isEmpty ? null : rooms.first),
                         ],
                       )
                     : RefreshIndicator(
@@ -1072,6 +1073,17 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
 }
 
 class _ChannelProfileCard extends StatelessWidget {
+  const _ChannelProfileCard({this.room});
+  final Map<String, dynamic>? room;
+
+  String _value(String key) {
+    if (room == null) return '暂无资料';
+    final raw = room![key];
+    return raw == null || raw.toString().trim().isEmpty
+        ? '暂无资料'
+        : raw.toString();
+  }
+
   @override
   Widget build(BuildContext context) => Card(
         color: const Color(0xff241936),
@@ -1084,17 +1096,19 @@ class _ChannelProfileCard extends StatelessWidget {
                   style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
               const SizedBox(height: 18),
               _ChannelInfoRow(
-                  icon: Icons.workspace_premium, title: '频道等级', value: 'Lv.1'),
+                  icon: Icons.workspace_premium,
+                  title: '频道等级',
+                  value: _value('level')),
               const Divider(height: 24),
               _ChannelInfoRow(
                   icon: Icons.auto_awesome,
                   title: '频道特权',
-                  value: '创建专属语音房、管理房间状态'),
+                  value: _value('privileges')),
               const Divider(height: 24),
               _ChannelInfoRow(
                   icon: Icons.groups_rounded,
-                  title: '多人语音',
-                  value: '支持多人加入同一语音频道'),
+                  title: '在线人数',
+                  value: _value('online_count')),
             ],
           ),
         ),

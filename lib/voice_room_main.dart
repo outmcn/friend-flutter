@@ -58,40 +58,16 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                   Text(
                       widget.room?['room']?['title']?.toString() ??
                           widget.room?['title']?.toString() ??
-                          '语音频道',
+                          '暂无频道名称',
                       style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
                           color: Colors.white)),
                 ])),
-                const SizedBox(height: 28),
-                const Text('麦位  ·  128 人在听',
-                    style: TextStyle(
-                        color: Colors.white70, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 14),
-                GridView.count(
-                    crossAxisCount: 4,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 18,
-                    children: const [
-                      _VoiceSeat(icon: Icons.music_note, name: '小鹿'),
-                      _VoiceSeat(icon: Icons.favorite_outline, name: '桃子'),
-                      _VoiceSeat(
-                          icon: Icons.sports_esports_outlined, name: '北辰'),
-                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
-                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
-                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
-                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true),
-                      _VoiceSeat(icon: Icons.add, name: '空麦位', empty: true)
-                    ]),
-                const SizedBox(height: 24),
-                const Text('房间消息',
-                    style: TextStyle(
-                        color: Colors.white70, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 10),
-                const _VoiceRoomMessage(name: '小鹿', text: '这首歌好好听～'),
-                const _VoiceRoomMessage(name: '桃子', text: '新来的朋友晚上好'),
+                const SizedBox(height: 32),
+                const Center(
+                    child: Text('暂无实时成员资料',
+                        style: TextStyle(color: Colors.white70))),
               ]),
         ]),
         bottomNavigationBar: SafeArea(
@@ -107,7 +83,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                   Expanded(
                       child: FilledButton(
                           onPressed: () => setState(() => joined = !joined),
-                          child: Text(joined ? '已上麦（UI）' : '申请上麦'))),
+                          child: Text(joined ? '已上麦' : '申请上麦'))),
                   IconButton(
                       onPressed: () {},
                       icon: const Icon(Icons.card_giftcard_outlined,
