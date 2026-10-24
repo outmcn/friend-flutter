@@ -489,7 +489,7 @@ class _SpaceLayout extends StatelessWidget {
           ),
           child: SafeArea(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 78, 18, 28),
+              padding: const EdgeInsets.fromLTRB(18, 58, 18, 28),
               children: [
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 30, 20, 26),
