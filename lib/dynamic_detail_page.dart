@@ -260,6 +260,38 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     return value;
   }
 
+  static const _dynamicGiftNames = [
+    '心愿礼盒',
+    '超赞手势',
+    '梦幻烟花',
+    '彩虹伞',
+    '极光云朵',
+    '彩光棱镜',
+    '爱心气球',
+    '星光书页',
+    '彩虹桥',
+    '许愿孔明灯',
+    '水晶花簇',
+    '音符精灵',
+    '缤纷圣代',
+    '甜心兔兔',
+    '梦幻莲花',
+    '星愿礼盒',
+    '魔法水晶球',
+    '梦幻蝴蝶',
+    '彩虹流星',
+    '心愿宝箱',
+  ];
+
+  int _dynamicGiftAssetIndex(Map<String, dynamic> gift, int fallback) {
+    final name = '${gift['name'] ?? ''}';
+    final byName = _dynamicGiftNames.indexOf(name);
+    if (byName >= 0) return byName;
+    final giftId = int.tryParse(
+        '${gift['gift_item_id'] ?? gift['giftItemId'] ?? gift['id']}');
+    return giftId == null ? fallback : (giftId - 1).clamp(0, 19);
+  }
+
   Future<List<Map<String, dynamic>>> _loadReceivedGifts(String t) async {
     final value = await service.fetchObjectList(
       t,
@@ -1240,23 +1272,57 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: receivedGifts
-                                      .map((gift) => InkWell(
-                                            onTap: () =>
-                                                _sendSelectedGift(gift),
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            child: Chip(
-                                              avatar: Text(
-                                                  '${gift['icon'] ?? '🎁'}'),
-                                              label: Text(
-                                                  '${gift['name'] ?? '礼物'} ×${gift['quantity'] ?? 1}'),
-                                            ),
-                                          ))
-                                      .toList(),
+                                SizedBox(
+                                  height: 106,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    padding: EdgeInsets.zero,
+                                    itemCount: receivedGifts.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(width: 14),
+                                    itemBuilder: (_, index) {
+                                      final gift = receivedGifts[index];
+                                      final assetIndex =
+                                          _dynamicGiftAssetIndex(gift, index);
+                                      return InkWell(
+                                        onTap: () => _sendSelectedGift(gift),
+                                        child: SizedBox(
+                                          width: 76,
+                                          child: Column(
+                                            children: [
+                                              Image.asset(
+                                                'assets/dynamic_gifts/gift_${assetIndex + 1}.png',
+                                                width: 58,
+                                                height: 58,
+                                                fit: BoxFit.contain,
+                                              ),
+                                              Text(
+                                                '${gift['name'] ?? '礼物'}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                    fontSize: 11),
+                                              ),
+                                              Text(
+                                                '收到 ${gift['quantity'] ?? 1} 个',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withValues(alpha: .62),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 _detailPublishTime(context, item),
