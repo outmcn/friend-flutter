@@ -752,6 +752,8 @@ class CpSpaceDetailPage extends StatelessWidget {
                     partnerId: int.tryParse('${partner?['userId']}'),
                     partnerExists: partner != null),
                 const SizedBox(height: 14),
+                _CpBlessingCard(partnerExists: partner != null),
+                const SizedBox(height: 14),
                 _CpGiftCard(
                     userId: userId,
                     partnerId: int.tryParse('${partner?['userId']}'),
@@ -764,6 +766,60 @@ class CpSpaceDetailPage extends StatelessWidget {
             ),
           ),
         ),
+      );
+}
+
+class _CpBlessingCard extends StatelessWidget {
+  const _CpBlessingCard({required this.partnerExists});
+  final bool partnerExists;
+  static const names = [
+    '双燕同心',
+    '幸福碰杯',
+    '桃枝相依',
+    '喜结铃缘',
+    '星月长伴',
+    '比翼双飞',
+    '好运双灯',
+    '彩虹相守',
+    '甜蜜成双',
+    '喜庆相伴'
+  ];
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+            color: const Color(0x443B2184),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0x887E5CC9))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('祝福礼物',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          if (!partnerExists)
+            const Text('暂无祝福礼物', style: TextStyle(color: Colors.white60))
+          else
+            SizedBox(
+                height: 92,
+                child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: names.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, i) => SizedBox(
+                        width: 66,
+                        child: Column(children: [
+                          Image.asset('assets/cp_blessings/gift_${i + 1}.png',
+                              width: 50, height: 50),
+                          Text(names[i],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 10)),
+                          const Text('×0',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 11))
+                        ]))))
+        ]),
       );
 }
 
