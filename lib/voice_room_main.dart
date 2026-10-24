@@ -166,10 +166,10 @@ class _VoiceRoomSeats extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: Colors.white70, fontSize: 11),
         ),
-        if (owner || manager)
-          Text(
-            owner ? '房主' : '管理',
-            style: const TextStyle(color: Color(0xffd3b5ff), fontSize: 10),
+        if (manager)
+          const Text(
+            '管理',
+            style: TextStyle(color: Color(0xffd3b5ff), fontSize: 10),
           ),
       ],
     );
