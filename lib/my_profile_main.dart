@@ -536,6 +536,10 @@ class _SpaceLayout extends StatelessWidget {
                               nickname: nickname,
                               avatarUrl: avatarUrl,
                               avatarLocalPath: avatarLocalPath,
+                              userId: userId,
+                              partner: partner,
+                              checkin: checkin,
+                              onCheckin: onCheckin,
                             ),
                           ),
                         ),
@@ -553,26 +557,6 @@ class _SpaceLayout extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                _CpSpaceLevelCard(
-                    experience: checkin?['experience'] is int
-                        ? checkin!['experience'] as int
-                        : int.tryParse('${checkin?['experience']}') ?? 0),
-                const SizedBox(height: 14),
-                _CpTaskCard(
-                    checkin: checkin,
-                    userId: userId,
-                    partnerId: int.tryParse('${partner?['userId']}'),
-                    partnerExists: partner != null),
-                const SizedBox(height: 14),
-                _CpGiftCard(
-                    userId: userId,
-                    partnerId: int.tryParse('${partner?['userId']}'),
-                    partnerExists: partner != null),
-                const SizedBox(height: 14),
-                _CpCheckinCard(checkin: checkin, onCheckin: onCheckin),
-                const SizedBox(height: 14),
-                const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
             ),
           ),
@@ -680,11 +664,19 @@ class CpSpaceDetailPage extends StatelessWidget {
     required this.nickname,
     this.avatarUrl,
     this.avatarLocalPath,
+    this.userId,
+    this.partner,
+    this.checkin,
+    required this.onCheckin,
   });
 
   final String nickname;
   final String? avatarUrl;
   final String? avatarLocalPath;
+  final int? userId;
+  final Map<String, dynamic>? partner;
+  final Map<String, dynamic>? checkin;
+  final VoidCallback onCheckin;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -709,13 +701,6 @@ class CpSpaceDetailPage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 74, 16, 28),
               children: [
-                const Text('CP空间',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 28),
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -723,32 +708,41 @@ class CpSpaceDetailPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: const Color(0xFFB991FF)),
                   ),
-                  child: Column(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _SpaceAvatar(
-                              label: nickname,
-                              url: avatarUrl,
-                              localPath: avatarLocalPath),
-                          const _HeartPulse(),
-                          const _SpaceAvatar(label: '虚位以待'),
-                        ],
+                      _SpaceAvatar(
+                          label: nickname,
+                          url: avatarUrl,
+                          localPath: avatarLocalPath),
+                      const _HeartPulse(),
+                      _SpaceAvatar(
+                        label: partner?['nickname']?.toString() ?? '虚位以待',
+                        url: partner?['avatar']?.toString(),
+                        isEmpty: partner == null,
                       ),
-                      const SizedBox(height: 22),
-                      const Text('CP搭档暂未建立',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      const Text('当前空间暂无更多内容',
-                          style: TextStyle(color: Colors.white70)),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
+                _CpSpaceLevelCard(
+                    experience: checkin?['experience'] is int
+                        ? checkin!['experience'] as int
+                        : int.tryParse('${checkin?['experience']}') ?? 0),
+                const SizedBox(height: 14),
+                _CpTaskCard(
+                    checkin: checkin,
+                    userId: userId,
+                    partnerId: int.tryParse('${partner?['userId']}'),
+                    partnerExists: partner != null),
+                const SizedBox(height: 14),
+                _CpGiftCard(
+                    userId: userId,
+                    partnerId: int.tryParse('${partner?['userId']}'),
+                    partnerExists: partner != null),
+                const SizedBox(height: 14),
+                _CpCheckinCard(checkin: checkin, onCheckin: onCheckin),
+                const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
             ),
