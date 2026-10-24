@@ -181,7 +181,12 @@ class _WalletPageState extends State<WalletPage> {
 }
 
 class GiftExhibitionPage extends StatefulWidget {
-  const GiftExhibitionPage({super.key});
+  const GiftExhibitionPage(
+      {super.key, this.userId, this.userName, this.onSendGift});
+
+  final int? userId;
+  final String? userName;
+  final VoidCallback? onSendGift;
 
   @override
   State<GiftExhibitionPage> createState() => _GiftExhibitionPageState();
@@ -203,7 +208,9 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('friend.auth.token') ?? '';
-      final value = await service.fetchMyUserGifts(token);
+      final value = widget.userId == null
+          ? await service.fetchMyUserGifts(token)
+          : await service.fetchUserGifts(token, widget.userId!);
       if (mounted) setState(() => gifts = value);
     } catch (e) {
       if (mounted) setState(() => error = '$e');
@@ -220,7 +227,18 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('礼物展馆')),
+        appBar: AppBar(
+          title: Text(
+              widget.userName == null ? '礼物展馆' : '${widget.userName}的礼物展馆'),
+          actions: [
+            if (widget.userId != null && widget.onSendGift != null)
+              TextButton.icon(
+                onPressed: widget.onSendGift,
+                icon: const Icon(Icons.card_giftcard_outlined),
+                label: const Text('送礼物'),
+              ),
+          ],
+        ),
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null

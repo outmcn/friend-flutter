@@ -245,7 +245,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           charmCoins = int.tryParse('${data['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(data['voiceUrl']?.toString());
           _avatarUrl = signedAvatar;
-          _avatarReviewRejected = data['avatarReviewStatus'] == 'rejected' || data['avatar_review_status'] == 'rejected';
+          _avatarReviewRejected = data['avatarReviewStatus'] == 'rejected' ||
+              data['avatar_review_status'] == 'rejected';
         });
       }
     } on UnsupportedError catch (e) {
@@ -372,7 +373,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       alignment: Alignment.centerRight,
                       child: Text(
                         '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
-                        style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -393,20 +397,44 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                     '${p?['nickname'] ?? widget.name}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 30, height: 1.2, fontWeight: FontWeight.w700),
+                                    style: const TextStyle(
+                                        fontSize: 30,
+                                        height: 1.2,
+                                        fontWeight: FontWeight.w700),
                                   ),
                                   Text(
                                     'ID：${p?['id'] ?? p?['userId'] ?? widget.userId ?? ''}',
-                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .65)),
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: .65)),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.only(top: 7, bottom: 14),
+                                    padding: const EdgeInsets.only(
+                                        top: 7, bottom: 14),
                                     child: Row(
                                       children: [
-                                        Expanded(child: _InlineProfileStat(label: '关注', value: '${p?['following'] ?? 0}')),
-                                        Expanded(child: _InlineProfileStat(label: '粉丝', value: '${p?['followers'] ?? 0}')),
-                                        Expanded(child: _InlineProfileStat(label: '获赞', value: '${p?['receivedLikes'] ?? 0}')),
-                                        Expanded(child: _InlineProfileStat(label: '魅力', value: '$charmCoins')),
+                                        Expanded(
+                                            child: _InlineProfileStat(
+                                                label: '关注',
+                                                value:
+                                                    '${p?['following'] ?? 0}')),
+                                        Expanded(
+                                            child: _InlineProfileStat(
+                                                label: '粉丝',
+                                                value:
+                                                    '${p?['followers'] ?? 0}')),
+                                        Expanded(
+                                            child: _InlineProfileStat(
+                                                label: '获赞',
+                                                value:
+                                                    '${p?['receivedLikes'] ?? 0}')),
+                                        Expanded(
+                                            child: _InlineProfileStat(
+                                                label: '魅力',
+                                                value: '$charmCoins')),
                                       ],
                                     ),
                                   ),
@@ -423,21 +451,52 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: p?['gender'] == '男'
-                                      ? const LinearGradient(colors: [Color(0xFF69B7FF), Color(0xFF1677FF), Color(0xFF0B3D91)])
+                                      ? const LinearGradient(colors: [
+                                          Color(0xFF69B7FF),
+                                          Color(0xFF1677FF),
+                                          Color(0xFF0B3D91)
+                                        ])
                                       : p?['gender'] == '女'
-                                          ? const LinearGradient(colors: [Color(0xFFFFB6D5), Color(0xFFFF6FAE), Color(0xFFC2185B)])
+                                          ? const LinearGradient(colors: [
+                                              Color(0xFFFFB6D5),
+                                              Color(0xFFFF6FAE),
+                                              Color(0xFFC2185B)
+                                            ])
                                           : null,
-                                  color: p?['gender'] == '男' || p?['gender'] == '女' ? null : Theme.of(context).dividerColor,
+                                  color:
+                                      p?['gender'] == '男' || p?['gender'] == '女'
+                                          ? null
+                                          : Theme.of(context).dividerColor,
                                 ),
                                 child: ClipOval(
                                   child: SizedBox(
                                     width: 102,
                                     height: 102,
                                     child: _avatarReviewRejected
-                                        ? const ColoredBox(color: Colors.black12, child: Center(child: Text('图片涉嫌违规', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.black54))))
-                                        : _avatarUrl == null || _avatarUrl!.isEmpty
-                                            ? const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40))
-                                            : _PermanentCachedImage(url: _avatarUrl!, width: 102, height: 102, fit: BoxFit.cover, placeholder: const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40))),
+                                        ? const ColoredBox(
+                                            color: Colors.black12,
+                                            child: Center(
+                                                child: Text('图片涉嫌违规',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        fontSize: 11,
+                                                        color:
+                                                            Colors.black54))))
+                                        : _avatarUrl == null ||
+                                                _avatarUrl!.isEmpty
+                                            ? const ColoredBox(
+                                                color: Colors.black12,
+                                                child: Icon(Icons.person,
+                                                    size: 40))
+                                            : _PermanentCachedImage(
+                                                url: _avatarUrl!,
+                                                width: 102,
+                                                height: 102,
+                                                fit: BoxFit.cover,
+                                                placeholder: const ColoredBox(
+                                                    color: Colors.black12,
+                                                    child: Icon(Icons.person,
+                                                        size: 40))),
                                   ),
                                 ),
                               ),
@@ -448,7 +507,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                         Text(
                           '${p?['signature'] ?? p?['bio'] ?? ''}',
                           softWrap: true,
-                          style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -456,13 +519,31 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   const SizedBox(height: 36),
                   Row(
                     children: [
-                      Expanded(child: _ProfileActionButton(icon: TIcons.sonic, label: '声音', onTap: _toggleSonic)),
+                      Expanded(
+                          child: _ProfileActionButton(
+                              icon: TIcons.sonic,
+                              label: '声音',
+                              onTap: _toggleSonic)),
                       const SizedBox(width: 6),
-                      Expanded(child: _ProfileActionButton(icon: Icons.auto_awesome_outlined, label: '展馆', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GiftExhibitionPage())))),
+                      Expanded(
+                          child: _ProfileActionButton(
+                              icon: Icons.auto_awesome_outlined,
+                              label: '展馆',
+                              onTap: _openGiftExhibition)),
                       const SizedBox(width: 6),
-                      Expanded(child: _ProfileActionButton(icon: TIcons.space, label: '空间', onTap: () => _showTopNotice(context, const Text('空间功能即将开放')))),
+                      Expanded(
+                          child: _ProfileActionButton(
+                              icon: TIcons.space,
+                              label: '空间',
+                              onTap: () => _showTopNotice(
+                                  context, const Text('空间功能即将开放')))),
                       const SizedBox(width: 6),
-                      Expanded(child: _ProfileActionButton(icon: TIcons.browse_gallery, label: '频道', onTap: () => _showTopNotice(context, const Text('频道功能即将开放')))),
+                      Expanded(
+                          child: _ProfileActionButton(
+                              icon: TIcons.browse_gallery,
+                              label: '频道',
+                              onTap: () => _showTopNotice(
+                                  context, const Text('频道功能即将开放')))),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -501,8 +582,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: actionLoading ? null : toggleFollow,
-                        icon: Icon(following ? Icons.person_remove_outlined : Icons.person_add_alt_1_outlined),
-                        label: Text(actionLoading ? '处理中…' : following ? (p?['followedByViewer'] == true ? '好友' : '已关注') : (p?['followedByViewer'] == true ? '回关' : '关注')),
+                        icon: Icon(following
+                            ? Icons.person_remove_outlined
+                            : Icons.person_add_alt_1_outlined),
+                        label: Text(actionLoading
+                            ? '处理中…'
+                            : following
+                                ? (p?['followedByViewer'] == true
+                                    ? '好友'
+                                    : '已关注')
+                                : (p?['followedByViewer'] == true
+                                    ? '回关'
+                                    : '关注')),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -518,6 +609,21 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               ),
             )
           : null,
+    );
+  }
+
+  Future<void> _openGiftExhibition() async {
+    final userId = widget.userId;
+    if (userId == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GiftExhibitionPage(
+          userId: userId,
+          userName: '${profile?['nickname'] ?? widget.name}',
+          onSendGift: _openGiftMenu,
+        ),
+      ),
     );
   }
 
