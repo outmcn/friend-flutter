@@ -94,6 +94,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
   bool _giftSubmitting = false;
 
+  int _giftPage = 0;
+
   Future<void> _openGiftMenu() async {
     if (widget.userId == null || _giftSubmitting || !mounted) return;
     try {
@@ -102,6 +104,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       if (token.isEmpty) throw Exception('请先登录');
       final gifts = await service.fetchGiftItems(token, scope: 'user');
       if (!mounted) return;
+      _giftPage = 0;
       await showModalBottomSheet<void>(
         context: context,
         showDragHandle: true,
@@ -124,56 +127,92 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                         height: 120,
                         child: Center(child: Text('暂无可送礼物')),
                       )
-                    : GridView.builder(
-                        shrinkWrap: true,
-                        itemCount: gifts.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: .85,
-                        ),
-                        itemBuilder: (_, index) {
-                          final gift = gifts[index];
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () {
-                              Navigator.pop(sheetContext);
-                              unawaited(_sendUserGift(gift));
-                            },
-                            child: Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(6),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.asset(
-                                        'assets/profile_gifts/gift_${index + 1}.png',
-                                        width: 52,
-                                        height: 52,
-                                        fit: BoxFit.cover,
+                    : StatefulBuilder(builder: (context, setSheetState) {
+                        final pageCount = (gifts.length / 10).ceil();
+                        final start = _giftPage * 10;
+                        final pageGifts = gifts.skip(start).take(10).toList();
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GridView.builder(
+                              shrinkWrap: true,
+                              itemCount: pageGifts.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 5,
+                                crossAxisSpacing: 6,
+                                mainAxisSpacing: 6,
+                                childAspectRatio: .72,
+                              ),
+                              itemBuilder: (_, index) {
+                                final gift = pageGifts[index];
+                                final assetIndex = start + index;
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {
+                                    Navigator.pop(sheetContext);
+                                    unawaited(_sendUserGift(gift));
+                                  },
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                            child: Image.asset(
+                                              'assets/profile_gifts/gift_${assetIndex + 1}.png',
+                                              width: 42,
+                                              height: 42,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text('${gift['name'] ?? '礼物'}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  fontSize: 11)),
+                                          Text(
+                                              '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
+                                              style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Theme.of(context)
+                                                      .hintColor)),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text('${gift['name'] ?? '礼物'}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis),
-                                    Text(
-                                        '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            color:
-                                                Theme.of(context).hintColor)),
-                                  ],
-                                ),
-                              ),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
+                            if (pageCount > 1)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    onPressed: _giftPage == 0
+                                        ? null
+                                        : () =>
+                                            setSheetState(() => _giftPage--),
+                                    icon: const Icon(Icons.chevron_left),
+                                  ),
+                                  Text('${_giftPage + 1}/$pageCount'),
+                                  IconButton(
+                                    onPressed: _giftPage >= pageCount - 1
+                                        ? null
+                                        : () =>
+                                            setSheetState(() => _giftPage++),
+                                    icon: const Icon(Icons.chevron_right),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        );
+                      }),
               ],
             ),
           ),
