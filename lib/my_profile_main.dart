@@ -2842,14 +2842,6 @@ class _DDProfilePageState extends State<DDProfilePage>
             : const SizedBox.shrink(),
         actions: [
           IconButton(
-            tooltip: '浏览记录',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const _HistoryRecordsPage()),
-            ),
-            icon: const Icon(TIcons.location),
-          ),
-          IconButton(
             tooltip: '设置',
             onPressed: () => Navigator.push(
               context,
