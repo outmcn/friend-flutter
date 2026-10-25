@@ -83,36 +83,48 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: Row(
-              mainAxisSize: MainAxisSize.min,
+          title: const SizedBox.shrink(),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: categories
-                  .map((item) => GestureDetector(
+                  .map(
+                    (item) => Expanded(
+                      child: GestureDetector(
                         onTap: () => setState(() => category = item),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 7),
-                          child:
-                              Column(mainAxisSize: MainAxisSize.min, children: [
-                            Text(item,
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: category == item
-                                        ? null
-                                        : Theme.of(context).hintColor)),
+                        behavior: HitTestBehavior.opaque,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              item,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: category == item
+                                    ? null
+                                    : Theme.of(context).hintColor,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             AnimatedContainer(
-                                duration: const Duration(milliseconds: 160),
-                                width: category == item ? 20 : 0,
-                                height: 3,
-                                decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(99))),
-                          ]),
+                              duration: const Duration(milliseconds: 160),
+                              width: category == item ? 24 : 0,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                            ),
+                          ],
                         ),
-                      ))
-                  .toList()),
-          centerTitle: true,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
         ),
         body: loading
             ? const Center(child: CircularProgressIndicator())
