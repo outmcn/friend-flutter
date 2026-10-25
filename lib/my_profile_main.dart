@@ -1051,6 +1051,27 @@ class _CpGiftCardState extends State<_CpGiftCard> {
     '甜蜜成双',
   ];
 
+  static const _cpGiftPrices = [
+    9,
+    19,
+    29,
+    39,
+    49,
+    59,
+    69,
+    79,
+    89,
+    99,
+    109,
+    119,
+    129,
+    139,
+    149,
+    159,
+    169,
+    179,
+  ];
+
   static const _blessingNames = [
     '双燕同心',
     '幸福碰杯',
@@ -1085,7 +1106,14 @@ class _CpGiftCardState extends State<_CpGiftCard> {
       final result = await DDPostService().fetchCpGifts(token, widget.userId!);
       if (mounted) {
         setState(() {
-          gifts = result;
+          gifts = result.asMap().entries.map((entry) {
+            final gift = Map<String, dynamic>.from(entry.value);
+            gift['name'] ??= _cpGiftNames[entry.key];
+            gift['coinPrice'] ??= _cpGiftPrices[entry.key];
+            gift['experience'] ??= _cpGiftPrices[entry.key];
+            gift['receivedQuantity'] ??= 0;
+            return gift;
+          }).toList();
           blessingGifts = const [];
         });
       }
@@ -1161,6 +1189,7 @@ class _CpGiftCardState extends State<_CpGiftCard> {
                     ? gifts[index]
                     : <String, dynamic>{
                         'name': _cpGiftNames[index],
+                        'coinPrice': _cpGiftPrices[index],
                         'receivedQuantity': 0,
                         'index': index + 1,
                       };
