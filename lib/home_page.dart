@@ -1,5 +1,26 @@
 part of 'main.dart';
 
+class _HomeCategoryButton extends StatelessWidget {
+  const _HomeCategoryButton(
+      {required this.label, required this.onTap, this.active = false});
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+  @override
+  Widget build(BuildContext context) => TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          foregroundColor: active
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
+          textStyle:
+              TextStyle(fontWeight: active ? FontWeight.w800 : FontWeight.w500),
+        ),
+        child: Text(label),
+      );
+}
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -11,6 +32,39 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
+          leadingWidth: 230,
+          leading: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _HomeCategoryButton(
+                label: '推荐',
+                active: true,
+                onTap: () {},
+              ),
+              _HomeCategoryButton(
+                label: '游戏',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const GameCompanionPlazaPage()),
+                ),
+              ),
+              _HomeCategoryButton(
+                label: '频道',
+                onTap: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  final id =
+                      int.tryParse(prefs.getString('friend.auth.userId') ?? '');
+                  if (!context.mounted) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => ProfileChannelPage(userId: id)),
+                  );
+                },
+              ),
+            ],
+          ),
           title: const SizedBox.shrink(),
           centerTitle: true,
           elevation: 0,
