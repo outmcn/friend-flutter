@@ -557,10 +557,33 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _openUserSearch() async {
     userSearchController.clear();
-    await showModalBottomSheet<void>(
+    await showGeneralDialog<void>(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => _NewChatSheet(controller: userSearchController),
+      barrierDismissible: true,
+      barrierLabel: '关闭搜索',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 180),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) => Align(
+        alignment: Alignment.topCenter,
+        child: Material(
+          color: Theme.of(dialogContext).colorScheme.surface,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: _NewChatSheet(controller: userSearchController),
+            ),
+          ),
+        ),
+      ),
+      transitionBuilder: (context, animation, secondaryAnimation, child) =>
+          SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, -1),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+        child: child,
+      ),
     );
   }
 
