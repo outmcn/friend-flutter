@@ -253,6 +253,30 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
     super.dispose();
   }
 
+  Future<void> _showGiftDetail(Map<String, dynamic> gift, int index) async {
+    final userId = widget.userId;
+    final giftId = int.tryParse('${gift['id'] ?? gift['gift_id'] ?? ''}');
+    if (userId == null || giftId == null) return;
+    try {
+      final token = (await SharedPreferences.getInstance()).getString('friend.auth.token') ?? '';
+      final ranking = await service.fetchUserGiftRanking(token, userId, giftId);
+      if (!mounted) return;
+      await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
+        title: Text('${gift['name'] ?? '礼物'}'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Image.asset(_giftAsset(gift, index), width: 86, height: 86),
+          const SizedBox(height: 14),
+          if (ranking.isEmpty) const Text('暂无赠送记录') else ...[
+            Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xffeee5ff), borderRadius: BorderRadius.circular(12)), child: Text('冠名：${ranking.first['nickname'] ?? '用户'} · ${ranking.first['quantity'] ?? 0} 个', textAlign: TextAlign.center)),
+            const SizedBox(height: 12),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: ranking.take(3).toList().asMap().entries.map((entry) { final row=entry.value; return Column(children: [CircleAvatar(radius: 24, backgroundImage: '${row['avatar'] ?? ''}'.isEmpty ? null : NetworkImage('${row['avatar']}'), child: '${row['avatar'] ?? ''}'.isEmpty ? const Icon(Icons.person) : null), const SizedBox(height: 4), Text('${entry.key + 1}. ${row['nickname'] ?? '用户'}', maxLines: 1, overflow: TextOverflow.ellipsis)]); }).toList()),
+          ],
+        ]),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('关闭'))],
+      ));
+    } catch (e) { if (mounted) _showTopNotice(context, Text('$e')); }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -292,8 +316,11 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                         height: 58,
                         fit: BoxFit.contain,
                       );
-                      return Card(
-                        child: Padding(
+                      return InkWell(
+                        onTap: () => _showGiftDetail(gift, index),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Card(
+                          child: Padding(
                           padding: const EdgeInsets.all(14),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -339,6 +366,7 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                             ],
                           ),
                         ),
+                      );
                       );
                     },
                   ),

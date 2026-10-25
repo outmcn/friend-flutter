@@ -1533,6 +1533,17 @@ class DDPostService {
     return _decodeResponse(response, '送礼失败');
   }
 
+  Future<List<Map<String, dynamic>>> fetchUserGiftRanking(
+      String token, int userId, int giftId) async {
+    final response = await _client.get(
+        _api('/users/$userId/gifts/$giftId/ranking'),
+        headers: {'Authorization': 'Bearer $token'});
+    final data = await _decodeResponse(response, '礼物排行加载失败');
+    final rows = data['top3'];
+    if (rows is! List) throw Exception('礼物排行数据格式错误');
+    return rows.whereType<Map>().map((x) => x.cast<String, dynamic>()).toList();
+  }
+
   Future<List<Map<String, dynamic>>> fetchUserGifts(String token, int userId) =>
       fetchObjectList(token, '/api/users/$userId/gifts', 'gifts');
 
