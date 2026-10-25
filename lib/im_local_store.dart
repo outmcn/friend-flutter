@@ -182,8 +182,8 @@ class ImLocalStore {
   }) async {
     final rows = await (await _db()).query(
       'messages',
-      where: 'account_id = ? AND conversation_id = ?',
-      whereArgs: [accountId, conversationId],
+      where: 'account_id = ? AND conversation_id = ? AND kind <> ?',
+      whereArgs: [accountId, conversationId, 'call'],
       orderBy: 'created_at DESC, CAST(message_id AS INTEGER) DESC',
       limit: 1,
     );
@@ -207,7 +207,12 @@ class ImLocalStore {
         final existing = await txn.query('messages',
             where:
                 'account_id = ? AND conversation_id = ? AND (message_id = ? OR (client_id = ? AND client_id IS NOT NULL))',
-            whereArgs: [accountId, conversationId, id, clientId.isEmpty ? '' : clientId]);
+            whereArgs: [
+              accountId,
+              conversationId,
+              id,
+              clientId.isEmpty ? '' : clientId
+            ]);
         final localState =
             message['status'] == 'pending' || message['status'] == 'failed';
         if (localState &&
@@ -320,7 +325,7 @@ class ImLocalStore {
   static Future<Map<String, Map<String, dynamic>>> latestMessages(
       String accountId) async {
     final rows = await (await _db()).rawQuery(
-        "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY created_at DESC, CAST(message_id AS INTEGER) DESC) AS position FROM messages WHERE account_id = ?) WHERE position = 1",
+        "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY created_at DESC, CAST(message_id AS INTEGER) DESC) AS position FROM messages WHERE account_id = ? AND kind <> 'call') WHERE position = 1",
         [accountId]);
     return {
       for (final row in rows)
