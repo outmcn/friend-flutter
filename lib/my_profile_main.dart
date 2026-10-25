@@ -592,6 +592,7 @@ class _SpaceLayout extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: ListView(
+              physics: const NeverScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(18, 112, 18, 28),
               children: [
                 Container(
