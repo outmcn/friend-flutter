@@ -347,33 +347,16 @@ class _VoiceRoomSeats extends StatelessWidget {
 }
 
 class _VoiceRoomMessages extends StatelessWidget {
-  const _VoiceRoomMessages({required this.messages});
-  final List<Map<String, dynamic>> messages;
+  const _VoiceRoomMessages();
 
   static const _platformNotice =
       '平台将24小时巡查违规内容，对私下交易、发布广告信息、从事任何金融违法犯罪活动等违规行为予以严肃处理，并上报相关部门。如您发现上述不正当行为，请及时向平台举报。让我们共同营造善意、平等、真实的氛围。';
 
   @override
-  Widget build(BuildContext context) => ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: messages.length + 1,
-        itemBuilder: (_, index) {
-          if (index == 0) {
-            return const Padding(
-              padding: EdgeInsets.only(bottom: 10),
-              child: Text('平台公告：$_platformNotice',
-                  style: TextStyle(color: Colors.white70, height: 1.45)),
-            );
-          }
-          final message = messages[index - 1];
-          final name = message['nickname']?.toString() ?? '用户';
-          final text = message['text']?.toString() ?? '';
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Text('$name：$text',
-                style: const TextStyle(color: Colors.white70)),
-          );
-        },
+  Widget build(BuildContext context) => const SingleChildScrollView(
+        physics: NeverScrollableScrollPhysics(),
+        child: Text('平台公告：$_platformNotice',
+            style: TextStyle(color: Colors.white70, height: 1.45)),
       );
 }
 
@@ -652,7 +635,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   final messageService = DDPostService();
   List<Map<String, dynamic>> roomMessages = const [];
   Map<String, dynamic> seatState = const {};
-  bool messagesLoading = true;
+  bool messagesLoading = false;
   bool messageSending = false;
   bool muted = false;
   bool joined = false;
@@ -663,7 +646,6 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   void initState() {
     super.initState();
     _joinRtc();
-    _loadRoomMessages();
     _loadSeats();
   }
 
@@ -725,23 +707,6 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
       await _loadSeats();
     } catch (e) {
       if (mounted) _showRoomNotice('$e');
-    }
-  }
-
-  Future<void> _sendRoomMessage() async {
-    final text = messageController.text.trim();
-    final roomId = _roomId;
-    if (text.isEmpty || roomId == null || messageSending) return;
-    setState(() => messageSending = true);
-    try {
-      final message = await messageService.sendVoiceRoomMessage(
-          token: await _messageToken(), roomId: roomId, text: text);
-      messageController.clear();
-      if (mounted) setState(() => roomMessages = [...roomMessages, message]);
-    } catch (e) {
-      if (mounted) _showRoomNotice('$e');
-    } finally {
-      if (mounted) setState(() => messageSending = false);
     }
   }
 
@@ -991,8 +956,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                                 color: Colors.white70,
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
-                        Expanded(
-                            child: _VoiceRoomMessages(messages: roomMessages)),
+                        Expanded(child: const _VoiceRoomMessages()),
                       ],
                     ),
                   ),
@@ -1023,33 +987,6 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                         tooltip: '送礼',
                         onPressed: _showVoiceGiftSheet,
                         icon: const Icon(TIcons.gift, color: Colors.white)),
-                    Expanded(
-                      child: TextField(
-                        controller: messageController,
-                        style: const TextStyle(color: Colors.white),
-                        onSubmitted: (_) => _sendRoomMessage(),
-                        decoration: InputDecoration(
-                          hintText: '输入消息',
-                          hintStyle: const TextStyle(color: Colors.white54),
-                          filled: true,
-                          fillColor: const Color(0xff342347),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(22),
-                              borderSide: BorderSide.none),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    FilledButton(
-                      onPressed: messageSending ? null : _sendRoomMessage,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(62, 38),
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                      ),
-                      child: Text(messageSending ? '发送中' : '发送'),
-                    ),
                   ]))),
         ),
       );

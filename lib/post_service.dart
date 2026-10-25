@@ -223,35 +223,6 @@ class DDPostService {
     _decodeResponse(response, '下麦失败');
   }
 
-  Future<List<Map<String, dynamic>>> fetchVoiceRoomMessages(
-      String token, String roomId) async {
-    final response = await _client.get(_api('/im/voice-rooms/$roomId/messages'),
-        headers: {'Authorization': 'Bearer $token'});
-    final data = await _decodeResponse(response, '房间消息加载失败');
-    final rows = data['messages'];
-    if (rows is! List) throw Exception('房间消息数据格式错误');
-    return rows.whereType<Map>().map((x) => x.cast<String, dynamic>()).toList();
-  }
-
-  Future<Map<String, dynamic>> sendVoiceRoomMessage({
-    required String token,
-    required String roomId,
-    required String text,
-  }) async {
-    final response = await _client.post(
-      _api('/im/voice-rooms/$roomId/messages'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json'
-      },
-      body: jsonEncode({'text': text}),
-    );
-    final data = await _decodeResponse(response, '消息发送失败');
-    final message = data['message'];
-    if (message is! Map) throw Exception('消息发送响应格式错误');
-    return message.cast<String, dynamic>();
-  }
-
   Future<List<DDConversation>> fetchImConversations(String token) async {
     final response = await _client.get(
       _api('/im/conversations'),
