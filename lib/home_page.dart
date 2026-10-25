@@ -11,7 +11,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
-          title: const Text('主页'),
+          title: const SizedBox.shrink(),
           centerTitle: true,
           elevation: 0,
           scrolledUnderElevation: 0,
