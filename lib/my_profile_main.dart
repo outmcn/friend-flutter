@@ -1025,8 +1025,21 @@ class _CpGiftCard extends StatefulWidget {
 
 class _CpGiftCardState extends State<_CpGiftCard> {
   List<Map<String, dynamic>> gifts = const [];
+  List<Map<String, dynamic>> blessingGifts = const [];
   bool loading = true;
   bool sending = false;
+
+  static const _blessingNames = [
+    '双燕同心',
+    '幸福碰杯',
+    '桃枝相依',
+    '喜结铃缘',
+    '星月长伴',
+    '比翼双飞',
+    '好运双灯',
+    '彩虹相守',
+    '甜蜜成双',
+  ];
 
   @override
   void initState() {
@@ -1037,6 +1050,7 @@ class _CpGiftCardState extends State<_CpGiftCard> {
   Future<String> _token() async =>
       (await SharedPreferences.getInstance()).getString('friend.auth.token') ??
       '';
+
   Future<void> _load() async {
     if (widget.userId == null ||
         widget.partnerId == null ||
@@ -1045,9 +1059,17 @@ class _CpGiftCardState extends State<_CpGiftCard> {
       return;
     }
     try {
-      final data =
-          await DDPostService().fetchCpGifts(await _token(), widget.userId!);
-      if (mounted) setState(() => gifts = data);
+      final token = await _token();
+      final results = await Future.wait([
+        DDPostService().fetchCpGifts(token, widget.userId!),
+        DDPostService().fetchCpBlessings(token, widget.userId!),
+      ]);
+      if (mounted) {
+        setState(() {
+          gifts = results[0];
+          blessingGifts = results[1];
+        });
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => loading = false);
@@ -1106,33 +1128,46 @@ class _CpGiftCardState extends State<_CpGiftCard> {
             const Text('暂无CP礼物', style: TextStyle(color: Colors.white60))
           else
             SizedBox(
-                height: 260,
-                child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: gifts.length > 9 ? 9 : gifts.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 6,
-                            mainAxisSpacing: 3,
-                            childAspectRatio: 1.02),
-                    itemBuilder: (_, i) {
-                      final g = gifts[i];
-                      return InkWell(
-                          onTap: sending ? null : () => _sendGift(g),
-                          child: Column(children: [
-                            Image.asset('assets/cp_gifts/gift_${i + 1}.png',
-                                width: 48, height: 48),
-                            Text('${g['name']}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 10)),
-                            Text('×${g['receivedQuantity'] ?? 0}',
-                                style: const TextStyle(
-                                    color: Colors.white70, fontSize: 11))
-                          ]));
-                    }))
+              height: 520,
+              child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 18,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 3,
+                    childAspectRatio: 1.02),
+                itemBuilder: (_, i) {
+                  final isBlessing = i >= 9;
+                  final index = isBlessing ? i - 9 : i;
+                  final gift = isBlessing
+                      ? (index < blessingGifts.length
+                          ? blessingGifts[index]
+                          : <String, dynamic>{})
+                      : gifts[index];
+                  final name = isBlessing
+                      ? '${gift['name'] ?? _blessingNames[index]}'
+                      : '${gift['name'] ?? '礼物'}';
+                  final asset = isBlessing
+                      ? 'assets/cp_blessings/gift_${int.tryParse('${gift['index']}') ?? index + 1}.png'
+                      : 'assets/cp_gifts/gift_${index + 1}.png';
+                  return InkWell(
+                    onTap: isBlessing || sending ? null : () => _sendGift(gift),
+                    child: Column(children: [
+                      Image.asset(asset, width: 48, height: 48),
+                      Text(name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 10)),
+                      Text('×${gift['receivedQuantity'] ?? 0}',
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 11)),
+                    ]),
+                  );
+                },
+              ),
+            ),
         ]),
       );
 }
