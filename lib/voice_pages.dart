@@ -273,8 +273,8 @@ class _VoiceMatchPageState extends State<VoiceMatchPage> {
                       onCancel: _leave,
                       onStart: matching ? _leave : _startMatching,
                       onCityStart: () => _startMatching(mode: 'city'),
-                      onSpeedStart: () => _showTopNotice(
-                          context, const SnackBar(content: Text('加速匹配功能即将开放'))),
+                      onSpeedStart: () =>
+                          _showTopNotice(context, const Text('加速匹配功能即将开放')),
                       matching: matching,
                       remaining: voiceRemaining)
                   : _VoiceMatchSuccess(

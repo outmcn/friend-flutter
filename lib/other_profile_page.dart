@@ -76,10 +76,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       );
     } catch (error) {
       if (!mounted) return;
-      _showTopNotice(
-        context,
-        SnackBar(content: Text('$error')),
-      );
+      _showTopNotice(context, Text('$error'));
     }
   }
 
@@ -701,7 +698,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       if (mounted) setState(() => blocked = next);
     } catch (error) {
       if (mounted) {
-        _showTopNotice(context, SnackBar(content: Text('$error')));
+        _showTopNotice(context, Text('$error'));
       }
     } finally {
       if (mounted) setState(() => actionLoading = false);

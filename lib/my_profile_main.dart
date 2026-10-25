@@ -494,9 +494,7 @@ class _ProfileSpacePageState extends State<ProfileSpacePage> {
       final data = await DDPostService().checkinCpSpace(token, widget.userId!);
       if (mounted) setState(() => checkin = data);
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
@@ -906,9 +904,7 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
           await DDPostService().requestCpDissolution(token, widget.userId!);
       if (mounted) setState(() => dissolution = value);
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
@@ -921,9 +917,7 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
       await DDPostService().cancelCpDissolution(token, widget.userId!);
       if (mounted) setState(() => dissolution = null);
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
@@ -1611,9 +1605,7 @@ class _CpApplyPageState extends State<CpApplyPage> {
       await DDPostService().applyCpSpace(token, widget.ownerId);
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1665,9 +1657,7 @@ class _CpApplicationListPageState extends State<CpApplicationListPage> {
       final r = await DDPostService().fetchCpApplications(t);
       if (mounted) setState(() => rows = r);
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
@@ -1682,9 +1672,7 @@ class _CpApplicationListPageState extends State<CpApplicationListPage> {
         await DDPostService().rejectCpApplication(t, int.parse('${row['id']}'));
       await _load();
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
@@ -1837,9 +1825,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
       Navigator.push(context,
           MaterialPageRoute(builder: (_) => VoiceRoomPage(room: data)));
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
@@ -2580,7 +2566,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       }
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
-      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     } finally {
       pendingLikes.remove(post.id);
     }
@@ -2600,7 +2586,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       }
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
-      if (mounted) _showTopNotice(context, SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     } finally {
       pendingFavorites.remove(post.id);
     }

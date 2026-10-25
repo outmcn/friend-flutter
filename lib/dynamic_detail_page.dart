@@ -541,10 +541,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     } else if (action == 'copy') {
       await Clipboard.setData(ClipboardData(text: comment.content));
       if (mounted) {
-        _showTopNotice(
-          context,
-          const SnackBar(content: Text('已复制')),
-        );
+        _showTopNotice(context, const Text('已复制'));
       }
     } else if (action == 'delete') {
       try {
@@ -741,7 +738,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       await DDPostService.clearProfileTabCaches();
     } catch (e) {
       if (mounted) {
-        _showTopNotice(context, SnackBar(content: Text('$e')));
+        _showTopNotice(context, Text('$e'));
       }
     } finally {
       pendingActions.remove(action);

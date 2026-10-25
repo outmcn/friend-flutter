@@ -51,9 +51,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  bool isSystem(DDNotification item) => item.nickname == null ||
-      item.type == 'post_rejected' || item.type == 'profile_rejected' ||
-      item.type == 'post_deleted' || item.type == 'comment_deleted';
+  bool isSystem(DDNotification item) =>
+      item.nickname == null ||
+      item.type == 'post_rejected' ||
+      item.type == 'profile_rejected' ||
+      item.type == 'post_deleted' ||
+      item.type == 'comment_deleted';
 
   String beijingTime(String value) {
     final parsed = DateTime.tryParse(value);
@@ -66,11 +69,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Future<void> _markAllRead() async {
     try {
       await service.markNotificationsRead(await token());
-      if (mounted) setState(() {
-        notifications = notifications.map((n) => DDNotification(id: n.id, type: n.type, content: n.content, createdAt: n.createdAt, nickname: n.nickname, avatar: n.avatar, postId: n.postId, commentId: n.commentId, postContent: n.postContent, commentContent: n.commentContent, read: true)).toList();
-      });
+      if (mounted)
+        setState(() {
+          notifications = notifications
+              .map((n) => DDNotification(
+                  id: n.id,
+                  type: n.type,
+                  content: n.content,
+                  createdAt: n.createdAt,
+                  nickname: n.nickname,
+                  avatar: n.avatar,
+                  postId: n.postId,
+                  commentId: n.commentId,
+                  postContent: n.postContent,
+                  commentContent: n.commentContent,
+                  read: true))
+              .toList();
+        });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     }
   }
 
@@ -79,7 +96,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         appBar: AppBar(
           title: const Text('通知'),
           actions: [
-            TextButton(onPressed: hasUnread ? _markAllRead : null, child: const Text('一键已读')),
+            TextButton(
+                onPressed: hasUnread ? _markAllRead : null,
+                child: const Text('一键已读')),
             IconButton(onPressed: load, icon: const Icon(Icons.refresh)),
           ],
         ),
@@ -115,16 +134,41 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   borderRadius: BorderRadius.circular(14),
                                   onTap: () async {
                                     final t = await token();
-                                    await service.markNotificationRead(t, item.id);
-                                    if (mounted) setState(() {
-                                      notifications = notifications.map((n) => n.id == item.id
-                                          ? DDNotification(id: n.id, type: n.type, content: n.content, createdAt: n.createdAt, nickname: n.nickname, avatar: n.avatar, postId: n.postId, commentId: n.commentId, postContent: n.postContent, commentContent: n.commentContent, read: true)
-                                          : n).toList();
-                                    });
+                                    await service.markNotificationRead(
+                                        t, item.id);
+                                    if (mounted)
+                                      setState(() {
+                                        notifications = notifications
+                                            .map((n) => n.id == item.id
+                                                ? DDNotification(
+                                                    id: n.id,
+                                                    type: n.type,
+                                                    content: n.content,
+                                                    createdAt: n.createdAt,
+                                                    nickname: n.nickname,
+                                                    avatar: n.avatar,
+                                                    postId: n.postId,
+                                                    commentId: n.commentId,
+                                                    postContent: n.postContent,
+                                                    commentContent:
+                                                        n.commentContent,
+                                                    read: true)
+                                                : n)
+                                            .toList();
+                                      });
                                     if (!mounted || item.postId == null) return;
-                                    await Navigator.push(context, MaterialPageRoute(builder: (_) => item.type == 'post_rejected'
-                                        ? ViolationNotificationPage(postId: item.postId!)
-                                        : DynamicDetailPage(postId: item.postId!, focusComment: item.commentId != null)));
+                                    await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                item.type == 'post_rejected'
+                                                    ? ViolationNotificationPage(
+                                                        postId: item.postId!)
+                                                    : DynamicDetailPage(
+                                                        postId: item.postId!,
+                                                        focusComment:
+                                                            item.commentId !=
+                                                                null)));
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
@@ -156,8 +200,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                                       fontWeight:
                                                           FontWeight.w700)),
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 4),
-                                                child: Text(item.content, maxLines: 3, overflow: TextOverflow.ellipsis),
+                                                padding: const EdgeInsets.only(
+                                                    top: 4),
+                                                child: Text(item.content,
+                                                    maxLines: 3,
+                                                    overflow:
+                                                        TextOverflow.ellipsis),
                                               ),
                                               Padding(
                                                 padding: const EdgeInsets.only(
@@ -176,7 +224,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                           ),
                                         ),
                                         if (!item.read)
-                                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+                                          Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: const BoxDecoration(
+                                                  color: Colors.red,
+                                                  shape: BoxShape.circle)),
                                       ],
                                     ),
                                   ),
@@ -188,38 +241,83 @@ class _NotificationsPageState extends State<NotificationsPage> {
       );
 }
 
-
 class ViolationNotificationPage extends StatefulWidget {
   const ViolationNotificationPage({super.key, required this.postId});
   final int postId;
-  @override State<ViolationNotificationPage> createState() => _ViolationNotificationPageState();
+  @override
+  State<ViolationNotificationPage> createState() =>
+      _ViolationNotificationPageState();
 }
 
 class _ViolationNotificationPageState extends State<ViolationNotificationPage> {
   final DDPostService service = DDPostService();
-  DDPost? post; String? error;
-  @override void initState() { super.initState(); _load(); }
+  DDPost? post;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final value = await service.fetchPost(prefs.getString('friend.auth.token') ?? '', widget.postId);
+      final value = await service.fetchPost(
+          prefs.getString('friend.auth.token') ?? '', widget.postId);
       if (mounted) setState(() => post = value);
-    } catch (e) { if (mounted) setState(() => error = e.toString().replaceFirst('Exception: ', '')); }
+    } catch (e) {
+      if (mounted)
+        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    }
   }
-  @override void dispose() { service.dispose(); super.dispose(); }
-  @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('违规内容')),
-    body: error != null ? Center(child: Text(error!)) : post == null ? const Center(child: CircularProgressIndicator()) : ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Row(children: [Icon(TIcons.error_triangle_filled, color: Colors.red), SizedBox(width: 8), Text('该动态正在确认违规', style: TextStyle(fontWeight: FontWeight.w700))]),
-        const SizedBox(height: 18),
-        if (post!.content.trim().isNotEmpty) Text(post!.content.characters.map((_) => '*').join(), style: const TextStyle(fontSize: 16, height: 1.5)),
-        if (post!.imageUrl?.isNotEmpty == true || post!.videoUrl?.isNotEmpty == true) ...[
-          const SizedBox(height: 16),
-          Container(height: 220, alignment: Alignment.center, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)), child: const Column(mainAxisSize: MainAxisSize.min, children: [Icon(TIcons.error_triangle_filled, color: Colors.red, size: 42), SizedBox(height: 8), Text('图片涉嫌违规')]))
-        ],
-      ],
-    ),
-  );
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('违规内容')),
+        body: error != null
+            ? Center(child: Text(error!))
+            : post == null
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      const Row(children: [
+                        Icon(TIcons.error_triangle_filled, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('该动态正在确认违规',
+                            style: TextStyle(fontWeight: FontWeight.w700))
+                      ]),
+                      const SizedBox(height: 18),
+                      if (post!.content.trim().isNotEmpty)
+                        Text(post!.content.characters.map((_) => '*').join(),
+                            style: const TextStyle(fontSize: 16, height: 1.5)),
+                      if (post!.imageUrl?.isNotEmpty == true ||
+                          post!.videoUrl?.isNotEmpty == true) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                            height: 220,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(12)),
+                            child: const Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(TIcons.error_triangle_filled,
+                                      color: Colors.red, size: 42),
+                                  SizedBox(height: 8),
+                                  Text('图片涉嫌违规')
+                                ]))
+                      ],
+                    ],
+                  ),
+      );
 }

@@ -418,9 +418,7 @@ class _VoiceGiftSheetState extends State<_VoiceGiftSheet> {
       if (mounted) setState(() => gifts = rows);
     } catch (e) {
       if (mounted) Navigator.pop(context);
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -457,13 +455,10 @@ class _VoiceGiftSheetState extends State<_VoiceGiftSheet> {
       );
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('送礼成功')));
+        _showTopNotice(context, const Text('送礼成功'));
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) _showTopNotice(context, Text('$e'));
     } finally {
       if (mounted) setState(() => sending = false);
     }
@@ -816,9 +811,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
 
   void _showRoomNotice(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message.replaceFirst('Exception: ', ''))),
-    );
+    _showTopNotice(context, Text(message.replaceFirst('Exception: ', '')));
   }
 
   Future<void> _exitRoom() async {

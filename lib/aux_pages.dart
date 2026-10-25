@@ -89,7 +89,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
       await DDPostService.clearProfileTabCaches();
       await load();
       if (mounted) {
-        _showTopNotice(context, const SnackBar(content: Text('动态已删除')));
+        _showTopNotice(context, const Text('动态已删除'));
       }
     } catch (e) {
       if (mounted) {
@@ -129,17 +129,17 @@ class _MyPostsPageState extends State<MyPostsPage> {
                     else
                       ...posts.map(
                         (post) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _MyProfilePostCard(
-                            post: post,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DynamicDetailPage(postId: post.id),
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _MyProfilePostCard(
+                              post: post,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      DynamicDetailPage(postId: post.id),
+                                ),
                               ),
-                            ),
-                          )
-                        ),
+                            )),
                       ),
                   ],
                 ),

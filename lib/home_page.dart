@@ -4,8 +4,7 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   void _unavailable(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('$feature功能暂未开放')));
+    _showTopNotice(context, Text('$feature功能暂未开放'));
   }
 
   @override

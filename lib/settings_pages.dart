@@ -55,9 +55,7 @@ class SettingsPage extends StatelessWidget {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.clear();
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('缓存已清理')),
-                    );
+                    _showTopNotice(context, const Text('缓存已清理'));
                   }
                 } else if (item == '关于软件') {
                   showAboutDialog(

@@ -502,12 +502,12 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
                   ),
                 )
               : Column(
-              children: [
-                _deltaBanners(),
-                _topTabs(),
-                Expanded(child: _configuredTabBody()),
-              ],
-            ),
+                  children: [
+                    _deltaBanners(),
+                    _topTabs(),
+                    Expanded(child: _configuredTabBody()),
+                  ],
+                ),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
@@ -559,9 +559,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
   }
 
   void _showTopMessage(String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$title功能')),
-    );
+    _showTopNotice(context, Text('$title功能'));
   }
 
   Future<void> _openDeltaAdmin() async {
@@ -595,8 +593,7 @@ class _DeltaCompanionPageState extends State<DeltaCompanionPage> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        _showTopNotice(context, Text('$error'));
       }
     } finally {
       api.dispose();
@@ -1587,8 +1584,7 @@ class _CompanionSelfEditPageState extends State<CompanionSelfEditPage> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        _showTopNotice(context, Text('$e'));
       }
     } finally {
       api.dispose();
@@ -1841,12 +1837,10 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
             MaterialPageRoute(builder: (_) => GameClubAdminPage(gameId: 2)));
         return;
       }
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('当前账号没有 Game 俱乐部管理权限')));
+      _showTopNotice(context, const Text('当前账号没有 Game 俱乐部管理权限'));
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
+        _showTopNotice(context, Text('$error'));
       }
     }
   }

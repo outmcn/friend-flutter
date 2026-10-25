@@ -1720,7 +1720,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (mounted) {
         _showTopNotice(
           context,
-          const SnackBar(content: Text('账号已在其他设备登录')),
+          const Text('账号已在其他设备登录'),
         );
       }
       return;
@@ -2055,7 +2055,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (mounted && cancelled) {
         _showTopNotice(
           context,
-          const SnackBar(content: Text('已取消录音')),
+          const Text('已取消录音'),
         );
       }
       return;
@@ -2292,9 +2292,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         setState(() => blockedConversation = action == 'blacklist');
         _showTopNotice(
           context,
-          SnackBar(
-            content: Text(action == 'blacklist' ? '已加入黑名单' : '已取消黑名单'),
-          ),
+          Text(action == 'blacklist' ? '已加入黑名单' : '已取消黑名单'),
         );
       }
     }
@@ -2369,10 +2367,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (id.isEmpty || id.startsWith('local:')) {
       if (choice == 'recall') {
         if (mounted) {
-          _showTopNotice(
-            context,
-            const SnackBar(content: Text('消息尚未发送成功，无法撤回')),
-          );
+          _showTopNotice(context, const Text('消息尚未发送成功，无法撤回'));
         }
       }
       return;
@@ -2408,7 +2403,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         }
       } catch (error) {
         if (mounted) {
-          _showTopNotice(context, SnackBar(content: Text('$error')));
+          _showTopNotice(context, Text('$error'));
         }
       } finally {
         service.dispose();
