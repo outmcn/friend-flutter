@@ -816,23 +816,32 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
 
   Future<void> _exitRoom() async {
     if (_leaving) return;
+    final ownerId = _ownerId?.toString();
+    final prefs = await SharedPreferences.getInstance();
+    final currentUserId = prefs.getString('friend.auth.userId');
+    final isOwner = currentUserId != null &&
+        currentUserId.isNotEmpty &&
+        ownerId != null &&
+        currentUserId == ownerId;
     _leaving = true;
     _seatRefreshTimer?.cancel();
     _VoiceRoomFloatingOverlay.remove();
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final currentUserId = prefs.getString('friend.auth.userId');
-      final ownerId = _ownerId?.toString();
-      if (currentUserId != null &&
-          currentUserId.isNotEmpty &&
-          ownerId != null &&
-          currentUserId == ownerId) {
+      if (isOwner) {
         await messageService
             .endVoiceRoom(await _authToken(), _roomId ?? '')
             .timeout(const Duration(seconds: 3));
+      } else if (_seatOn) {
+        await messageService
+            .leaveVoiceRoomSeat(await _authToken(), _roomId ?? '')
+            .timeout(const Duration(seconds: 3));
       }
     } catch (e) {
-      if (mounted) _showRoomNotice('结束频道失败，频道仍可能保持开启');
+      if (mounted) {
+        _leaving = false;
+        _showRoomNotice(isOwner ? '解散频道失败，请重试' : '$e');
+        return;
+      }
     }
     if (_rtcJoined) {
       try {
@@ -954,29 +963,6 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
               ),
             ),
           ]),
-          bottomNavigationBar: SafeArea(
-              top: false,
-              child: Container(
-                  color: const Color(0xff21172e),
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                  child: Row(children: [
-                    IconButton(
-                        tooltip: muted ? '开启语音输入' : '关闭语音输入',
-                        onPressed: () async {
-                          final next = !muted;
-                          if (!_seatOn) {
-                            _showRoomNotice('房主批准上麦后才能开启麦克风');
-                            return;
-                          }
-                          await _setRtcMuted(next);
-                        },
-                        icon: Icon(muted ? Icons.mic_off : TIcons.microphone_1,
-                            color: Colors.white)),
-                    IconButton(
-                        tooltip: '送礼',
-                        onPressed: _showVoiceGiftSheet,
-                        icon: const Icon(TIcons.gift, color: Colors.white)),
-                  ]))),
         ),
       );
 }
