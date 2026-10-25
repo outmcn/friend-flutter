@@ -398,6 +398,7 @@ class _VoiceGiftSheetState extends State<_VoiceGiftSheet> {
   int? selectedRecipient;
   bool loading = true;
   bool sending = false;
+  int _giftPage = 0;
 
   @override
   void initState() {
@@ -546,38 +547,60 @@ class _VoiceGiftSheetState extends State<_VoiceGiftSheet> {
                   padding: EdgeInsets.all(24),
                   child: CircularProgressIndicator())
             else
-              SizedBox(
-                height: 230,
-                child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: gifts.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 4,
-                    mainAxisExtent: 108,
+              Column(children: [
+                SizedBox(
+                  height: 230,
+                  child: PageView.builder(
+                    itemCount: (gifts.length / 10).ceil(),
+                    onPageChanged: (page) => setState(() => _giftPage = page),
+                    itemBuilder: (_, page) {
+                      final pageGifts = gifts.skip(page * 10).take(10).toList();
+                      return GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        itemCount: pageGifts.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 5,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 4,
+                          mainAxisExtent: 108,
+                        ),
+                        itemBuilder: (_, index) {
+                          final gift = pageGifts[index];
+                          final giftIndex = int.tryParse('${gift['index']}') ??
+                              page * 10 + index + 1;
+                          return GestureDetector(
+                            onTap: () => _send(gift),
+                            child: Column(children: [
+                              Image.asset(
+                                  'assets/voice_gifts/gift_$giftIndex.png',
+                                  width: 54,
+                                  height: 54,
+                                  fit: BoxFit.contain),
+                              Text(
+                                  gift['name']?.toString() ??
+                                      _names[giftIndex - 1],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11)),
+                              Text('${gift['coinPrice'] ?? 0}金币',
+                                  style: const TextStyle(
+                                      fontSize: 10, color: Colors.orange)),
+                            ]),
+                          );
+                        },
+                      );
+                    },
                   ),
-                  itemBuilder: (_, index) {
-                    final gift = gifts[index];
-                    final giftIndex =
-                        int.tryParse('${gift['index']}') ?? index + 1;
-                    return GestureDetector(
-                      onTap: () => _send(gift),
-                      child: Column(children: [
-                        Image.asset('assets/voice_gifts/gift_$giftIndex.png',
-                            width: 54, height: 54, fit: BoxFit.contain),
-                        Text(gift['name']?.toString() ?? _names[index],
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11)),
-                        Text('${gift['coinPrice'] ?? 0}金币',
-                            style: const TextStyle(
-                                fontSize: 10, color: Colors.orange)),
-                      ]),
-                    );
-                  },
                 ),
-              ),
+                if (gifts.length > 10) ...[
+                  const SizedBox(height: 4),
+                  Text('${_giftPage + 1}/${(gifts.length / 10).ceil()}',
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.black54)),
+                ],
+              ]),
           ]),
         ),
       );
