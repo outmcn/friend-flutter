@@ -382,7 +382,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final mapped = <_ChatPreview>[];
       final latest = accountId.isEmpty
           ? <String, Map<String, dynamic>>{}
-          : await ImLocalStore.latestMessages(accountId);
+          : await ImLocalStore.latestMessages(accountId, includeCalls: false);
       for (final row in rows) {
         final local = latest[row.id];
         final localPreview = local == null
