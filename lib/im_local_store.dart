@@ -325,7 +325,7 @@ class ImLocalStore {
   static Future<Map<String, Map<String, dynamic>>> latestMessages(
       String accountId) async {
     final rows = await (await _db()).rawQuery(
-        "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY created_at DESC, CAST(message_id AS INTEGER) DESC) AS position FROM messages WHERE account_id = ? AND kind <> 'call') WHERE position = 1",
+        "SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY created_at DESC, CAST(message_id AS INTEGER) DESC) AS position FROM messages WHERE account_id = ?) WHERE position = 1",
         [accountId]);
     return {
       for (final row in rows)
