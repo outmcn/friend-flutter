@@ -1977,7 +1977,10 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                                     minimumSize: const Size.fromHeight(52)),
                               ),
                             if (widget.isOwner) const SizedBox(height: 28),
-                            const _ChannelProfileCard(),
+                            if (selectedCategory == '附近')
+                              const _NearbyEmptyChannelSlots(),
+                            if (selectedCategory != '附近')
+                              const _ChannelProfileCard(),
                           ],
                         )
                       : RefreshIndicator(
@@ -1985,7 +1988,10 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                           child: ListView(
                             padding: const EdgeInsets.fromLTRB(16, 116, 16, 28),
                             children: [
-                              _ChannelSummaryCard(
+                              if (selectedCategory == '附近')
+                                const _NearbyEmptyChannelSlots()
+                              else
+                                _ChannelSummaryCard(
                                   room: rooms.first,
                                   onEnter: () async {
                                     final token =
@@ -2001,13 +2007,37 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                                           MaterialPageRoute(
                                               builder: (_) =>
                                                   VoiceRoomPage(room: joined)));
-                                  }),
-                              const SizedBox(height: 16),
-                              _ChannelProfileCard(room: rooms.first),
+                                  },
+                                ),
+                              if (selectedCategory != '附近') ...[
+                                const SizedBox(height: 16),
+                                _ChannelProfileCard(room: rooms.first),
+                              ],
                             ],
                           ),
                         ),
         ),
+      );
+}
+
+class _NearbyEmptyChannelSlots extends StatelessWidget {
+  const _NearbyEmptyChannelSlots();
+  @override
+  Widget build(BuildContext context) => Column(
+        children: List.generate(
+            10,
+            (index) => Container(
+                  height: 72,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .06),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: const Center(
+                      child: Text('暂无频道资料',
+                          style: TextStyle(color: Colors.white38))),
+                )),
       );
 }
 
