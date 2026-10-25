@@ -221,7 +221,7 @@ class _HomePageState extends State<HomePage> {
                                   title: '缘分匹配',
                                   subtitle: '遇见聊得来的人',
                                   meta: 'FATE',
-                                  tabLabel: 'FATE',
+                                  tabLabel: '',
                                   colors: const [
                                     Color(0xffff6b9d),
                                     Color(0xffa855f7)
@@ -248,7 +248,7 @@ class _HomePageState extends State<HomePage> {
                                         title: '语音匹配',
                                         subtitle: '遇见懂你的人',
                                         meta: '',
-                                        tabLabel: 'VOICE',
+                                        tabLabel: '',
                                         colors: const [
                                           Color(0xff6e4fe0),
                                           Color(0xffd46bc8)
