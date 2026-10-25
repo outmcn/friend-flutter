@@ -2128,29 +2128,23 @@ class _DDProfilePageState extends State<DDProfilePage>
     });
     _sonicPlayer.onPlayerComplete.listen((_) {});
     profileFeedTabs = List.generate(
-      4,
+      3,
       (tab) => FeedShellTab(
         title: tab == 0
             ? '我的动态'
             : tab == 1
                 ? '收藏'
-                : tab == 2
-                    ? '点赞'
-                    : '私密动态',
+                : '私密动态',
         icon: tab == 0
             ? TIcons.highlight_1
             : tab == 1
                 ? TIcons.bookmark
-                : tab == 2
-                    ? TIcons.heart
-                    : TIcons.lock_on,
+                : TIcons.lock_on,
         selectedIcon: tab == 0
             ? TIcons.highlight_1_filled
             : tab == 1
                 ? TIcons.bookmark_filled
-                : tab == 2
-                    ? TIcons.heart_filled
-                    : TIcons.lock_on,
+                : TIcons.lock_on,
         cacheKey: 'dd.profile.my.v2.tab.$tab',
         fetch: (offset) async {
           final token = await _token();
@@ -2158,9 +2152,7 @@ class _DDProfilePageState extends State<DDProfilePage>
               ? await service.fetchMyPosts(token, offset: offset)
               : tab == 1
                   ? await service.fetchFavoritedPosts(token, offset: offset)
-                  : tab == 2
-                      ? await service.fetchLikedPosts(token, offset: offset)
-                      : await service.fetchPrivatePosts(token, offset: offset);
+                  : await service.fetchPrivatePosts(token, offset: offset);
           return Future.wait(
               loaded.map((post) => service.resolvePostMedia(token, post)));
         },
@@ -2991,20 +2983,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                                           'followers',
                                                                       title:
                                                                           '粉丝'))))),
-                                                  Expanded(
-                                                      child: _InlineProfileStat(
-                                                          label: '获赞',
-                                                          value: _formatCount(
-                                                              p?['receivedLikes'] ??
-                                                                  p?['likes']),
-                                                          onTap: () => Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (_) => const _UserRelationListPage(
-                                                                      relation:
-                                                                          'likers',
-                                                                      title:
-                                                                          '获赞'))))),
                                                   Expanded(
                                                       child: _InlineProfileStat(
                                                     label: '魅力',

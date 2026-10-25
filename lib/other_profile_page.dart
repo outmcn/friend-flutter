@@ -23,10 +23,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool loading = true;
   bool actionLoading = false;
   bool isFollowing = false;
-  bool isProfileLiked = false;
   bool isSelfProfile = false;
   bool blocked = false;
-  int profileLikes = 0;
   int charmCoins = 0;
   int selectedContentTab = 0;
   bool _showStickyNickname = false;
@@ -280,10 +278,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           profile = data;
           posts = resolvedPosts;
           isFollowing = data['followingByViewer'] == true;
-          isProfileLiked = data['likedByViewer'] == true;
           isSelfProfile = '${data['id']}' == '${me['id']}';
           blocked = currentBlocked;
-          profileLikes = int.tryParse('${data['receivedLikes'] ?? 0}') ?? 0;
           charmCoins = int.tryParse('${data['charmCoins'] ?? 0}') ?? 0;
           _sonicUrl = DDPostService.mediaUrl(data['voiceUrl']?.toString());
           _avatarUrl = signedAvatar;
@@ -339,31 +335,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
-  Future<void> toggleProfileLike() async {
-    final userId = widget.userId;
-    if (userId == null || actionLoading) return;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('friend.auth.token') ?? '';
-      if (token.isEmpty) throw Exception('请先登录');
-      setState(() => actionLoading = true);
-      final result = await service.toggleProfileLike(token, userId);
-      if (mounted) {
-        setState(() {
-          isProfileLiked = result['liked'] == true;
-          profileLikes += isProfileLiked ? 1 : -1;
-          if (profileLikes < 0) profileLikes = 0;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => actionLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -385,12 +356,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               icon: const Icon(Icons.card_giftcard_outlined),
             ),
           if (!loading && !isSelfProfile)
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: _ProfileLikePill(
-                liked: isProfileLiked,
-                onTap: actionLoading ? null : toggleProfileLike,
-              ),
+            IconButton(
+              tooltip: '送礼',
+              onPressed: _openGiftMenu,
+              icon: const Icon(Icons.card_giftcard_outlined),
             ),
           IconButton(
             onPressed: () => _showProfileMenu(context),
@@ -468,11 +437,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                                 label: '粉丝',
                                                 value:
                                                     '${p?['followers'] ?? 0}')),
-                                        Expanded(
-                                            child: _InlineProfileStat(
-                                                label: '获赞',
-                                                value:
-                                                    '${p?['receivedLikes'] ?? 0}')),
                                         Expanded(
                                             child: _InlineProfileStat(
                                                 label: '魅力',
