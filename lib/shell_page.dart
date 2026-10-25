@@ -8,21 +8,7 @@ final MethodChannel _compassChannel =
 /// Shows recoverable chat errors at the top of the current page instead of
 /// placing them over the composer as a bottom SnackBar.
 void _showTopErrorBanner(BuildContext context, String message) {
-  final messenger = ScaffoldMessenger.of(context);
-  messenger.hideCurrentMaterialBanner();
-  messenger.showMaterialBanner(
-    MaterialBanner(
-      leading: const Icon(Icons.error_outline, color: Colors.redAccent),
-      content: Text(message),
-      backgroundColor: Theme.of(context).colorScheme.errorContainer,
-      actions: [
-        TextButton(
-          onPressed: messenger.hideCurrentMaterialBanner,
-          child: const Text('关闭'),
-        ),
-      ],
-    ),
-  );
+  _showTopNotice(context, Text(message));
 }
 
 ImageProvider _cachedAvatarProvider(String url) =>
