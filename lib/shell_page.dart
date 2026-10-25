@@ -1856,9 +1856,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ['pending', 'failed'].contains(status ?? item['status'])) {
       return false;
     }
+    final previousMetadata = index >= 0 ? messages[index]['metadata'] : null;
+    final incomingMetadata = item['metadata'];
+    final hasIncomingMetadata =
+        incomingMetadata is Map && incomingMetadata.isNotEmpty;
     final merged = <String, dynamic>{
       ...(index >= 0 ? messages[index] : const <String, dynamic>{}),
       ...item,
+      if (!hasIncomingMetadata && previousMetadata != null)
+        'metadata': previousMetadata,
       if (status != null) 'status': status,
       if (status == null && index >= 0) 'status': messages[index]['status'],
     };
