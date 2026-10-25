@@ -1766,7 +1766,7 @@ class _GameCompanionPlazaPageState extends State<GameCompanionPlazaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Game 俱乐部'),
+        title: const Text('陪玩'),
         actions: [
           IconButton(
             tooltip: '订单',

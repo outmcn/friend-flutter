@@ -182,6 +182,11 @@ class _HomePageState extends State<HomePage> {
                 onTap: () => setState(() => selectedCategory = 0),
               ),
               _HomeCategoryButton(
+                label: '陪玩',
+                active: selectedCategory == 1,
+                onTap: () => setState(() => selectedCategory = 1),
+              ),
+              _HomeCategoryButton(
                 label: '频道',
                 active: selectedCategory == 2,
                 onTap: () => setState(() => selectedCategory = 2),
