@@ -986,7 +986,10 @@ class _CpBlessingCardState extends State<_CpBlessingCard> {
     '甜蜜成双',
     '喜庆相伴',
   ];
-  List<Map<String, dynamic>> gifts = const [];
+  List<Map<String, dynamic>> gifts = List.generate(
+    10,
+    (i) => {'index': i + 1, 'name': names[i], 'receivedQuantity': 0},
+  );
   bool loading = true;
 
   @override
