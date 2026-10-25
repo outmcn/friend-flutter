@@ -178,6 +178,51 @@ class DDPostService {
     return _decodeResponse(response, '频道礼物发送失败');
   }
 
+  Future<Map<String, dynamic>> fetchVoiceRoomSeats(
+      String token, String roomId) async {
+    final response = await _client.get(_api('/im/voice-rooms/$roomId/seats'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '麦位状态加载失败');
+  }
+
+  Future<Map<String, dynamic>> requestVoiceRoomSeat(
+      String token, String roomId) async {
+    final response = await _client.post(
+        _api('/im/voice-rooms/$roomId/seats/request'),
+        headers: {'Authorization': 'Bearer $token'});
+    return _decodeResponse(response, '申请上麦失败');
+  }
+
+  Future<void> cancelVoiceRoomSeatRequest(String token, String roomId) async {
+    final response = await _client.delete(
+        _api('/im/voice-rooms/$roomId/seats/request'),
+        headers: {'Authorization': 'Bearer $token'});
+    _decodeResponse(response, '取消上麦申请失败');
+  }
+
+  Future<void> approveVoiceRoomSeat(
+      String token, String roomId, String userId) async {
+    final response = await _client.post(
+        _api('/im/voice-rooms/$roomId/seats/$userId/approve'),
+        headers: {'Authorization': 'Bearer $token'});
+    _decodeResponse(response, '同意上麦失败');
+  }
+
+  Future<void> rejectVoiceRoomSeat(
+      String token, String roomId, String userId) async {
+    final response = await _client.post(
+        _api('/im/voice-rooms/$roomId/seats/$userId/reject'),
+        headers: {'Authorization': 'Bearer $token'});
+    _decodeResponse(response, '拒绝上麦失败');
+  }
+
+  Future<void> leaveVoiceRoomSeat(String token, String roomId) async {
+    final response = await _client.delete(
+        _api('/im/voice-rooms/$roomId/seats/me'),
+        headers: {'Authorization': 'Bearer $token'});
+    _decodeResponse(response, '下麦失败');
+  }
+
   Future<List<Map<String, dynamic>>> fetchVoiceRoomMessages(
       String token, String roomId) async {
     final response = await _client.get(_api('/im/voice-rooms/$roomId/messages'),

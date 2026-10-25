@@ -144,8 +144,10 @@ class _VoiceRoomShareAction extends StatelessWidget {
 }
 
 class _VoiceRoomSeats extends StatelessWidget {
-  const _VoiceRoomSeats({required this.room});
+  const _VoiceRoomSeats({required this.room, this.state, this.onAction});
   final Map<String, dynamic>? room;
+  final Map<String, dynamic>? state;
+  final Future<void> Function(String action, [String? userId])? onAction;
 
   String _text(Map member, String key) => member[key]?.toString() ?? '';
 
@@ -184,41 +186,36 @@ class _VoiceRoomSeats extends StatelessWidget {
     );
   }
 
-  Widget _applySeatButton(BuildContext context) => GestureDetector(
-        onTap: () => showDialog<void>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('申请上麦'),
-            content: const Text('是否申请上麦？'),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('取消')),
-              FilledButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('上麦申请暂未接入')));
-                  },
-                  child: const Text('申请')),
-            ],
-          ),
-        ),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-                radius: 23,
-                backgroundColor: Color(0xff493365),
-                child: Icon(Icons.add, color: Colors.white70)),
-            SizedBox(height: 4),
-            Text('申请上麦',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.white70, fontSize: 11)),
-          ],
-        ),
-      );
+  Widget _applySeatButton(BuildContext context) {
+    final requested = state?['requested'] == true;
+    final onSeat = state?['onSeat'] == true;
+    final label = onSeat
+        ? '下麦'
+        : requested
+            ? '取消申请'
+            : '申请上麦';
+    return GestureDetector(
+      onTap: onAction == null
+          ? null
+          : () => onAction!(onSeat
+              ? 'leave'
+              : requested
+                  ? 'cancel'
+                  : 'request'),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        CircleAvatar(
+            radius: 23,
+            backgroundColor: const Color(0xff493365),
+            child: Icon(onSeat ? Icons.mic_off : Icons.add,
+                color: Colors.white70)),
+        const SizedBox(height: 4),
+        Text(label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white70, fontSize: 11)),
+      ]),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -312,6 +309,32 @@ class _VoiceRoomSeats extends StatelessWidget {
                         itemBuilder: (_, index) => _memberTile(normal[index],
                             owner: false, manager: false),
                       ),
+                    ],
+                    if (state?['isOwner'] == true &&
+                        state?['requests'] is List &&
+                        (state?['requests'] as List).isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      const Text('上麦申请',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 11)),
+                      const SizedBox(height: 6),
+                      ...(state?['requests'] as List)
+                          .whereType<Map>()
+                          .map((request) {
+                        final id = '${request['userId'] ?? ''}';
+                        return Row(children: [
+                          Expanded(
+                              child: Text('${request['nickname'] ?? '用户'}',
+                                  style:
+                                      const TextStyle(color: Colors.white70))),
+                          TextButton(
+                              onPressed: () => onAction?.call('reject', id),
+                              child: const Text('拒绝')),
+                          FilledButton(
+                              onPressed: () => onAction?.call('approve', id),
+                              child: const Text('同意')),
+                        ]);
+                      }),
                     ],
                     const SizedBox(height: 14),
                     Center(child: _applySeatButton(context)),
@@ -628,6 +651,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   final messageController = TextEditingController();
   final messageService = DDPostService();
   List<Map<String, dynamic>> roomMessages = const [];
+  Map<String, dynamic> seatState = const {};
   bool messagesLoading = true;
   bool messageSending = false;
   bool muted = false;
@@ -640,6 +664,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
     super.initState();
     _joinRtc();
     _loadRoomMessages();
+    _loadSeats();
   }
 
   Future<String> _messageToken() async {
@@ -665,6 +690,41 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
       if (mounted) _showRoomNotice('$e');
     } finally {
       if (mounted) setState(() => messagesLoading = false);
+    }
+  }
+
+  Future<void> _loadSeats() async {
+    final id = _roomId;
+    if (id == null) return;
+    try {
+      final data =
+          await messageService.fetchVoiceRoomSeats(await _authToken(), id);
+      if (mounted) setState(() => seatState = data);
+    } catch (e) {
+      if (mounted) _showRoomNotice('$e');
+    }
+  }
+
+  Future<void> _seatAction(String action, [String? userId]) async {
+    final id = _roomId;
+    if (id == null) return;
+    try {
+      final token = await _authToken();
+      if (action == 'request')
+        await messageService.requestVoiceRoomSeat(token, id);
+      if (action == 'cancel')
+        await messageService.cancelVoiceRoomSeatRequest(token, id);
+      if (action == 'approve' && userId != null)
+        await messageService.approveVoiceRoomSeat(token, id, userId);
+      if (action == 'reject' && userId != null)
+        await messageService.rejectVoiceRoomSeat(token, id, userId);
+      if (action == 'leave') {
+        await messageService.leaveVoiceRoomSeat(token, id);
+        await AliyunRtcBridge.setMuted(true);
+      }
+      await _loadSeats();
+    } catch (e) {
+      if (mounted) _showRoomNotice('$e');
     }
   }
 
@@ -915,7 +975,10 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: _VoiceRoomSeats(room: widget.roomData),
+                    child: _VoiceRoomSeats(
+                        room: widget.roomData,
+                        state: seatState,
+                        onAction: _seatAction),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
