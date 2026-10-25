@@ -1172,21 +1172,34 @@ class _CpGiftCardState extends State<_CpGiftCard> {
       if (mounted) {
         final message = '$e'.replaceFirst('Exception: ', '');
         final insufficient = message.contains('金币余额不足');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            action: insufficient
-                ? SnackBarAction(
-                    label: '进入钱包',
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const WalletPage()),
-                      );
-                    },
-                  )
-                : null,
-          ),
-        );
+        if (insufficient) {
+          await showDialog<void>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('金币不足'),
+              content: Text(message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const WalletPage()),
+                    );
+                  },
+                  child: const Text('进入钱包'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => sending = false);
