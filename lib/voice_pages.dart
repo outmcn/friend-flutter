@@ -497,12 +497,6 @@ class _VoiceMatchSuccess extends StatelessWidget {
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 9),
           const Text('已为你匹配到一位声音伙伴', style: TextStyle(color: Colors.white60)),
-          const SizedBox(height: 14),
-          Wrap(spacing: 8, children: [
-            for (final tag
-                in (peer['tags'] is List ? peer['tags'] as List : const []))
-              Chip(label: Text('$tag'))
-          ]),
           const SizedBox(height: 28),
           if (error.isNotEmpty)
             Text(error, style: const TextStyle(color: Colors.redAccent)),

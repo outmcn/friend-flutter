@@ -37,8 +37,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 onSelectionChanged: (v) => setState(() => gender = v.first)),
             const SizedBox(height: 14),
             const _AuthField(label: '一句话介绍自己', icon: Icons.edit_outlined),
-            const SizedBox(height: 14),
-            const _AuthField(label: '选择兴趣标签', icon: Icons.local_offer_outlined),
             const SizedBox(height: 24),
             _PrimaryAuthButton(
               label: '完成',

@@ -395,12 +395,6 @@ class _FateSuccess extends StatelessWidget {
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 9),
           const Text('已为你匹配到一位有缘人', style: TextStyle(color: Colors.white60)),
-          const SizedBox(height: 14),
-          Wrap(spacing: 8, children: [
-            for (final tag
-                in (peer['tags'] is List ? peer['tags'] as List : const []))
-              Chip(label: Text('$tag'))
-          ]),
           if (error.isNotEmpty)
             Padding(
                 padding: const EdgeInsets.only(top: 16),
