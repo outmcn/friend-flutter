@@ -316,16 +316,24 @@ class _VoiceRoomSeats extends StatelessWidget {
 }
 
 class _VoiceRoomMessages extends StatelessWidget {
-  const _VoiceRoomMessages();
+  const _VoiceRoomMessages({required this.messages});
+  final List<String> messages;
 
   static const _platformNotice =
       '平台将24小时巡查违规内容，对私下交易、发布广告信息、从事任何金融违法犯罪活动等违规行为予以严肃处理，并上报相关部门。如您发现上述不正当行为，请及时向平台举报。让我们共同营造善意、平等、真实的氛围。';
 
   @override
-  Widget build(BuildContext context) => const SingleChildScrollView(
-        physics: NeverScrollableScrollPhysics(),
-        child: Text('平台公告：$_platformNotice',
-            style: TextStyle(color: Colors.white70, height: 1.45)),
+  Widget build(BuildContext context) => ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const Text('平台公告：$_platformNotice',
+              style: TextStyle(color: Colors.white70, height: 1.45)),
+          ...messages.map((message) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(message,
+                    style: const TextStyle(color: Colors.white70)),
+              )),
+        ],
       );
 }
 
@@ -602,6 +610,8 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   bool muted = true;
   bool _leaving = false;
   bool _rtcJoined = false;
+  final _roomMessages = <String>[];
+  final _messageController = TextEditingController();
 
   @override
   void initState() {
@@ -614,9 +624,40 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   String? get _roomId => widget.roomData['id']?.toString();
 
   void _handleImEvent(Map<String, dynamic> event) {
+    if ('${event['roomId'] ?? ''}' == (_roomId ?? '')) {
+      if (event['type'] == 'voice_room:system' && event['kind'] == 'join') {
+        _appendRoomMessage('${event['nickname'] ?? '用户'} 进入了频道');
+      } else if (event['type'] == 'voice_room:chat') {
+        _appendRoomMessage(
+            '${event['nickname'] ?? '用户'}：${event['text'] ?? ''}');
+      } else if (event['type'] == 'voice_room:gift') {
+        _appendRoomMessage(
+            '${event['sender'] ?? '用户'} 送给 ${event['receiver'] ?? '用户'} ${event['giftName'] ?? '礼物'}');
+      }
+    }
     if (event['type'] != 'voice_room:ended' ||
         '${event['roomId'] ?? ''}' != (_roomId ?? '')) return;
     unawaited(_handleRoomEnded());
+  }
+
+  void _appendRoomMessage(String message) {
+    if (!mounted || message.trim().isEmpty) return;
+    setState(() {
+      _roomMessages.add(message);
+      if (_roomMessages.length > 100) _roomMessages.removeAt(0);
+    });
+  }
+
+  Future<void> _sendRoomMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty || _roomId == null) return;
+    _messageController.clear();
+    try {
+      await messageService.sendVoiceRoomMessage(
+          await _authToken(), _roomId!, text);
+    } catch (e) {
+      if (mounted) _showRoomNotice('$e');
+    }
   }
 
   Future<void> _handleRoomEnded() async {
@@ -880,6 +921,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
     _seatRefreshTimer?.cancel();
     _imEvents?.cancel();
     messageService.dispose();
+    _messageController.dispose();
     if (!_leaving) {
       // 返回或右滑进入浮窗时保留 RTC，不在此处离开频道。
     }
@@ -955,7 +997,8 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                                 color: Colors.white70,
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
-                        Expanded(child: const _VoiceRoomMessages()),
+                        Expanded(
+                            child: _VoiceRoomMessages(messages: _roomMessages)),
                       ],
                     ),
                   ),
@@ -969,6 +1012,22 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                   color: const Color(0xff21172e),
                   padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                   child: Row(children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        onSubmitted: (_) => _sendRoomMessage(),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          hintText: '说点什么…',
+                          hintStyle: TextStyle(color: Colors.white54),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                        tooltip: '发送',
+                        onPressed: _sendRoomMessage,
+                        icon: const Icon(Icons.send, color: Colors.white)),
                     IconButton(
                         tooltip: muted ? '开启语音输入' : '关闭语音输入',
                         onPressed: () async {

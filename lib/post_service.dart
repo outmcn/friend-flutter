@@ -185,6 +185,19 @@ class DDPostService {
     return _decodeResponse(response, '麦位状态加载失败');
   }
 
+  Future<void> sendVoiceRoomMessage(
+      String token, String roomId, String text) async {
+    final response = await _client.post(
+      _api('/im/voice-rooms/$roomId/messages'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'text': text}),
+    );
+    _decodeResponse(response, '消息发送失败');
+  }
+
   Future<Map<String, dynamic>> requestVoiceRoomSeat(
       String token, String roomId) async {
     final response = await _client.post(
