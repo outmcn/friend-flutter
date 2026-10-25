@@ -103,6 +103,7 @@ class _HomeFolderCard extends StatelessWidget {
     required this.borderRadius,
     this.height = 132,
     required this.onTap,
+    this.imageAsset,
   });
   final IconData icon;
   final String title;
@@ -114,6 +115,7 @@ class _HomeFolderCard extends StatelessWidget {
   final BorderRadius borderRadius;
   final double height;
   final VoidCallback onTap;
+  final String? imageAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -132,52 +134,56 @@ class _HomeFolderCard extends StatelessWidget {
                 gradient: LinearGradient(colors: colors),
                 shape: shape,
               ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              child: imageAsset == null
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
+                      child: Row(
                         children: [
-                          Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  meta,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 9,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            meta,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 9,
-                            ),
-                          ),
+                          const SizedBox(width: 6),
+                          Icon(icon, color: Colors.white, size: 27),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Icon(icon, color: Colors.white, size: 27),
-                  ],
-                ),
-              ),
+                    )
+                  : ClipPath(
+                      clipper: ShapeBorderClipper(shape: shape),
+                      child: Image.asset(imageAsset!, fit: BoxFit.cover)),
             ),
           ),
         ),
