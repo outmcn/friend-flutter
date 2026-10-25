@@ -1127,46 +1127,45 @@ class _CpGiftCardState extends State<_CpGiftCard> {
           else if (!widget.partnerExists)
             const Text('暂无CP礼物', style: TextStyle(color: Colors.white60))
           else
-            SizedBox(
-              height: 520,
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: 18,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 6,
-                    mainAxisSpacing: 3,
-                    childAspectRatio: 1.02),
-                itemBuilder: (_, i) {
-                  final isBlessing = i >= 9;
-                  final index = isBlessing ? i - 9 : i;
-                  final gift = isBlessing
-                      ? (index < blessingGifts.length
-                          ? blessingGifts[index]
-                          : <String, dynamic>{})
-                      : gifts[index];
-                  final name = isBlessing
-                      ? '${gift['name'] ?? _blessingNames[index]}'
-                      : '${gift['name'] ?? '礼物'}';
-                  final asset = isBlessing
-                      ? 'assets/cp_blessings/gift_${int.tryParse('${gift['index']}') ?? index + 1}.png'
-                      : 'assets/cp_gifts/gift_${index + 1}.png';
-                  return InkWell(
-                    onTap: isBlessing || sending ? null : () => _sendGift(gift),
-                    child: Column(children: [
-                      Image.asset(asset, width: 48, height: 48),
-                      Text(name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 10)),
-                      Text('×${gift['receivedQuantity'] ?? 0}',
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 11)),
-                    ]),
-                  );
-                },
-              ),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              itemCount: 18,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 6,
+                  mainAxisSpacing: 3,
+                  childAspectRatio: 1.02),
+              itemBuilder: (_, i) {
+                final isBlessing = i >= 9;
+                final index = isBlessing ? i - 9 : i;
+                final gift = isBlessing
+                    ? (index < blessingGifts.length
+                        ? blessingGifts[index]
+                        : <String, dynamic>{})
+                    : gifts[index];
+                final name = isBlessing
+                    ? '${gift['name'] ?? _blessingNames[index]}'
+                    : '${gift['name'] ?? '礼物'}';
+                final asset = isBlessing
+                    ? 'assets/cp_blessings/gift_${int.tryParse('${gift['index']}') ?? index + 1}.png'
+                    : 'assets/cp_gifts/gift_${index + 1}.png';
+                return InkWell(
+                  onTap: isBlessing || sending ? null : () => _sendGift(gift),
+                  child: Column(children: [
+                    Image.asset(asset, width: 48, height: 48),
+                    Text(name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 10)),
+                    Text('×${gift['receivedQuantity'] ?? 0}',
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 11)),
+                  ]),
+                );
+              },
             ),
         ]),
       );
