@@ -166,7 +166,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           chat.muted,
           chat.online,
           chat.peerLatitude,
-          chat.peerLongitude);
+          chat.peerLongitude,
+          chat.avatarFrameAsset,
+          chat.avatarFrameSelection);
     });
     await ImLocalStore.saveConversations(
         accountId: accountId,
@@ -402,6 +404,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           row.peer?.online ?? false,
           row.peer?.latitude,
           row.peer?.longitude,
+          row.peer?.avatarFrameAsset,
+          row.peer?.avatarFrameSelection,
         ));
       }
       mapped.sort((a, b) {
