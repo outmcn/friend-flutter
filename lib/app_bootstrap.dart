@@ -487,7 +487,7 @@ class _AuthGateState extends State<AuthGate> {
       final last = conversation.lastMessage;
       final chat = _ChatPreview(
         peer?.nickname ?? '用户',
-        last?.text ?? '',
+        _conversationLastMessagePreview(last) ?? '',
         peer?.avatarUrl,
         peer?.avatarKey,
         peer?.id,
