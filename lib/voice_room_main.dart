@@ -499,8 +499,6 @@ class _VoiceGiftSheetState extends State<_VoiceGiftSheet> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('频道礼物',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             SizedBox(
               height: 78,

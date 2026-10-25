@@ -138,13 +138,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    '主页礼物',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                ),
                 gifts.isEmpty
                     ? const SizedBox(
                         height: 120,
