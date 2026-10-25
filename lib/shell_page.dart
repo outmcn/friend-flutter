@@ -413,13 +413,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 'localDurationSeconds': local['local_duration_seconds'] ??
                     local['localDurationSeconds'],
               });
-        // Local SQLite wins after a local delete; only fall back to the server
-        // preview when no local message is available.
-        final preview = localPreview ??
-            (locallyDeleted.contains(row.id)
+        final preview = (locallyDeleted.contains(row.id)
                 ? '开始一段新的聊天'
-                : _conversationLastMessagePreview(row.lastMessage) ??
-                    '开始一段新的聊天');
+                : _conversationLastMessagePreview(row.lastMessage)) ??
+            localPreview ??
+            '开始一段新的聊天';
         mapped.add(_ChatPreview(
           row.peer?.nickname ?? '会话 ${row.id}',
           preview,
