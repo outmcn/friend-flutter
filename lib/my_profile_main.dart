@@ -637,7 +637,7 @@ class _SpaceLayout extends StatelessWidget {
                     experience:
                         int.tryParse('${loveTree?['experience']}') ?? 0),
                 const SizedBox(height: 14),
-                _CpBlessingCard(userId: userId, partnerExists: partner != null),
+                _CpBlessingCard(),
               ],
             ),
           ),
@@ -977,77 +977,37 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
       );
 }
 
-class _CpBlessingCard extends StatefulWidget {
-  const _CpBlessingCard({required this.userId, required this.partnerExists});
-  final int? userId;
-  final bool partnerExists;
-
-  @override
-  State<_CpBlessingCard> createState() => _CpBlessingCardState();
-}
-
-class _CpBlessingCardState extends State<_CpBlessingCard> {
+class _CpBlessingCard extends StatelessWidget {
+  const _CpBlessingCard();
   static const names = [
-    '双燕同心',
-    '幸福碰杯',
-    '桃枝相依',
-    '喜结铃缘',
-    '星月长伴',
-    '比翼双飞',
-    '好运双灯',
-    '彩虹相守',
-    '甜蜜成双',
-    '喜庆相伴',
+    '初见心滴',
+    '晶莹心语',
+    '彩色情缘',
+    '星光心愿',
+    '花漾恋曲',
+    '梦幻告白',
+    '星月相伴',
+    '永恒心海'
   ];
-  List<Map<String, dynamic>> gifts = List.generate(
-    10,
-    (i) => {'index': i + 1, 'name': names[i], 'receivedQuantity': 0},
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    if (!widget.partnerExists || widget.userId == null) return;
-    try {
-      final token = (await SharedPreferences.getInstance())
-              .getString('friend.auth.token') ??
-          '';
-      final data =
-          await DDPostService().fetchCpBlessings(token, widget.userId!);
-      if (mounted) setState(() => gifts = data);
-    } catch (_) {}
-  }
-
   @override
   Widget build(BuildContext context) => GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
-        itemCount: 10,
+        itemCount: 8,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
-          crossAxisSpacing: 6,
-          mainAxisSpacing: 6,
-          childAspectRatio: .9,
-        ),
-        itemBuilder: (_, i) {
-          final gift = gifts[i];
-          final index = int.tryParse('${gift['index']}') ?? i + 1;
-          return Column(children: [
-            Image.asset('assets/cp_blessings/gift_$index.png',
-                width: 40, height: 40),
-            Text('${gift['name'] ?? names[i]}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 10)),
-            Text('收到 ${gift['receivedQuantity'] ?? 0} 个',
-                style: const TextStyle(color: Colors.white70, fontSize: 11)),
-          ]);
-        },
+            crossAxisCount: 4,
+            crossAxisSpacing: 6,
+            mainAxisSpacing: 6,
+            childAspectRatio: .9),
+        itemBuilder: (_, i) => Column(children: [
+          Image.asset('assets/cp_waterdrops/gift_${i + 1}.png',
+              width: 48, height: 48),
+          Text(names[i],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 10)),
+        ]),
       );
 }
 
