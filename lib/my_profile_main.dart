@@ -558,7 +558,6 @@ class _SpaceLayout extends StatelessWidget {
           backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
-          scrolledUnderElevation: 0,
           foregroundColor: Colors.white,
           actions: [
             IconButton(
@@ -587,7 +586,7 @@ class _SpaceLayout extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF5E36B5), Color(0xFF160D3B)],
+              colors: [Color(0xFF6A3BC4), Color(0xFF160D3B)],
             ),
           ),
           child: SafeArea(
