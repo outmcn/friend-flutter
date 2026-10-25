@@ -660,6 +660,18 @@ class _CpLoveTreeCard extends StatelessWidget {
     6600,
     9200
   ];
+  static const titles = [
+    '初遇',
+    '心动',
+    '暧昧',
+    '热恋',
+    '默契',
+    '守护',
+    '相知',
+    '挚爱',
+    '永恒',
+    '传奇'
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -670,42 +682,44 @@ class _CpLoveTreeCard extends StatelessWidget {
     }
     final max = level == thresholds.length - 1;
     final start = thresholds[level];
-    final next = max ? start : thresholds[level + 1];
-    final progress =
-        max ? 1.0 : ((safe - start) / (next - start)).clamp(0.0, 1.0);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-      decoration: BoxDecoration(
-        color: const Color(0x443B2184),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0x887E5CC9)),
+    final required = max ? 0 : thresholds[level + 1] - start;
+    final current = safe - start;
+    final progress = max ? 1.0 : (current / required).clamp(0.0, 1.0);
+
+    return Column(children: [
+      const Text('爱情树',
+          style: TextStyle(
+              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 8),
+      Image.asset('assets/cp_love_tree/level_${level + 1}.png',
+          width: double.infinity, height: 190, fit: BoxFit.contain),
+      const SizedBox(height: 10),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+            color: const Color(0x443B2184),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0x887E5CC9))),
+        child: Row(children: [
+          Text('Lv.${level + 1} · ${titles[level]}',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w800)),
+          const SizedBox(width: 12),
+          Expanded(
+              child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 8,
+                      backgroundColor: const Color(0x553B2184),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xffffc1e1))))),
+          const SizedBox(width: 8),
+          Text(max ? '$safe/9200+' : '$current/$required',
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ]),
       ),
-      child: Column(children: [
-        const Text('爱情树',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w800)),
-        const SizedBox(height: 8),
-        Image.asset('assets/cp_love_tree/level_${level + 1}.png',
-            width: double.infinity, height: 190, fit: BoxFit.contain),
-        const SizedBox(height: 8),
-        Text('Lv.${level + 1}',
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w800)),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            backgroundColor: const Color(0x553B2184),
-            valueColor: const AlwaysStoppedAnimation(Color(0xffffc1e1))),
-        const SizedBox(height: 6),
-        Text(max ? '$safe / MAX 经验' : '$safe / $next 经验',
-            style: const TextStyle(color: Colors.white70, fontSize: 13)),
-      ]),
-    );
+    ]);
   }
 }
 
