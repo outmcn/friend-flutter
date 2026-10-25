@@ -270,7 +270,7 @@ class _HomePageState extends State<HomePage> {
                                     Expanded(
                                       child: _HomeNormalCard(
                                         icon: Icons.sports_esports_outlined,
-                                        title: 'Game 俱乐部',
+                                        title: '心动雷达',
                                         colors: const [
                                           Color(0xffff9a5a),
                                           Color(0xffff5f8f),
