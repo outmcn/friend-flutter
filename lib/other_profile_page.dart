@@ -680,7 +680,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         builder: (_) => GiftExhibitionPage(
           userId: userId,
           userName: '${profile?['nickname'] ?? widget.name}',
-          onSendGift: _openGiftMenu,
+          onSendGift: () async {
+            await _openGiftMenu();
+          },
         ),
       ),
     );

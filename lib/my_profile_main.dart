@@ -186,7 +186,7 @@ class GiftExhibitionPage extends StatefulWidget {
 
   final int? userId;
   final String? userName;
-  final VoidCallback? onSendGift;
+  final Future<void> Function()? onSendGift;
 
   @override
   State<GiftExhibitionPage> createState() => _GiftExhibitionPageState();
@@ -328,7 +328,10 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
           actions: [
             if (widget.userId != null && widget.onSendGift != null)
               TextButton.icon(
-                onPressed: widget.onSendGift,
+                onPressed: () async {
+                  await widget.onSendGift?.call();
+                  if (mounted) await _load();
+                },
                 icon: const Icon(Icons.card_giftcard_outlined),
                 label: const Text('送礼物'),
               ),
