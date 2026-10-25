@@ -20,6 +20,58 @@ class _GlobalScrollToTopRegistry {
 
 final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
 
+class _FriendAvatar extends StatelessWidget {
+  const _FriendAvatar({
+    required this.avatarUrl,
+    this.frameAsset,
+    this.size = 48,
+    this.placeholder,
+  });
+  final String avatarUrl;
+  final String? frameAsset;
+  final double size;
+  final Widget? placeholder;
+
+  @override
+  Widget build(BuildContext context) {
+    final frame = frameAsset?.trim() ?? '';
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          ClipOval(
+            child: avatarUrl.trim().isEmpty
+                ? (placeholder ??
+                    const ColoredBox(
+                      color: Colors.black12,
+                      child: Icon(Icons.person_outline),
+                    ))
+                : _PermanentCachedImage(
+                    url: avatarUrl,
+                    width: size,
+                    height: size,
+                    fit: BoxFit.cover,
+                    placeholder: placeholder ??
+                        const ColoredBox(
+                          color: Colors.black12,
+                          child: Icon(Icons.person_outline),
+                        ),
+                  ),
+          ),
+          if (frame.isNotEmpty)
+            Positioned.fill(
+              child:
+                  IgnorePointer(child: Image.asset(frame, fit: BoxFit.contain)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 OverlayEntry? _activeTopNotice;
 
 void _showTopNotice(BuildContext context, Widget content,

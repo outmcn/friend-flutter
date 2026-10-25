@@ -484,11 +484,11 @@ class _VoiceMatchSuccess extends StatelessWidget {
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           const _VoiceUiNotice(),
           const SizedBox(height: 32),
-          CircleAvatar(
-              radius: 66,
-              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-              child:
-                  avatar.isEmpty ? const Icon(Icons.person, size: 62) : null),
+          _FriendAvatar(
+              avatarUrl: avatar,
+              frameAsset: '${peer['avatarFrameAsset'] ?? ''}',
+              size: 132,
+              placeholder: const Icon(Icons.person, size: 62)),
           const SizedBox(height: 24),
           Text('${peer['nickname'] ?? '声音伙伴'}',
               style: const TextStyle(

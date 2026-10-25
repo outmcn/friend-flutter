@@ -42,11 +42,18 @@ class DDImPeer {
       {required this.id,
       required this.nickname,
       this.avatarKey,
-      this.avatarUrl, this.online = false, this.latitude, this.longitude});
+      this.avatarUrl,
+      this.avatarFrameAsset,
+      this.avatarFrameSelection,
+      this.online = false,
+      this.latitude,
+      this.longitude});
   final String id;
   final String nickname;
   final String? avatarKey;
   final String? avatarUrl;
+  final String? avatarFrameAsset;
+  final String? avatarFrameSelection;
   final bool online;
   final double? latitude;
   final double? longitude;
@@ -56,6 +63,8 @@ class DDImPeer {
         nickname: '${json['nickname'] ?? json['username'] ?? '用户'}',
         avatarKey: json['avatarKey'] as String?,
         avatarUrl: json['avatarUrl'] as String?,
+        avatarFrameAsset: json['avatarFrameAsset'] as String?,
+        avatarFrameSelection: json['avatarFrameSelection'] as String?,
         online: json['online'] == true,
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),

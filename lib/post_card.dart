@@ -962,22 +962,35 @@ class _DiscoverProfileCard extends StatelessWidget {
   }
 
   Widget _avatarFrame(
-      {required Widget child, required String gender, double size = 40}) {
+      {required Widget child,
+      required String gender,
+      double size = 40,
+      String? frameAsset}) {
     final color = gender == '男'
         ? const Color(0xFF1677FF)
         : gender == '女'
             ? const Color(0xFFFF6FAE)
             : Colors.transparent;
-    return Container(
-        width: size,
-        height: size,
-        padding: EdgeInsets.all(color == Colors.transparent ? 0 : 2),
-        decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: color == Colors.transparent
-                ? null
-                : Border.all(color: color, width: 2)),
-        child: ClipOval(child: child));
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Container(
+            width: size,
+            height: size,
+            padding: EdgeInsets.all(color == Colors.transparent ? 0 : 2),
+            decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: color == Colors.transparent
+                    ? null
+                    : Border.all(color: color, width: 2)),
+            child: ClipOval(child: child)),
+        if (frameAsset != null && frameAsset.isNotEmpty)
+          Positioned.fill(
+              child: IgnorePointer(
+                  child: Image.asset(frameAsset, fit: BoxFit.contain))),
+      ],
+    );
   }
 
   @override
@@ -998,6 +1011,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                 children: [
                   _avatarFrame(
                     gender: post.gender,
+                    frameAsset: post.authorAvatarFrameAsset,
                     child: SizedBox.expand(
                       child: post.avatar.trim().isEmpty
                           ? const Icon(Icons.person_outline)

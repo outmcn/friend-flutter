@@ -34,6 +34,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final clean = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
     return clean.characters.take(100).toList().join();
   }
+
   void _normalizeSignature({TextEditingValue? value}) {
     final current = value ?? signature.value;
     if (current.composing.isValid && !current.composing.isCollapsed) return;
@@ -57,7 +58,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ? data['user'] as Map<String, dynamic>
           : data;
       nickname.text = '${profile['nickname'] ?? ''}';
-      signature.text = _formatSignature('${profile['signature'] ?? profile['bio'] ?? ''}');
+      signature.text =
+          _formatSignature('${profile['signature'] ?? profile['bio'] ?? ''}');
       if (profile['avatarKey'] is String &&
           (profile['avatarKey'] as String).trim().isNotEmpty) {
         final signed = await service.resolveAvatarUrl(
@@ -121,12 +123,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final token = p.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       final avatarKey = await _avatarObjectKey(token);
+      final frameAsset = p.getString('friend.avatar.frame.asset');
+      final frameSelection = p.getString('friend.avatar.frame.selection');
       await service.updateMe(
         token: token,
         nickname: nickname.text.trim(),
         signature: signature.text.trim(),
         bio: signature.text.trim(),
         avatarKey: avatarKey,
+        avatarFrameAsset: frameAsset,
+        avatarFrameSelection: frameSelection,
       );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -193,7 +199,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: const InputDecoration(labelText: '昵称')),
                 TextField(
                     controller: signature,
-                    onChanged: (_) => _normalizeSignature(value: signature.value),
+                    onChanged: (_) =>
+                        _normalizeSignature(value: signature.value),
                     maxLength: 100,
                     minLines: 1,
                     maxLines: null,

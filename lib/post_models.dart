@@ -34,6 +34,8 @@ class DDPost {
     required this.nickname,
     required this.avatar,
     this.gender = '',
+    this.authorAvatarFrameAsset = '',
+    this.authorAvatarFrameSelection = '',
     this.authorOnline = false,
     required this.likes,
     required this.favorites,
@@ -62,6 +64,8 @@ class DDPost {
   final String nickname;
   final String avatar;
   final String gender;
+  final String authorAvatarFrameAsset;
+  final String authorAvatarFrameSelection;
   final bool authorOnline;
   final int likes;
   final int favorites;
@@ -159,7 +163,12 @@ class DDPost {
         nickname: '${json['nickname'] ?? '用户'}',
         avatar: _mediaValue(json['avatar'], preserveMediaKeys),
         gender: '${json['gender'] ?? ''}',
-        authorOnline: json['authorOnline'] == true || json['author_online'] == true,
+        authorAvatarFrameAsset:
+            '${json['authorAvatarFrameAsset'] ?? json['author_avatar_frame_asset'] ?? ''}',
+        authorAvatarFrameSelection:
+            '${json['authorAvatarFrameSelection'] ?? json['author_avatar_frame_selection'] ?? ''}',
+        authorOnline:
+            json['authorOnline'] == true || json['author_online'] == true,
         likes: _intValue(json['likes']) ?? 0,
         favorites: _intValue(json['favorites']) ?? 0,
         comments: _intValue(json['comments']) ?? 0,
@@ -178,7 +187,8 @@ class DDPost {
         imageHeight: _intValue(json['imageHeight']),
         thumbnailWidth: _intValue(json['thumbnailWidth']),
         thumbnailHeight: _intValue(json['thumbnailHeight']),
-        reviewStatus: '${json['reviewStatus'] ?? json['review_status'] ?? 'approved'}',
+        reviewStatus:
+            '${json['reviewStatus'] ?? json['review_status'] ?? 'approved'}',
       );
 }
 

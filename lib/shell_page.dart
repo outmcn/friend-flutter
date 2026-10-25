@@ -775,8 +775,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      CircleAvatar(
-                          radius: 24, backgroundImage: _avatarFor(chat)),
+                      _FriendAvatar(
+                        avatarUrl: chat.avatarUrl ?? '',
+                        frameAsset: chat.avatarFrameAsset,
+                        size: 48,
+                        placeholder: const Icon(Icons.person_outline),
+                      ),
                       if (chat.online)
                         Positioned(
                           right: -1,
@@ -997,7 +1001,9 @@ class _ChatPreview {
       this.muted = false,
       this.online = false,
       this.peerLatitude,
-      this.peerLongitude]);
+      this.peerLongitude,
+      this.avatarFrameAsset,
+      this.avatarFrameSelection]);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -1011,6 +1017,8 @@ class _ChatPreview {
   final bool pinned;
   final bool muted;
   final bool online;
+  final String? avatarFrameAsset;
+  final String? avatarFrameSelection;
   final double? peerLatitude;
   final double? peerLongitude;
 
@@ -1030,6 +1038,8 @@ class _ChatPreview {
         row['online'] == true,
         (row['peerLatitude'] as num?)?.toDouble(),
         (row['peerLongitude'] as num?)?.toDouble(),
+        row['avatarFrameAsset'] as String?,
+        row['avatarFrameSelection'] as String?,
       );
 
   _ChatPreview copyWith({bool? pinned, bool? muted, int? unreadCount}) =>
@@ -1049,6 +1059,8 @@ class _ChatPreview {
         online,
         peerLatitude,
         peerLongitude,
+        avatarFrameAsset,
+        avatarFrameSelection,
       );
 
   Map<String, dynamic> toCache() => {
@@ -1065,6 +1077,8 @@ class _ChatPreview {
         'pinned': pinned,
         'muted': muted,
         'online': online,
+        'avatarFrameAsset': avatarFrameAsset,
+        'avatarFrameSelection': avatarFrameSelection,
         'peerLatitude': peerLatitude,
         'peerLongitude': peerLongitude,
       };

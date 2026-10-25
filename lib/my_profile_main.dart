@@ -2520,6 +2520,20 @@ class _DDProfilePageState extends State<DDProfilePage>
       _sonicUrl = nextSonicUrl;
       _avatarLocalPath = localAvatar;
       _avatarUrl = signedAvatar;
+      _avatarFrameAsset =
+          '${loaded['avatarFrameAsset'] ?? loaded['avatar_frame_asset'] ?? ''}'
+                  .trim()
+                  .isEmpty
+              ? null
+              : '${loaded['avatarFrameAsset'] ?? loaded['avatar_frame_asset']}'
+                  .trim();
+      _avatarFrameSelection =
+          '${loaded['avatarFrameSelection'] ?? loaded['avatar_frame_selection'] ?? ''}'
+                  .trim()
+                  .isEmpty
+              ? null
+              : '${loaded['avatarFrameSelection'] ?? loaded['avatar_frame_selection']}'
+                  .trim();
       _avatarReviewRejected = loaded['avatarReviewStatus'] == 'rejected' ||
           loaded['avatar_review_status'] == 'rejected';
       _stealth = '${loaded['presenceMode'] ?? 'online'}' == 'stealth';
@@ -3280,6 +3294,18 @@ class _AvatarDressupPageState extends State<_AvatarDressupPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('friend.avatar.frame.selection', id);
     await prefs.setString('friend.avatar.frame.asset', asset);
+    try {
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isNotEmpty) {
+        await DDPostService().updateMe(
+          token: token,
+          avatarFrameAsset: asset,
+          avatarFrameSelection: id,
+        );
+      }
+    } catch (_) {
+      // 本地选择保留，资料同步失败时下次保存资料继续同步。
+    }
     if (mounted) setState(() => selected = id);
   }
 

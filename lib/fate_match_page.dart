@@ -382,11 +382,11 @@ class _FateSuccess extends StatelessWidget {
           const Text('缘分匹配',
               style: TextStyle(color: Colors.white60, fontSize: 11)),
           const SizedBox(height: 36),
-          CircleAvatar(
-              radius: 66,
-              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-              child:
-                  avatar.isEmpty ? const Icon(Icons.person, size: 62) : null),
+          _FriendAvatar(
+              avatarUrl: avatar,
+              frameAsset: '${peer['avatarFrameAsset'] ?? ''}',
+              size: 132,
+              placeholder: const Icon(Icons.person, size: 62)),
           const SizedBox(height: 24),
           Text('${peer['nickname'] ?? '有缘人'}',
               style: const TextStyle(
