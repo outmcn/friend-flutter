@@ -74,6 +74,43 @@ class _FriendAvatar extends StatelessWidget {
 
 OverlayEntry? _activeTopNotice;
 
+String _simplifyNoticeText(String value) {
+  var text = value.trim();
+  text = text.replaceFirst(RegExp(r'^Exception:\s*'), '');
+  text = text.replaceFirst(RegExp(r'^Error:\s*'), '');
+  text =
+      text.replaceFirst(RegExp(r'\s*\(HTTP\s*\d+\)', caseSensitive: false), '');
+  text = text.replaceFirst(RegExp(r'\s*HTTP\s*\d+', caseSensitive: false), '');
+  const replacements = {
+    'Network is unreachable': '网络不可用',
+    'Connection refused': '网络连接失败',
+    'Connection reset by peer': '网络连接中断',
+    'Failed host lookup': '网络连接失败',
+    'SocketException': '网络连接失败',
+    'TimeoutException': '请求超时',
+    'Request timeout': '请求超时',
+    'Unauthorized': '登录状态已失效',
+    'Forbidden': '暂无权限',
+    'Not Found': '内容不存在',
+    'Internal Server Error': '服务器暂时不可用',
+    'The data couldn\'t be read because it isn\'t in the correct format':
+        '数据格式错误',
+  };
+  for (final entry in replacements.entries) {
+    if (text.contains(entry.key)) return entry.value;
+  }
+  if (text.isEmpty) return '操作失败';
+  return text.length > 80 ? '${text.substring(0, 80)}…' : text;
+}
+
+Widget _simplifyNoticeContent(Widget content) {
+  if (content is Text && content.data != null) {
+    return Text(_simplifyNoticeText(content.data!),
+        maxLines: 2, overflow: TextOverflow.ellipsis);
+  }
+  return content;
+}
+
 void _showTopNotice(BuildContext context, Widget content,
     {VoidCallback? onTap}) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
@@ -87,7 +124,7 @@ void _showTopNotice(BuildContext context, Widget content,
 
   entry = OverlayEntry(
     builder: (context) => _FloatingNotice(
-      content: content,
+      content: _simplifyNoticeContent(content),
       onTap: onTap,
       onClose: close,
     ),
