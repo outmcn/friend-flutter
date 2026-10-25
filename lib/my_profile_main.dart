@@ -1030,6 +1030,18 @@ class _CpGiftCardState extends State<_CpGiftCard> {
   bool loading = true;
   bool sending = false;
 
+  static const _cpGiftNames = [
+    '心动初遇',
+    '甜蜜糖果',
+    '浪漫花束',
+    '情侣手链',
+    '怦然心动',
+    '浪漫烟花',
+    '永恒对戒',
+    '真爱水晶',
+    '一生一世',
+  ];
+
   static const _blessingNames = [
     '双燕同心',
     '幸福碰杯',
@@ -1143,8 +1155,18 @@ class _CpGiftCardState extends State<_CpGiftCard> {
                 final gift = isBlessing
                     ? (index < blessingGifts.length
                         ? blessingGifts[index]
-                        : <String, dynamic>{})
-                    : gifts[index];
+                        : <String, dynamic>{
+                            'name': _blessingNames[index],
+                            'receivedQuantity': 0,
+                            'index': index + 1,
+                          })
+                    : (index < gifts.length
+                        ? gifts[index]
+                        : <String, dynamic>{
+                            'name': _cpGiftNames[index],
+                            'receivedQuantity': 0,
+                            'index': index + 1,
+                          });
                 final name = isBlessing
                     ? '${gift['name'] ?? _blessingNames[index]}'
                     : '${gift['name'] ?? '礼物'}';
