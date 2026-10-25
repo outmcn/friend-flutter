@@ -1832,6 +1832,8 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
   List<Map<String, dynamic>> rooms = const [];
   bool loading = true;
   String? loadError;
+  String selectedCategory = '附近';
+  static const _categories = ['附近', '闲聊', '点歌', '开黑', '睡眠', '树洞'];
 
   @override
   void initState() {
@@ -1911,7 +1913,35 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           scrolledUnderElevation: 0,
-          title: const Text('频道'),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: _categories
+                .map((category) => GestureDetector(
+                      onTap: () => setState(() => selectedCategory = category),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 7),
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
+                          Text(category,
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: selectedCategory == category
+                                      ? null
+                                      : Theme.of(context).hintColor)),
+                          const SizedBox(height: 4),
+                          AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              width: selectedCategory == category ? 20 : 0,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(99))),
+                        ]),
+                      ),
+                    ))
+                .toList(),
+          ),
           actions: widget.isOwner && rooms.isNotEmpty
               ? [IconButton(onPressed: _create, icon: const Icon(Icons.add))]
               : const [],
