@@ -1912,9 +1912,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
           elevation: 0,
           scrolledUnderElevation: 0,
           title: const Text('频道'),
-          actions: widget.isOwner && rooms.isNotEmpty
-              ? [IconButton(onPressed: _create, icon: const Icon(Icons.add))]
-              : const [],
+          actions: const [],
         ),
         extendBodyBehindAppBar: true,
         body: Container(
