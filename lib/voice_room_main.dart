@@ -963,6 +963,29 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
               ),
             ),
           ]),
+          bottomNavigationBar: SafeArea(
+              top: false,
+              child: Container(
+                  color: const Color(0xff21172e),
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                  child: Row(children: [
+                    IconButton(
+                        tooltip: muted ? '开启语音输入' : '关闭语音输入',
+                        onPressed: () async {
+                          final next = !muted;
+                          if (!_seatOn) {
+                            _showRoomNotice('房主批准上麦后才能开启麦克风');
+                            return;
+                          }
+                          await _setRtcMuted(next);
+                        },
+                        icon: Icon(muted ? Icons.mic_off : TIcons.microphone_1,
+                            color: Colors.white)),
+                    IconButton(
+                        tooltip: '送礼',
+                        onPressed: _showVoiceGiftSheet,
+                        icon: const Icon(TIcons.gift, color: Colors.white)),
+                  ]))),
         ),
       );
 }
