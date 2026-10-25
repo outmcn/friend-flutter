@@ -806,6 +806,21 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
     _leaving = true;
     _seatRefreshTimer?.cancel();
     _VoiceRoomFloatingOverlay.remove();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserId = prefs.getString('friend.auth.userId');
+      final ownerId = _ownerId?.toString();
+      if (currentUserId != null &&
+          currentUserId.isNotEmpty &&
+          ownerId != null &&
+          currentUserId == ownerId) {
+        await messageService
+            .endVoiceRoom(await _authToken(), _roomId ?? '')
+            .timeout(const Duration(seconds: 3));
+      }
+    } catch (e) {
+      if (mounted) _showRoomNotice('结束频道失败，频道仍可能保持开启');
+    }
     if (_rtcJoined) {
       try {
         await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
