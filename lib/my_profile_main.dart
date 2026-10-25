@@ -1003,7 +1003,6 @@ class _CpBlessingCardState extends State<_CpBlessingCard> {
     10,
     (i) => {'index': i + 1, 'name': names[i], 'receivedQuantity': 0},
   );
-  bool loading = true;
 
   @override
   void initState() {
@@ -1012,10 +1011,7 @@ class _CpBlessingCardState extends State<_CpBlessingCard> {
   }
 
   Future<void> _load() async {
-    if (!widget.partnerExists || widget.userId == null) {
-      if (mounted) setState(() => loading = false);
-      return;
-    }
+    if (!widget.partnerExists || widget.userId == null) return;
     try {
       final token = (await SharedPreferences.getInstance())
               .getString('friend.auth.token') ??
@@ -1023,59 +1019,35 @@ class _CpBlessingCardState extends State<_CpBlessingCard> {
       final data =
           await DDPostService().fetchCpBlessings(token, widget.userId!);
       if (mounted) setState(() => gifts = data);
-    } catch (_) {
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
+    } catch (_) {}
   }
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-            color: const Color(0x443B2184),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0x887E5CC9))),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('祝福礼物',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          if (!widget.partnerExists)
-            const Text('暂无祝福礼物', style: TextStyle(color: Colors.white60))
-          else if (loading)
-            const Center(child: CircularProgressIndicator())
-          else
-            SizedBox(
-              height: 210,
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: gifts.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    crossAxisSpacing: 6,
-                    mainAxisSpacing: 6,
-                    childAspectRatio: .9),
-                itemBuilder: (_, i) {
-                  final gift = gifts[i];
-                  return Column(children: [
-                    Image.asset(
-                        'assets/cp_blessings/gift_${(int.tryParse('${gift['index']}') ?? i + 1)}.png',
-                        width: 40,
-                        height: 40),
-                    Text('${gift['name'] ?? names[i]}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 10)),
-                    Text('收到 ${gift['receivedQuantity'] ?? 0} 个',
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 11)),
-                  ]);
-                },
-              ),
-            ),
-        ]),
+  Widget build(BuildContext context) => GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: 10,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 5,
+          crossAxisSpacing: 6,
+          mainAxisSpacing: 6,
+          childAspectRatio: .9,
+        ),
+        itemBuilder: (_, i) {
+          final gift = gifts[i];
+          final index = int.tryParse('${gift['index']}') ?? i + 1;
+          return Column(children: [
+            Image.asset('assets/cp_blessings/gift_$index.png',
+                width: 40, height: 40),
+            Text('${gift['name'] ?? names[i]}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 10)),
+            Text('收到 ${gift['receivedQuantity'] ?? 0} 个',
+                style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          ]);
+        },
       );
 }
 
