@@ -1171,8 +1171,21 @@ class _CpGiftCardState extends State<_CpGiftCard> {
     } catch (e) {
       if (mounted) {
         final message = '$e'.replaceFirst('Exception: ', '');
+        final insufficient = message.contains('金币余额不足');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
+          SnackBar(
+            content: Text(message),
+            action: insufficient
+                ? SnackBarAction(
+                    label: '进入钱包',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const WalletPage()),
+                      );
+                    },
+                  )
+                : null,
+          ),
         );
       }
     } finally {
