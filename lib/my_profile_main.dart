@@ -1168,6 +1168,13 @@ class _CpGiftCardState extends State<_CpGiftCard> {
           name: '${gift['name']}');
       await _load();
       await widget.onGiftSent?.call();
+    } catch (e) {
+      if (mounted) {
+        final message = '$e'.replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
     } finally {
       if (mounted) setState(() => sending = false);
     }
