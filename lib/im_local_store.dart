@@ -182,8 +182,8 @@ class ImLocalStore {
   }) async {
     final rows = await (await _db()).query(
       'messages',
-      where: 'account_id = ? AND conversation_id = ? AND kind <> ?',
-      whereArgs: [accountId, conversationId, 'call'],
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
       orderBy: 'created_at DESC, CAST(message_id AS INTEGER) DESC',
       limit: 1,
     );
