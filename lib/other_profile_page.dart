@@ -195,7 +195,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                                   Text(
                                                       '${gift['coinPrice'] ?? gift['coin_price'] ?? 0}金币',
                                                       style: const TextStyle(
-                                                          fontSize: 10)),
+                                                          fontSize: 10,
+                                                          color:
+                                                              Colors.orange)),
                                                 ]),
                                           ),
                                         );

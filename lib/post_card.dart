@@ -810,7 +810,9 @@ class _PostGiftSheetState extends State<_PostGiftSheet> {
                                           style: const TextStyle(fontSize: 11)),
                                       Text(
                                           '${pageGifts[index]['coin_price'] ?? pageGifts[index]['coinPrice'] ?? 0}金币',
-                                          style: const TextStyle(fontSize: 10))
+                                          style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.orange))
                                     ]),
                                   ),
                                 );

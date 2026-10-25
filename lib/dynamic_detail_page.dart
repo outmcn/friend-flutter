@@ -1014,7 +1014,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                                       style: const TextStyle(fontSize: 11)),
                                   Text(
                                       '${gift['coin_price'] ?? gift['coinPrice'] ?? 0}金币',
-                                      style: const TextStyle(fontSize: 10)),
+                                      style: const TextStyle(
+                                          fontSize: 10, color: Colors.orange)),
                                 ]),
                               );
                             },
