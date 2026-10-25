@@ -555,7 +555,7 @@ class _SpaceLayout extends StatelessWidget {
         backgroundColor: const Color(0xFF160D3B),
         appBar: AppBar(
           title: const Text('CP空间'),
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color(0xFF6A3BC4),
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           foregroundColor: Colors.white,
@@ -917,7 +917,7 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           title: const Text('CP 小窝'),
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color(0xFF6A3BC4),
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           foregroundColor: Colors.white,
