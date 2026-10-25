@@ -2346,68 +2346,65 @@ class _DDProfilePageState extends State<DDProfilePage>
       showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (_, setSheetState) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: const Text('在线 / 隐身'),
-                subtitle: Text('${_stealth ? '当前：隐身' : '当前：在线'} · 已同步'),
-                trailing: Switch(
-                  value: !_stealth,
-                  onChanged: _presenceUpdating
-                      ? null
-                      : (value) {
-                          unawaited(_setPresenceMode(
-                            value ? 'online' : 'stealth',
-                            setSheetState,
-                          ));
-                        },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('状态设置',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                 ),
-              ),
-              SwitchListTile(
-                title: const Text('全站防骚扰'),
-                subtitle: const Text('服务端同步'),
-                value: _antiHarassment,
-                onChanged: (value) {
-                  final before = _antiHarassment;
-                  setSheetState(() => _antiHarassment = value);
-                  unawaited(_savePreferences(
-                    antiHarassment: value,
-                    onFailure: () =>
-                        setSheetState(() => _antiHarassment = before),
-                  ));
-                },
-              ),
-              SwitchListTile(
-                title: const Text('智能屏蔽'),
-                subtitle: const Text('服务端同步'),
-                value: _smartBlock,
-                onChanged: (value) {
-                  final before = _smartBlock;
-                  setSheetState(() => _smartBlock = value);
-                  unawaited(_savePreferences(
-                    smartBlock: value,
-                    onFailure: () => setSheetState(() => _smartBlock = before),
-                  ));
-                },
-              ),
-              ListTile(
-                title: const Text('开启匹配'),
-                subtitle: const Text('服务端同步'),
-                trailing: Switch(
-                  value: _matching,
-                  onChanged: (value) {
-                    final before = _matching;
-                    setSheetState(() => _matching = value);
-                    unawaited(_savePreferences(
-                      matchingEnabled: value,
-                      onFailure: () => setSheetState(() => _matching = before),
-                    ));
-                  },
+                const SizedBox(height: 18),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _PresenceCircleSwitch(
+                        label: '在线',
+                        value: !_stealth,
+                        onChanged: _presenceUpdating
+                            ? null
+                            : (value) => unawaited(_setPresenceMode(
+                                value ? 'online' : 'stealth', setSheetState))),
+                    _PresenceCircleSwitch(
+                        label: _matching ? '想聊' : '沉默',
+                        value: _matching,
+                        onChanged: (value) {
+                          final before = _matching;
+                          setSheetState(() => _matching = value);
+                          unawaited(_savePreferences(
+                              matchingEnabled: value,
+                              onFailure: () =>
+                                  setSheetState(() => _matching = before)));
+                        }),
+                    _PresenceCircleSwitch(
+                        label: '雷达',
+                        value: _smartBlock,
+                        onChanged: (value) {
+                          final before = _smartBlock;
+                          setSheetState(() => _smartBlock = value);
+                          unawaited(_savePreferences(
+                              smartBlock: value,
+                              onFailure: () =>
+                                  setSheetState(() => _smartBlock = before)));
+                        }),
+                    _PresenceCircleSwitch(
+                        label: '防护',
+                        value: _antiHarassment,
+                        onChanged: (value) {
+                          final before = _antiHarassment;
+                          setSheetState(() => _antiHarassment = value);
+                          unawaited(_savePreferences(
+                              antiHarassment: value,
+                              onFailure: () => setSheetState(
+                                  () => _antiHarassment = before)));
+                        }),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -3389,6 +3386,41 @@ class _AvatarDressupPageState extends State<_AvatarDressupPage> {
       ),
     );
   }
+}
+
+class _PresenceCircleSwitch extends StatelessWidget {
+  const _PresenceCircleSwitch(
+      {required this.label, required this.value, required this.onChanged});
+  final String label;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onChanged == null ? null : () => onChanged!(!value),
+        child: Column(children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: value
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: Border.all(
+                  color: value
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outlineVariant),
+            ),
+            child: Icon(value ? Icons.check_rounded : Icons.remove_rounded,
+                color: value
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 7),
+          Text(label, style: const TextStyle(fontSize: 13)),
+        ]),
+      );
 }
 
 class _ProfileActionButton extends StatelessWidget {
