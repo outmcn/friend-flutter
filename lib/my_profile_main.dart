@@ -2910,7 +2910,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                         TextOverflow.ellipsis,
                                                     style: const TextStyle(
                                                         fontSize: 30,
-                                                        height: 1.2,
+                                                        height: 1.0,
                                                         fontWeight:
                                                             FontWeight.w700),
                                                   ),
@@ -2935,6 +2935,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                   'ID：${p?['id'] ?? p?['userId'] ?? ''}',
                                                   style: TextStyle(
                                                     fontSize: 16,
+                                                    height: 1.0,
                                                     color: Theme.of(context)
                                                         .colorScheme
                                                         .onSurface
