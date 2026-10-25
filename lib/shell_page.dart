@@ -492,7 +492,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
           IconButton(
             tooltip: '添加',
-            onPressed: _openNewChat,
+            onPressed: _openPlusActions,
             icon: _tdIcon('add'),
           ),
         ],
@@ -515,6 +515,44 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
    * 聊天列表页统一使用 AppBar；此处只保留会话列表内容，避免自定义顶栏
    * 与其他页面的系统安全区、标题高度和操作按钮间距产生差异。
    */
+  Future<void> _openPlusActions() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.group_add_outlined),
+              title: const Text('发起群聊'),
+              onTap: () => Navigator.pop(sheetContext, 'group'),
+            ),
+            ListTile(
+              leading: const Icon(TIcons.user_add),
+              title: const Text('添加朋友'),
+              onTap: () => Navigator.pop(sheetContext, 'friend'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code_scanner),
+              title: const Text('扫一扫'),
+              onTap: () => Navigator.pop(sheetContext, 'scan'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+    if (action == 'friend') {
+      await _openNewChat();
+    } else if (action == 'group') {
+      _showTopNotice(context, const Text('发起群聊功能即将开放'));
+    } else if (action == 'scan') {
+      _showTopNotice(context, const Text('扫一扫功能即将开放'));
+    }
+  }
+
   Future<void> _openNewChat() async {
     final selected = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
