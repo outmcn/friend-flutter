@@ -960,18 +960,18 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
               children: [
                 _CpCastleCard(
                     experience: currentCheckin?['experience'] is int
-                        ? widget.checkin!['experience'] as int
+                        ? currentCheckin!['experience'] as int
                         : int.tryParse('${currentCheckin?['experience']}') ??
                             0),
                 const SizedBox(height: 14),
                 _CpSpaceLevelCard(
                     experience: currentCheckin?['experience'] is int
-                        ? widget.checkin!['experience'] as int
+                        ? currentCheckin!['experience'] as int
                         : int.tryParse('${currentCheckin?['experience']}') ??
                             0),
                 const SizedBox(height: 14),
                 _CpTaskCard(
-                    checkin: widget.checkin,
+                    checkin: currentCheckin,
                     userId: widget.userId,
                     partnerId: int.tryParse('${widget.partner?['userId']}'),
                     partnerExists: widget.partner != null),
@@ -983,7 +983,7 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
                     onGiftSent: _reloadProgress),
                 const SizedBox(height: 14),
                 _CpCheckinCard(
-                    checkin: widget.checkin,
+                    checkin: currentCheckin,
                     onCheckin: widget.onCheckin ?? () {}),
                 const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
