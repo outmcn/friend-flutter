@@ -513,6 +513,10 @@ class _ProfileSpacePageState extends State<ProfileSpacePage> {
     } catch (_) {}
   }
 
+  Future<void> _reloadProgress() async {
+    await Future.wait([_loadCheckin(), _loadLoveTree()]);
+  }
+
   @override
   Widget build(BuildContext context) => _SpaceLayout(
         nickname: widget.nickname ?? '我',
@@ -964,7 +968,8 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
                 _CpGiftCard(
                     userId: widget.userId,
                     partnerId: int.tryParse('${widget.partner?['userId']}'),
-                    partnerExists: widget.partner != null),
+                    partnerExists: widget.partner != null,
+                    onGiftSent: _reloadProgress),
                 const SizedBox(height: 14),
                 _CpCheckinCard(
                     checkin: widget.checkin,
@@ -1016,10 +1021,13 @@ class _CpGiftCard extends StatefulWidget {
   const _CpGiftCard(
       {required this.userId,
       required this.partnerId,
-      required this.partnerExists});
+      required this.partnerExists,
+      this.onGiftSent});
   final int? userId;
   final int? partnerId;
   final bool partnerExists;
+  final Future<void> Function()? onGiftSent;
+
   @override
   State<_CpGiftCard> createState() => _CpGiftCardState();
 }
@@ -1148,6 +1156,7 @@ class _CpGiftCardState extends State<_CpGiftCard> {
           userId: widget.partnerId!,
           name: '${gift['name']}');
       await _load();
+      await widget.onGiftSent?.call();
     } finally {
       if (mounted) setState(() => sending = false);
     }
