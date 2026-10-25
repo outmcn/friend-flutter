@@ -219,8 +219,13 @@ class _VoiceRoomSeats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final raw = room?['members'] ?? room?['participants'] ?? room?['speakers'];
-    final members = raw is List ? raw.whereType<Map>().toList() : <Map>[];
+    final rawSeats = state?['seats'];
+    final seats = rawSeats is List
+        ? rawSeats
+            .whereType<Map>()
+            .map((x) => x.cast<String, dynamic>())
+            .toList()
+        : <Map<String, dynamic>>[];
     final owner = <String, dynamic>{
       'user_id': room?['owner_user_id'] ?? room?['ownerUserId'],
       'nickname': room?['owner_nickname'] ??
@@ -230,22 +235,6 @@ class _VoiceRoomSeats extends StatelessWidget {
           room?['owner_avatar'] ?? room?['ownerAvatar'] ?? room?['avatar'],
       'role': 'owner',
     };
-    final ownerId = owner['user_id'];
-    final others = members.where((member) {
-      final id = member['user_id'] ?? member['userId'];
-      return id == null || ownerId == null || '$id' != '$ownerId';
-    }).toList();
-    final managers = others.where((member) {
-      final role =
-          '${member['role'] ?? member['user_role'] ?? member['userRole']}'
-              .toLowerCase();
-      return role == 'admin' ||
-          role == 'manager' ||
-          role == '管理员' ||
-          role == '管理';
-    }).toList();
-    final normal =
-        others.where((member) => !managers.contains(member)).toList();
     final hasOwner = owner['user_id'] != null ||
         owner['nickname'] != null ||
         owner['avatar'] != null;
@@ -260,45 +249,25 @@ class _VoiceRoomSeats extends StatelessWidget {
                 color: Colors.white70, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         Expanded(
-          child: !hasOwner && members.isEmpty
+          child: !hasOwner && seats.isEmpty
               ? const Center(
                   child:
-                      Text('暂无在线成员资料', style: TextStyle(color: Colors.white54)))
+                      Text('暂无麦上成员资料', style: TextStyle(color: Colors.white54)))
               : ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                    _memberTile(owner, owner: true, manager: false),
-                    if (managers.isNotEmpty) ...[
+                    if (hasOwner)
+                      _memberTile(owner, owner: true, manager: false),
+                    if (seats.isNotEmpty) ...[
                       const SizedBox(height: 14),
-                      const Text('管理',
+                      const Text('麦上成员',
                           style:
                               TextStyle(color: Colors.white54, fontSize: 11)),
                       const SizedBox(height: 8),
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: managers.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisExtent: 78,
-                          crossAxisSpacing: 6,
-                          mainAxisSpacing: 8,
-                        ),
-                        itemBuilder: (_, index) => _memberTile(managers[index],
-                            owner: false, manager: true),
-                      ),
-                    ],
-                    if (normal.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      const Text('成员',
-                          style:
-                              TextStyle(color: Colors.white54, fontSize: 11)),
-                      const SizedBox(height: 8),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: normal.length,
+                        itemCount: seats.length,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -306,7 +275,7 @@ class _VoiceRoomSeats extends StatelessWidget {
                           crossAxisSpacing: 6,
                           mainAxisSpacing: 8,
                         ),
-                        itemBuilder: (_, index) => _memberTile(normal[index],
+                        itemBuilder: (_, index) => _memberTile(seats[index],
                             owner: false, manager: false),
                       ),
                     ],
@@ -631,14 +600,10 @@ class VoiceRoomPage extends StatefulWidget {
 }
 
 class _VoiceRoomPageState extends State<VoiceRoomPage> {
-  final messageController = TextEditingController();
   final messageService = DDPostService();
-  List<Map<String, dynamic>> roomMessages = const [];
   Map<String, dynamic> seatState = const {};
-  bool messagesLoading = false;
-  bool messageSending = false;
-  bool muted = false;
-  bool joined = false;
+  Timer? _seatRefreshTimer;
+  bool muted = true;
   bool _leaving = false;
   bool _rtcJoined = false;
 
@@ -647,33 +612,13 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
     super.initState();
     _joinRtc();
     _loadSeats();
-  }
-
-  Future<String> _messageToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty) throw Exception('请先登录');
-    return token;
+    _seatRefreshTimer =
+        Timer.periodic(const Duration(seconds: 5), (_) => _loadSeats());
   }
 
   String? get _roomId => widget.roomData['id']?.toString();
 
-  Future<void> _loadRoomMessages() async {
-    final roomId = _roomId;
-    if (roomId == null || roomId.isEmpty) {
-      if (mounted) setState(() => messagesLoading = false);
-      return;
-    }
-    try {
-      final messages = await messageService.fetchVoiceRoomMessages(
-          await _messageToken(), roomId);
-      if (mounted) setState(() => roomMessages = messages);
-    } catch (e) {
-      if (mounted) _showRoomNotice('$e');
-    } finally {
-      if (mounted) setState(() => messagesLoading = false);
-    }
-  }
+  bool get _seatOn => seatState['onSeat'] == true;
 
   Future<void> _loadSeats() async {
     final id = _roomId;
@@ -696,18 +641,32 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
         await messageService.requestVoiceRoomSeat(token, id);
       if (action == 'cancel')
         await messageService.cancelVoiceRoomSeatRequest(token, id);
-      if (action == 'approve' && userId != null)
+      if (action == 'approve' && userId != null) {
         await messageService.approveVoiceRoomSeat(token, id, userId);
-      if (action == 'reject' && userId != null)
+        await _setRtcMuted(false);
+      }
+      if (action == 'reject' && userId != null) {
         await messageService.rejectVoiceRoomSeat(token, id, userId);
+        await _setRtcMuted(true);
+      }
       if (action == 'leave') {
         await messageService.leaveVoiceRoomSeat(token, id);
-        await AliyunRtcBridge.setMuted(true);
+        await _setRtcMuted(true);
       }
       await _loadSeats();
+      if (action == 'approve' || action == 'reject') await _loadSeats();
     } catch (e) {
       if (mounted) _showRoomNotice('$e');
     }
+  }
+
+  Future<void> _setRtcMuted(bool next) async {
+    if (_rtcJoined) {
+      try {
+        await AliyunRtcBridge.setMuted(next);
+      } catch (_) {}
+    }
+    if (mounted) setState(() => muted = next);
   }
 
   Future<void> _joinRtc() async {
@@ -717,6 +676,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
       await AliyunRtcBridge.join(rtc);
       await AliyunRtcBridge.subscribeRemoteAudio(true);
       _rtcJoined = true;
+      await _setRtcMuted(true);
     } catch (_) {}
   }
 
@@ -844,6 +804,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   Future<void> _exitRoom() async {
     if (_leaving) return;
     _leaving = true;
+    _seatRefreshTimer?.cancel();
     _VoiceRoomFloatingOverlay.remove();
     if (_rtcJoined) {
       try {
@@ -879,7 +840,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
 
   @override
   void dispose() {
-    messageController.dispose();
+    _seatRefreshTimer?.cancel();
     messageService.dispose();
     if (!_leaving) {
       // 返回或右滑进入浮窗时保留 RTC，不在此处离开频道。
@@ -974,12 +935,11 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
                         tooltip: muted ? '开启语音输入' : '关闭语音输入',
                         onPressed: () async {
                           final next = !muted;
-                          if (_rtcJoined) {
-                            try {
-                              await AliyunRtcBridge.setMuted(next);
-                            } catch (_) {}
+                          if (!_seatOn) {
+                            _showRoomNotice('房主批准上麦后才能开启麦克风');
+                            return;
                           }
-                          if (mounted) setState(() => muted = next);
+                          await _setRtcMuted(next);
                         },
                         icon: Icon(muted ? Icons.mic_off : TIcons.microphone_1,
                             color: Colors.white)),
