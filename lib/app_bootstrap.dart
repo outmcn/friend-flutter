@@ -2,8 +2,10 @@ part of 'main.dart';
 
 class _GlobalScrollToTopRegistry {
   static final controllers = <ScrollController>{};
-  static void register(ScrollController controller) => controllers.add(controller);
-  static void unregister(ScrollController controller) => controllers.remove(controller);
+  static void register(ScrollController controller) =>
+      controllers.add(controller);
+  static void unregister(ScrollController controller) =>
+      controllers.remove(controller);
   static void scrollTop() {
     for (final controller in List<ScrollController>.of(controllers)) {
       if (!controller.hasClients) continue;
@@ -18,7 +20,8 @@ class _GlobalScrollToTopRegistry {
 
 final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
 
-void _showTopNotice(BuildContext context, Widget content, {VoidCallback? onTap}) {
+void _showTopNotice(BuildContext context, Widget content,
+    {VoidCallback? onTap}) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   if (overlay == null) return;
   late OverlayEntry entry;
@@ -33,7 +36,8 @@ void _showTopNotice(BuildContext context, Widget content, {VoidCallback? onTap})
 }
 
 class _FloatingNotice extends StatefulWidget {
-  const _FloatingNotice({required this.content, this.onTap, required this.onClose});
+  const _FloatingNotice(
+      {required this.content, this.onTap, required this.onClose});
   final Widget content;
   final VoidCallback? onTap;
   final VoidCallback onClose;
@@ -72,26 +76,27 @@ class _FloatingNoticeState extends State<_FloatingNotice>
         bottom: false,
         child: SlideTransition(
           position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
-              .animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic)),
+              .animate(CurvedAnimation(
+                  parent: controller, curve: Curves.easeOutCubic)),
           child: GestureDetector(
             onTap: widget.onTap,
             child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).colorScheme.surfaceContainerHigh,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-              child: Row(
-                children: [
-                  Expanded(child: widget.content),
-                  IconButton(
-                    tooltip: '关闭',
-                    onPressed: widget.onClose,
-                    icon: const Icon(Icons.close, size: 18),
-                  ),
-                ],
+              elevation: 8,
+              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+                child: Row(
+                  children: [
+                    Expanded(child: widget.content),
+                    IconButton(
+                      tooltip: '关闭',
+                      onPressed: widget.onClose,
+                      icon: const Icon(Icons.close, size: 18),
+                    ),
+                  ],
+                ),
               ),
-            ),
             ),
           ),
         ),
@@ -137,6 +142,16 @@ class DDApp extends StatelessWidget {
         highlightColor: Colors.transparent,
         hoverColor: Colors.transparent,
         focusColor: Colors.transparent,
+        dialogTheme: DialogThemeData(
+          backgroundColor: const Color(0xff342047),
+          surfaceTintColor: Colors.transparent,
+          titleTextStyle: const TextStyle(
+              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+          contentTextStyle: const TextStyle(color: Colors.white70),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(18))),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        ),
         tooltipTheme: const TooltipThemeData(
           triggerMode: TooltipTriggerMode.manual,
           waitDuration: Duration(days: 365),
@@ -180,6 +195,16 @@ class DDApp extends StatelessWidget {
         highlightColor: Colors.transparent,
         hoverColor: Colors.transparent,
         focusColor: Colors.transparent,
+        dialogTheme: DialogThemeData(
+          backgroundColor: const Color(0xff342047),
+          surfaceTintColor: Colors.transparent,
+          titleTextStyle: const TextStyle(
+              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+          contentTextStyle: const TextStyle(color: Colors.white70),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(18))),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        ),
         tooltipTheme: const TooltipThemeData(
           triggerMode: TooltipTriggerMode.manual,
           waitDuration: Duration(days: 365),
@@ -343,7 +368,8 @@ class _AuthGateState extends State<AuthGate> {
   void initState() {
     super.initState();
     auth = FriendAuthClient();
-    _messageNoticeSubscription = ImSession.instance.events.listen(_handleMessageNotice);
+    _messageNoticeSubscription =
+        ImSession.instance.events.listen(_handleMessageNotice);
     // Render the shell immediately; token restoration continues in the background.
     // A valid token will keep the user on the main page without a startup spinner.
     _restore();
@@ -358,12 +384,25 @@ class _AuthGateState extends State<AuthGate> {
     if (senderId.isEmpty || senderId == selfId) return;
     final text = '${message['text'] ?? ''}'.trim();
     final kind = '${message['kind'] ?? 'text'}';
-    final preview = text.isNotEmpty ? text : (kind == 'image' ? '图片消息' : kind == 'audio' ? '语音消息' : '收到一条新消息');
-    final conversationId = '${message['conversationId'] ?? message['conversation_id'] ?? ''}';
+    final preview = text.isNotEmpty
+        ? text
+        : (kind == 'image'
+            ? '图片消息'
+            : kind == 'audio'
+                ? '语音消息'
+                : '收到一条新消息');
+    final conversationId =
+        '${message['conversationId'] ?? message['conversation_id'] ?? ''}';
     _showTopNotice(
       context,
-      Row(children: [const Text('收到新消息：'), Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis))]),
-      onTap: conversationId.isEmpty ? null : () => unawaited(_openMessageConversation(conversationId)),
+      Row(children: [
+        const Text('收到新消息：'),
+        Expanded(
+            child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis))
+      ]),
+      onTap: conversationId.isEmpty
+          ? null
+          : () => unawaited(_openMessageConversation(conversationId)),
     );
   }
 
@@ -372,12 +411,15 @@ class _AuthGateState extends State<AuthGate> {
     if (navigator == null) return;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
-    final currentUserId = prefs.getString('friend.auth.userId') ?? ImSession.instance.userId ?? '';
+    final currentUserId = prefs.getString('friend.auth.userId') ??
+        ImSession.instance.userId ??
+        '';
     if (token.isEmpty) return;
     final service = DDPostService();
     try {
       final rows = await service.fetchImConversations(token);
-      final conversation = rows.firstWhere((item) => item.id == conversationId, orElse: () => const DDConversation(id: '', kind: 'dm'));
+      final conversation = rows.firstWhere((item) => item.id == conversationId,
+          orElse: () => const DDConversation(id: '', kind: 'dm'));
       if (conversation.id.isEmpty) return;
       final peer = conversation.peer;
       final last = conversation.lastMessage;
@@ -393,11 +435,14 @@ class _AuthGateState extends State<AuthGate> {
         conversation.updatedAt,
         conversation.kind,
       );
-      await navigator.push(MaterialPageRoute(builder: (_) => _ChatDetailPage(chat: chat, currentUserId: currentUserId)));
+      await navigator.push(MaterialPageRoute(
+          builder: (_) =>
+              _ChatDetailPage(chat: chat, currentUserId: currentUserId)));
     } finally {
       service.dispose();
     }
   }
+
   Future<void> _restore() async {
     final restored = await auth.restoreToken();
     if (restored != null) {
