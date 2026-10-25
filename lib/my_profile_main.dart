@@ -1040,6 +1040,15 @@ class _CpGiftCardState extends State<_CpGiftCard> {
     '永恒对戒',
     '真爱水晶',
     '一生一世',
+    '双燕同心',
+    '幸福碰杯',
+    '桃枝相依',
+    '喜结铃缘',
+    '星月长伴',
+    '比翼双飞',
+    '好运双灯',
+    '彩虹相守',
+    '甜蜜成双',
   ];
 
   static const _blessingNames = [
@@ -1073,14 +1082,11 @@ class _CpGiftCardState extends State<_CpGiftCard> {
     }
     try {
       final token = await _token();
-      final results = await Future.wait([
-        DDPostService().fetchCpGifts(token, widget.userId!),
-        DDPostService().fetchCpBlessings(token, widget.userId!),
-      ]);
+      final result = await DDPostService().fetchCpGifts(token, widget.userId!);
       if (mounted) {
         setState(() {
-          gifts = results[0];
-          blessingGifts = results[1];
+          gifts = result;
+          blessingGifts = const [];
         });
       }
     } catch (_) {
@@ -1150,31 +1156,20 @@ class _CpGiftCardState extends State<_CpGiftCard> {
                   mainAxisSpacing: 3,
                   childAspectRatio: 1.02),
               itemBuilder: (_, i) {
-                final isBlessing = i >= 9;
-                final index = isBlessing ? i - 9 : i;
-                final gift = isBlessing
-                    ? (index < blessingGifts.length
-                        ? blessingGifts[index]
-                        : <String, dynamic>{
-                            'name': _blessingNames[index],
-                            'receivedQuantity': 0,
-                            'index': index + 1,
-                          })
-                    : (index < gifts.length
-                        ? gifts[index]
-                        : <String, dynamic>{
-                            'name': _cpGiftNames[index],
-                            'receivedQuantity': 0,
-                            'index': index + 1,
-                          });
-                final name = isBlessing
-                    ? '${gift['name'] ?? _blessingNames[index]}'
-                    : '${gift['name'] ?? '礼物'}';
-                final asset = isBlessing
-                    ? 'assets/cp_blessings/gift_${int.tryParse('${gift['index']}') ?? index + 1}.png'
-                    : 'assets/cp_gifts/gift_${index + 1}.png';
+                final index = i;
+                final gift = index < gifts.length
+                    ? gifts[index]
+                    : <String, dynamic>{
+                        'name': _cpGiftNames[index],
+                        'receivedQuantity': 0,
+                        'index': index + 1,
+                      };
+                final name = '${gift['name'] ?? _cpGiftNames[index]}';
+                final asset = index < 9
+                    ? 'assets/cp_gifts/gift_${index + 1}.png'
+                    : 'assets/cp_blessings/gift_${index - 8}.png';
                 return InkWell(
-                  onTap: isBlessing || sending ? null : () => _sendGift(gift),
+                  onTap: sending ? null : () => _sendGift(gift),
                   child: Column(children: [
                     Image.asset(asset, width: 48, height: 48),
                     Text(name,
