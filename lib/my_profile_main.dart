@@ -513,10 +513,6 @@ class _ProfileSpacePageState extends State<ProfileSpacePage> {
     } catch (_) {}
   }
 
-  Future<void> _reloadProgress() async {
-    await Future.wait([_loadCheckin(), _loadLoveTree()]);
-  }
-
   @override
   Widget build(BuildContext context) => _SpaceLayout(
         nickname: widget.nickname ?? '我',
@@ -846,6 +842,8 @@ class CpSpaceDetailPage extends StatefulWidget {
 
 class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
   Map<String, dynamic>? dissolution;
+  Map<String, dynamic>? currentCheckin;
+  Map<String, dynamic>? currentLoveTree;
 
   bool get dissolutionPending {
     final effectiveAt =
@@ -856,7 +854,20 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
   @override
   void initState() {
     super.initState();
+    currentCheckin = widget.checkin;
     _loadDissolution();
+  }
+
+  Future<void> _reloadProgress() async {
+    if (widget.userId == null) return;
+    final token = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    if (token.isEmpty) return;
+    try {
+      final data = await DDPostService().fetchCpCheckin(token, widget.userId!);
+      if (mounted) setState(() => currentCheckin = data);
+    } catch (_) {}
   }
 
   Future<void> _loadDissolution() async {
@@ -948,15 +959,15 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
               padding: const EdgeInsets.fromLTRB(16, 74, 16, 28),
               children: [
                 _CpCastleCard(
-                    experience: widget.checkin?['experience'] is int
+                    experience: currentCheckin?['experience'] is int
                         ? widget.checkin!['experience'] as int
-                        : int.tryParse('${widget.checkin?['experience']}') ??
+                        : int.tryParse('${currentCheckin?['experience']}') ??
                             0),
                 const SizedBox(height: 14),
                 _CpSpaceLevelCard(
-                    experience: widget.checkin?['experience'] is int
+                    experience: currentCheckin?['experience'] is int
                         ? widget.checkin!['experience'] as int
-                        : int.tryParse('${widget.checkin?['experience']}') ??
+                        : int.tryParse('${currentCheckin?['experience']}') ??
                             0),
                 const SizedBox(height: 14),
                 _CpTaskCard(
