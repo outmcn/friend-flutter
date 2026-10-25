@@ -603,6 +603,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   final messageService = DDPostService();
   Map<String, dynamic> seatState = const {};
   Timer? _seatRefreshTimer;
+  StreamSubscription<Map<String, dynamic>>? _imEvents;
   bool muted = true;
   bool _leaving = false;
   bool _rtcJoined = false;
@@ -612,11 +613,30 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
     super.initState();
     _joinRtc();
     _loadSeats();
-    _seatRefreshTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) => _loadSeats());
+    _imEvents = ImSession.instance.events.listen(_handleImEvent);
   }
 
   String? get _roomId => widget.roomData['id']?.toString();
+
+  void _handleImEvent(Map<String, dynamic> event) {
+    if (event['type'] != 'voice_room:ended' ||
+        '${event['roomId'] ?? ''}' != (_roomId ?? '')) return;
+    unawaited(_handleRoomEnded());
+  }
+
+  Future<void> _handleRoomEnded() async {
+    if (_leaving) return;
+    _leaving = true;
+    _seatRefreshTimer?.cancel();
+    if (_rtcJoined) {
+      try {
+        await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    _showRoomNotice('房主已解散频道');
+    Navigator.of(context).pop();
+  }
 
   bool get _seatOn => seatState['onSeat'] == true;
 
@@ -856,6 +876,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   @override
   void dispose() {
     _seatRefreshTimer?.cancel();
+    _imEvents?.cancel();
     messageService.dispose();
     if (!_leaving) {
       // 返回或右滑进入浮窗时保留 RTC，不在此处离开频道。
