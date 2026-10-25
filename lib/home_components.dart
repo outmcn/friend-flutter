@@ -103,7 +103,6 @@ class _HomeFolderCard extends StatelessWidget {
     required this.borderRadius,
     this.height = 132,
     required this.onTap,
-    this.imageAsset,
   });
   final IconData icon;
   final String title;
@@ -135,50 +134,50 @@ class _HomeFolderCard extends StatelessWidget {
               ),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
-                      child: Row(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  subtitle,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  meta,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 9,
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          Icon(icon, color: Colors.white, size: 27),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 9,
+                            ),
+                          ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 6),
+                    Icon(icon, color: Colors.white, size: 27),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
