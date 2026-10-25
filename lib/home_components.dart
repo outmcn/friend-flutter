@@ -115,7 +115,6 @@ class _HomeFolderCard extends StatelessWidget {
   final BorderRadius borderRadius;
   final double height;
   final VoidCallback onTap;
-  final String? imageAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -134,9 +133,8 @@ class _HomeFolderCard extends StatelessWidget {
                 gradient: LinearGradient(colors: colors),
                 shape: shape,
               ),
-              child: imageAsset == null
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
                       child: Row(
                         children: [
                           Expanded(
@@ -180,10 +178,7 @@ class _HomeFolderCard extends StatelessWidget {
                           Icon(icon, color: Colors.white, size: 27),
                         ],
                       ),
-                    )
-                  : ClipPath(
-                      clipper: ShapeBorderClipper(shape: shape),
-                      child: Image.asset(imageAsset!, fit: BoxFit.cover)),
+                    ),
             ),
           ),
         ),

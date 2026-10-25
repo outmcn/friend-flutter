@@ -102,8 +102,6 @@ class _HomePageState extends State<HomePage> {
                               Expanded(
                                 flex: 11,
                                 child: _HomeFolderCard(
-                                  imageAsset:
-                                      'assets/home_tiles/match_fate.png',
                                   icon: Icons.auto_awesome,
                                   title: '缘分匹配',
                                   subtitle: '遇见聊得来的人',

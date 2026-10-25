@@ -96,7 +96,7 @@ flutter:
     - assets/profile_gifts/
     - assets/voice_gifts/
     - assets/avatar_frames/
-    - assets/home_tiles/
+    - assets/avatar_frames/
     - assets/dynamic_gifts/
     - assets/figma/
   #   - images/a_dot_ham.jpeg
