@@ -1172,34 +1172,62 @@ class _CpGiftCardState extends State<_CpGiftCard> {
       if (mounted) {
         final message = '$e'.replaceFirst('Exception: ', '');
         final insufficient = message.contains('金币余额不足');
-        if (insufficient) {
-          await showDialog<void>(
-            context: context,
-            builder: (dialogContext) => AlertDialog(
-              title: const Text('金币不足'),
-              content: Text(message),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('取消'),
+        await showGeneralDialog<void>(
+          context: context,
+          barrierDismissible: true,
+          barrierLabel: '错误提示',
+          barrierColor: Colors.black38,
+          transitionDuration: const Duration(milliseconds: 180),
+          pageBuilder: (dialogContext, animation, secondaryAnimation) =>
+              SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width - 32,
+                  margin: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xff342047),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xff9b70e8)),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black45, blurRadius: 14),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: Colors.orangeAccent),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(message,
+                            style: const TextStyle(color: Colors.white)),
+                      ),
+                      if (insufficient)
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(dialogContext);
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const WalletPage()),
+                            );
+                          },
+                          child: const Text('进入钱包'),
+                        )
+                      else
+                        IconButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          icon: const Icon(Icons.close, color: Colors.white70),
+                        ),
+                    ],
+                  ),
                 ),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const WalletPage()),
-                    );
-                  },
-                  child: const Text('进入钱包'),
-                ),
-              ],
+              ),
             ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
-        }
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => sending = false);
