@@ -227,23 +227,32 @@ class _VoiceRoomSeats extends StatelessWidget {
             .toList()
         : <Map<String, dynamic>>[];
     final owner = <String, dynamic>{
-      'user_id': room?['owner_user_id'] ?? room?['ownerUserId'],
-      'nickname': room?['owner_nickname'] ??
+      'user_id': state?['owner']?['userId'] ??
+          room?['owner_user_id'] ??
+          room?['ownerUserId'],
+      'nickname': state?['owner']?['nickname'] ??
+          room?['owner_nickname'] ??
           room?['ownerNickname'] ??
           room?['nickname'],
-      'avatar':
-          room?['owner_avatar'] ?? room?['ownerAvatar'] ?? room?['avatar'],
+      'avatar': state?['owner']?['avatar'] ??
+          room?['owner_avatar'] ??
+          room?['ownerAvatar'] ??
+          room?['avatar'],
       'role': 'owner',
     };
     final hasOwner = owner['user_id'] != null ||
         owner['nickname'] != null ||
         owner['avatar'] != null;
-    final online = room?['online_count'] ?? room?['onlineCount'];
+    final online =
+        state?['onlineCount'] ?? room?['online_count'] ?? room?['onlineCount'];
     final onlineText = online == null ? '在线人数暂无' : '$online人在线';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text('频道ID：${room?['id'] ?? room?['roomId'] ?? '暂无资料'}',
+            style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        const SizedBox(height: 4),
         Text(onlineText,
             style: const TextStyle(
                 color: Colors.white70, fontWeight: FontWeight.w700)),
@@ -610,7 +619,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
   bool muted = true;
   bool _leaving = false;
   bool _rtcJoined = false;
-  final _roomMessages = <String>[];
+  final List<String> _roomMessages = <String>[];
   final _messageController = TextEditingController();
 
   @override
@@ -635,6 +644,17 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
             '${event['sender'] ?? '用户'} 送给 ${event['receiver'] ?? '用户'} ${event['giftName'] ?? '礼物'}');
       }
     }
+    if (event['type'] == 'voice_room:owner_left' &&
+        '${event['roomId'] ?? ''}' == (_roomId ?? '')) {
+      unawaited(_handleOwnerLeft());
+      return;
+    }
+    if (event['type'] == 'voice_room:left' &&
+        '${event['roomId'] ?? ''}' == (_roomId ?? '') &&
+        '${event['userId'] ?? ''}' == (ImSession.instance.userId ?? '')) {
+      unawaited(_handleOwnerLeft());
+      return;
+    }
     if (event['type'] != 'voice_room:ended' ||
         '${event['roomId'] ?? ''}' != (_roomId ?? '')) return;
     unawaited(_handleRoomEnded());
@@ -657,6 +677,20 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
           await _authToken(), _roomId!, text);
     } catch (e) {
       if (mounted) _showRoomNotice('$e');
+    }
+  }
+
+  Future<void> _handleOwnerLeft() async {
+    if (_leaving) return;
+    _leaving = true;
+    if (_rtcJoined) {
+      try {
+        await AliyunRtcBridge.leave().timeout(const Duration(seconds: 2));
+      } catch (_) {}
+    }
+    if (mounted) {
+      _showRoomNotice('房主已退出，频道在线用户已被移出');
+      Navigator.of(context).pop();
     }
   }
 
@@ -857,30 +891,17 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
 
   Future<void> _exitRoom() async {
     if (_leaving) return;
-    final ownerId = _ownerId?.toString();
-    final prefs = await SharedPreferences.getInstance();
-    final currentUserId = prefs.getString('friend.auth.userId');
-    final isOwner = currentUserId != null &&
-        currentUserId.isNotEmpty &&
-        ownerId != null &&
-        currentUserId == ownerId;
     _leaving = true;
     _seatRefreshTimer?.cancel();
     _VoiceRoomFloatingOverlay.remove();
     try {
-      if (isOwner) {
-        await messageService
-            .endVoiceRoom(await _authToken(), _roomId ?? '')
-            .timeout(const Duration(seconds: 3));
-      } else if (_seatOn) {
-        await messageService
-            .leaveVoiceRoomSeat(await _authToken(), _roomId ?? '')
-            .timeout(const Duration(seconds: 3));
-      }
+      await messageService
+          .leaveVoiceRoom(await _authToken(), _roomId ?? '')
+          .timeout(const Duration(seconds: 3));
     } catch (e) {
       if (mounted) {
         _leaving = false;
-        _showRoomNotice(isOwner ? '解散频道失败，请重试' : '$e');
+        _showRoomNotice('退出频道失败，请重试');
         return;
       }
     }

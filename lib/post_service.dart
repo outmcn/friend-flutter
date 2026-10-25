@@ -142,10 +142,13 @@ class DDPostService {
     return _decodeResponse(response, '加入语音频道失败');
   }
 
-  Future<Map<String, dynamic>> endVoiceRoom(String token, String id) async {
-    final response = await _client.post(_api('/im/voice-rooms/$id/end'),
-        headers: {'Authorization': 'Bearer $token'});
-    return _decodeResponse(response, '结束语音频道失败');
+  Future<Map<String, dynamic>> leaveVoiceRoom(
+      String token, String roomId) async {
+    final response = await _client.post(
+      _api('/im/voice-rooms/$roomId/leave'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return _decodeResponse(response, '退出语音频道失败');
   }
 
   Future<List<Map<String, dynamic>>> fetchVoiceRoomGifts(
