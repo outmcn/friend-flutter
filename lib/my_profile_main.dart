@@ -1221,7 +1221,7 @@ class _CpTaskCardState extends State<_CpTaskCard> {
         const SizedBox(height: 12),
         _taskRow('双方每日签到', both ? '已完成 · +10经验' : '双方签到后 +10经验', both),
         _taskRow('连续签到7天', '当前连续 $streak 天 · 达成后额外 +30经验', streak >= 7),
-        _taskRow('每日赠送CP礼物', '不限次数 · 每次扣除对应金币，经验 +10～+90', giftDone),
+        _taskRow('每日赠送CP礼物', '不限次数 · 每次扣除对应金币，经验与金币相同', giftDone),
       ]),
     );
   }
