@@ -831,7 +831,16 @@ class DDPostService {
   Future<Map<String, dynamic>> _decodeResponse(
       http.Response response, String fallback) async {
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('$fallback（${response.statusCode}）');
+      var detail = '';
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          detail = '${decoded['error'] ?? decoded['message'] ?? ''}'.trim();
+        }
+      } catch (_) {}
+      throw Exception(detail.isEmpty
+          ? '$fallback（${response.statusCode}）'
+          : '$detail（${response.statusCode}）');
     }
     if (response.body.trim().isEmpty) {
       throw Exception('$fallback：服务器返回空响应');
