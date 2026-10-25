@@ -966,6 +966,7 @@ class _DiscoverProfileCard extends StatelessWidget {
       required String gender,
       double size = 40,
       String? frameAsset}) {
+    final normalizedFrame = normalizeAvatarFrameAsset(frameAsset);
     final color = gender == '男'
         ? const Color(0xFF1677FF)
         : gender == '女'
@@ -985,10 +986,10 @@ class _DiscoverProfileCard extends StatelessWidget {
                     ? null
                     : Border.all(color: color, width: 2)),
             child: ClipOval(child: child)),
-        if (frameAsset != null && frameAsset.isNotEmpty)
+        if (normalizedFrame.isNotEmpty)
           Positioned.fill(
               child: IgnorePointer(
-                  child: Image.asset(frameAsset, fit: BoxFit.contain))),
+                  child: Image.asset(normalizedFrame, fit: BoxFit.contain))),
       ],
     );
   }

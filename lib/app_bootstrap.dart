@@ -20,6 +20,21 @@ class _GlobalScrollToTopRegistry {
 
 final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
 
+String normalizeAvatarFrameAsset(String? asset) {
+  final value = asset?.trim() ?? '';
+  if (value == 'assets/avatar_frames/男_frame.png' ||
+      value.contains('男_') ||
+      value.contains('male-')) {
+    return 'assets/avatar_frames/男_frame.png';
+  }
+  if (value == 'assets/avatar_frames/女_frame.png' ||
+      value.contains('女_') ||
+      value.contains('female-')) {
+    return 'assets/avatar_frames/女_frame.png';
+  }
+  return '';
+}
+
 class _FriendAvatar extends StatelessWidget {
   const _FriendAvatar({
     required this.avatarUrl,
@@ -34,7 +49,7 @@ class _FriendAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final frame = frameAsset?.trim() ?? '';
+    final frame = normalizeAvatarFrameAsset(frameAsset);
     return SizedBox(
       width: size,
       height: size,

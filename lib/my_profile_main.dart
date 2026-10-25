@@ -2515,13 +2515,9 @@ class _DDProfilePageState extends State<DDProfilePage>
       _sonicUrl = nextSonicUrl;
       _avatarLocalPath = localAvatar;
       _avatarUrl = signedAvatar;
-      _avatarFrameAsset =
-          '${loaded['avatarFrameAsset'] ?? loaded['avatar_frame_asset'] ?? ''}'
-                  .trim()
-                  .isEmpty
-              ? null
-              : '${loaded['avatarFrameAsset'] ?? loaded['avatar_frame_asset']}'
-                  .trim();
+      final normalizedFrame = normalizeAvatarFrameAsset(
+          '${loaded['avatarFrameAsset'] ?? loaded['avatar_frame_asset'] ?? ''}');
+      _avatarFrameAsset = normalizedFrame.isEmpty ? null : normalizedFrame;
       _avatarFrameSelection =
           '${loaded['avatarFrameSelection'] ?? loaded['avatar_frame_selection'] ?? ''}'
                   .trim()
@@ -3249,30 +3245,8 @@ class _AvatarDressupPage extends StatefulWidget {
 class _AvatarDressupPageState extends State<_AvatarDressupPage> {
   String? selected;
 
-  static const _maleFrames = [
-    'assets/avatar_frames/男_1.png',
-    'assets/avatar_frames/男_2.png',
-    'assets/avatar_frames/男_3.png',
-    'assets/avatar_frames/男_4.png',
-    'assets/avatar_frames/男_5.png',
-    'assets/avatar_frames/男_6.png',
-    'assets/avatar_frames/男_7.png',
-    'assets/avatar_frames/男_8.png',
-    'assets/avatar_frames/男_9.png',
-    'assets/avatar_frames/男_10.png',
-  ];
-  static const _femaleFrames = [
-    'assets/avatar_frames/女_1.png',
-    'assets/avatar_frames/女_2.png',
-    'assets/avatar_frames/女_3.png',
-    'assets/avatar_frames/女_4.png',
-    'assets/avatar_frames/女_5.png',
-    'assets/avatar_frames/女_6.png',
-    'assets/avatar_frames/女_7.png',
-    'assets/avatar_frames/女_8.png',
-    'assets/avatar_frames/女_9.png',
-    'assets/avatar_frames/女_10.png',
-  ];
+  static const _maleFrame = 'assets/avatar_frames/男_frame.png';
+  static const _femaleFrame = 'assets/avatar_frames/女_frame.png';
 
   void initState() {
     super.initState();
@@ -3305,13 +3279,6 @@ class _AvatarDressupPageState extends State<_AvatarDressupPage> {
     if (mounted) setState(() => selected = id);
   }
 
-  Future<void> _clearFrame() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('friend.avatar.frame.selection');
-    await prefs.remove('friend.avatar.frame.asset');
-    if (mounted) setState(() => selected = null);
-  }
-
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('头像装扮')),
@@ -3323,33 +3290,13 @@ class _AvatarDressupPageState extends State<_AvatarDressupPage> {
             const SizedBox(height: 6),
             const Text('点击头像框即可选择，未选择时使用默认渐变圆环。'),
             const SizedBox(height: 20),
-            ..._maleFrames.asMap().entries.map((entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: _frameOption(context,
-                      id: 'male-${entry.key + 1}',
-                      title: '男生头像框 ${entry.key + 1}',
-                      asset: entry.value),
-                )),
-            ..._femaleFrames.asMap().entries.map((entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: _frameOption(context,
-                      id: 'female-${entry.key + 1}',
-                      title: '女生头像框 ${entry.key + 1}',
-                      asset: entry.value),
-                )),
-            const SizedBox(height: 18),
-            ListTile(
-              leading: const Icon(Icons.circle_outlined, color: Colors.blue),
-              title: const Text('默认蓝色渐变圆环'),
-              subtitle: const Text('未选择头像框时使用'),
-              onTap: _clearFrame,
-            ),
-            ListTile(
-              leading: const Icon(Icons.circle_outlined, color: Colors.pink),
-              title: const Text('默认粉色渐变圆环'),
-              subtitle: const Text('未选择头像框时使用'),
-              onTap: _clearFrame,
-            ),
+            _frameOption(context,
+                id: 'male-default', title: '男性默认头像框', asset: _maleFrame),
+            const SizedBox(height: 14),
+            _frameOption(context,
+                id: 'female-default', title: '女性默认头像框', asset: _femaleFrame),
+            const SizedBox(height: 8),
+            const Text('仅保留男女默认头像框，选择后会同步到你的资料。'),
           ],
         ),
       );
