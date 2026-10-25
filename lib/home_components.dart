@@ -102,6 +102,7 @@ class _HomeFolderCard extends StatelessWidget {
     required this.tabAlignment,
     required this.borderRadius,
     this.height = 132,
+    this.compactText = false,
     required this.onTap,
   });
   final IconData icon;
@@ -113,6 +114,7 @@ class _HomeFolderCard extends StatelessWidget {
   final Alignment tabAlignment;
   final BorderRadius borderRadius;
   final double height;
+  final bool compactText;
   final VoidCallback onTap;
 
   @override
@@ -133,7 +135,8 @@ class _HomeFolderCard extends StatelessWidget {
                 shape: shape,
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 24, 12, 12),
+                padding: EdgeInsets.fromLTRB(
+                    14, compactText ? 10 : 24, 12, compactText ? 10 : 12),
                 child: Row(
                   children: [
                     Expanded(
@@ -160,7 +163,7 @@ class _HomeFolderCard extends StatelessWidget {
                               fontSize: 11,
                             ),
                           ),
-                          const Spacer(),
+                          if (!compactText) const Spacer(),
                           Text(
                             meta,
                             maxLines: 1,

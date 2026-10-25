@@ -256,6 +256,7 @@ class _HomePageState extends State<HomePage> {
                                         tabAlignment: Alignment.topLeft,
                                         borderRadius: BorderRadius.circular(24),
                                         height: 63,
+                                        compactText: true,
                                         onTap: () => Navigator.push(
                                           context,
                                           MaterialPageRoute(
