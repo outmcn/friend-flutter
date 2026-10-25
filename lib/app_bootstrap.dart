@@ -20,18 +20,27 @@ class _GlobalScrollToTopRegistry {
 
 final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
 
+OverlayEntry? _activeTopNotice;
+
 void _showTopNotice(BuildContext context, Widget content,
     {VoidCallback? onTap}) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   if (overlay == null) return;
+  _activeTopNotice?.remove();
   late OverlayEntry entry;
+  void close() {
+    if (identical(_activeTopNotice, entry)) _activeTopNotice = null;
+    if (entry.mounted) entry.remove();
+  }
+
   entry = OverlayEntry(
     builder: (context) => _FloatingNotice(
       content: content,
       onTap: onTap,
-      onClose: () => entry.remove(),
+      onClose: close,
     ),
   );
+  _activeTopNotice = entry;
   overlay.insert(entry);
 }
 
@@ -56,6 +65,7 @@ class _FloatingNoticeState extends State<_FloatingNotice>
   @override
   void initState() {
     super.initState();
+    timer = Timer(const Duration(seconds: 5), widget.onClose);
   }
 
   @override
