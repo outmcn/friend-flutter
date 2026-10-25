@@ -439,6 +439,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                                     '${p?['followers'] ?? 0}')),
                                         Expanded(
                                             child: _InlineProfileStat(
+                                                label: '访客',
+                                                value:
+                                                    '${p?['visitors'] ?? 0}')),
+                                        Expanded(
+                                            child: _InlineProfileStat(
                                                 label: '魅力',
                                                 value: '$charmCoins')),
                                       ],

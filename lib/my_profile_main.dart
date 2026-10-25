@@ -3005,6 +3005,21 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                                           '粉丝'))))),
                                                   Expanded(
                                                       child: _InlineProfileStat(
+                                                    label: '访客',
+                                                    value: _formatCount(
+                                                        p?['visitors']),
+                                                    onTap: () => Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              const _UserRelationListPage(
+                                                                  relation:
+                                                                      'history',
+                                                                  title: '访客')),
+                                                    ),
+                                                  )),
+                                                  Expanded(
+                                                      child: _InlineProfileStat(
                                                     label: '魅力',
                                                     value: _formatCount(
                                                         charmCoins),
