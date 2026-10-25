@@ -2923,7 +2923,30 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                         .withValues(alpha: .65),
                                                   ),
                                                 ),
-                                                const SizedBox(width: 14),
+                                                IconButton(
+                                                  tooltip: '复制ID',
+                                                  icon: const Icon(Icons.copy,
+                                                      size: 16),
+                                                  padding: EdgeInsets.zero,
+                                                  constraints:
+                                                      const BoxConstraints
+                                                          .tightFor(
+                                                          width: 28,
+                                                          height: 28),
+                                                  onPressed: () async {
+                                                    final id =
+                                                        '${p?['id'] ?? p?['userId'] ?? ''}';
+                                                    if (id.trim().isEmpty)
+                                                      return;
+                                                    await Clipboard.setData(
+                                                        ClipboardData(
+                                                            text: id));
+                                                    if (context.mounted)
+                                                      _showTopNotice(context,
+                                                          const Text('ID已复制'));
+                                                  },
+                                                ),
+                                                const SizedBox(width: 6),
                                                 Text(
                                                   'IP：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未定位' : '${p?['city']}'.trim()}',
                                                   style: TextStyle(
