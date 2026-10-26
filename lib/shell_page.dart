@@ -1214,7 +1214,7 @@ class _ChatImageMessageState extends State<_ChatImageMessage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child:
-            Image.file(File(path), width: 180, height: 140, fit: BoxFit.cover),
+            Image.file(File(path), width: 180, height: 300, fit: BoxFit.cover),
       ),
     );
   }
