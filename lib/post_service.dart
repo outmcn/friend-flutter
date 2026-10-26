@@ -787,27 +787,56 @@ class DDPostService {
   }
 
   Future<DDPost> fetchPost(String token, int postId) async {
-    final response = await _client.get(
-      _api('/posts/$postId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final decoded =
-          response.body.trim().isEmpty ? null : jsonDecode(response.body);
-      final message = decoded is Map<String, dynamic>
-          ? decoded['error'] ?? '动态加载失败'
-          : '动态加载失败';
-      throw Exception('$message（${response.statusCode}）');
+    Object? lastError;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        final response = await _client.get(
+          _api('/posts/$postId'),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+        final decoded =
+            response.body.trim().isEmpty ? null : jsonDecode(response.body);
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          final message = decoded is Map<String, dynamic>
+              ? '${decoded['error'] ?? decoded['message'] ?? '动态加载失败'}'
+              : '动态加载失败';
+          final retryable = response.statusCode == 408 ||
+              response.statusCode == 429 ||
+              response.statusCode >= 500;
+          if (retryable && attempt < 2) {
+            await Future<void>.delayed(
+                Duration(milliseconds: 250 * (attempt + 1)));
+            continue;
+          }
+          throw Exception('$message（HTTP ${response.statusCode}）');
+        }
+        if (decoded is! Map<String, dynamic>) {
+          throw Exception('动态数据格式错误');
+        }
+        final post = decoded['post'] is Map
+            ? decoded['post']
+            : decoded['data'] is Map && decoded['data']['post'] is Map
+                ? decoded['data']['post']
+                : decoded['data'] is Map
+                    ? decoded['data']
+                    : decoded;
+        if (post is! Map) throw Exception('动态数据格式错误');
+        return DDPost.fromJson(
+          post.cast<String, dynamic>(),
+          preserveMediaKeys: true,
+        );
+      } catch (e) {
+        lastError = e;
+        final text = '$e';
+        final retryable = text.contains('ClientConnection') ||
+            text.contains('Connection closed') ||
+            text.contains('SocketException') ||
+            text.contains('TimeoutException');
+        if (!retryable || attempt >= 2) rethrow;
+        await Future<void>.delayed(Duration(milliseconds: 250 * (attempt + 1)));
+      }
     }
-    if (response.body.trim().isEmpty) {
-      throw Exception('动态加载失败：服务器返回空响应');
-    }
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic> || decoded['post'] is! Map) {
-      throw Exception('动态数据格式错误');
-    }
-    return DDPost.fromJson((decoded['post'] as Map).cast<String, dynamic>(),
-        preserveMediaKeys: true);
+    throw Exception('$lastError');
   }
 
   Future<List<DDPost>> fetchMyPosts(String token, {int offset = 0}) async {
