@@ -377,7 +377,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
               _publish(await service.resolvePostMedia(t, cached));
             } catch (_) {}
           }
-          final fresh = await service.fetchPost(t, widget.postId);
+          final fresh = widget.initialPost == null
+              ? await service.fetchPost(t, widget.postId)
+              : widget.initialPost!;
           final resolved = await service.resolvePostMedia(t, fresh);
           final current = post;
           final merged = current == null
