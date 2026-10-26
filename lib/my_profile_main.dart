@@ -2941,8 +2941,8 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                   constraints:
                                                       const BoxConstraints
                                                           .tightFor(
-                                                          width: 28,
-                                                          height: 28),
+                                                          width: 16,
+                                                          height: 16),
                                                   onPressed: () async {
                                                     final id =
                                                         '${p?['id'] ?? p?['userId'] ?? ''}';
