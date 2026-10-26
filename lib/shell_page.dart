@@ -1737,24 +1737,21 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  int _timelineVersion = 0;
   List<Map<String, dynamic>>? _timelineCache;
-  String? _timelineCacheKey;
+  int? _timelineCacheVersion;
 
-  String _timelineStateKey() {
-    if (messages.isEmpty) return '0';
-    final first = messages.first;
-    final last = messages.last;
-    return '${messages.length}|${first['id'] ?? first['clientId'] ?? ''}|${first['createdAt'] ?? ''}|${last['id'] ?? last['clientId'] ?? ''}|${last['createdAt'] ?? ''}';
+  void _invalidateTimelineCache() {
+    _timelineVersion++;
   }
 
   List<Map<String, dynamic>> get _timeline {
-    final key = _timelineStateKey();
-    if (_timelineCacheKey == key && _timelineCache != null) {
+    if (_timelineCacheVersion == _timelineVersion && _timelineCache != null) {
       return _timelineCache!;
     }
     final combined = <Map<String, dynamic>>[...messages];
     combined.sort((a, b) => _messageTime(b).compareTo(_messageTime(a)));
-    _timelineCacheKey = key;
+    _timelineCacheVersion = _timelineVersion;
     _timelineCache = combined;
     return combined;
   }
@@ -2050,12 +2047,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (status == null && index >= 0) 'status': messages[index]['status'],
     };
     if (index >= 0) {
-      setState(() => messages[index] = merged);
-      _sortMessagesFrom(index);
-      return true;
+      messages[index] = merged;
+    } else {
+      messages.add(merged);
     }
-    setState(() => messages.add(merged));
-    _sortMessagesFrom(messages.length - 1);
+    _sortMessagesFrom(index >= 0 ? index : messages.length - 1);
+    _invalidateTimelineCache();
+    if (mounted) setState(() {});
     return true;
   }
 
@@ -2080,7 +2078,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (mounted) {
       final follow = _isNearBottom();
-      setState(() {});
       if (follow) _scrollToLatest(force: true);
     }
   }
