@@ -2701,7 +2701,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _openSharedPost(Map<String, dynamic> message) async {
-    final metadata = message['metadata'];
+    final normalized = _normalizeMessageMetadata(message);
+    final metadata = normalized['metadata'];
     if (metadata is! Map) return;
     final postId =
         int.tryParse('${metadata['postId'] ?? metadata['post_id'] ?? ''}');
