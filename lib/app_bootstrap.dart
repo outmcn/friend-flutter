@@ -35,6 +35,22 @@ String normalizeAvatarFrameAsset(String? asset) {
   return '';
 }
 
+bool isMaleGender(String? gender) {
+  final value = (gender ?? '').trim().toUpperCase();
+  return value == '男' || value == 'MALE' || value == 'MAN' || value == 'M';
+}
+
+bool isFemaleGender(String? gender) {
+  final value = (gender ?? '').trim().toUpperCase();
+  return value == '女' || value == 'FEMALE' || value == 'WOMAN' || value == 'F';
+}
+
+String defaultAvatarFrameForGender(String? gender) {
+  if (isMaleGender(gender)) return 'assets/avatar_frames/男_frame.png';
+  if (isFemaleGender(gender)) return 'assets/avatar_frames/女_frame.png';
+  return '';
+}
+
 class _FriendAvatar extends StatelessWidget {
   const _FriendAvatar({
     required this.avatarUrl,

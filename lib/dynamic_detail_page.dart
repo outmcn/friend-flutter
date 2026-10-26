@@ -336,6 +336,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     widget.onChanged?.call(value);
   }
 
+  Future<void> _ignoreDetailFailure(Future<void> task) async {
+    try {
+      await task;
+    } catch (_) {
+      // 附属数据失败不应让动态主体显示为加载失败。
+    }
+  }
+
   Future<void> load() async {
     if (refreshing) return;
     refreshing = true;
@@ -352,7 +360,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       }
       // 身份、评论与动态各自加载，任何一路失败都不抹掉已展示内容。
       await Future.wait([
-        () async {
+        _ignoreDetailFailure(() async {
           final me = await service.fetchMe(t);
           if (mounted) {
             setState(() {
@@ -360,9 +368,9 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
               ownerResolved = true;
             });
           }
-        }(),
-        _loadComments(t),
-        _loadReceivedGifts(t),
+        }()),
+        _ignoreDetailFailure(_loadComments(t)),
+        _ignoreDetailFailure(_loadReceivedGifts(t)),
         () async {
           if (cached != null) {
             try {
