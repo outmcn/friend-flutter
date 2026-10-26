@@ -76,15 +76,18 @@ class DDPostService {
 
   Future<DDPost> resolvePostMedia(String token, DDPost post) async {
     final data = post.toJson();
-    await Future.wait(
-        ['avatar', 'imageUrl', 'videoUrl', 'thumbnailUrl'].map((field) async {
+    for (final field in ['avatar', 'imageUrl', 'videoUrl', 'thumbnailUrl']) {
       final raw = data[field] as String?;
-      if (raw == null || raw.isEmpty) return;
-      if (!_needsMediaSignature(raw)) return;
-      data[field] = field == 'avatar'
-          ? await avatarUrl(token, mediaKey(raw))
-          : await mediaUrlForKey(token, mediaKey(raw));
-    }));
+      if (raw == null || raw.isEmpty || !_needsMediaSignature(raw)) continue;
+      try {
+        data[field] = field == 'avatar'
+            ? await avatarUrl(token, mediaKey(raw))
+            : await mediaUrlForKey(token, mediaKey(raw));
+      } catch (_) {
+        // 一个媒体对象失败不能让整条动态详情失败；保留原始对象键，
+        // 后续刷新时继续尝试解析，其他媒体继续正常显示。
+      }
+    }
     return DDPost.fromJson(data, preserveMediaKeys: true);
   }
 
