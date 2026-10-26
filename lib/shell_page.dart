@@ -1004,6 +1004,9 @@ Map<String, dynamic>? _decodeConversationMetadata(Object? value) {
   }
 }
 
+String _stripSharedPostMarker(String text) =>
+    text.replaceFirst(RegExp(r'^\[动态分享:\d+\]\s*'), '').trim();
+
 String? _localMessagePreview(Map<String, dynamic>? row) {
   if (row == null) return null;
   final status = '${row['status'] ?? 'sent'}';
@@ -1020,7 +1023,8 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
   }
   if (kind == 'image') return '[图片]';
   if (kind == 'audio') return '[语音]';
-  return '${row['text'] ?? ''}';
+  final text = _stripSharedPostMarker('${row['text'] ?? ''}');
+  return text.isEmpty ? '分享了一条动态' : text;
 }
 
 String? _conversationLastMessagePreview(DDImLastMessage? message) {
@@ -1041,9 +1045,9 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
     case 'call':
       return '[语音通话]';
     default:
-      final text = message.text.trim();
+      final text = _stripSharedPostMarker(message.text.trim());
       if (text.startsWith('分享：')) return text;
-      return text.isEmpty ? null : text;
+      return text.isEmpty ? '分享了一条动态' : text;
   }
 }
 
