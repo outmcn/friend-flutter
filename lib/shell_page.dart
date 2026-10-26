@@ -1793,7 +1793,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           item['_timelineKind'] = 'call';
         }
       }
-      if (mounted) {
+      final deletedIds = await ImLocalStore.localDeletedMessageIds(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+      );
+      cached.removeWhere((item) =>
+          !ImCall.isCall(item) && deletedIds.contains('${item['id']}'));
+      if (mounted && !_localMessagesCleared) {
         setState(() {
           messages
             ..clear()
@@ -2625,8 +2631,12 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     final id = '${message['id'] ?? ''}';
     if (choice == 'delete') {
-      final index = messages.indexWhere(
-          (item) => !ImCall.isCall(item) && '${item['id'] ?? ''}' == id);
+      final targetClientId = '${message['clientId'] ?? ''}';
+      final index = messages.indexWhere((item) =>
+          !ImCall.isCall(item) &&
+          ((id.isNotEmpty && '${item['id'] ?? ''}' == id) ||
+              (targetClientId.isNotEmpty &&
+                  '${item['clientId'] ?? ''}' == targetClientId)));
       if (index >= 0) {
         final messageId = '${messages[index]['id'] ?? ''}';
         _localMessageLoadVersion++;
