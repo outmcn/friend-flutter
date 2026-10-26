@@ -1524,10 +1524,39 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   void initState() {
     super.initState();
     messageScrollController.addListener(_handleMessageScroll);
+    unawaited(_loadChatLocalMessages());
     unawaited(_loadChatAvatars());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_connectIm());
     });
+  }
+
+  Future<void> _loadChatLocalMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accountId = widget.currentUserId.isNotEmpty
+        ? widget.currentUserId
+        : (ImSession.instance.userId ??
+            prefs.getString('friend.auth.userId') ??
+            '');
+    if (accountId.isEmpty || !mounted) return;
+    try {
+      final cached = await ImLocalStore.messages(
+        accountId: accountId,
+        conversationId: widget.chat.conversationId,
+      );
+      for (final item in cached) {
+        if ('${item['kind'] ?? ''}' == 'call') item['_timelineKind'] = 'call';
+      }
+      if (!mounted || cached.isEmpty || messages.isNotEmpty) return;
+      messages
+        ..clear()
+        ..addAll(cached);
+      _invalidateTimelineCache();
+      initialSyncCompleted = true;
+      setState(() {});
+    } catch (_) {
+      // 本地缓存读取失败时由 IM 初始化路径继续处理。
+    }
   }
 
   Future<void> _loadChatAvatars() async {
