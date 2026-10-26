@@ -1514,55 +1514,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     } catch (_) {}
   }
 
-  String _historyMetadataSyncKey(String accountId) =>
-      'friend.im.history.metadata.synced.$accountId.${widget.chat.conversationId}';
-
-  Future<void> _syncHistoryMetadataOnce(
-      String token, String accountId, List<Map<String, dynamic>> cached) async {
-    final prefs = await SharedPreferences.getInstance();
-    final syncKey = _historyMetadataSyncKey(accountId);
-    if (prefs.getBool(syncKey) == true) return;
-    final service = DDPostService();
-    try {
-      final timeline =
-          await service.fetchImTimeline(token, widget.chat.conversationId);
-      var changed = false;
-      for (final raw in timeline) {
-        final item = _normalizeMessageMetadata(raw);
-        final id = '${item['id'] ?? ''}';
-        final clientId = '${item['clientId'] ?? ''}';
-        final index = cached.indexWhere((existing) =>
-            (id.isNotEmpty && '${existing['id'] ?? ''}' == id) ||
-            (clientId.isNotEmpty &&
-                '${existing['clientId'] ?? ''}' == clientId));
-        if (index >= 0) {
-          cached[index] = {...cached[index], ...item};
-        } else {
-          cached.add(item);
-        }
-        changed = true;
-      }
-      if (changed) {
-        await ImLocalStore.saveMessages(
-            accountId: accountId,
-            conversationId: widget.chat.conversationId,
-            messages: cached);
-        if (mounted) {
-          setState(() {
-            messages
-              ..clear()
-              ..addAll(cached);
-          });
-        }
-      }
-      await prefs.setBool(syncKey, true);
-    } catch (_) {
-      // 首次同步失败不标记完成，下次进入继续尝试。
-    } finally {
-      service.dispose();
-    }
-  }
-
   Future<void> _connectImInternal() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
@@ -1611,7 +1562,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           initialSyncCompleted = true;
         });
       }
-      unawaited(_syncHistoryMetadataOnce(token, currentUserId, cached));
       final deletedIds = await ImLocalStore.localDeletedMessageIds(
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
