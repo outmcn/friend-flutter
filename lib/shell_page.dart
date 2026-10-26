@@ -1723,9 +1723,25 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  List<Map<String, dynamic>>? _timelineCache;
+  String? _timelineCacheKey;
+
+  String _timelineStateKey() {
+    if (messages.isEmpty) return '0';
+    final first = messages.first;
+    final last = messages.last;
+    return '${messages.length}|${first['id'] ?? first['clientId'] ?? ''}|${first['createdAt'] ?? ''}|${last['id'] ?? last['clientId'] ?? ''}|${last['createdAt'] ?? ''}';
+  }
+
   List<Map<String, dynamic>> get _timeline {
+    final key = _timelineStateKey();
+    if (_timelineCacheKey == key && _timelineCache != null) {
+      return _timelineCache!;
+    }
     final combined = <Map<String, dynamic>>[...messages];
     combined.sort((a, b) => _messageTime(b).compareTo(_messageTime(a)));
+    _timelineCacheKey = key;
+    _timelineCache = combined;
     return combined;
   }
 
