@@ -1154,6 +1154,72 @@ ImageProvider _chatAvatarFor(_ChatPreview chat) {
 ImageProvider _neutralAvatar() =>
     const AssetImage('assets/figma/avatar-placeholder.png');
 
+class _ChatImageMessage extends StatefulWidget {
+  const _ChatImageMessage(
+      {super.key, required this.imageKey, required this.onOpen});
+  final String imageKey;
+  final ValueChanged<String> onOpen;
+  @override
+  State<_ChatImageMessage> createState() => _ChatImageMessageState();
+}
+
+class _ChatImageMessageState extends State<_ChatImageMessage> {
+  String? filePath;
+  bool resolving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_resolve());
+  }
+
+  Future<void> _resolve() async {
+    if (widget.imageKey.isEmpty || resolving) return;
+    resolving = true;
+    final cached = await ImLocalStore.imagePath(widget.imageKey);
+    if (cached != null) {
+      if (mounted) setState(() => filePath = cached);
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final url = await service.mediaUrlForKey(token, widget.imageKey);
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final saved =
+            await ImLocalStore.saveImage(widget.imageKey, response.bodyBytes);
+        if (mounted) setState(() => filePath = saved);
+      }
+    } catch (_) {
+      // 保留占位，避免影响消息列表滚动。
+    } finally {
+      service.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final path = filePath;
+    if (path == null) {
+      return const SizedBox(
+          width: 120,
+          height: 90,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+    }
+    return GestureDetector(
+      onTap: () => widget.onOpen(path),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child:
+            Image.file(File(path), width: 180, height: 140, fit: BoxFit.cover),
+      ),
+    );
+  }
+}
+
 class _TypingBubble extends StatefulWidget {
   @override
   State<_TypingBubble> createState() => _TypingBubbleState();
@@ -2145,29 +2211,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   Widget _imageMessageBody(Map<String, dynamic> message) {
     final key = '${message['text'] ?? ''}';
-    final filePath = imageFiles[key];
-    if (filePath == null) {
-      unawaited(_resolveImage(key));
-      return const SizedBox(
-        width: 120,
-        height: 90,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      );
-    }
-    return GestureDetector(
-      onTap: () => showDialog<void>(
+    return _ChatImageMessage(
+      key: ValueKey('image-$key'),
+      imageKey: key,
+      onOpen: (filePath) => showDialog<void>(
         context: context,
         builder: (_) => Dialog(
           child: InteractiveViewer(child: Image.file(File(filePath))),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.file(
-          File(filePath),
-          width: 180,
-          height: 140,
-          fit: BoxFit.cover,
         ),
       ),
     );
