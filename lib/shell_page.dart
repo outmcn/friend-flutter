@@ -2570,7 +2570,19 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (raw is Map) {
       final map = Map<String, dynamic>.from(raw);
-      if (map.isNotEmpty) return {...message, 'metadata': map};
+      if (map.isNotEmpty) {
+        final type = '${map['type'] ?? ''}';
+        final body = '${message['text'] ?? ''}';
+        final preview =
+            body.replaceFirst(RegExp(r'^\[动态分享:\d+\]\s*'), '').trim();
+        if (type == 'post_share' &&
+            '${map['content'] ?? ''}'.trim().isEmpty &&
+            preview.isNotEmpty &&
+            preview != '分享了一条动态') {
+          map['content'] = preview;
+        }
+        return {...message, 'metadata': map};
+      }
     }
     final topType = '${message['type'] ?? message['messageType'] ?? ''}';
     final topPostId = message['postId'] ?? message['post_id'];
