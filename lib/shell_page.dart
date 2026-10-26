@@ -2579,11 +2579,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         final body = '${message['text'] ?? ''}';
         final preview =
             body.replaceFirst(RegExp(r'^\[动态分享:\d+\]\s*'), '').trim();
-        if (type == 'post_share' &&
-            '${map['content'] ?? ''}'.trim().isEmpty &&
-            preview.isNotEmpty &&
-            preview != '分享了一条动态') {
-          map['content'] = preview;
+        if (type == 'post_share') {
+          final content = '${map['content'] ?? ''}'.trim();
+          final thumbnail = '${map['thumbnailUrl'] ?? ''}'.trim();
+          if (content.isEmpty && preview.isNotEmpty && preview != '分享了一条动态') {
+            map['content'] = preview;
+          }
+          if (thumbnail.isEmpty &&
+              '${message['thumbnailUrl'] ?? ''}'.trim().isNotEmpty) {
+            map['thumbnailUrl'] = '${message['thumbnailUrl']}'.trim();
+          }
+          if ('${map['author'] ?? ''}'.trim().isEmpty &&
+              '${message['author'] ?? ''}'.trim().isNotEmpty) {
+            map['author'] = '${message['author']}'.trim();
+          }
         }
         return {...message, 'metadata': map};
       }
