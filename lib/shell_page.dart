@@ -2701,7 +2701,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: 230,
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(1),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(12),
@@ -2797,7 +2797,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: 230,
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(1),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(12),
