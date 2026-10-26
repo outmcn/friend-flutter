@@ -249,9 +249,9 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
         final ratio = _imageInfo!.image.width / _imageInfo!.image.height;
         final availableWidth = constraints.maxWidth;
         final naturalHeight = availableWidth / ratio;
-        final displayHeight = naturalHeight > 500 ? 500.0 : naturalHeight;
+        final displayHeight = naturalHeight > 400 ? 400.0 : naturalHeight;
         final displayWidth =
-            naturalHeight > 500 ? displayHeight * ratio : availableWidth;
+            naturalHeight > 400 ? displayHeight * ratio : availableWidth;
         return Align(
           alignment: Alignment.topLeft,
           child: ClipRRect(
