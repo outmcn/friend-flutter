@@ -107,10 +107,54 @@ class _VoiceRoomShareSheetState extends State<_VoiceRoomShareSheet> {
 
   String _roomTitle() => widget.room?['title']?.toString() ?? '语音频道';
 
+  String get _ownerName =>
+      widget.room?['owner_nickname']?.toString() ??
+      widget.room?['ownerNickname']?.toString() ??
+      widget.room?['nickname']?.toString() ??
+      '房主';
+
   Future<void> _sendTo(DDConversation conversation) async {
     final peer = conversation.peer;
     if (peer == null) return;
-    widget.onDirectChat();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final accountId = prefs.getString('friend.auth.userId') ?? '';
+      if (accountId.isEmpty) throw Exception('登录状态已失效');
+      final roomId = widget.room?['id'] ?? widget.room?['roomId'] ?? '';
+      if ('$roomId'.isEmpty) throw Exception('频道资料暂不可用');
+      final roomTitle = _roomTitle();
+      final ownerId = widget.room?['owner_user_id'] ??
+          widget.room?['ownerUserId'] ??
+          widget.room?['owner_id'] ??
+          '';
+      await MessageSendCoordinator.instance.send(
+        accountId: accountId,
+        message: {
+          'clientId': 'channel-share-${DateTime.now().microsecondsSinceEpoch}',
+          'conversationId': conversation.id,
+          'senderId': accountId,
+          'text': '分享了一个语音频道',
+          'kind': 'text',
+          'metadata': {
+            'type': 'voice_room_share',
+            'roomId': '$roomId',
+            'title': roomTitle,
+            'ownerId': '$ownerId',
+            'ownerName': _ownerName,
+          },
+          'createdAt': DateTime.now().toIso8601String(),
+          'status': 'pending',
+        },
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('已分享给${peer.nickname ?? '好友'}')),
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => error = '频道分享失败');
+    }
   }
 
   @override
