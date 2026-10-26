@@ -3347,8 +3347,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                   ),
                                                   margin: const EdgeInsets.only(
                                                       bottom: 0),
-                                                  padding:
-                                                      const EdgeInsets.all(1),
+                                                  padding: _isVoiceRoomShare(
+                                                              message) ||
+                                                          _isSharedPost(message)
+                                                      ? const EdgeInsets.all(1)
+                                                      : const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 8),
                                                   decoration: BoxDecoration(
                                                     color: isMine
                                                         ? Theme.of(context)
