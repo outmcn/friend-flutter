@@ -1513,34 +1513,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
       );
-      final service = DDPostService();
-      try {
-        final timeline = await service.fetchImTimeline(
-          token,
-          widget.chat.conversationId,
-        );
-        for (final raw in timeline) {
-          final item = _normalizeMessageMetadata(raw);
-          final id = '${item['id'] ?? ''}';
-          final clientId = '${item['clientId'] ?? ''}';
-          final index = cached.indexWhere((existing) =>
-              (id.isNotEmpty && '${existing['id'] ?? ''}' == id) ||
-              (clientId.isNotEmpty &&
-                  '${existing['clientId'] ?? ''}' == clientId));
-          if (index >= 0) {
-            cached[index] = {...cached[index], ...item};
-          } else {
-            cached.add(item);
-          }
-        }
-        await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: cached,
-        );
-      } finally {
-        service.dispose();
-      }
       for (final state in MessageSendCoordinator.instance
           .snapshot(currentUserId, widget.chat.conversationId)) {
         final index = cached.indexWhere((row) =>
