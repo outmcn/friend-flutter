@@ -39,17 +39,26 @@ class _FriendAvatar extends StatelessWidget {
   const _FriendAvatar({
     required this.avatarUrl,
     this.frameAsset,
+    this.gender,
     this.size = 48,
     this.placeholder,
   });
   final String avatarUrl;
   final String? frameAsset;
+  final String? gender;
   final double size;
   final Widget? placeholder;
 
   @override
   Widget build(BuildContext context) {
-    final frame = normalizeAvatarFrameAsset(frameAsset);
+    final explicitFrame = normalizeAvatarFrameAsset(frameAsset);
+    final frame = explicitFrame.isNotEmpty
+        ? explicitFrame
+        : gender == '男'
+            ? 'assets/avatar_frames/男_frame.png'
+            : gender == '女'
+                ? 'assets/avatar_frames/女_frame.png'
+                : '';
     return SizedBox(
       width: size,
       height: size,

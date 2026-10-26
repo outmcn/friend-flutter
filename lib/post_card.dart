@@ -966,7 +966,14 @@ class _DiscoverProfileCard extends StatelessWidget {
       required String gender,
       double size = 40,
       String? frameAsset}) {
-    final normalizedFrame = normalizeAvatarFrameAsset(frameAsset);
+    final explicitFrame = normalizeAvatarFrameAsset(frameAsset);
+    final normalizedFrame = explicitFrame.isNotEmpty
+        ? explicitFrame
+        : gender == '男'
+            ? 'assets/avatar_frames/男_frame.png'
+            : gender == '女'
+                ? 'assets/avatar_frames/女_frame.png'
+                : '';
     final color = gender == '男'
         ? const Color(0xFF1677FF)
         : gender == '女'

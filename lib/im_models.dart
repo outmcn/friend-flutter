@@ -45,6 +45,7 @@ class DDImPeer {
       this.avatarUrl,
       this.avatarFrameAsset,
       this.avatarFrameSelection,
+      this.gender,
       this.online = false,
       this.latitude,
       this.longitude});
@@ -54,6 +55,7 @@ class DDImPeer {
   final String? avatarUrl;
   final String? avatarFrameAsset;
   final String? avatarFrameSelection;
+  final String? gender;
   final bool online;
   final double? latitude;
   final double? longitude;
@@ -65,6 +67,7 @@ class DDImPeer {
         avatarUrl: json['avatarUrl'] as String?,
         avatarFrameAsset: json['avatarFrameAsset'] as String?,
         avatarFrameSelection: json['avatarFrameSelection'] as String?,
+        gender: json['gender']?.toString(),
         online: json['online'] == true,
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),

@@ -406,6 +406,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           row.peer?.longitude,
           row.peer?.avatarFrameAsset,
           row.peer?.avatarFrameSelection,
+          row.peer?.gender,
         ));
       }
       mapped.sort((a, b) {
@@ -809,6 +810,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       _FriendAvatar(
                         avatarUrl: chat.avatarUrl ?? '',
                         frameAsset: chat.avatarFrameAsset,
+                        gender: chat.gender,
                         size: 48,
                         placeholder: const Icon(Icons.person_outline),
                       ),
@@ -1034,7 +1036,8 @@ class _ChatPreview {
       this.peerLatitude,
       this.peerLongitude,
       this.avatarFrameAsset,
-      this.avatarFrameSelection]);
+      this.avatarFrameSelection,
+      this.gender]);
   final String name;
   final String preview;
   final String? avatarUrl;
@@ -1050,6 +1053,7 @@ class _ChatPreview {
   final bool online;
   final String? avatarFrameAsset;
   final String? avatarFrameSelection;
+  final String? gender;
   final double? peerLatitude;
   final double? peerLongitude;
 
@@ -1071,6 +1075,7 @@ class _ChatPreview {
         (row['peerLongitude'] as num?)?.toDouble(),
         row['avatarFrameAsset'] as String?,
         row['avatarFrameSelection'] as String?,
+        row['gender'] as String?,
       );
 
   _ChatPreview copyWith({bool? pinned, bool? muted, int? unreadCount}) =>
@@ -1092,6 +1097,7 @@ class _ChatPreview {
         peerLongitude,
         avatarFrameAsset,
         avatarFrameSelection,
+        gender,
       );
 
   Map<String, dynamic> toCache() => {
@@ -1110,6 +1116,7 @@ class _ChatPreview {
         'online': online,
         'avatarFrameAsset': avatarFrameAsset,
         'avatarFrameSelection': avatarFrameSelection,
+        'gender': gender,
         'peerLatitude': peerLatitude,
         'peerLongitude': peerLongitude,
       };
