@@ -33,7 +33,7 @@ Future<void> _sendSharedPostMessage({
       'clientId': clientId,
       'conversationId': conversationId,
       'senderId': accountId,
-      'text': '[动态分享:$postId] ${text.trim().isEmpty ? '分享了一条动态' : text.trim()}',
+      'text': text.trim().isEmpty ? '分享了一条动态' : text.trim(),
       'kind': 'text',
       'metadata': {
         'postId': postId,
@@ -1004,9 +1004,6 @@ Map<String, dynamic>? _decodeConversationMetadata(Object? value) {
   }
 }
 
-String _stripSharedPostMarker(String text) =>
-    text.replaceFirst(RegExp(r'^\[动态分享:\d+\]\s*'), '').trim();
-
 String? _localMessagePreview(Map<String, dynamic>? row) {
   if (row == null) return null;
   final status = '${row['status'] ?? 'sent'}';
@@ -1023,8 +1020,7 @@ String? _localMessagePreview(Map<String, dynamic>? row) {
   }
   if (kind == 'image') return '[图片]';
   if (kind == 'audio') return '[语音]';
-  final text = _stripSharedPostMarker('${row['text'] ?? ''}');
-  return text.isEmpty ? '分享了一条动态' : text;
+  return '${row['text'] ?? ''}';
 }
 
 String? _conversationLastMessagePreview(DDImLastMessage? message) {
@@ -1045,9 +1041,9 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
     case 'call':
       return '[语音通话]';
     default:
-      final text = _stripSharedPostMarker(message.text.trim());
+      final text = message.text.trim();
       if (text.startsWith('分享：')) return text;
-      return text.isEmpty ? '分享了一条动态' : text;
+      return text.isEmpty ? null : text;
   }
 }
 
@@ -2567,62 +2563,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Map<String, dynamic> _normalizeMessageMetadata(Map<String, dynamic> message) {
-    dynamic raw = message['metadata'];
+    final raw = message['metadata'];
+    if (raw is Map && raw.isNotEmpty) {
+      return {...message, 'metadata': Map<String, dynamic>.from(raw)};
+    }
     if (raw is String) {
       final decoded = ImLocalStore.decodeMetadata(raw);
       if (decoded != null) return {...message, 'metadata': decoded};
-    }
-    if (raw is Map) {
-      final map = Map<String, dynamic>.from(raw);
-      if (map.isNotEmpty) {
-        final type = '${map['type'] ?? ''}';
-        final body = '${message['text'] ?? ''}';
-        final preview =
-            body.replaceFirst(RegExp(r'^\[动态分享:\d+\]\s*'), '').trim();
-        if (type == 'post_share') {
-          final content = '${map['content'] ?? ''}'.trim();
-          final thumbnail = '${map['thumbnailUrl'] ?? ''}'.trim();
-          if (content.isEmpty && preview.isNotEmpty && preview != '分享了一条动态') {
-            map['content'] = preview;
-          }
-          if (thumbnail.isEmpty &&
-              '${message['thumbnailUrl'] ?? ''}'.trim().isNotEmpty) {
-            map['thumbnailUrl'] = '${message['thumbnailUrl']}'.trim();
-          }
-          if ('${map['author'] ?? ''}'.trim().isEmpty &&
-              '${message['author'] ?? ''}'.trim().isNotEmpty) {
-            map['author'] = '${message['author']}'.trim();
-          }
-        }
-        return {...message, 'metadata': map};
-      }
-    }
-    final topType = '${message['type'] ?? message['messageType'] ?? ''}';
-    final topPostId = message['postId'] ?? message['post_id'];
-    final text = '${message['text'] ?? ''}';
-    final match = RegExp(r'^\[动态分享:(\d+)\]').firstMatch(text);
-    if ((topType == 'post_share' && topPostId != null) || match != null) {
-      final postId = topPostId ?? match!.group(1);
-      return {
-        ...message,
-        'metadata': {
-          'type': 'post_share',
-          'postId': postId,
-          'author': message['author'] ?? '',
-          'content': message['content'] ??
-              text.replaceFirst(RegExp(r'^\[动态分享:\d+\]\s*'), ''),
-          'thumbnailUrl': message['thumbnailUrl'] ?? '',
-        },
-      };
-    }
-    for (final key in ['payload', 'data', 'message']) {
-      final nested = message[key];
-      if (nested is Map && nested['metadata'] != null) {
-        return _normalizeMessageMetadata({
-          ...message,
-          'metadata': nested['metadata'],
-        });
-      }
     }
     return message;
   }
