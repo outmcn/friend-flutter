@@ -70,11 +70,7 @@ class _FriendAvatar extends StatelessWidget {
     final explicitFrame = normalizeAvatarFrameAsset(frameAsset);
     final frame = explicitFrame.isNotEmpty
         ? explicitFrame
-        : gender == '男'
-            ? 'assets/avatar_frames/男_frame.png'
-            : gender == '女'
-                ? 'assets/avatar_frames/女_frame.png'
-                : '';
+        : defaultAvatarFrameForGender(gender);
     return SizedBox(
       width: size,
       height: size,
