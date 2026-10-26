@@ -3349,8 +3349,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                       bottom: 0),
                                                   padding: _isVoiceRoomShare(
                                                               message) ||
-                                                          _isSharedPost(message)
-                                                      ? const EdgeInsets.all(1)
+                                                          _isSharedPost(
+                                                              message) ||
+                                                          message['kind'] ==
+                                                              'image'
+                                                      ? const EdgeInsets.all(5)
                                                       : const EdgeInsets
                                                           .symmetric(
                                                           horizontal: 12,
