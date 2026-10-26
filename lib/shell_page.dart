@@ -1522,6 +1522,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     messageFocusNode.dispose();
     messageScrollController.removeListener(_handleMessageScroll);
     messageScrollController.dispose();
+    _messagePersistTimer?.cancel();
+    if (_messagePersistQueued) unawaited(_persistMessagesSnapshot());
     typingTimer?.cancel();
     unawaited(holdRecorder?.dispose());
     audioPlayer.dispose();
@@ -1568,6 +1570,31 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     } finally {
       service.dispose();
     }
+  }
+
+  Timer? _messagePersistTimer;
+  bool _messagePersistQueued = false;
+
+  void _scheduleMessagePersist() {
+    _messagePersistQueued = true;
+    _messagePersistTimer?.cancel();
+    _messagePersistTimer = Timer(const Duration(milliseconds: 180), () {
+      _messagePersistTimer = null;
+      if (_messagePersistQueued) unawaited(_persistMessagesSnapshot());
+    });
+  }
+
+  Future<void> _persistMessagesSnapshot() async {
+    if (!_messagePersistQueued || currentUserId.isEmpty) return;
+    _messagePersistQueued = false;
+    final snapshot = messages.map((item) => {...item}).toList();
+    try {
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: snapshot,
+      );
+    } catch (_) {}
   }
 
   Future<void> _cleanupCachedMessagesInBackground(
@@ -1998,11 +2025,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     if (type == 'message:new') {
       if (_mergeMessage(item, status: 'sent')) {
-        await ImLocalStore.saveMessages(
-          accountId: currentUserId,
-          conversationId: widget.chat.conversationId,
-          messages: messages,
-        );
+        _scheduleMessagePersist();
         final id = '${item['id'] ?? ''}';
         await _confirmDurableMessages(<String>[id]);
         unawaited(_markLatestRead());
