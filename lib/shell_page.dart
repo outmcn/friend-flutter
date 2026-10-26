@@ -1529,6 +1529,47 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     super.dispose();
   }
 
+  String _historyMetadataSyncKey(String accountId) =>
+      'friend.im.history.metadata.synced.$accountId.${widget.chat.conversationId}';
+
+  Future<void> _syncHistoryMetadataOnce(
+      String token, String accountId, List<Map<String, dynamic>> cached) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _historyMetadataSyncKey(accountId);
+    if (prefs.getBool(key) == true) return;
+    final service = DDPostService();
+    try {
+      final timeline =
+          await service.fetchImTimeline(token, widget.chat.conversationId);
+      var changed = false;
+      for (final raw in timeline) {
+        final item = _normalizeMessageMetadata(raw);
+        final id = '${item['id'] ?? ''}';
+        final index = cached.indexWhere((x) => '${x['id'] ?? ''}' == id);
+        if (index >= 0)
+          cached[index] = {...cached[index], ...item};
+        else
+          cached.add(item);
+        changed = true;
+      }
+      if (changed) {
+        await ImLocalStore.saveMessages(
+            accountId: accountId,
+            conversationId: widget.chat.conversationId,
+            messages: cached);
+        if (mounted)
+          setState(() => messages
+            ..clear()
+            ..addAll(cached));
+      }
+      await prefs.setBool(key, true);
+    } catch (_) {
+      // 失败不阻塞聊天，下次进入继续尝试。
+    } finally {
+      service.dispose();
+    }
+  }
+
   Future<void> _connectIm() async {
     try {
       await _connectImInternal();
@@ -1583,6 +1624,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           initialSyncCompleted = true;
         });
       }
+      unawaited(_syncHistoryMetadataOnce(token, currentUserId, cached));
       final deletedIds = await ImLocalStore.localDeletedMessageIds(
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
@@ -2526,7 +2568,22 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       if (decoded != null) return {...message, 'metadata': decoded};
     }
     if (raw is Map) {
-      return {...message, 'metadata': Map<String, dynamic>.from(raw)};
+      final map = Map<String, dynamic>.from(raw);
+      if (map.isNotEmpty) return {...message, 'metadata': map};
+    }
+    final topType = '${message['type'] ?? message['messageType'] ?? ''}';
+    final topPostId = message['postId'] ?? message['post_id'];
+    if (topType == 'post_share' && topPostId != null) {
+      return {
+        ...message,
+        'metadata': {
+          'type': 'post_share',
+          'postId': topPostId,
+          'author': message['author'] ?? '',
+          'content': message['content'] ?? message['text'] ?? '',
+          'thumbnailUrl': message['thumbnailUrl'] ?? '',
+        },
+      };
     }
     for (final key in ['payload', 'data', 'message']) {
       final nested = message[key];
