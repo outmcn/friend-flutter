@@ -1624,7 +1624,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           initialSyncCompleted = true;
         });
       }
-      unawaited(_syncHistoryMetadataOnce(token, currentUserId, cached));
+      // 进入聊天只读取本地缓存；历史补同步不参与首屏流程。
+      // 动态分享 metadata 由发送回执和实时消息直接写入本地.
       final deletedIds = await ImLocalStore.localDeletedMessageIds(
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
