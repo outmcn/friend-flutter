@@ -2575,7 +2575,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final topType = '${message['type'] ?? message['messageType'] ?? ''}';
     final topPostId = message['postId'] ?? message['post_id'];
     final text = '${message['text'] ?? ''}';
-    final match = RegExp(r'^\\[动态分享:(\\d+)\\]').firstMatch(text);
+    final match = RegExp(r'^\[动态分享:(\d+)\]').firstMatch(text);
     if ((topType == 'post_share' && topPostId != null) || match != null) {
       final postId = topPostId ?? match!.group(1);
       return {
@@ -2585,7 +2585,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           'postId': postId,
           'author': message['author'] ?? '',
           'content': message['content'] ??
-              text.replaceFirst(RegExp(r'^\\[动态分享:\\d+\\]\\s*'), ''),
+              text.replaceFirst(RegExp(r'^\[动态分享:\d+\]\s*'), ''),
           'thumbnailUrl': message['thumbnailUrl'] ?? '',
         },
       };
