@@ -1214,7 +1214,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
                     children: [
-                      if (error != null)
+                      if (error != null && item == null)
                         _PageErrorState(
                             title: '加载失败', subtitle: error!, onRetry: load),
                       if (item != null) ...[
