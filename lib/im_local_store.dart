@@ -84,6 +84,15 @@ class ImLocalStore {
         if (oldVersion < 10) {
           await db.execute('ALTER TABLE messages ADD COLUMN metadata TEXT');
         }
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS local_deleted_messages (
+            account_id TEXT NOT NULL,
+            conversation_id TEXT NOT NULL,
+            message_id TEXT NOT NULL,
+            deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (account_id, conversation_id, message_id)
+          )
+        ''');
         if (oldVersion < 2) {
           await db.execute(
               "ALTER TABLE messages ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'");
