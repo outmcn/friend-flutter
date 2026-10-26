@@ -1239,10 +1239,13 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   void initState() {
     super.initState();
     _loadLocation();
-    _magnetometer = Timer.periodic(const Duration(milliseconds: 40), (_) async {
+    _magnetometer =
+        Timer.periodic(const Duration(milliseconds: 250), (_) async {
       final raw = await _compassChannel.invokeMethod<dynamic>('heading');
       final value = raw is num ? raw.toDouble() : null;
-      if (value != null && mounted) setState(() => heading = value);
+      if (value != null && mounted && (value - heading).abs() >= 1) {
+        setState(() => heading = value);
+      }
     });
   }
 
@@ -1457,7 +1460,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     super.initState();
     messageScrollController.addListener(_handleMessageScroll);
     unawaited(_loadChatAvatars());
-    unawaited(_connectIm());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_connectIm());
+    });
   }
 
   Future<void> _loadChatAvatars() async {
