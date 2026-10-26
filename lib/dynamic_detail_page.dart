@@ -926,6 +926,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
 
   Future<void> _sendSelectedGift(Map<String, dynamic> gift) async {
     if (giftSubmitting) return;
+    final giftId = int.tryParse(
+        '${gift['id'] ?? gift['gift_id'] ?? gift['gift_item_id'] ?? gift['giftItemId'] ?? ''}');
+    if (giftId == null || giftId <= 0) {
+      if (mounted) _showTopNotice(context, const Text('礼物资料无效'));
+      return;
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -949,7 +955,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       await service.sendPostGift(
         token: await token(),
         postId: widget.postId,
-        giftId: int.parse('${gift['id']}'),
+        giftId: giftId,
       );
       await _loadReceivedGifts(await token());
       if (mounted) _showTopNotice(context, const Text('送礼成功'));
