@@ -33,7 +33,7 @@ Future<void> _sendSharedPostMessage({
       'clientId': clientId,
       'conversationId': conversationId,
       'senderId': accountId,
-      'text': text.trim().isEmpty ? '分享了一条动态' : text.trim(),
+      'text': '[动态分享:$postId] ${text.trim().isEmpty ? '分享了一条动态' : text.trim()}',
       'kind': 'text',
       'metadata': {
         'postId': postId,
@@ -2573,14 +2573,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     final topType = '${message['type'] ?? message['messageType'] ?? ''}';
     final topPostId = message['postId'] ?? message['post_id'];
-    if (topType == 'post_share' && topPostId != null) {
+    final text = '${message['text'] ?? ''}';
+    final match = RegExp(r'^\\[动态分享:(\\d+)\\]').firstMatch(text);
+    if ((topType == 'post_share' && topPostId != null) || match != null) {
+      final postId = topPostId ?? match!.group(1);
       return {
         ...message,
         'metadata': {
           'type': 'post_share',
-          'postId': topPostId,
+          'postId': postId,
           'author': message['author'] ?? '',
-          'content': message['content'] ?? message['text'] ?? '',
+          'content': message['content'] ??
+              text.replaceFirst(RegExp(r'^\\[动态分享:\\d+\\]\\s*'), ''),
           'thumbnailUrl': message['thumbnailUrl'] ?? '',
         },
       };
