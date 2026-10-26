@@ -50,7 +50,7 @@ class _VoiceRoomFloatingOverlay {
   }
 }
 
-class _VoiceRoomShareSheet extends StatelessWidget {
+class _VoiceRoomShareSheet extends StatefulWidget {
   const _VoiceRoomShareSheet({
     required this.room,
     required this.onDirectChat,
@@ -58,61 +58,149 @@ class _VoiceRoomShareSheet extends StatelessWidget {
     required this.onGift,
     required this.onReport,
   });
-
   final Map<String, dynamic>? room;
   final VoidCallback onDirectChat;
   final VoidCallback onFollow;
   final VoidCallback onGift;
   final VoidCallback onReport;
+  @override
+  State<_VoiceRoomShareSheet> createState() => _VoiceRoomShareSheetState();
+}
+
+class _VoiceRoomShareSheetState extends State<_VoiceRoomShareSheet> {
+  final service = DDPostService();
+  List<DDConversation> conversations = const [];
+  bool loading = true;
+  String? error;
 
   @override
-  Widget build(BuildContext context) {
-    final title = room?['title']?.toString() ?? '语音频道';
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Center(
-              child: Text('更多操作',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 88,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.mic, color: Color(0xff9b6cff), size: 34),
-                    const SizedBox(height: 6),
-                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-            ),
-            const Divider(height: 24),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _VoiceRoomShareAction(
-                    label: '私聊', icon: TIcons.chat, onTap: onDirectChat),
-                _VoiceRoomShareAction(
-                    label: '关注', icon: TIcons.user_add, onTap: onFollow),
-                _VoiceRoomShareAction(
-                    label: '送礼', icon: TIcons.gift, onTap: onGift),
-                _VoiceRoomShareAction(
-                    label: '举报', icon: TIcons.bug_report, onTap: onReport),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  void initState() {
+    super.initState();
+    unawaited(_loadConversations());
   }
+
+  @override
+  void dispose() {
+    service.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('friend.auth.token') ?? '';
+      if (token.isEmpty) throw Exception('请先登录');
+      final rows = await service.fetchImConversations(token);
+      if (mounted)
+        setState(() {
+          conversations = rows.take(10).toList();
+          loading = false;
+        });
+    } catch (e) {
+      if (mounted)
+        setState(() {
+          loading = false;
+          error = '最近聊天加载失败';
+        });
+    }
+  }
+
+  String _roomTitle() => widget.room?['title']?.toString() ?? '语音频道';
+
+  Future<void> _sendTo(DDConversation conversation) async {
+    final peer = conversation.peer;
+    if (peer == null) return;
+    widget.onDirectChat();
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                  child: Text('分享频道',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700))),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 92,
+                child: loading
+                    ? const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : error != null
+                        ? Center(child: Text(error!))
+                        : conversations.isEmpty
+                            ? const Center(child: Text('暂无最近聊天'))
+                            : ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: conversations.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: 12),
+                                itemBuilder: (_, index) {
+                                  final conversation = conversations[index];
+                                  final peer = conversation.peer;
+                                  final name =
+                                      peer?.nickname?.trim().isNotEmpty == true
+                                          ? peer!.nickname!
+                                          : '好友';
+                                  final avatar =
+                                      peer?.avatarUrl ?? peer?.avatarKey ?? '';
+                                  return InkWell(
+                                    onTap: () => _sendTo(conversation),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: SizedBox(
+                                      width: 64,
+                                      child: Column(children: [
+                                        CircleAvatar(
+                                          radius: 25,
+                                          backgroundImage: avatar.isEmpty
+                                              ? null
+                                              : NetworkImage(avatar),
+                                          child: avatar.isEmpty
+                                              ? const Icon(Icons.person_outline)
+                                              : null,
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style:
+                                                const TextStyle(fontSize: 12)),
+                                      ]),
+                                    ),
+                                  );
+                                },
+                              ),
+              ),
+              const Divider(height: 24),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _VoiceRoomShareAction(
+                      label: '私聊',
+                      icon: TIcons.chat,
+                      onTap: widget.onDirectChat),
+                  _VoiceRoomShareAction(
+                      label: '关注',
+                      icon: TIcons.user_add,
+                      onTap: widget.onFollow),
+                  _VoiceRoomShareAction(
+                      label: '送礼', icon: TIcons.gift, onTap: widget.onGift),
+                  _VoiceRoomShareAction(
+                      label: '举报',
+                      icon: TIcons.bug_report,
+                      onTap: widget.onReport),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _VoiceRoomShareAction extends StatelessWidget {
