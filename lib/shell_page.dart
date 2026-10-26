@@ -3347,10 +3347,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                   ),
                                                   margin: const EdgeInsets.only(
                                                       bottom: 0),
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 8),
+                                                  padding:
+                                                      const EdgeInsets.all(1),
                                                   decoration: BoxDecoration(
                                                     color: isMine
                                                         ? Theme.of(context)
