@@ -344,6 +344,27 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     }
   }
 
+  Future<void> _loadDetailBackground(String token, DDPost? cached) async {
+    await Future.wait([
+      _ignoreDetailFailure(() async {
+        final me = await service.fetchMe(token);
+        if (mounted)
+          setState(() {
+            currentUserId = _intValue(me['id']);
+            ownerResolved = true;
+          });
+      }()),
+      _ignoreDetailFailure(_loadComments(token)),
+      _ignoreDetailFailure(_loadReceivedGifts(token)),
+      _ignoreDetailFailure(() async {
+        final source = cached ?? await service.fetchPost(token, widget.postId);
+        final resolved = await service.resolvePostMedia(token, source);
+        if (mounted) _publish(resolved);
+        await _saveDetailCache(resolved);
+      }()),
+    ]);
+  }
+
   Future<void> load() async {
     if (refreshing) return;
     refreshing = true;
@@ -357,50 +378,19 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           post = cached;
           loading = false;
         });
+        unawaited(_loadDetailBackground(t, cached));
+        return;
       }
-      // 身份、评论与动态各自加载，任何一路失败都不抹掉已展示内容。
-      await Future.wait([
-        _ignoreDetailFailure(() async {
-          final me = await service.fetchMe(t);
-          if (mounted) {
-            setState(() {
-              currentUserId = _intValue(me['id']);
-              ownerResolved = true;
-            });
-          }
-        }()),
-        _ignoreDetailFailure(_loadComments(t)),
-        _ignoreDetailFailure(_loadReceivedGifts(t)),
-        () async {
-          if (cached != null) {
-            try {
-              _publish(await service.resolvePostMedia(t, cached));
-            } catch (_) {}
-          }
-          final fresh = widget.initialPost == null
-              ? await service.fetchPost(t, widget.postId)
-              : widget.initialPost!;
-          final resolved = await service.resolvePostMedia(t, fresh);
-          final current = post;
-          final merged = current == null
-              ? resolved
-              : resolved.copyWith(
-                  nickname: resolved.nickname.trim().isEmpty
-                      ? current.nickname
-                      : resolved.nickname,
-                  avatar: resolved.avatar.trim().isEmpty
-                      ? current.avatar
-                      : resolved.avatar,
-                );
-          _publish(merged);
-          await _saveDetailCache(merged);
-        }(),
-      ]);
-      if (mounted) setState(() => error = null);
+      final fresh = await service.fetchPost(t, widget.postId);
+      if (!mounted) return;
+      setState(() {
+        post = fresh;
+        loading = false;
+      });
+      unawaited(_loadDetailBackground(t, fresh));
     } catch (e) {
-      if (mounted) {
+      if (mounted)
         setState(() => error = e.toString().replaceFirst('Exception: ', ''));
-      }
     } finally {
       refreshing = false;
       if (mounted) setState(() => loading = false);
