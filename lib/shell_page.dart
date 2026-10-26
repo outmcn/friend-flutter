@@ -1703,12 +1703,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       List<Map<String, dynamic>> source) async {
     try {
       final cached = source.map((item) => {...item}).toList();
-      final deletedIds = await ImLocalStore.localDeletedMessageIds(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-      );
-      cached.removeWhere((item) =>
-          !ImCall.isCall(item) && deletedIds.contains('${item['id']}'));
       final normalized = <String, Map<String, dynamic>>{};
       for (final item in cached) {
         final key =
@@ -1793,12 +1787,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           item['_timelineKind'] = 'call';
         }
       }
-      final deletedIds = await ImLocalStore.localDeletedMessageIds(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-      );
-      cached.removeWhere((item) =>
-          !ImCall.isCall(item) && deletedIds.contains('${item['id']}'));
       if (mounted && !_localMessagesCleared) {
         setState(() {
           messages

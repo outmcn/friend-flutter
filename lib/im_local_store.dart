@@ -148,22 +148,13 @@ class ImLocalStore {
     required String conversationId,
   }) async {
     final db = await _db();
-    final deletedRows = await db.query(
-      'local_deleted_messages',
-      columns: ['message_id'],
-      where: 'account_id = ? AND conversation_id = ?',
-      whereArgs: [accountId, conversationId],
-    );
-    final deletedIds = deletedRows.map((row) => '${row['message_id']}').toSet();
     final rows = await db.query(
       'messages',
       where: 'account_id = ? AND conversation_id = ?',
       whereArgs: [accountId, conversationId],
       orderBy: 'created_at ASC, CAST(message_id AS INTEGER) ASC',
     );
-    return rows
-        .where((row) => !deletedIds.contains('${row['message_id']}'))
-        .map((row) {
+    return rows.map((row) {
       final item = Map<String, dynamic>.from(row);
       return <String, dynamic>{
         'id':
@@ -416,11 +407,6 @@ class ImLocalStore {
     final conversationId = '${message['conversationId'] ?? ''}';
     final messageId = '${message['id'] ?? ''}';
     if (conversationId.isEmpty || messageId.isEmpty) return;
-    final deleted = await localDeletedMessageIds(
-      accountId: accountId,
-      conversationId: conversationId,
-    );
-    if (deleted.contains(messageId)) return;
     await saveMessages(
       accountId: accountId,
       conversationId: conversationId,
@@ -504,11 +490,6 @@ class ImLocalStore {
       where: 'account_id = ? AND conversation_id = ?',
       whereArgs: [accountId, conversationId],
     );
-    await db.delete(
-      'local_deleted_messages',
-      where: 'account_id = ? AND conversation_id = ?',
-      whereArgs: [accountId, conversationId],
-    );
   }
 
   static Future<void> deleteLocalMessage({
@@ -522,43 +503,6 @@ class ImLocalStore {
       where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
       whereArgs: [accountId, conversationId, messageId],
     );
-    await db.insert(
-      'local_deleted_messages',
-      {
-        'account_id': accountId,
-        'conversation_id': conversationId,
-        'message_id': messageId,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  static Future<Set<String>> localDeletedMessageIds({
-    required String accountId,
-    required String conversationId,
-  }) async {
-    final rows = await (await _db()).query(
-      'local_deleted_messages',
-      columns: ['message_id'],
-      where: 'account_id = ? AND conversation_id = ?',
-      whereArgs: [accountId, conversationId],
-    );
-    return rows.map((row) => '${row['message_id']}').toSet();
-  }
-
-  static Future<bool> isLocalMessageDeleted({
-    required String accountId,
-    required String conversationId,
-    required String messageId,
-  }) async {
-    final rows = await (await _db()).query(
-      'local_deleted_messages',
-      columns: ['message_id'],
-      where: 'account_id = ? AND conversation_id = ? AND message_id = ?',
-      whereArgs: [accountId, conversationId, messageId],
-      limit: 1,
-    );
-    return rows.isNotEmpty;
   }
 
   static Future<List<Map<String, dynamic>>> pendingMessages(
