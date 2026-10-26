@@ -1531,7 +1531,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     });
   }
 
+  int _localMessageLoadVersion = 0;
+  bool _localMessagesCleared = false;
+
   Future<void> _loadChatLocalMessages() async {
+    final loadVersion = _localMessageLoadVersion;
     final prefs = await SharedPreferences.getInstance();
     final accountId = widget.currentUserId.isNotEmpty
         ? widget.currentUserId
@@ -1547,7 +1551,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
       for (final item in cached) {
         if ('${item['kind'] ?? ''}' == 'call') item['_timelineKind'] = 'call';
       }
-      if (!mounted || cached.isEmpty || messages.isNotEmpty) return;
+      if (!mounted ||
+          loadVersion != _localMessageLoadVersion ||
+          _localMessagesCleared ||
+          cached.isEmpty ||
+          messages.isNotEmpty) return;
       messages
         ..clear()
         ..addAll(cached);
@@ -2534,11 +2542,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ),
       );
       if (confirmed == true) {
+        _localMessageLoadVersion++;
+        _localMessagesCleared = true;
+        messages.clear();
+        _invalidateTimelineCache();
         await ImLocalStore.clearConversation(
           accountId: currentUserId,
           conversationId: widget.chat.conversationId,
         );
-        if (mounted) setState(() => messages.clear());
+        if (mounted) setState(() {});
       }
     } else if (action == 'search') {
       await showSearch<String?>(
@@ -2617,7 +2629,11 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           (item) => !ImCall.isCall(item) && '${item['id'] ?? ''}' == id);
       if (index >= 0) {
         final messageId = '${messages[index]['id'] ?? ''}';
-        setState(() => messages.removeAt(index));
+        _localMessageLoadVersion++;
+        setState(() {
+          messages.removeAt(index);
+          _invalidateTimelineCache();
+        });
         await ImLocalStore.deleteLocalMessage(
           accountId: currentUserId,
           conversationId: widget.chat.conversationId,
