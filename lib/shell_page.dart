@@ -308,6 +308,25 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
+  Future<String?> _peerGender(DDImPeer? peer, String token) async {
+    if (peer == null || peer.id.trim().isEmpty) return null;
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'friend.peer.gender.${peer.id}';
+    final cached = prefs.getString(cacheKey);
+    if (cached != null && cached.isNotEmpty) return cached;
+    try {
+      final profileService = DDPostService();
+      final profile =
+          await profileService.fetchUserProfile(token, int.parse(peer.id));
+      profileService.dispose();
+      final gender = '${profile['gender'] ?? ''}'.trim();
+      if (gender.isNotEmpty) await prefs.setString(cacheKey, gender);
+      return gender.isEmpty ? null : gender;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _loadConversations({bool showLoading = true}) async {
     if (_conversationRequestRunning) return;
     _conversationRequestRunning = true;
@@ -366,6 +385,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final service = DDPostService();
     try {
       final rows = await service.fetchImConversations(token);
+      final peerGenders = <String, String?>{};
+      await Future.wait(rows.map((row) async {
+        peerGenders[row.id] = await _peerGender(row.peer, token);
+      }));
       if (!mounted) return;
       final mapped = <_ChatPreview>[];
       final latest = accountId.isEmpty
@@ -406,7 +429,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           row.peer?.longitude,
           row.peer?.avatarFrameAsset,
           row.peer?.avatarFrameSelection,
-          row.peer?.gender,
+          peerGenders[row.id] ?? row.peer?.gender,
         ));
       }
       mapped.sort((a, b) {
