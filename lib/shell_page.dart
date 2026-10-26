@@ -1209,7 +1209,8 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   double heading = 0;
   double? myLatitude;
   double? myLongitude;
-  bool dayMode = false;
+  bool get dayMode =>
+      MediaQuery.platformBrightnessOf(context) == Brightness.light;
   Timer? _magnetometer;
   @override
   void initState() {
@@ -1228,7 +1229,6 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
     setState(() {
       myLatitude = p.getDouble('dd.location.latitude');
       myLongitude = p.getDouble('dd.location.longitude');
-      dayMode = p.getBool('friend.radar.dayMode') ?? false;
     });
   }
 
@@ -1276,14 +1276,7 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-      onLongPress: () async {
-        final p = await SharedPreferences.getInstance();
-        final next = !dayMode;
-        await p.setBool('friend.radar.dayMode', next);
-        if (mounted) setState(() => dayMode = next);
-      },
-      child: SizedBox(
+  Widget build(BuildContext context) => SizedBox(
         width: 100,
         height: 120,
         child: DecoratedBox(
@@ -1327,7 +1320,7 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
             ],
           ),
         ),
-      ));
+      );
 }
 
 class _RadarPainter extends CustomPainter {
