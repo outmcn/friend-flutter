@@ -1503,7 +1503,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   bool callDialogShowing = false;
   BuildContext? incomingDialogContext;
   String? activeCallId;
-  final Map<String, String> imageFiles = {};
   String? playingAudioKey;
   Timer? typingTimer;
   bool voiceMode = false;
@@ -2221,31 +2220,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         ),
       ),
     );
-  }
-
-  Future<void> _resolveImage(String key) async {
-    if (key.isEmpty || imageFiles.containsKey(key)) return;
-    final cached = await ImLocalStore.imagePath(key);
-    if (cached != null && mounted) {
-      setState(() => imageFiles[key] = cached);
-      return;
-    }
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('friend.auth.token') ?? '';
-    if (token.isEmpty) return;
-    final service = DDPostService();
-    try {
-      final url = await service.mediaUrlForKey(token, key);
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final filePath = await ImLocalStore.saveImage(key, response.bodyBytes);
-        if (mounted) setState(() => imageFiles[key] = filePath);
-      }
-    } catch (_) {
-      // A later rebuild can retry a transient signed URL or network failure.
-    } finally {
-      service.dispose();
-    }
   }
 
   Future<void> _startHoldRecording(LongPressStartDetails details) async {
