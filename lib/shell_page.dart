@@ -1570,6 +1570,45 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  Future<void> _cleanupCachedMessagesInBackground(
+      List<Map<String, dynamic>> source) async {
+    try {
+      final cached = source.map((item) => {...item}).toList();
+      final deletedIds = await ImLocalStore.localDeletedMessageIds(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+      );
+      cached.removeWhere((item) =>
+          !ImCall.isCall(item) && deletedIds.contains('${item['id']}'));
+      final normalized = <String, Map<String, dynamic>>{};
+      for (final item in cached) {
+        final key =
+            '${ImCall.isCall(item) ? 'call' : 'message'}:${item['clientId'] ?? item['id'] ?? ''}';
+        final old = normalized[key];
+        if (old == null ||
+            '${old['id'] ?? ''}'.startsWith('local:') &&
+                !'${item['id'] ?? ''}'.startsWith('local:')) {
+          normalized[key] = item;
+        }
+      }
+      final cleaned = normalized.values.toList();
+      if (cleaned.length == source.length) return;
+      await ImLocalStore.saveMessages(
+        accountId: currentUserId,
+        conversationId: widget.chat.conversationId,
+        messages: cleaned,
+      );
+      if (!mounted) return;
+      setState(() {
+        messages
+          ..clear()
+          ..addAll(cleaned);
+      });
+    } catch (_) {
+      // 后台清理失败不影响首屏消息显示。
+    }
+  }
+
   Future<void> _connectIm() async {
     try {
       await _connectImInternal();
@@ -1624,39 +1663,14 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
           initialSyncCompleted = true;
         });
       }
-      // 进入聊天只读取本地缓存；历史补同步不参与首屏流程。
-      // 动态分享 metadata 由发送回执和实时消息直接写入本地.
-      final deletedIds = await ImLocalStore.localDeletedMessageIds(
-        accountId: currentUserId,
-        conversationId: widget.chat.conversationId,
-      );
-      cached.removeWhere((item) =>
-          !ImCall.isCall(item) && deletedIds.contains('${item['id']}'));
-      final normalized = <String, Map<String, dynamic>>{};
-      for (final item in cached) {
-        final key =
-            '${ImCall.isCall(item) ? 'call' : 'message'}:${item['clientId'] ?? item['id'] ?? ''}';
-        final old = normalized[key];
-        if (old == null ||
-            '${old['id'] ?? ''}'.startsWith('local:') &&
-                !'${item['id'] ?? ''}'.startsWith('local:')) {
-          normalized[key] = item;
-        }
-      }
-      cached
-        ..clear()
-        ..addAll(normalized.values);
-      if (!mounted) return;
-      setState(() {
-        messages
-          ..clear()
-          ..addAll(cached);
-        initialSyncCompleted = true;
-      });
-      unawaited(_markLatestRead());
+      // 首屏只显示本地消息；清理、去重和已读请求放到首帧后后台执行。
+      unawaited(_cleanupCachedMessagesInBackground(cached));
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToLatest(force: true);
+        if (!mounted) return;
+        unawaited(_markLatestRead());
+        _scrollToLatest(force: true);
       });
+      return;
     } catch (_) {
       if (mounted) setState(() => initialSyncCompleted = true);
     }
