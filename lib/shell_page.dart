@@ -2499,17 +2499,29 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Map<String, dynamic> _normalizeMessageMetadata(Map<String, dynamic> message) {
-    final raw = message['metadata'];
+    dynamic raw = message['metadata'];
     if (raw is String) {
       final decoded = ImLocalStore.decodeMetadata(raw);
       if (decoded != null) return {...message, 'metadata': decoded};
+    }
+    if (raw is Map) {
+      return {...message, 'metadata': Map<String, dynamic>.from(raw)};
+    }
+    for (final key in ['payload', 'data', 'message']) {
+      final nested = message[key];
+      if (nested is Map && nested['metadata'] != null) {
+        return _normalizeMessageMetadata({
+          ...message,
+          'metadata': nested['metadata'],
+        });
+      }
     }
     return message;
   }
 
   bool _isSharedPost(Map<String, dynamic> message) {
-    message = _normalizeMessageMetadata(message);
-    final metadata = message['metadata'];
+    final normalized = _normalizeMessageMetadata(message);
+    final metadata = normalized['metadata'];
     if (metadata is! Map) return false;
     final type = '${metadata['type'] ?? ''}';
     final postId =
@@ -2518,8 +2530,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Widget _sharedPostBody(Map<String, dynamic> message) {
-    message = _normalizeMessageMetadata(message);
-    final metadata = Map<String, dynamic>.from(message['metadata'] as Map);
+    final normalized = _normalizeMessageMetadata(message);
+    final metadata = Map<String, dynamic>.from(normalized['metadata'] as Map);
     final text =
         '${metadata['content'] ?? message['text'] ?? '分享了一条动态'}'.trim();
     final author = '${metadata['author'] ?? ''}'.trim();
