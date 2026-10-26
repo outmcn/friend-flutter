@@ -138,13 +138,23 @@ class ImLocalStore {
     required String accountId,
     required String conversationId,
   }) async {
-    final rows = await (await _db()).query(
+    final db = await _db();
+    final deletedRows = await db.query(
+      'local_deleted_messages',
+      columns: ['message_id'],
+      where: 'account_id = ? AND conversation_id = ?',
+      whereArgs: [accountId, conversationId],
+    );
+    final deletedIds = deletedRows.map((row) => '${row['message_id']}').toSet();
+    final rows = await db.query(
       'messages',
       where: 'account_id = ? AND conversation_id = ?',
       whereArgs: [accountId, conversationId],
       orderBy: 'created_at ASC, CAST(message_id AS INTEGER) ASC',
     );
-    return rows.map((row) {
+    return rows
+        .where((row) => !deletedIds.contains('${row['message_id']}'))
+        .map((row) {
       final item = Map<String, dynamic>.from(row);
       return <String, dynamic>{
         'id':
