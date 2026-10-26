@@ -2590,6 +2590,98 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     return message;
   }
 
+  bool _isVoiceRoomShare(Map<String, dynamic> message) {
+    final metadata = _normalizeMessageMetadata(message)['metadata'];
+    return metadata is Map &&
+        '${metadata['type'] ?? ''}' == 'voice_room_share' &&
+        '${metadata['roomId'] ?? metadata['room_id'] ?? ''}'.trim().isNotEmpty;
+  }
+
+  Widget _voiceRoomShareBody(Map<String, dynamic> message) {
+    final metadata = Map<String, dynamic>.from(
+        _normalizeMessageMetadata(message)['metadata'] as Map);
+    final title = '${metadata['title'] ?? '语音频道'}'.trim();
+    final owner = '${metadata['ownerName'] ?? '房主'}'.trim();
+    final roomId = '${metadata['roomId'] ?? metadata['room_id'] ?? ''}'.trim();
+    return InkWell(
+      onTap: () => _openSharedVoiceRoom(roomId, title, owner),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 230,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(12),
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+        child: Row(children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: const Color(0xff7c4dff).withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.mic, color: Color(0xff9b6cff), size: 28),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge),
+                const SizedBox(height: 3),
+                Text('$owner · 语音频道',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 3),
+                const Text('点击进入频道',
+                    style: TextStyle(fontSize: 11, color: Colors.blue)),
+              ],
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _openSharedVoiceRoom(
+      String roomId, String title, String owner) async {
+    if (roomId.isEmpty || !mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
+    final service = DDPostService();
+    try {
+      final joined = await service.joinVoiceRoom(token, roomId);
+      if (!mounted) return;
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => VoiceRoomPage(room: {
+                    ...joined,
+                    'room': {
+                      ...((joined['room'] is Map)
+                          ? (joined['room'] as Map).cast<String, dynamic>()
+                          : <String, dynamic>{}),
+                      'id': roomId,
+                      'title': title,
+                      'owner_nickname': owner,
+                    },
+                  })));
+    } catch (error) {
+      if (mounted) _showTopErrorBanner(context, '频道加载失败：$error');
+    } finally {
+      service.dispose();
+    }
+  }
+
   bool _isSharedPost(Map<String, dynamic> message) {
     final normalized = _normalizeMessageMetadata(message);
     final metadata = normalized['metadata'];
@@ -3205,33 +3297,36 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                                       color: Colors
                                                                           .grey),
                                                                 )
-                                                              : _isSharedPost(
+                                                              : _isVoiceRoomShare(
                                                                       message)
-                                                                  ? _sharedPostBody(
+                                                                  ? _voiceRoomShareBody(
                                                                       message)
-                                                                  : message['kind'] ==
-                                                                          'image'
-                                                                      ? _imageMessageBody(
+                                                                  : _isSharedPost(
+                                                                          message)
+                                                                      ? _sharedPostBody(
                                                                           message)
                                                                       : message['kind'] ==
-                                                                              'audio'
-                                                                          ? InkWell(
-                                                                              onTap: () => _playAudioMessage('${message['text'] ?? ''}'),
-                                                                              child: SizedBox(
-                                                                                height: 24,
-                                                                                child: Align(
-                                                                                  alignment: Alignment.centerLeft,
-                                                                                  child: Text(
-                                                                                    playingAudioKey == '${message['text'] ?? ''}' ? '⏸ 播放中' : '🔊 播放语音',
-                                                                                    style: Theme.of(context).textTheme.bodyLarge,
+                                                                              'image'
+                                                                          ? _imageMessageBody(
+                                                                              message)
+                                                                          : message['kind'] == 'audio'
+                                                                              ? InkWell(
+                                                                                  onTap: () => _playAudioMessage('${message['text'] ?? ''}'),
+                                                                                  child: SizedBox(
+                                                                                    height: 24,
+                                                                                    child: Align(
+                                                                                      alignment: Alignment.centerLeft,
+                                                                                      child: Text(
+                                                                                        playingAudioKey == '${message['text'] ?? ''}' ? '⏸ 播放中' : '🔊 播放语音',
+                                                                                        style: Theme.of(context).textTheme.bodyLarge,
+                                                                                      ),
+                                                                                    ),
                                                                                   ),
+                                                                                )
+                                                                              : Text(
+                                                                                  '${message['text'] ?? ''}',
+                                                                                  style: Theme.of(context).textTheme.bodyLarge,
                                                                                 ),
-                                                                              ),
-                                                                            )
-                                                                          : Text(
-                                                                              '${message['text'] ?? ''}',
-                                                                              style: Theme.of(context).textTheme.bodyLarge,
-                                                                            ),
                                                         ),
                                                         if (status ==
                                                             'pending') ...[
