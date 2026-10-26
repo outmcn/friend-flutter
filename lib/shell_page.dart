@@ -1684,7 +1684,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
         }
       }
       final cleaned = normalized.values.toList();
-      if (cleaned.length == source.length) return;
+      final currentKeys = messages
+          .map((item) =>
+              '${ImCall.isCall(item) ? 'call' : 'message'}:${item['clientId'] ?? item['id'] ?? ''}')
+          .toSet();
+      final cleanedKeys = cleaned
+          .map((item) =>
+              '${ImCall.isCall(item) ? 'call' : 'message'}:${item['clientId'] ?? item['id'] ?? ''}')
+          .toSet();
+      if (currentKeys.length == cleanedKeys.length &&
+          currentKeys.containsAll(cleanedKeys)) return;
       await ImLocalStore.saveMessages(
         accountId: currentUserId,
         conversationId: widget.chat.conversationId,
@@ -1862,14 +1871,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     };
     final index = messages.indexWhere(
         (item) => ImCall.isCall(item) && '${item['id']}' == '${call['id']}');
-    setState(() {
-      if (index >= 0) {
-        messages[index] = ImCall.merge(messages[index], normalizedCall);
-      } else {
-        messages.add(ImCall.merge({}, normalizedCall));
-      }
-      messages.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
-    });
+    if (index >= 0) {
+      messages[index] = ImCall.merge(messages[index], normalizedCall);
+    } else {
+      messages.add(ImCall.merge({}, normalizedCall));
+    }
+    messages.sort((a, b) => _messageTime(a).compareTo(_messageTime(b)));
+    _invalidateTimelineCache();
+    if (mounted) setState(() {});
+    _scheduleMessagePersist();
   }
 
   Future<void> _restoreRingingCalls(String token) async {
