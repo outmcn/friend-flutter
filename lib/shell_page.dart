@@ -1209,6 +1209,7 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   double heading = 0;
   double? myLatitude;
   double? myLongitude;
+  bool dayMode = false;
   Timer? _magnetometer;
   @override
   void initState() {
@@ -1227,6 +1228,7 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
     setState(() {
       myLatitude = p.getDouble('dd.location.latitude');
       myLongitude = p.getDouble('dd.location.longitude');
+      dayMode = p.getBool('friend.radar.dayMode') ?? false;
     });
   }
 
@@ -1274,14 +1276,25 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox(
+  Widget build(BuildContext context) => GestureDetector(
+      onLongPress: () async {
+        final p = await SharedPreferences.getInstance();
+        final next = !dayMode;
+        await p.setBool('friend.radar.dayMode', next);
+        if (mounted) setState(() => dayMode = next);
+      },
+      child: SizedBox(
         width: 100,
         height: 120,
         child: DecoratedBox(
           decoration: BoxDecoration(
-              color: const Color(0xE6101020),
+              color:
+                  dayMode ? const Color(0xFFF4F8FF) : const Color(0xE6101020),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x554C4CFF))),
+              border: Border.all(
+                  color: dayMode
+                      ? const Color(0xFF8AB4F8)
+                      : const Color(0x554C4CFF))),
           child: Column(
             children: [
               SizedBox(
@@ -1292,8 +1305,11 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
                         distance == null
                             ? '位置未知'
                             : '相距 ${distance!.toStringAsFixed(1)}km',
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 11))),
+                        style: TextStyle(
+                            color: dayMode
+                                ? const Color(0xFF243B64)
+                                : Colors.white,
+                            fontSize: 11))),
               ),
               Align(
                 alignment: Alignment.bottomCenter,
@@ -1304,13 +1320,14 @@ class _ChatRadarPanelState extends State<_ChatRadarPanel> {
                       heading: heading,
                       distanceKm: distance,
                       hasPeer: bearing != null,
+                      dayMode: dayMode,
                       avatar: widget.avatar),
                 ),
               ),
             ],
           ),
         ),
-      );
+      ));
 }
 
 class _RadarPainter extends CustomPainter {
@@ -1319,11 +1336,13 @@ class _RadarPainter extends CustomPainter {
       required this.heading,
       required this.distanceKm,
       required this.hasPeer,
+      required this.dayMode,
       required this.avatar});
   final double? bearing;
   final double heading;
   final double? distanceKm;
   final bool hasPeer;
+  final bool dayMode;
   final ImageProvider avatar;
   @override
   void paint(Canvas c, Size s) {
@@ -1332,7 +1351,7 @@ class _RadarPainter extends CustomPainter {
     final ring = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = const Color(0x664C4CFF);
+      ..color = dayMode ? const Color(0x6682A8E8) : const Color(0x664C4CFF);
     for (final k in [1.0, .72, .44]) {
       c.drawCircle(o, r * k, ring);
     }
@@ -1345,7 +1364,11 @@ class _RadarPainter extends CustomPainter {
       ..arcTo(Rect.fromCircle(center: o, radius: r), sectorHeading - .524,
           1.048, false)
       ..close();
-    c.drawPath(sector, Paint()..color = const Color(0x334CFFD9));
+    c.drawPath(
+        sector,
+        Paint()
+          ..color =
+              dayMode ? const Color(0x335AA7FF) : const Color(0x334CFFD9));
     if (!hasPeer || bearing == null) return;
     final a = bearing! * math.pi / 180;
     final ringRadius = distanceKm == null
@@ -1357,7 +1380,12 @@ class _RadarPainter extends CustomPainter {
                 : r;
     final point = Offset(
         o.dx + math.sin(a) * ringRadius, o.dy - math.cos(a) * ringRadius);
-    c.drawCircle(point, 3, Paint()..color = const Color(0xFF59D9FF));
+    c.drawCircle(
+        point,
+        3,
+        Paint()
+          ..color =
+              dayMode ? const Color(0xFF2E6DD1) : const Color(0xFF59D9FF));
   }
 
   @override
@@ -1365,7 +1393,8 @@ class _RadarPainter extends CustomPainter {
       old.heading != heading ||
       old.bearing != bearing ||
       old.distanceKm != distanceKm ||
-      old.hasPeer != hasPeer;
+      old.hasPeer != hasPeer ||
+      old.dayMode != dayMode;
 }
 
 class _ChatDetailPageState extends State<_ChatDetailPage> {
