@@ -11,7 +11,7 @@ import 'package:sqflite/sqflite.dart';
 class ImLocalStore {
   static Database? _database;
 
-  static Map<String, dynamic>? _decodeMetadata(dynamic value) {
+  static Map<String, dynamic>? decodeMetadata(dynamic value) {
     if (value is! String) return null;
     try {
       final decoded = jsonDecode(value);
@@ -156,7 +156,7 @@ class ImLocalStore {
         'calleeId': item['callee_id']?.toString(),
         'text': '${item['text'] ?? ''}',
         'kind': '${item['kind'] ?? 'text'}',
-        'metadata': _decodeMetadata(item['metadata']),
+        'metadata': decodeMetadata(item['metadata']),
         if ('${item['kind'] ?? ''}' == 'call') '_timelineKind': 'call',
         'durationMs': _parseInt(item['duration_ms']) ?? 0,
         'createdAt': item['created_at'],
@@ -568,7 +568,7 @@ class ImLocalStore {
               'clientId': '${row['client_id'] ?? ''}',
               'text': '${row['text'] ?? ''}',
               'kind': '${row['kind'] ?? 'text'}',
-              'metadata': _decodeMetadata(row['metadata']),
+              'metadata': decodeMetadata(row['metadata']),
               'durationMs': (row['duration_ms'] as num?)?.toInt() ?? 0,
               'retryStartedAt': row['retry_started_at'],
               'retryUntil': row['retry_until'],

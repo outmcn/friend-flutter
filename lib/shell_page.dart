@@ -1822,7 +1822,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (type == 'message:recalled') {
       final message = event['message'];
       if (message is Map) {
-        final item = message.cast<String, dynamic>();
+        final item = _normalizeMessageMetadata(message.cast<String, dynamic>());
         final messageId = '${item['id'] ?? ''}';
         final clientId = '${item['clientId'] ?? ''}';
         final index = messages.indexWhere((existing) {
@@ -1871,7 +1871,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (type != 'message:new' && type != 'message:accepted') return;
     final message = event['message'];
     if (message is! Map) return;
-    final item = message.cast<String, dynamic>();
+    final item = _normalizeMessageMetadata(message.cast<String, dynamic>());
     if (type == 'message:accepted') {
       _markPendingAccepted(item);
       return;
@@ -2469,7 +2469,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
   }
 
+  Map<String, dynamic> _normalizeMessageMetadata(Map<String, dynamic> message) {
+    final raw = message['metadata'];
+    if (raw is String) {
+      final decoded = ImLocalStore.decodeMetadata(raw);
+      if (decoded != null) return {...message, 'metadata': decoded};
+    }
+    return message;
+  }
+
   bool _isSharedPost(Map<String, dynamic> message) {
+    message = _normalizeMessageMetadata(message);
     final metadata = message['metadata'];
     if (metadata is! Map) return false;
     final type = '${metadata['type'] ?? ''}';
@@ -2479,6 +2489,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Widget _sharedPostBody(Map<String, dynamic> message) {
+    message = _normalizeMessageMetadata(message);
     final metadata = Map<String, dynamic>.from(message['metadata'] as Map);
     final text =
         '${metadata['content'] ?? message['text'] ?? '分享了一条动态'}'.trim();
