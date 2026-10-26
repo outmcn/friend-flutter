@@ -2700,32 +2700,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     );
   }
 
-  DDPost _sharedPostSnapshot(Map<String, dynamic> metadata, int postId) {
-    final content = '${metadata['content'] ?? ''}';
-    final author = '${metadata['author'] ?? '用户'}';
-    final avatar = '${metadata['avatar'] ?? ''}';
-    final image = '${metadata['imageUrl'] ?? ''}'.trim();
-    final thumbnail = '${metadata['thumbnailUrl'] ?? ''}'.trim();
-    return DDPost(
-      id: postId,
-      userId: int.tryParse('${metadata['userId'] ?? ''}'),
-      content: content,
-      createdAt: '${metadata['createdAt'] ?? DateTime.now().toIso8601String()}',
-      nickname: author,
-      avatar: avatar,
-      gender: '${metadata['gender'] ?? ''}',
-      likes: int.tryParse('${metadata['likes'] ?? 0}') ?? 0,
-      favorites: int.tryParse('${metadata['favorites'] ?? 0}') ?? 0,
-      comments: int.tryParse('${metadata['comments'] ?? 0}') ?? 0,
-      following: false,
-      liked: false,
-      favorited: false,
-      imageUrl: image.isEmpty ? null : image,
-      thumbnailUrl: thumbnail.isEmpty ? null : thumbnail,
-      views: int.tryParse('${metadata['views'] ?? 0}') ?? 0,
-    );
-  }
-
   Future<void> _openSharedPost(Map<String, dynamic> message) async {
     final normalized = _normalizeMessageMetadata(message);
     final metadata = normalized['metadata'];
@@ -2747,17 +2721,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 DynamicDetailPage(postId: postId, initialPost: post),
           ));
     } catch (error) {
-      if ('${metadata['content'] ?? ''}'.trim().isNotEmpty && mounted) {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => DynamicDetailPage(
-                    postId: postId,
-                    initialPost: _sharedPostSnapshot(
-                        Map<String, dynamic>.from(metadata), postId))));
-      } else if (mounted) {
-        _showTopErrorBanner(context, '动态加载失败：$error');
-      }
+      if (mounted) _showTopErrorBanner(context, '动态加载失败：$error');
     } finally {
       service.dispose();
     }
