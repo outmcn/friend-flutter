@@ -3478,14 +3478,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 ),
               ),
             ]),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _ChatRadarPanel(
-                  avatar: _chatAvatarFor(widget.chat),
-                  peerLatitude: widget.chat.peerLatitude,
-                  peerLongitude: widget.chat.peerLongitude),
-            ),
+            // 定位雷达卡片暂时不参与构建，保留源码以便后续恢复。
+            if (false)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _ChatRadarPanel(
+                    avatar: _chatAvatarFor(widget.chat),
+                    peerLatitude: widget.chat.peerLatitude,
+                    peerLongitude: widget.chat.peerLongitude),
+              ),
             if (moreExpanded)
               Positioned(
                 right: 8,
