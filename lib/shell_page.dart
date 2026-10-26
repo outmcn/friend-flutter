@@ -1980,18 +1980,16 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                   '${existing['clientId'] ?? ''}' == clientId);
         });
         if (index >= 0) {
-          setState(() => messages[index] = {
-                ...messages[index],
-                'status': 'recalled',
-                'text': '',
-                'recalledAt':
-                    item['recalledAt'] ?? DateTime.now().toIso8601String(),
-              });
-          await ImLocalStore.saveMessages(
-            accountId: currentUserId,
-            conversationId: widget.chat.conversationId,
-            messages: messages,
-          );
+          messages[index] = {
+            ...messages[index],
+            'status': 'recalled',
+            'text': '',
+            'recalledAt':
+                item['recalledAt'] ?? DateTime.now().toIso8601String(),
+          };
+          _invalidateTimelineCache();
+          if (mounted) setState(() {});
+          _scheduleMessagePersist();
         }
       }
       return;
@@ -2588,19 +2586,17 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
             ('${item['id'] ?? ''}' == id ||
                 '${item['clientId'] ?? ''}' == '${message['clientId'] ?? ''}'));
         if (index >= 0) {
-          setState(() => messages[index] = {
-                ...messages[index],
-                ...recalled,
-                'status': 'recalled',
-                'text': '',
-                'recalledAt':
-                    recalled['recalledAt'] ?? DateTime.now().toIso8601String(),
-              });
-          await ImLocalStore.saveMessages(
-            accountId: currentUserId,
-            conversationId: widget.chat.conversationId,
-            messages: messages,
-          );
+          messages[index] = {
+            ...messages[index],
+            ...recalled,
+            'status': 'recalled',
+            'text': '',
+            'recalledAt':
+                recalled['recalledAt'] ?? DateTime.now().toIso8601String(),
+          };
+          _invalidateTimelineCache();
+          if (mounted) setState(() {});
+          _scheduleMessagePersist();
         }
       } catch (error) {
         if (mounted) {
@@ -3079,6 +3075,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                     : peerTopBarAvatar;
                                 if (isCall) {
                                   return Column(
+                                    key: ValueKey(
+                                        'message-${message['clientId'] ?? message['id'] ?? index}'),
                                     children: [
                                       if (showTime)
                                         Padding(
@@ -3236,6 +3234,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                   );
                                 }
                                 return Column(
+                                  key: ValueKey(
+                                      'message-${message['clientId'] ?? message['id'] ?? index}'),
                                   children: [
                                     if (showTime)
                                       Padding(
