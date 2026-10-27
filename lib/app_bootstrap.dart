@@ -21,49 +21,28 @@ class _GlobalScrollToTopRegistry {
 final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
 
 class _FriendAvatar extends StatelessWidget {
-  const _FriendAvatar({
-    required this.avatarUrl,
-    this.gender,
-    this.size = 48,
-    this.placeholder,
-  });
+  const _FriendAvatar(
+      {required this.avatarUrl, this.size = 48, this.placeholder});
   final String avatarUrl;
-  final String? gender;
   final double size;
   final Widget? placeholder;
 
-  bool get _isFemale {
-    final value = (gender ?? '').trim().toUpperCase();
-    return value == '女' ||
-        value == 'FEMALE' ||
-        value == 'WOMAN' ||
-        value == 'F';
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final ring = _isFemale ? const Color(0xFFFF82B7) : const Color(0xFF4E9BFF);
-    return Container(
-      width: size,
-      height: size,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: ring, width: 3),
-      ),
-      child: ClipOval(
-        child: avatarUrl.trim().isEmpty
-            ? (placeholder ?? const Icon(Icons.person_outline))
-            : _PermanentCachedImage(
-                url: avatarUrl,
-                width: size,
-                height: size,
-                fit: BoxFit.cover,
-                placeholder: placeholder ?? const Icon(Icons.person_outline),
-              ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SizedBox(
+        width: size,
+        height: size,
+        child: ClipOval(
+          child: avatarUrl.trim().isEmpty
+              ? (placeholder ?? const Icon(Icons.person_outline))
+              : _PermanentCachedImage(
+                  url: avatarUrl,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  placeholder: placeholder ?? const Icon(Icons.person_outline),
+                ),
+        ),
+      );
 }
 
 OverlayEntry? _activeTopNotice;

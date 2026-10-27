@@ -384,7 +384,6 @@ class _FateSuccess extends StatelessWidget {
           const SizedBox(height: 36),
           _FriendAvatar(
               avatarUrl: avatar,
-              gender: '${peer['gender'] ?? ''}',
               size: 132,
               placeholder: const Icon(Icons.person, size: 62)),
           const SizedBox(height: 24),
