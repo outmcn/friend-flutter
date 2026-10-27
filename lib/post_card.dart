@@ -995,7 +995,7 @@ class _DiscoverProfileCard extends StatelessWidget {
                   SizedBox(
                     width: 40,
                     height: 40,
-                    child: SizedBox.expand(
+                    child: ClipOval(
                       child: post.avatar.trim().isEmpty
                           ? const Icon(Icons.person_outline)
                           : _PermanentCachedImage(
