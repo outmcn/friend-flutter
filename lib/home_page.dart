@@ -316,7 +316,7 @@ class _HomePageState extends State<HomePage> {
                                   onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const HeartRadarPage(),
+                                      builder: (_) => const FateMatchPage(),
                                     ),
                                   ),
                                 ),
@@ -364,7 +364,7 @@ class _HomePageState extends State<HomePage> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) =>
-                                                const FateMatchPage(),
+                                                const HeartRadarPage(),
                                           ),
                                         ),
                                       ),
