@@ -2379,10 +2379,18 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     }
     try {
       final service = DDPostService();
+      final extension = picked.name.split('.').last.toLowerCase();
+      final contentType = extension == 'jpg' || extension == 'jpeg'
+          ? 'image/jpeg'
+          : extension == 'png'
+              ? 'image/png'
+              : extension == 'webp'
+                  ? 'image/webp'
+                  : 'image/jpeg';
       final upload = await service.postMediaUploadUrl(
         token: token,
         fileName: picked.name,
-        contentType: 'image/${picked.name.split('.').last.toLowerCase()}',
+        contentType: contentType,
         kind: 'image',
       );
       final uploadUrl = '${upload['uploadUrl'] ?? upload['url'] ?? ''}';
