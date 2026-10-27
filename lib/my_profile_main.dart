@@ -2825,6 +2825,11 @@ class _DDProfilePageState extends State<DDProfilePage>
     return result;
   }
 
+  int? _profileUserId() {
+    final value = profile?['id'] ?? profile?['userId'] ?? _currentUserId;
+    return value is int ? value : int.tryParse('$value');
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = profile;
@@ -3176,7 +3181,12 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (_) =>
-                                                          const GiftExhibitionPage())))),
+                                                          GiftExhibitionPage(
+                                                            userId:
+                                                                _profileUserId(),
+                                                            userName:
+                                                                '${profile?['nickname'] ?? '我的'}',
+                                                          ))))),
                                       const SizedBox(width: 6),
                                       Expanded(
                                           child: _ProfileActionButton(
