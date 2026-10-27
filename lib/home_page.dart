@@ -53,6 +53,9 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   String? error;
   String selectedCategory = '闲聊';
   static const channelCategories = ['闲聊', '点歌', '开黑', '睡眠', '树洞'];
+
+  String _roomCategory(Map<String, dynamic> room) =>
+      '${room['category'] ?? room['category_name'] ?? room['categoryName'] ?? ''}';
   @override
   void initState() {
     super.initState();
@@ -122,8 +125,7 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                           child: Builder(builder: (context) {
                             final filtered = rooms
                                 .where((room) =>
-                                    '${room['category'] ?? ''}' ==
-                                    selectedCategory)
+                                    _roomCategory(room) == selectedCategory)
                                 .toList();
                             return filtered.isEmpty
                                 ? ListView(
