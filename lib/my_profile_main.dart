@@ -267,80 +267,83 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
-        builder: (dialogContext) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('${gift['name'] ?? '礼物'}',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 12),
-                Image.asset(_giftAsset(gift, index), width: 86, height: 86),
-                const SizedBox(height: 14),
-                if (ranking.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                        color: const Color(0xffeee5ff),
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Text(
-                        '冠名：${ranking.first['nickname'] ?? '用户'} · ${ranking.first['quantity'] ?? 0} 个',
-                        textAlign: TextAlign.center),
-                  ),
-                if (ranking.isEmpty) const Text('暂无赠送记录'),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(3, (slot) {
-                    final row = slot < ranking.length ? ranking[slot] : null;
-                    return Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: const Color(0xffeee5ff),
-                          backgroundImage:
-                              row == null || '${row['avatar'] ?? ''}'.isEmpty
-                                  ? null
-                                  : NetworkImage('${row['avatar']}'),
-                          child: row == null
-                              ? Text('${slot + 1}',
-                                  style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700))
-                              : '${row['avatar'] ?? ''}'.isEmpty
-                                  ? const Icon(Icons.person)
-                                  : null,
-                        ),
-                        const SizedBox(height: 4),
-                        SizedBox(
-                          width: 82,
-                          child: Text(
-                            row == null
-                                ? '待冠名'
-                                : '${slot + 1}. ${row['nickname'] ?? '用户'}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
+        builder: (dialogContext) {
+          final scheme = Theme.of(dialogContext).colorScheme;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${gift['name'] ?? '礼物'}',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 12),
+                  Image.asset(_giftAsset(gift, index), width: 86, height: 86),
+                  const SizedBox(height: 14),
+                  if (ranking.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                          color: scheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Text(
+                          '冠名：${ranking.first['nickname'] ?? '用户'} · ${ranking.first['quantity'] ?? 0} 个',
+                          textAlign: TextAlign.center),
+                    ),
+                  if (ranking.isEmpty) const Text('暂无赠送记录'),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(3, (slot) {
+                      final row = slot < ranking.length ? ranking[slot] : null;
+                      return Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: scheme.primaryContainer,
+                            backgroundImage:
+                                row == null || '${row['avatar'] ?? ''}'.isEmpty
+                                    ? null
+                                    : NetworkImage('${row['avatar']}'),
+                            child: row == null
+                                ? Text('${slot + 1}',
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700))
+                                : '${row['avatar'] ?? ''}'.isEmpty
+                                    ? const Icon(Icons.person)
+                                    : null,
                           ),
-                        ),
-                        if (row != null)
-                          Text('${row['quantity'] ?? 0} 个',
-                              style: const TextStyle(fontSize: 11)),
-                      ],
-                    );
-                  }),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    child: const Text('关闭')),
-              ],
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: 82,
+                            child: Text(
+                              row == null
+                                  ? '待冠名'
+                                  : '${slot + 1}. ${row['nickname'] ?? '用户'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          if (row != null)
+                            Text('${row['quantity'] ?? 0} 个',
+                                style: const TextStyle(fontSize: 11)),
+                        ],
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      child: const Text('关闭')),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       );
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
