@@ -51,8 +51,8 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   List<Map<String, dynamic>> rooms = const [];
   bool loading = true;
   String? error;
-  String selectedCategory = '全部';
-  static const channelCategories = ['全部', '闲聊', '点歌', '开黑', '睡眠', '树洞'];
+  String selectedCategory = '闲聊';
+  static const channelCategories = ['闲聊', '点歌', '开黑', '睡眠', '树洞'];
   @override
   void initState() {
     super.initState();
@@ -82,7 +82,6 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('频道'),
           elevation: 0,
           scrolledUnderElevation: 0,
           backgroundColor: Colors.transparent,
@@ -108,6 +107,7 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                                 child: ChoiceChip(
                                   label: Text(category),
                                   selected: active,
+                                  showCheckmark: false,
                                   onSelected: (_) => setState(
                                       () => selectedCategory = category),
                                 ),
@@ -117,13 +117,11 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                         ),
                         Expanded(
                           child: Builder(builder: (context) {
-                            final filtered = selectedCategory == '全部'
-                                ? rooms
-                                : rooms
-                                    .where((room) =>
-                                        '${room['category'] ?? ''}' ==
-                                        selectedCategory)
-                                    .toList();
+                            final filtered = rooms
+                                .where((room) =>
+                                    '${room['category'] ?? ''}' ==
+                                    selectedCategory)
+                                .toList();
                             return filtered.isEmpty
                                 ? ListView(
                                     padding: const EdgeInsets.all(16),
