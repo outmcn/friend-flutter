@@ -146,44 +146,147 @@ class _FateMatchPageState extends State<FateMatchPage> {
     super.dispose();
   }
 
+  int selectedDistance = 0;
+  int selectedGender = 0;
+  int selectedAge = 0;
+
   @override
   Widget build(BuildContext context) => Scaffold(
-        extendBodyBehindAppBar: true,
-        backgroundColor: const Color(0xff191019),
+        backgroundColor: const Color(0xff160d3b),
         appBar: AppBar(
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            surfaceTintColor: Colors.transparent,
-            backgroundColor: Colors.transparent,
-            foregroundColor: Colors.white,
-            title: Text(peer == null ? '缘分匹配' : '匹配成功')),
-        body: Stack(children: [
-          const Positioned.fill(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.white,
+          title: const Text(''),
+        ),
+        body: Stack(
+          children: [
+            const Positioned.fill(
               child: DecoratedBox(
-                  decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                          center: Alignment.topRight,
-                          radius: 1.4,
-                          colors: [Color(0xffff6f9a), Color(0xff191019)])))),
-          Center(
-              child: peer == null
-                  ? _FateWaiting(
-                      seconds: waitingSeconds,
-                      error: error,
-                      onCancel: _leave,
-                      onStart: matching ? _leave : _startMatching,
-                      onCityStart: () => _startMatching(mode: 'city'),
-                      onSpeedStart: () =>
-                          _showTopNotice(context, const Text('加速匹配功能即将开放')),
-                      matching: matching,
-                      remaining: fateRemaining)
-                  : _FateSuccess(
-                      peer: peer!,
-                      error: error,
-                      onChat: _openChat,
-                      onRestart: _startMatching)),
-        ]),
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.topRight,
+                    radius: 1.35,
+                    colors: [Color(0xff7542c8), Color(0xff160d3b)],
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    const Text('立即匹配',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 8),
+                    Text('今日剩余${fateRemaining == 30 ? 1 : fateRemaining}次',
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 14)),
+                    const SizedBox(height: 30),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _filterSection(
+                                '距离',
+                                ['不限', '5km', '10km'],
+                                selectedDistance,
+                                (v) => setState(() => selectedDistance = v)),
+                            const SizedBox(height: 24),
+                            _filterSection('性别', ['不限', '异性'], selectedGender,
+                                (v) => setState(() => selectedGender = v)),
+                            const SizedBox(height: 24),
+                            _filterSection(
+                                '年龄',
+                                ['不限', '18-25岁', '26-29岁'],
+                                selectedAge,
+                                (v) => setState(() => selectedAge = v)),
+                            if (error.isNotEmpty) ...[
+                              const SizedBox(height: 18),
+                              Text(error,
+                                  style:
+                                      const TextStyle(color: Colors.redAccent)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton(
+                        onPressed: matching ? _leave : _startMatching,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xffff5f8f),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28)),
+                        ),
+                        child: Text(matching ? '取消匹配' : '立即匹配',
+                            style: const TextStyle(
+                                fontSize: 17, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       );
+
+  Widget _filterSection(String title, List<String> options, int selected,
+      ValueChanged<int> onSelected) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
+        Row(
+          children: options.asMap().entries.map((entry) {
+            final active = entry.key == selected;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                    right: entry.key == options.length - 1 ? 0 : 10),
+                child: GestureDetector(
+                  onTap: () => onSelected(entry.key),
+                  child: Container(
+                    height: 42,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: active
+                          ? const Color(0xffff5f8f)
+                          : Colors.white.withValues(alpha: .10),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                          color: active
+                              ? const Color(0xffff8bad)
+                              : Colors.white24),
+                    ),
+                    child: Text(entry.value,
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight:
+                                active ? FontWeight.w700 : FontWeight.w400)),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
 }
 
 class _FateWaiting extends StatefulWidget {
