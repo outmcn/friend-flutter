@@ -1096,9 +1096,10 @@ class _ChatPreview {
         row['online'] == true,
         (row['peerLatitude'] as num?)?.toDouble(),
         (row['peerLongitude'] as num?)?.toDouble(),
-        row['avatarFrameAsset'] as String?,
-        row['avatarFrameSelection'] as String?,
-        row['gender'] as String?,
+        (row['avatarFrameAsset'] ?? row['avatar_frame_asset'])?.toString(),
+        (row['avatarFrameSelection'] ?? row['avatar_frame_selection'])
+            ?.toString(),
+        (row['gender'] ?? row['sex'])?.toString(),
       );
 
   _ChatPreview copyWith({bool? pinned, bool? muted, int? unreadCount}) =>
