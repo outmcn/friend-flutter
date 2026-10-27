@@ -109,8 +109,9 @@ class _DiscoverPostContentState extends State<_DiscoverPostContent> {
 }
 
 class _DiscoverMediaImage extends StatefulWidget {
-  const _DiscoverMediaImage({required this.url});
+  const _DiscoverMediaImage({required this.url, this.showPlay = false});
   final String url;
+  final bool showPlay;
 
   @override
   State<_DiscoverMediaImage> createState() => _DiscoverMediaImageState();
@@ -254,14 +255,27 @@ class _DiscoverMediaImageState extends State<_DiscoverMediaImage> {
             naturalHeight > 400 ? displayHeight * ratio : availableWidth;
         return Align(
           alignment: Alignment.topLeft,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image(
-              image: _provider!,
-              width: displayWidth,
-              height: displayHeight,
-              fit: BoxFit.fill,
-              alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: displayWidth,
+            height: displayHeight,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image(
+                    image: _provider!,
+                    fit: BoxFit.fill,
+                    alignment: Alignment.topLeft,
+                  ),
+                  if (widget.showPlay)
+                    const Align(
+                      alignment: Alignment.center,
+                      child: Icon(Icons.play_circle_outline,
+                          size: 48, color: Colors.white),
+                    ),
+                ],
+              ),
             ),
           ),
         );
@@ -912,8 +926,9 @@ class _DiscoverProfileCard extends StatelessWidget {
   final bool hideAuthorRow;
   final bool showViews;
 
-  Widget _media({required String url, required bool thumbnail}) {
-    return _DiscoverMediaImage(url: url);
+  Widget _media(
+      {required String url, required bool thumbnail, bool showPlay = false}) {
+    return _DiscoverMediaImage(url: url, showPlay: showPlay);
   }
 
   Widget _action({
@@ -1186,13 +1201,8 @@ class _DiscoverProfileCard extends StatelessWidget {
                                 ? post.thumbnailUrl!.trim()
                                 : post.videoUrl!.trim(),
                             thumbnail:
-                                post.thumbnailUrl?.trim().isNotEmpty == true),
-                        const Positioned.fill(
-                          child: Center(
-                            child: Icon(Icons.play_circle_outline,
-                                size: 48, color: Colors.white),
-                          ),
-                        ),
+                                post.thumbnailUrl?.trim().isNotEmpty == true,
+                            showPlay: true),
                       ],
                     ),
                   ],
