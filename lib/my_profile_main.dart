@@ -2159,8 +2159,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   String? _avatarUrl;
   String? _avatarLocalPath;
   bool _avatarReviewRejected = false;
-  String? _avatarFrameAsset;
-  String? _avatarFrameSelection;
   String? error;
   bool _stealth = false;
   bool _antiHarassment = false;
@@ -2183,7 +2181,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       if (_appActive) _sendPresenceHeartbeat();
     });
     _sonicPlayer.onPlayerComplete.listen((_) {});
-    unawaited(_loadAvatarFrameSelection());
     profileFeedTabs = List.generate(
       3,
       (tab) => FeedShellTab(
@@ -2285,23 +2282,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     if (active != _appActive && mounted) {
       setState(() => _appActive = active);
     }
-  }
-
-  Future<void> _loadAvatarFrameSelection() async {
-    final prefs = await SharedPreferences.getInstance();
-    final asset = prefs.getString('friend.avatar.frame.asset');
-    final selection = prefs.getString('friend.avatar.frame.selection');
-    if (!mounted) return;
-    setState(() {
-      _avatarFrameAsset = asset;
-      _avatarFrameSelection = selection;
-    });
-  }
-
-  Future<void> _openAvatarDressup() async {
-    await Navigator.push(
-        context, MaterialPageRoute(builder: (_) => const _AvatarDressupPage()));
-    await _loadAvatarFrameSelection();
   }
 
   @override
@@ -2571,16 +2551,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       _sonicUrl = nextSonicUrl;
       _avatarLocalPath = localAvatar;
       _avatarUrl = signedAvatar;
-      final normalizedFrame = normalizeAvatarFrameAsset(
-          '${loaded['avatarFrameAsset'] ?? loaded['avatar_frame_asset'] ?? ''}');
-      _avatarFrameAsset = normalizedFrame.isEmpty ? null : normalizedFrame;
-      _avatarFrameSelection =
-          '${loaded['avatarFrameSelection'] ?? loaded['avatar_frame_selection'] ?? ''}'
-                  .trim()
-                  .isEmpty
-              ? null
-              : '${loaded['avatarFrameSelection'] ?? loaded['avatar_frame_selection']}'
-                  .trim();
       _avatarReviewRejected = loaded['avatarReviewStatus'] == 'rejected' ||
           loaded['avatar_review_status'] == 'rejected';
       _stealth = '${loaded['presenceMode'] ?? 'online'}' == 'stealth';
@@ -3103,7 +3073,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         child: Column(
                                           children: [
                                             GestureDetector(
-                                              onTap: _openAvatarDressup,
                                               child: SizedBox(
                                                 width: 104,
                                                 height: 104,
@@ -3163,35 +3132,22 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                                               color: Colors.black12,
                                                                               child: Icon(Icons.person, size: 40))),
                                                     ),
-                                                    if (_avatarFrameAsset !=
-                                                        null)
-                                                      Positioned.fill(
-                                                        child: IgnorePointer(
-                                                          child: Image.asset(
-                                                              _avatarFrameAsset!,
-                                                              fit: BoxFit
-                                                                  .contain),
-                                                        ),
-                                                      )
-                                                    else
-                                                      Container(
-                                                        width: 96,
-                                                        height: 96,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          shape:
-                                                              BoxShape.circle,
-                                                          border: Border.all(
-                                                            color: p?['gender'] ==
-                                                                    '女'
-                                                                ? const Color(
-                                                                    0xFFFF82B7)
-                                                                : const Color(
-                                                                    0xFF4E9BFF),
-                                                            width: 3,
-                                                          ),
+                                                    Container(
+                                                      width: 96,
+                                                      height: 96,
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: p?['gender'] ==
+                                                                  '女'
+                                                              ? const Color(
+                                                                  0xFFFF82B7)
+                                                              : const Color(
+                                                                  0xFF4E9BFF),
+                                                          width: 3,
                                                         ),
                                                       ),
+                                                    ),
                                                   ],
                                                 ),
                                               ),
@@ -3297,106 +3253,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                 ),
               ],
             ),
-    );
-  }
-}
-
-class _AvatarDressupPage extends StatefulWidget {
-  const _AvatarDressupPage();
-
-  @override
-  State<_AvatarDressupPage> createState() => _AvatarDressupPageState();
-}
-
-class _AvatarDressupPageState extends State<_AvatarDressupPage> {
-  String? selected;
-
-  static const _maleFrame = 'assets/avatar_frames/男_frame.png';
-  static const _femaleFrame = 'assets/avatar_frames/女_frame.png';
-
-  void initState() {
-    super.initState();
-    _loadSelection();
-  }
-
-  Future<void> _loadSelection() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted)
-      setState(
-          () => selected = prefs.getString('friend.avatar.frame.selection'));
-  }
-
-  Future<void> _selectFrame(String id, String asset) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('friend.avatar.frame.selection', id);
-    await prefs.setString('friend.avatar.frame.asset', asset);
-    try {
-      final token = prefs.getString('friend.auth.token') ?? '';
-      if (token.isNotEmpty) {
-        await DDPostService().updateMe(
-          token: token,
-          avatarFrameAsset: asset,
-          avatarFrameSelection: id,
-        );
-      }
-    } catch (_) {
-      // 本地选择保留，资料同步失败时下次保存资料继续同步。
-    }
-    if (mounted) setState(() => selected = id);
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('头像装扮')),
-        body: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const Text('选择头像框',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            const Text('点击头像框即可选择，未选择时使用默认渐变圆环。'),
-            const SizedBox(height: 20),
-            _frameOption(context,
-                id: 'male-default', title: '男性默认头像框', asset: _maleFrame),
-            const SizedBox(height: 14),
-            _frameOption(context,
-                id: 'female-default', title: '女性默认头像框', asset: _femaleFrame),
-            const SizedBox(height: 8),
-            const Text('仅保留男女默认头像框，选择后会同步到你的资料。'),
-          ],
-        ),
-      );
-
-  Widget _frameOption(BuildContext context,
-      {required String id, required String title, required String asset}) {
-    final active = selected == id;
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () => _selectFrame(id, asset),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: active
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outlineVariant,
-            width: active ? 2 : 1,
-          ),
-        ),
-        child: Row(children: [
-          Image.asset(asset, width: 104, height: 104, fit: BoxFit.contain),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(title,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-          ),
-          if (active)
-            Icon(Icons.check_circle,
-                color: Theme.of(context).colorScheme.primary),
-        ]),
-      ),
     );
   }
 }

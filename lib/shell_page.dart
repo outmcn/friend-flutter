@@ -152,23 +152,22 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (preview == chat.preview) return;
     setState(() {
       conversations[index] = _ChatPreview(
-          chat.name,
-          preview,
-          chat.avatarUrl,
-          chat.avatarKey,
-          chat.peerUserId,
-          chat.conversationId,
-          chat.unreadCount,
-          chat.peerReadMessageId,
-          chat.updatedAt,
-          chat.kind,
-          chat.pinned,
-          chat.muted,
-          chat.online,
-          chat.peerLatitude,
-          chat.peerLongitude,
-          chat.avatarFrameAsset,
-          chat.avatarFrameSelection);
+        chat.name,
+        preview,
+        chat.avatarUrl,
+        chat.avatarKey,
+        chat.peerUserId,
+        chat.conversationId,
+        chat.unreadCount,
+        chat.peerReadMessageId,
+        chat.updatedAt,
+        chat.kind,
+        chat.pinned,
+        chat.muted,
+        chat.online,
+        chat.peerLatitude,
+        chat.peerLongitude,
+      );
     });
     await ImLocalStore.saveConversations(
         accountId: accountId,
@@ -427,8 +426,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           row.peer?.online ?? false,
           row.peer?.latitude,
           row.peer?.longitude,
-          row.peer?.avatarFrameAsset,
-          row.peer?.avatarFrameSelection,
           peerGenders[row.id] ?? row.peer?.gender,
         ));
       }
@@ -832,8 +829,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     children: [
                       _FriendAvatar(
                         avatarUrl: chat.avatarUrl ?? '',
-                        frameAsset: chat.avatarFrameAsset,
-                        gender: chat.gender,
                         size: 48,
                         placeholder: const Icon(Icons.person_outline),
                       ),
@@ -1058,8 +1053,6 @@ class _ChatPreview {
       this.online = false,
       this.peerLatitude,
       this.peerLongitude,
-      this.avatarFrameAsset,
-      this.avatarFrameSelection,
       this.gender]);
   final String name;
   final String preview;
@@ -1074,8 +1067,6 @@ class _ChatPreview {
   final bool pinned;
   final bool muted;
   final bool online;
-  final String? avatarFrameAsset;
-  final String? avatarFrameSelection;
   final String? gender;
   final double? peerLatitude;
   final double? peerLongitude;
@@ -1096,8 +1087,6 @@ class _ChatPreview {
         row['online'] == true,
         (row['peerLatitude'] as num?)?.toDouble(),
         (row['peerLongitude'] as num?)?.toDouble(),
-        row['avatarFrameAsset'] as String?,
-        row['avatarFrameSelection'] as String?,
         row['gender'] as String?,
       );
 
@@ -1118,8 +1107,6 @@ class _ChatPreview {
         online,
         peerLatitude,
         peerLongitude,
-        avatarFrameAsset,
-        avatarFrameSelection,
         gender,
       );
 
@@ -1137,8 +1124,6 @@ class _ChatPreview {
         'pinned': pinned,
         'muted': muted,
         'online': online,
-        'avatarFrameAsset': avatarFrameAsset,
-        'avatarFrameSelection': avatarFrameSelection,
         'gender': gender,
         'peerLatitude': peerLatitude,
         'peerLongitude': peerLongitude,

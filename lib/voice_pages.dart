@@ -486,8 +486,6 @@ class _VoiceMatchSuccess extends StatelessWidget {
           const SizedBox(height: 32),
           _FriendAvatar(
               avatarUrl: avatar,
-              frameAsset: '${peer['avatarFrameAsset'] ?? ''}',
-              gender: '${peer['gender'] ?? ''}',
               size: 132,
               placeholder: const Icon(Icons.person, size: 62)),
           const SizedBox(height: 24),

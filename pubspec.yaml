@@ -95,8 +95,6 @@ flutter:
     - assets/cp_waterdrops/
     - assets/profile_gifts/
     - assets/voice_gifts/
-    - assets/avatar_frames/
-    - assets/avatar_frames/
     - assets/dynamic_gifts/
     - assets/figma/
   #   - images/a_dot_ham.jpeg

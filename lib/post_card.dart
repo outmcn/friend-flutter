@@ -976,42 +976,6 @@ class _DiscoverProfileCard extends StatelessWidget {
     );
   }
 
-  Widget _avatarFrame(
-      {required Widget child,
-      required String gender,
-      double size = 40,
-      String? frameAsset}) {
-    final explicitFrame = normalizeAvatarFrameAsset(frameAsset);
-    final normalizedFrame = explicitFrame.isNotEmpty
-        ? explicitFrame
-        : defaultAvatarFrameForGender(gender);
-    final color = isMaleGender(gender)
-        ? const Color(0xFF1677FF)
-        : isFemaleGender(gender)
-            ? const Color(0xFFFF6FAE)
-            : Colors.transparent;
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.center,
-      children: [
-        Container(
-            width: size,
-            height: size,
-            padding: EdgeInsets.all(color == Colors.transparent ? 0 : 2),
-            decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: color == Colors.transparent
-                    ? null
-                    : Border.all(color: color, width: 2)),
-            child: ClipOval(child: child)),
-        if (normalizedFrame.isNotEmpty)
-          Positioned.fill(
-              child: IgnorePointer(
-                  child: Image.asset(normalizedFrame, fit: BoxFit.contain))),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final violation = post.reviewStatus == 'rejected' && onDelete != null;
@@ -1028,9 +992,9 @@ class _DiscoverProfileCard extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  _avatarFrame(
-                    gender: post.gender,
-                    frameAsset: post.authorAvatarFrameAsset,
+                  SizedBox(
+                    width: 40,
+                    height: 40,
                     child: SizedBox.expand(
                       child: post.avatar.trim().isEmpty
                           ? const Icon(Icons.person_outline)

@@ -20,97 +20,29 @@ class _GlobalScrollToTopRegistry {
 
 final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
 
-String normalizeAvatarFrameAsset(String? asset) {
-  final value = asset?.trim() ?? '';
-  if (value == 'assets/avatar_frames/男_frame.png' ||
-      value.contains('男_') ||
-      value.contains('male-')) {
-    return 'assets/avatar_frames/男_frame.png';
-  }
-  if (value == 'assets/avatar_frames/女_frame.png' ||
-      value.contains('女_') ||
-      value.contains('female-')) {
-    return 'assets/avatar_frames/女_frame.png';
-  }
-  return '';
-}
-
-bool isMaleGender(String? gender) {
-  final value = (gender ?? '').trim().toUpperCase();
-  return value == '男' || value == 'MALE' || value == 'MAN' || value == 'M';
-}
-
-bool isFemaleGender(String? gender) {
-  final value = (gender ?? '').trim().toUpperCase();
-  return value == '女' || value == 'FEMALE' || value == 'WOMAN' || value == 'F';
-}
-
-String defaultAvatarFrameForGender(String? gender) {
-  if (isMaleGender(gender)) return 'assets/avatar_frames/男_frame.png';
-  if (isFemaleGender(gender)) return 'assets/avatar_frames/女_frame.png';
-  return '';
-}
-
 class _FriendAvatar extends StatelessWidget {
-  const _FriendAvatar({
-    required this.avatarUrl,
-    this.frameAsset,
-    this.gender,
-    this.size = 48,
-    this.placeholder,
-  });
+  const _FriendAvatar(
+      {required this.avatarUrl, this.size = 48, this.placeholder});
   final String avatarUrl;
-  final String? frameAsset;
-  final String? gender;
   final double size;
   final Widget? placeholder;
 
   @override
-  Widget build(BuildContext context) {
-    final explicitFrame = normalizeAvatarFrameAsset(frameAsset);
-    final frame = explicitFrame.isNotEmpty
-        ? explicitFrame
-        : defaultAvatarFrameForGender(gender);
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          ClipOval(
-            child: avatarUrl.trim().isEmpty
-                ? (placeholder ??
-                    const ColoredBox(
-                      color: Colors.black12,
-                      child: Icon(Icons.person_outline),
-                    ))
-                : _PermanentCachedImage(
-                    url: avatarUrl,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.cover,
-                    placeholder: placeholder ??
-                        const ColoredBox(
-                          color: Colors.black12,
-                          child: Icon(Icons.person_outline),
-                        ),
-                  ),
-          ),
-          if (frame.isNotEmpty)
-            Positioned(
-              left: -size * 0.28,
-              top: -size * 0.12,
-              width: size * 1.56,
-              height: size * 1.24,
-              child: IgnorePointer(
-                child: Image.asset(frame, fit: BoxFit.fill),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SizedBox(
+        width: size,
+        height: size,
+        child: ClipOval(
+          child: avatarUrl.trim().isEmpty
+              ? (placeholder ?? const Icon(Icons.person_outline))
+              : _PermanentCachedImage(
+                  url: avatarUrl,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  placeholder: placeholder ?? const Icon(Icons.person_outline),
+                ),
+        ),
+      );
 }
 
 OverlayEntry? _activeTopNotice;

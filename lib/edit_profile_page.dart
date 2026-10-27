@@ -123,16 +123,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final token = p.getString('friend.auth.token') ?? '';
       if (token.isEmpty) throw Exception('请先登录');
       final avatarKey = await _avatarObjectKey(token);
-      final frameAsset = p.getString('friend.avatar.frame.asset');
-      final frameSelection = p.getString('friend.avatar.frame.selection');
       await service.updateMe(
         token: token,
         nickname: nickname.text.trim(),
         signature: signature.text.trim(),
         bio: signature.text.trim(),
         avatarKey: avatarKey,
-        avatarFrameAsset: frameAsset,
-        avatarFrameSelection: frameSelection,
       );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {

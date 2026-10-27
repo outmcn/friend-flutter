@@ -1474,8 +1474,6 @@ class DDPostService {
     String? city,
     String? avatarKey,
     String? voiceKey,
-    String? avatarFrameAsset,
-    String? avatarFrameSelection,
   }) async {
     final response = await _client.put(
       _base.resolve('/api/me'),
@@ -1491,9 +1489,6 @@ class DDPostService {
         if (city != null) 'city': city,
         if (avatarKey != null) 'avatarKey': avatarKey,
         if (voiceKey != null) 'voiceKey': voiceKey,
-        if (avatarFrameAsset != null) 'avatarFrameAsset': avatarFrameAsset,
-        if (avatarFrameSelection != null)
-          'avatarFrameSelection': avatarFrameSelection,
       }),
     );
     final decoded = jsonDecode(response.body);
