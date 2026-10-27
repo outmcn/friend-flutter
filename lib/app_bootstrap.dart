@@ -98,9 +98,14 @@ class _FriendAvatar extends StatelessWidget {
                   ),
           ),
           if (frame.isNotEmpty)
-            Positioned.fill(
-              child:
-                  IgnorePointer(child: Image.asset(frame, fit: BoxFit.contain)),
+            Positioned(
+              left: -size * 0.28,
+              top: -size * 0.12,
+              width: size * 1.56,
+              height: size * 1.24,
+              child: IgnorePointer(
+                child: Image.asset(frame, fit: BoxFit.fill),
+              ),
             ),
         ],
       ),
