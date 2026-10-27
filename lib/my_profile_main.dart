@@ -1896,7 +1896,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
 
   Future<void> _create() async {
     final controller = TextEditingController(text: '语音频道');
-    String category = '闲聊';
+    String? category;
     final result = await showDialog<Map<String, String>>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -1914,13 +1914,12 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
               ),
               DropdownButtonFormField<String>(
                 value: category,
-                decoration: const InputDecoration(labelText: '频道分类'),
+                decoration: const InputDecoration(labelText: '频道分类（必选）'),
                 items: const ['闲聊', '点歌', '开黑', '睡眠', '树洞']
                     .map((item) =>
                         DropdownMenuItem(value: item, child: Text(item)))
                     .toList(),
-                onChanged: (value) =>
-                    setDialogState(() => category = value ?? '闲聊'),
+                onChanged: (value) => setDialogState(() => category = value),
               ),
             ],
           ),
@@ -1929,10 +1928,12 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                 onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('取消')),
             FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, {
-                'title': controller.text.trim(),
-                'category': category,
-              }),
+              onPressed: category == null
+                  ? null
+                  : () => Navigator.pop(dialogContext, {
+                        'title': controller.text.trim(),
+                        'category': category!,
+                      }),
               child: const Text('创建'),
             ),
           ],
@@ -1946,8 +1947,10 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
       final token = (await SharedPreferences.getInstance())
               .getString('friend.auth.token') ??
           '';
+      final selectedCategory = result?['category'];
+      if (selectedCategory == null || selectedCategory.isEmpty) return;
       final data = await service.createVoiceRoom(token,
-          title: title, category: result?['category'] ?? '闲聊');
+          title: title, category: selectedCategory);
       if (!mounted) return;
       Navigator.push(context,
           MaterialPageRoute(builder: (_) => VoiceRoomPage(room: data)));

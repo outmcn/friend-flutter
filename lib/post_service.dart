@@ -129,7 +129,7 @@ class DDPostService {
   }
 
   Future<Map<String, dynamic>> createVoiceRoom(String token,
-      {required String title, String category = '闲聊'}) async {
+      {required String title, required String category}) async {
     final response = await _client.post(_api('/im/voice-rooms'),
         headers: {
           'Authorization': 'Bearer $token',
