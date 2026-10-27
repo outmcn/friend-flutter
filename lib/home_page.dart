@@ -51,8 +51,6 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   List<Map<String, dynamic>> rooms = const [];
   bool loading = true;
   String? error;
-  static const categories = ['附近', '闲聊', '点歌', '开黑', '睡眠', '树洞'];
-  String category = '附近';
 
   @override
   void initState() {
@@ -83,48 +81,11 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const SizedBox.shrink(),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: categories
-                  .map(
-                    (item) => Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => category = item),
-                        behavior: HitTestBehavior.opaque,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              item,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: category == item
-                                    ? null
-                                    : Theme.of(context).hintColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              width: category == item ? 24 : 0,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
+          title: const Text('频道'),
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
         ),
         body: loading
             ? const Center(child: CircularProgressIndicator())
@@ -135,10 +96,11 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                     child: rooms.isEmpty
                         ? ListView(
                             padding: const EdgeInsets.all(16),
-                            children: [
-                                const SizedBox(height: 80),
-                                _NearbyEmptyChannelSlots()
-                              ])
+                            children: const [
+                              SizedBox(height: 120),
+                              Center(child: Text('暂无频道')),
+                            ],
+                          )
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
                             itemCount: rooms.length,
