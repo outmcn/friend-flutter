@@ -81,12 +81,6 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-        ),
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
