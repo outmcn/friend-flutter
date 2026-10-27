@@ -992,9 +992,19 @@ class _DiscoverProfileCard extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  SizedBox(
+                  Container(
                     width: 40,
                     height: 40,
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: post.gender == '女'
+                            ? const Color(0xFFFF82B7)
+                            : const Color(0xFF4E9BFF),
+                        width: 3,
+                      ),
+                    ),
                     child: ClipOval(
                       child: post.avatar.trim().isEmpty
                           ? const Icon(Icons.person_outline)

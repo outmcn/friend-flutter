@@ -829,6 +829,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     children: [
                       _FriendAvatar(
                         avatarUrl: chat.avatarUrl ?? '',
+                        gender: chat.gender,
                         size: 48,
                         placeholder: const Icon(Icons.person_outline),
                       ),
