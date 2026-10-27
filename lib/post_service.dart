@@ -129,13 +129,13 @@ class DDPostService {
   }
 
   Future<Map<String, dynamic>> createVoiceRoom(String token,
-      {required String title}) async {
+      {required String title, String category = '闲聊'}) async {
     final response = await _client.post(_api('/im/voice-rooms'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json'
         },
-        body: jsonEncode({'title': title}));
+        body: jsonEncode({'title': title, 'category': category}));
     return _decodeResponse(response, '创建语音频道失败');
   }
 

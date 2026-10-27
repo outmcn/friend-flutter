@@ -51,7 +51,8 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   List<Map<String, dynamic>> rooms = const [];
   bool loading = true;
   String? error;
-
+  String selectedCategory = '全部';
+  static const channelCategories = ['全部', '闲聊', '点歌', '开黑', '睡眠', '树洞'];
   @override
   void initState() {
     super.initState();
@@ -93,38 +94,79 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                 ? Center(child: Text('频道加载失败：$error'))
                 : RefreshIndicator(
                     onRefresh: _load,
-                    child: rooms.isEmpty
-                        ? ListView(
-                            padding: const EdgeInsets.all(16),
-                            children: const [
-                              SizedBox(height: 120),
-                              Center(child: Text('暂无频道')),
-                            ],
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                            itemCount: rooms.length,
-                            itemBuilder: (_, index) {
-                              final room = rooms[index];
-                              return _ChannelSummaryCard(
-                                room: room,
-                                onEnter: () async {
-                                  final token =
-                                      (await SharedPreferences.getInstance())
-                                              .getString('friend.auth.token') ??
-                                          '';
-                                  final joined = await service.joinVoiceRoom(
-                                      token, '${room['id']}');
-                                  if (context.mounted)
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                VoiceRoomPage(room: joined)));
-                                },
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 48,
+                          child: ListView(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            scrollDirection: Axis.horizontal,
+                            children: channelCategories.map((category) {
+                              final active = selectedCategory == category;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text(category),
+                                  selected: active,
+                                  onSelected: (_) => setState(
+                                      () => selectedCategory = category),
+                                ),
                               );
-                            },
+                            }).toList(),
                           ),
+                        ),
+                        Expanded(
+                          child: Builder(builder: (context) {
+                            final filtered = selectedCategory == '全部'
+                                ? rooms
+                                : rooms
+                                    .where((room) =>
+                                        '${room['category'] ?? ''}' ==
+                                        selectedCategory)
+                                    .toList();
+                            return filtered.isEmpty
+                                ? ListView(
+                                    padding: const EdgeInsets.all(16),
+                                    children: [
+                                      const SizedBox(height: 120),
+                                      Center(
+                                          child: Text(rooms.isEmpty
+                                              ? '暂无频道'
+                                              : '该分类暂无频道')),
+                                    ],
+                                  )
+                                : ListView.builder(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 12, 16, 28),
+                                    itemCount: filtered.length,
+                                    itemBuilder: (_, index) {
+                                      final room = filtered[index];
+                                      return _ChannelSummaryCard(
+                                        room: room,
+                                        onEnter: () async {
+                                          final token = (await SharedPreferences
+                                                      .getInstance())
+                                                  .getString(
+                                                      'friend.auth.token') ??
+                                              '';
+                                          final joined =
+                                              await service.joinVoiceRoom(
+                                                  token, '${room['id']}');
+                                          if (context.mounted)
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        VoiceRoomPage(
+                                                            room: joined)));
+                                        },
+                                      );
+                                    },
+                                  );
+                          }),
+                        ),
+                      ],
+                    ),
                   ),
       );
 }

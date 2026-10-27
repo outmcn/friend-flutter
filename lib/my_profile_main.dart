@@ -1893,35 +1893,58 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
 
   Future<void> _create() async {
     final controller = TextEditingController(text: '语音频道');
-    final title = await showDialog<String>(
+    String category = '闲聊';
+    final result = await showDialog<Map<String, String>>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('创建语音频道'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 40,
-          decoration:
-              const InputDecoration(labelText: '房间名字', hintText: '请输入房间名字'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('创建语音频道'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: true,
+                maxLength: 40,
+                decoration: const InputDecoration(
+                    labelText: '房间名字', hintText: '请输入房间名字'),
+              ),
+              DropdownButtonFormField<String>(
+                value: category,
+                decoration: const InputDecoration(labelText: '频道分类'),
+                items: const ['闲聊', '点歌', '开黑', '睡眠', '树洞']
+                    .map((item) =>
+                        DropdownMenuItem(value: item, child: Text(item)))
+                    .toList(),
+                onChanged: (value) =>
+                    setDialogState(() => category = value ?? '闲聊'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('取消')),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, {
+                'title': controller.text.trim(),
+                'category': category,
+              }),
+              child: const Text('创建'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('取消')),
-          FilledButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, controller.text.trim()),
-              child: const Text('创建')),
-        ],
       ),
     );
     controller.dispose();
-    if (title == null || title.trim().isEmpty) return;
+    final title = result?['title']?.trim() ?? '';
+    if (title.isEmpty) return;
     try {
       final token = (await SharedPreferences.getInstance())
               .getString('friend.auth.token') ??
           '';
-      final data = await service.createVoiceRoom(token, title: title.trim());
+      final data = await service.createVoiceRoom(token,
+          title: title, category: result?['category'] ?? '闲聊');
       if (!mounted) return;
       Navigator.push(context,
           MaterialPageRoute(builder: (_) => VoiceRoomPage(room: data)));
