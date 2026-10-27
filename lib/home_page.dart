@@ -318,7 +318,7 @@ class _HomePageState extends State<HomePage> {
                                   onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const FateMatchPage(),
+                                      builder: (_) => const HeartRadarPage(),
                                     ),
                                   ),
                                 ),

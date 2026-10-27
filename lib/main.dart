@@ -62,6 +62,7 @@ part 'voice_room_page.dart';
 part 'voice_room_widgets.dart';
 part 'voice_room_main.dart';
 part 'fate_match_page.dart';
+part 'heart_radar_page.dart';
 part 'aux_pages.dart';
 part 'edit_profile_page.dart';
 part 'settings_pages.dart';
