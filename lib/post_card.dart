@@ -1180,7 +1180,6 @@ class _DiscoverProfileCard extends StatelessWidget {
                   ] else if (post.videoUrl?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 10),
                     Stack(
-                      alignment: Alignment.center,
                       children: [
                         _media(
                             url: post.thumbnailUrl?.trim().isNotEmpty == true
@@ -1188,8 +1187,12 @@ class _DiscoverProfileCard extends StatelessWidget {
                                 : post.videoUrl!.trim(),
                             thumbnail:
                                 post.thumbnailUrl?.trim().isNotEmpty == true),
-                        const Icon(Icons.play_circle_outline,
-                            size: 48, color: Colors.white),
+                        const Positioned.fill(
+                          child: Center(
+                            child: Icon(Icons.play_circle_outline,
+                                size: 48, color: Colors.white),
+                          ),
+                        ),
                       ],
                     ),
                   ],
