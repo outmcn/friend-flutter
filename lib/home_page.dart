@@ -324,7 +324,7 @@ class _HomePageState extends State<HomePage> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) =>
-                                                const GameCompanionPlazaPage(),
+                                                const FateMatchPage(),
                                           ),
                                         ),
                                       ),
