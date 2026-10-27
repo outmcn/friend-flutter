@@ -91,22 +91,31 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                       children: [
                         SizedBox(
                           height: 48,
-                          child: ListView(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            scrollDirection: Axis.horizontal,
-                            children: channelCategories.map((category) {
-                              final active = selectedCategory == category;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: ChoiceChip(
-                                  label: Text(category),
-                                  selected: active,
-                                  showCheckmark: false,
-                                  onSelected: (_) => setState(
-                                      () => selectedCategory = category),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) =>
+                                SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                    minWidth: constraints.maxWidth),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: channelCategories.map((category) {
+                                    final active = selectedCategory == category;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ChoiceChip(
+                                        label: Text(category),
+                                        selected: active,
+                                        showCheckmark: false,
+                                        onSelected: (_) => setState(
+                                            () => selectedCategory = category),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ),
-                              );
-                            }).toList(),
+                              ),
+                            ),
                           ),
                         ),
                         Expanded(
