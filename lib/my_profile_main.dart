@@ -281,18 +281,19 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                   const SizedBox(height: 12),
                   Image.asset(_giftAsset(gift, index), width: 86, height: 86),
                   const SizedBox(height: 14),
-                  if (ranking.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                          color: scheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(12)),
-                      child: Text(
-                          '冠名：${ranking.first['nickname'] ?? '用户'} · ${ranking.first['quantity'] ?? 0} 个',
-                          textAlign: TextAlign.center),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Text(
+                      ranking.isEmpty
+                          ? '暂无'
+                          : '冠名：${ranking.first['nickname'] ?? '用户'} · ${ranking.first['quantity'] ?? 0} 个',
+                      textAlign: TextAlign.center,
                     ),
-                  if (ranking.isEmpty) const Text('暂无赠送记录'),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -321,8 +322,8 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                             width: 82,
                             child: Text(
                               row == null
-                                  ? '待冠名'
-                                  : '${slot + 1}. ${row['nickname'] ?? '用户'}',
+                                  ? 'No.${slot + 1}：暂无'
+                                  : 'No.${slot + 1}：${row['nickname'] ?? '用户'}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
