@@ -475,11 +475,12 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.auto_awesome,
-                                      size: 58,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary),
+                                  Image.asset(
+                                    'assets/profile_gifts/all_gifts.png',
+                                    width: 58,
+                                    height: 58,
+                                    fit: BoxFit.contain,
+                                  ),
                                   const SizedBox(height: 8),
                                   const Text('全部点亮',
                                       maxLines: 1,
