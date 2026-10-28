@@ -487,6 +487,18 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     }
   }
 
+  Future<void> _togglePinned() async {
+    try {
+      await service.setPostPinned(
+          await _token(), widget.post.id, !widget.post.pinned);
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showTopNotice(context, Text(widget.post.pinned ? '已取消置顶' : '已置顶'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => SafeArea(
         child: Padding(
@@ -552,9 +564,9 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                   children: [
                     if (widget.onDelete != null) ...[
                       _ShareAction(
-                          label: '置顶',
+                          label: widget.post.pinned ? '取消置顶' : '置顶',
                           icon: Icons.push_pin_outlined,
-                          onTap: () => Navigator.pop(context)),
+                          onTap: _togglePinned),
                       _ShareAction(
                           label: '权限',
                           icon: TIcons.browse,

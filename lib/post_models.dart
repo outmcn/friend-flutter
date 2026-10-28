@@ -53,6 +53,7 @@ class DDPost {
     this.thumbnailWidth,
     this.thumbnailHeight,
     this.reviewStatus = 'approved',
+    this.pinned = false,
   });
 
   final int id;
@@ -81,6 +82,7 @@ class DDPost {
   final int? thumbnailWidth;
   final int? thumbnailHeight;
   final String reviewStatus;
+  final bool pinned;
 
   DDPost copyWith({
     bool? following,
@@ -88,6 +90,7 @@ class DDPost {
     int? likes,
     bool? favorited,
     int? favorites,
+    bool? pinned,
     String? nickname,
     String? avatar,
     String? gender,
@@ -118,6 +121,7 @@ class DDPost {
         thumbnailWidth: thumbnailWidth,
         thumbnailHeight: thumbnailHeight,
         reviewStatus: reviewStatus,
+        pinned: pinned ?? this.pinned,
       );
 
   Map<String, dynamic> toJson() => {
@@ -145,6 +149,7 @@ class DDPost {
         'thumbnailWidth': thumbnailWidth,
         'thumbnailHeight': thumbnailHeight,
         'reviewStatus': reviewStatus,
+        'pinned': pinned,
       };
 
   factory DDPost.fromJson(
@@ -181,6 +186,7 @@ class DDPost {
         thumbnailHeight: _intValue(json['thumbnailHeight']),
         reviewStatus:
             '${json['reviewStatus'] ?? json['review_status'] ?? 'approved'}',
+        pinned: json['pinned'] == true,
       );
 }
 

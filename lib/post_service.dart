@@ -837,6 +837,21 @@ class DDPostService {
     return _fetchProfilePosts(token, '/me/private-posts', offset: offset);
   }
 
+  Future<List<DDPost>> fetchPinnedPosts(String token, {int offset = 0}) async {
+    return _fetchProfilePosts(token, '/me/pinned-posts', offset: offset);
+  }
+
+  Future<Map<String, dynamic>> setPostPinned(
+      String token, int postId, bool pinned) async {
+    final response = await _client.patch(_api('/posts/$postId/pin'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'pinned': pinned}));
+    return _decodeResponse(response, '动态置顶更新失败');
+  }
+
   Future<List<DDPost>> fetchLikedPosts(String token, {int offset = 0}) async {
     return _fetchProfilePosts(token, '/me/liked-posts', offset: offset);
   }
