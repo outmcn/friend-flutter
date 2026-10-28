@@ -393,9 +393,40 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                       mainAxisSpacing: 12,
                       childAspectRatio: 0.72,
                     ),
-                    itemCount: gifts.length,
+                    itemCount: gifts.length + 1,
                     itemBuilder: (_, index) {
-                      final gift = gifts[index];
+                      if (index == 0) {
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.auto_awesome,
+                                    size: 58,
+                                    color:
+                                        Theme.of(context).colorScheme.primary),
+                                const SizedBox(height: 8),
+                                const Text('全部点亮',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                Text('点亮 ${gifts.where((gift) {
+                                  final quantity = int.tryParse(
+                                          '${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0}') ??
+                                      0;
+                                  return quantity > 0;
+                                }).length} 个'),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      final gift = gifts[index - 1];
                       final received = int.tryParse(
                               '${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0}') ??
                           0;
@@ -451,7 +482,8 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 6),
-                                Text('收到 ${gift['received_quantity'] ?? 0} 个'),
+                                Text(
+                                    '点亮 ${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0} 个'),
                               ],
                             ),
                           ),
