@@ -154,7 +154,7 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
   }
 
   int selectedDistance = 0;
-  int selectedGender = 1;
+  int selectedGender = 0;
   int selectedDistanceBucket = 0;
   RangeValues ageRange = const RangeValues(18, 60);
 
