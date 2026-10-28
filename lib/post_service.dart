@@ -1519,6 +1519,17 @@ class DDPostService {
         : decoded as Map<String, dynamic>;
   }
 
+  Future<Map<String, dynamic>> setPostVisibility(
+      String token, int postId, String visibility) async {
+    final response = await _client.patch(_api('/posts/$postId/visibility'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'visibility': visibility}));
+    return _decodeResponse(response, '动态权限更新失败');
+  }
+
   Future<Map<String, dynamic>> updateLocation(
       {required String token,
       required double latitude,

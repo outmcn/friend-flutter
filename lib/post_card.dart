@@ -410,6 +410,18 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     }
   }
 
+  Future<void> _setPrivate() async {
+    try {
+      await service.setPostVisibility(
+          await _token(), widget.post.id, 'private');
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showTopNotice(context, const Text('已设为私密'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => SafeArea(
         child: Padding(
@@ -485,7 +497,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                       _ShareAction(
                           label: '私密',
                           icon: Icons.lock_outline,
-                          onTap: () => Navigator.pop(context)),
+                          onTap: _setPrivate),
                       _ShareAction(
                           label: '删除',
                           icon: Icons.delete_outline,
