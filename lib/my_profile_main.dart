@@ -2393,7 +2393,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                     ? TIcons.heart
                     : tab == 3
                         ? TIcons.lock_on
-                        : Icons.push_pin_outlined,
+                        : TIcons.pin,
         selectedIcon: tab == 0
             ? TIcons.highlight_1_filled
             : tab == 1
@@ -2402,7 +2402,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                     ? TIcons.heart_filled
                     : tab == 3
                         ? TIcons.lock_on
-                        : Icons.push_pin,
+                        : TIcons.pin_filled,
         cacheKey: 'dd.profile.my.v2.tab.$tab',
         fetch: (offset) async {
           final token = await _token();
