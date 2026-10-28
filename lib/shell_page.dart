@@ -504,6 +504,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('消息'),
+        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         actions: [
           IconButton(
             tooltip: '通讯录',

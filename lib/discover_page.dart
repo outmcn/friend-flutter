@@ -396,7 +396,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          surfaceTintColor: Colors.transparent,
+          systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark,
           titleSpacing: 0,
           leading: SizedBox(
             width: 48,
