@@ -748,9 +748,12 @@ class _ProfileSpacePageState extends State<ProfileSpacePage> {
     if (widget.userId == null) return;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return;
     try {
       final data = await DDPostService().checkinCpSpace(token, widget.userId!);
-      if (mounted) setState(() => checkin = data);
+      if (!mounted) return;
+      setState(() => checkin = data);
+      await _loadCheckin();
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
     }
@@ -1114,6 +1117,20 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
     _loadDissolution();
   }
 
+  Future<void> _doCheckinDetail() async {
+    if (widget.userId == null) return;
+    final token = (await SharedPreferences.getInstance())
+            .getString('friend.auth.token') ??
+        '';
+    if (token.isEmpty) return;
+    try {
+      final data = await DDPostService().checkinCpSpace(token, widget.userId!);
+      if (mounted) setState(() => currentCheckin = data);
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
   Future<void> _reloadProgress() async {
     if (widget.userId == null) return;
     final token = (await SharedPreferences.getInstance())
@@ -1235,8 +1252,7 @@ class _CpSpaceDetailPageState extends State<CpSpaceDetailPage> {
                     onGiftSent: _reloadProgress),
                 const SizedBox(height: 14),
                 _CpCheckinCard(
-                    checkin: currentCheckin,
-                    onCheckin: widget.onCheckin ?? () {}),
+                    checkin: currentCheckin, onCheckin: _doCheckinDetail),
                 const SizedBox(height: 14),
                 const _SpaceDetailEmptyCard(title: '空间动态'),
               ],
