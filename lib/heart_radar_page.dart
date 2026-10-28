@@ -45,7 +45,8 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
       final result = await _service!.joinFateMatch(
         authToken,
         mode: mode,
-        distanceBucket: selectedDistanceBucket,
+        distanceBucket:
+            selectedDistanceBucket == 0 ? null : selectedDistanceBucket - 1,
         minAge: ageRange.start.round() <= 18 ? null : ageRange.start.round(),
         maxAge: ageRange.end.round() >= 60 ? null : ageRange.end.round(),
       );
@@ -241,7 +242,7 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
 
   Widget _distanceSlider() => _filterSection(
         '距离',
-        const ['0-10km', '10-30km', '30km以上'],
+        const ['全部', '0-10km', '10-30km', '30km以上'],
         selectedDistanceBucket,
         (value) => setState(() => selectedDistanceBucket = value),
       );
