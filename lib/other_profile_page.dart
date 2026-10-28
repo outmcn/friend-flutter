@@ -355,12 +355,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               onPressed: _openGiftMenu,
               icon: const Icon(Icons.card_giftcard_outlined),
             ),
-          if (!loading && !isSelfProfile)
-            IconButton(
-              tooltip: '送礼',
-              onPressed: _openGiftMenu,
-              icon: const Icon(Icons.card_giftcard_outlined),
-            ),
           IconButton(
             onPressed: () => _showProfileMenu(context),
             icon: _tdIcon('more'),
