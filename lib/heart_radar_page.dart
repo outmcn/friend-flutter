@@ -45,7 +45,7 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
       final result = await _service!.joinFateMatch(
         authToken,
         mode: mode,
-        maxDistanceKm: maxDistanceKm >= 10 ? null : maxDistanceKm,
+        distanceBucket: selectedDistanceBucket,
         minAge: ageRange.start.round() <= 18 ? null : ageRange.start.round(),
         maxAge: ageRange.end.round() >= 60 ? null : ageRange.end.round(),
       );
@@ -154,7 +154,7 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
 
   int selectedDistance = 0;
   int selectedGender = 0;
-  double maxDistanceKm = 10;
+  int selectedDistanceBucket = 0;
   RangeValues ageRange = const RangeValues(18, 60);
 
   @override
@@ -239,32 +239,11 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
         ),
       );
 
-  Widget _distanceSlider() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-              '距离：${maxDistanceKm >= 10 ? '不限' : '${maxDistanceKm.round()}km'}',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700)),
-          Slider(
-            value: maxDistanceKm,
-            min: 1,
-            max: 10,
-            divisions: 9,
-            label: maxDistanceKm >= 10 ? '不限' : '${maxDistanceKm.round()}km',
-            activeColor: const Color(0xffff5f8f),
-            onChanged: (value) => setState(() => maxDistanceKm = value),
-          ),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('1km', style: TextStyle(color: Colors.white60)),
-              Text('不限', style: TextStyle(color: Colors.white60)),
-            ],
-          ),
-        ],
+  Widget _distanceSlider() => _filterSection(
+        '距离',
+        const ['0-10km', '10-30km', '30km以上'],
+        selectedDistanceBucket,
+        (value) => setState(() => selectedDistanceBucket = value),
       );
 
   Widget _ageSlider() => Column(
