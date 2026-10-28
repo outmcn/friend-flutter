@@ -1410,22 +1410,10 @@ class _CpGiftCardState extends State<_CpGiftCard> {
                         child: Text(message,
                             style: const TextStyle(color: Colors.white)),
                       ),
-                      if (insufficient)
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(dialogContext);
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (_) => const WalletPage()),
-                            );
-                          },
-                          child: const Text('进入钱包'),
-                        )
-                      else
-                        IconButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          icon: const Icon(Icons.close, color: Colors.white70),
-                        ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                      ),
                     ],
                   ),
                 ),
@@ -2984,6 +2972,14 @@ class _DDProfilePageState extends State<DDProfilePage>
               )
             : const SizedBox.shrink(),
         actions: [
+          IconButton(
+            tooltip: '钱包',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const WalletPage()),
+            ),
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+          ),
           IconButton(
             tooltip: '设置',
             onPressed: () => Navigator.push(
