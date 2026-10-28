@@ -145,6 +145,17 @@ class DDPostService {
     return _decodeResponse(response, '加入语音频道失败');
   }
 
+  Future<Map<String, dynamic>> updateVoiceRoomCategory(
+      String token, String id, String category) async {
+    final response = await _client.patch(_api('/im/voice-rooms/$id/category'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({'category': category}));
+    return _decodeResponse(response, '频道分类更新失败');
+  }
+
   Future<Map<String, dynamic>> leaveVoiceRoom(
       String token, String roomId) async {
     final response = await _client.post(

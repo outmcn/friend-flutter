@@ -2117,6 +2117,53 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
     }
   }
 
+  Future<String?> _chooseCategory() async {
+    String? selected;
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('选择本次频道分类'),
+          content: DropdownButtonFormField<String>(
+            value: selected,
+            decoration: const InputDecoration(labelText: '频道分类（必选）'),
+            items: const ['闲聊', '点歌', '开黑', '睡眠', '树洞']
+                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+                .toList(),
+            onChanged: (value) => setDialogState(() => selected = value),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('取消')),
+            FilledButton(
+                onPressed: selected == null
+                    ? null
+                    : () => Navigator.pop(dialogContext, selected),
+                child: const Text('进入频道')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _enterOwnedRoom(Map<String, dynamic> room) async {
+    final category = await _chooseCategory();
+    if (category == null || !mounted) return;
+    try {
+      final token = (await SharedPreferences.getInstance())
+              .getString('friend.auth.token') ??
+          '';
+      await service.updateVoiceRoomCategory(token, '${room['id']}', category);
+      final joined = await service.joinVoiceRoom(token, '${room['id']}');
+      if (!mounted) return;
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => VoiceRoomPage(room: joined)));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: const Color(0xFF160D3B),
@@ -2168,22 +2215,9 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                             padding: const EdgeInsets.fromLTRB(16, 116, 16, 28),
                             children: [
                               _ChannelSummaryCard(
-                                  room: rooms.first,
-                                  onEnter: () async {
-                                    final token =
-                                        (await SharedPreferences.getInstance())
-                                                .getString(
-                                                    'friend.auth.token') ??
-                                            '';
-                                    final joined = await service.joinVoiceRoom(
-                                        token, '${rooms.first['id']}');
-                                    if (context.mounted)
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  VoiceRoomPage(room: joined)));
-                                  }),
+                                room: rooms.first,
+                                onEnter: () => _enterOwnedRoom(rooms.first),
+                              ),
                               const SizedBox(height: 16),
                               _ChannelProfileCard(room: rooms.first),
                             ],
