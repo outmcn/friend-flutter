@@ -336,9 +336,21 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                     }),
                   ),
                   const SizedBox(height: 16),
-                  TextButton(
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
                       onPressed: () => Navigator.pop(dialogContext),
-                      child: const Text('关闭')),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: scheme.primary,
+                        foregroundColor: scheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      child: const Text('关闭'),
+                    ),
+                  ),
                 ],
               ),
             ),
