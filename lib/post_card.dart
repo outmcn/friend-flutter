@@ -459,6 +459,34 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     }
   }
 
+  Future<void> _setPrivateDirectly() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('设为私密'),
+        content: const Text('确认将这条动态设为私密吗？'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('取消')),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('确认')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await service.setPostVisibility(
+          await _token(), widget.post.id, 'private');
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showTopNotice(context, const Text('已设为私密'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => SafeArea(
         child: Padding(
@@ -534,7 +562,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                       _ShareAction(
                           label: '私密',
                           icon: Icons.lock_outline,
-                          onTap: _setVisibility),
+                          onTap: _setPrivateDirectly),
                       _ShareAction(
                           label: '删除',
                           icon: Icons.delete_outline,
