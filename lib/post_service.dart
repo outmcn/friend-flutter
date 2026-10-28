@@ -260,13 +260,21 @@ class DDPostService {
   }
 
   Future<Map<String, dynamic>> joinFateMatch(String token,
-      {String mode = 'all'}) async {
+      {String mode = 'all',
+      double? maxDistanceKm,
+      int? minAge,
+      int? maxAge}) async {
     final response = await _client.post(_api('/fate-match/join'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json'
         },
-        body: jsonEncode({'mode': mode}));
+        body: jsonEncode({
+          'mode': mode,
+          if (maxDistanceKm != null) 'maxDistanceKm': maxDistanceKm,
+          if (minAge != null) 'minAge': minAge,
+          if (maxAge != null) 'maxAge': maxAge,
+        }));
     final data =
         response.body.trim().isEmpty ? null : jsonDecode(response.body);
     if (response.statusCode != 200 || data is! Map)

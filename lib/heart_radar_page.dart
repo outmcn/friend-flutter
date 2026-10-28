@@ -42,7 +42,13 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
         waitingSeconds = 0;
       });
     try {
-      final result = await _service!.joinFateMatch(authToken, mode: mode);
+      final result = await _service!.joinFateMatch(
+        authToken,
+        mode: mode,
+        maxDistanceKm: maxDistanceKm >= 10 ? null : maxDistanceKm,
+        minAge: ageRange.start.round() <= 18 ? null : ageRange.start.round(),
+        maxAge: ageRange.end.round() >= 60 ? null : ageRange.end.round(),
+      );
       fateRemaining =
           ((result['quota'] as Map?)?['remaining'] as num?)?.toInt() ??
               fateRemaining;
@@ -148,7 +154,8 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
 
   int selectedDistance = 0;
   int selectedGender = 0;
-  int selectedAge = 0;
+  double maxDistanceKm = 10;
+  RangeValues ageRange = const RangeValues(18, 60);
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -193,20 +200,12 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _filterSection(
-                                '距离',
-                                ['不限', '5km', '10km'],
-                                selectedDistance,
-                                (v) => setState(() => selectedDistance = v)),
+                            _distanceSlider(),
                             const SizedBox(height: 24),
                             _filterSection('性别', ['不限', '异性'], selectedGender,
                                 (v) => setState(() => selectedGender = v)),
                             const SizedBox(height: 24),
-                            _filterSection(
-                                '年龄',
-                                ['不限', '18-25岁', '26-29岁'],
-                                selectedAge,
-                                (v) => setState(() => selectedAge = v)),
+                            _ageSlider(),
                             if (error.isNotEmpty) ...[
                               const SizedBox(height: 18),
                               Text(error,
@@ -238,6 +237,62 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
             ),
           ],
         ),
+      );
+
+  Widget _distanceSlider() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+              '距离：${maxDistanceKm >= 10 ? '不限' : '${maxDistanceKm.round()}km'}',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700)),
+          Slider(
+            value: maxDistanceKm,
+            min: 1,
+            max: 10,
+            divisions: 9,
+            label: maxDistanceKm >= 10 ? '不限' : '${maxDistanceKm.round()}km',
+            activeColor: const Color(0xffff5f8f),
+            onChanged: (value) => setState(() => maxDistanceKm = value),
+          ),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('1km', style: TextStyle(color: Colors.white60)),
+              Text('不限', style: TextStyle(color: Colors.white60)),
+            ],
+          ),
+        ],
+      );
+
+  Widget _ageSlider() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('年龄：${ageRange.start.round()}-${ageRange.end.round()}岁',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700)),
+          RangeSlider(
+            values: ageRange,
+            min: 18,
+            max: 60,
+            divisions: 42,
+            labels: RangeLabels(
+                '${ageRange.start.round()}岁', '${ageRange.end.round()}岁'),
+            activeColor: const Color(0xffff5f8f),
+            onChanged: (value) => setState(() => ageRange = value),
+          ),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('18岁', style: TextStyle(color: Colors.white60)),
+              Text('60岁', style: TextStyle(color: Colors.white60)),
+            ],
+          ),
+        ],
       );
 
   Widget _filterSection(String title, List<String> options, int selected,
