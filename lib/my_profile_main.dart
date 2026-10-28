@@ -379,24 +379,19 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
               const Text('全部礼物',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              Icon(Icons.card_giftcard, size: 86, color: scheme.primary),
+              Image.asset('assets/profile_gifts/all_gifts.png',
+                  width: 86, height: 86, fit: BoxFit.contain),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(
-                    3,
-                    (index) => Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 28,
-                              backgroundColor: scheme.primaryContainer,
-                              child: Text('礼物${index + 1}',
-                                  style: const TextStyle(fontSize: 11)),
-                            ),
-                            const SizedBox(height: 6),
-                            Text('No.${index + 1}：暂无'),
-                          ],
-                        )),
+                children: [
+                  _allGiftSpecialSlot(scheme,
+                      'assets/profile_gifts/special/01_时空灵鹿.png', '时空灵鹿'),
+                  _allGiftSpecialSlot(scheme,
+                      'assets/profile_gifts/special/02_星河凤凰.png', '星河凤凰'),
+                  _allGiftSpecialSlot(scheme,
+                      'assets/profile_gifts/special/03_月光独角兽.png', '月光独角兽'),
+                ],
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -419,6 +414,24 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
       ),
     );
   }
+
+  Widget _allGiftSpecialSlot(ColorScheme scheme, String asset, String name) =>
+      Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Image.asset(asset, fit: BoxFit.contain),
+          ),
+          const SizedBox(height: 6),
+          Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) => Scaffold(
