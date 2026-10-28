@@ -483,7 +483,7 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                                         fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 6),
                                 Text(
-                                    '点亮 ${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0} 个'),
+                                    '收到 ${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0} 个'),
                               ],
                             ),
                           ),
