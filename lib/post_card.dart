@@ -410,13 +410,50 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     }
   }
 
-  Future<void> _setPrivate() async {
+  Future<void> _setVisibility() async {
+    String? selected;
+    final visibility = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('权限'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: ['public', 'friends', 'profile']
+                .map((value) => RadioListTile<String>(
+                      value: value,
+                      groupValue: selected,
+                      title: Text(value == 'public'
+                          ? '全部可见'
+                          : value == 'friends'
+                              ? '好友可见'
+                              : '主页可见'),
+                      onChanged: (next) =>
+                          setDialogState(() => selected = next),
+                    ))
+                .toList(),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('取消')),
+            FilledButton(
+              onPressed: selected == null
+                  ? null
+                  : () => Navigator.pop(dialogContext, selected),
+              child: const Text('保存'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (visibility == null || !mounted) return;
     try {
       await service.setPostVisibility(
-          await _token(), widget.post.id, 'private');
+          await _token(), widget.post.id, visibility);
       if (!mounted) return;
       Navigator.pop(context);
-      _showTopNotice(context, const Text('已设为私密'));
+      _showTopNotice(context, const Text('权限已更新'));
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
     }
@@ -493,11 +530,11 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                       _ShareAction(
                           label: '权限',
                           icon: TIcons.browse,
-                          onTap: () => Navigator.pop(context)),
+                          onTap: _setVisibility),
                       _ShareAction(
                           label: '私密',
                           icon: Icons.lock_outline,
-                          onTap: _setPrivate),
+                          onTap: _setVisibility),
                       _ShareAction(
                           label: '删除',
                           icon: Icons.delete_outline,
