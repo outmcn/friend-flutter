@@ -83,7 +83,15 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Color(0xff160d3b),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
@@ -171,7 +179,7 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                       ],
                     ),
                   ),
-      );
+      ));
 }
 
 class _NearbyEmptyChannelSlots extends StatelessWidget {

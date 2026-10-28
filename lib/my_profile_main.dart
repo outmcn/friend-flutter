@@ -3069,385 +3069,412 @@ class _DDProfilePageState extends State<DDProfilePage>
   @override
   Widget build(BuildContext context) {
     final p = profile;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          tooltip: '在线状态',
-          onPressed: _openPresenceControls,
-          icon: const Icon(TIcons.sensors),
+    final systemStyle = Theme.of(context).brightness == Brightness.dark
+        ? const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+            systemNavigationBarColor: Color(0xff101010),
+            systemNavigationBarIconBrightness: Brightness.light,
+          )
+        : const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xfff7f5fb),
+            systemNavigationBarIconBrightness: Brightness.dark,
+          );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: systemStyle,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            tooltip: '在线状态',
+            onPressed: _openPresenceControls,
+            icon: const Icon(TIcons.sensors),
+          ),
+          title: _showStickyNickname
+              ? Text(
+                  '${p?['nickname'] ?? 'Friend 用户'}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                )
+              : const SizedBox.shrink(),
+          actions: [
+            IconButton(
+              tooltip: '钱包',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WalletPage()),
+              ),
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+            ),
+            IconButton(
+              tooltip: '设置',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              ),
+              icon: const Icon(TIcons.format_vertical_align_right),
+            ),
+          ],
         ),
-        title: _showStickyNickname
-            ? Text(
-                '${p?['nickname'] ?? 'Friend 用户'}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )
-            : const SizedBox.shrink(),
-        actions: [
-          IconButton(
-            tooltip: '钱包',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const WalletPage()),
-            ),
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-          ),
-          IconButton(
-            tooltip: '设置',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
-            icon: const Icon(TIcons.format_vertical_align_right),
-          ),
-        ],
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                RefreshIndicator(
-                  notificationPredicate: (notification) =>
-                      notification.depth == 0,
-                  onRefresh: () => load(forceRefresh: true),
-                  child: CustomScrollView(
-                    controller: _profileHeaderScroll,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        sliver: SliverToBoxAdapter(
-                          child: const SizedBox.shrink(),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  RefreshIndicator(
+                    notificationPredicate: (notification) =>
+                        notification.depth == 0,
+                    onRefresh: () => load(forceRefresh: true),
+                    child: CustomScrollView(
+                      controller: _profileHeaderScroll,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: const SizedBox.shrink(),
+                          ),
                         ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Flexible(
-                                                  child: Text(
-                                                    '${p?['nickname'] ?? 'Friend 用户'}',
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                        fontSize: 30,
-                                                        height: 1.0,
-                                                        fontWeight:
-                                                            FontWeight.w700),
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  tooltip: '编辑资料',
-                                                  onPressed: _openEditProfile,
-                                                  icon: const Icon(TIcons
-                                                      .textformat_shorter),
-                                                  padding: EdgeInsets.zero,
-                                                  constraints:
-                                                      const BoxConstraints
-                                                          .tightFor(
-                                                          width: 32,
-                                                          height: 32),
-                                                ),
-                                              ],
-                                            ),
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  'ID：${p?['id'] ?? p?['userId'] ?? ''}',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    height: 1.0,
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .withValues(alpha: .65),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  'IP：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未定位' : '${p?['city']}'.trim()}',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .withValues(alpha: .65),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.only(
-                                                  top: 0, bottom: 14),
-                                              decoration: const BoxDecoration(),
-                                              child: Row(
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          sliver: SliverList(
+                            delegate: SliverChildListDelegate([
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
                                                 children: [
-                                                  Expanded(
-                                                      child: _InlineProfileStat(
-                                                          label: '关注',
-                                                          value: _formatCount(
-                                                              p?['following']),
-                                                          onTap: () => Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (_) => const _UserRelationListPage(
-                                                                      relation:
-                                                                          'following',
-                                                                      title:
-                                                                          '关注'))))),
-                                                  Expanded(
-                                                      child: _InlineProfileStat(
-                                                          label: '粉丝',
-                                                          value: _formatCount(
-                                                              p?['followers']),
-                                                          onTap: () => Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (_) => const _UserRelationListPage(
-                                                                      relation:
-                                                                          'followers',
-                                                                      title:
-                                                                          '粉丝'))))),
-                                                  Expanded(
-                                                      child: _InlineProfileStat(
-                                                    label: '访客',
-                                                    value: _formatCount(
-                                                        p?['visitors']),
-                                                    onTap: () => Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (_) =>
-                                                              const _UserRelationListPage(
-                                                                  relation:
-                                                                      'history',
-                                                                  title: '访客')),
+                                                  Flexible(
+                                                    child: Text(
+                                                      '${p?['nickname'] ?? 'Friend 用户'}',
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                          fontSize: 30,
+                                                          height: 1.0,
+                                                          fontWeight:
+                                                              FontWeight.w700),
                                                     ),
-                                                  )),
-                                                  Expanded(
-                                                      child: _InlineProfileStat(
-                                                    label: '魅力',
-                                                    value: _formatCount(
-                                                        charmCoins),
-                                                    onTap: () => Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (_) =>
-                                                            const _CharmSourcesPage(),
-                                                      ),
-                                                    ),
-                                                  )),
+                                                  ),
+                                                  IconButton(
+                                                    tooltip: '编辑资料',
+                                                    onPressed: _openEditProfile,
+                                                    icon: const Icon(TIcons
+                                                        .textformat_shorter),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints
+                                                            .tightFor(
+                                                            width: 32,
+                                                            height: 32),
+                                                  ),
                                                 ],
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 18),
-                                        child: Column(
-                                          children: [
-                                            GestureDetector(
-                                              child: SizedBox(
-                                                width: 104,
-                                                height: 104,
-                                                child: Stack(
-                                                  alignment: Alignment.center,
-                                                  clipBehavior: Clip.none,
-                                                  children: [
-                                                    Container(
-                                                      width: 90,
-                                                      height: 90,
-                                                      clipBehavior:
-                                                          Clip.antiAlias,
-                                                      decoration:
-                                                          const BoxDecoration(
-                                                              shape: BoxShape
-                                                                  .circle),
-                                                      child:
-                                                          _avatarReviewRejected
-                                                              ? const ColoredBox(
-                                                                  color: Colors
-                                                                      .black12,
-                                                                  child: Center(
-                                                                      child: Text(
-                                                                          '图片涉嫌违规',
-                                                                          textAlign: TextAlign
-                                                                              .center,
-                                                                          style: TextStyle(
-                                                                              fontSize: 11,
-                                                                              color: Colors.black54))),
-                                                                )
-                                                              : _avatarLocalPath !=
-                                                                      null
-                                                                  ? Image.file(
-                                                                      File(
-                                                                          _avatarLocalPath!),
-                                                                      fit: BoxFit
-                                                                          .cover)
-                                                                  : _avatarUrl == null ||
-                                                                          _avatarUrl!
-                                                                              .isEmpty
-                                                                      ? const ColoredBox(
-                                                                          color: Colors
-                                                                              .black12,
-                                                                          child: Icon(Icons.person,
-                                                                              size:
-                                                                                  40))
-                                                                      : _PermanentCachedImage(
-                                                                          url:
-                                                                              _avatarUrl!,
-                                                                          width:
-                                                                              90,
-                                                                          height:
-                                                                              90,
-                                                                          fit: BoxFit
-                                                                              .cover,
-                                                                          placeholder: const ColoredBox(
-                                                                              color: Colors.black12,
-                                                                              child: Icon(Icons.person, size: 40))),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    'ID：${p?['id'] ?? p?['userId'] ?? ''}',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      height: 1.0,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                              alpha: .65),
                                                     ),
-                                                    Container(
-                                                      width: 96,
-                                                      height: 96,
-                                                      decoration: BoxDecoration(
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(
-                                                          color: p?['gender'] ==
-                                                                  '女'
-                                                              ? const Color(
-                                                                  0xFFFF82B7)
-                                                              : const Color(
-                                                                  0xFF4E9BFF),
-                                                          width: 3,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    'IP：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未定位' : '${p?['city']}'.trim()}',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                              alpha: .65),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              Container(
+                                                padding: const EdgeInsets.only(
+                                                    top: 0, bottom: 14),
+                                                decoration:
+                                                    const BoxDecoration(),
+                                                child: Row(
+                                                  children: [
+                                                    Expanded(
+                                                        child: _InlineProfileStat(
+                                                            label: '关注',
+                                                            value: _formatCount(p?[
+                                                                'following']),
+                                                            onTap: () => Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                    builder: (_) => const _UserRelationListPage(
+                                                                        relation:
+                                                                            'following',
+                                                                        title:
+                                                                            '关注'))))),
+                                                    Expanded(
+                                                        child: _InlineProfileStat(
+                                                            label: '粉丝',
+                                                            value: _formatCount(p?[
+                                                                'followers']),
+                                                            onTap: () => Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                    builder: (_) => const _UserRelationListPage(
+                                                                        relation:
+                                                                            'followers',
+                                                                        title:
+                                                                            '粉丝'))))),
+                                                    Expanded(
+                                                        child:
+                                                            _InlineProfileStat(
+                                                      label: '访客',
+                                                      value: _formatCount(
+                                                          p?['visitors']),
+                                                      onTap: () =>
+                                                          Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                const _UserRelationListPage(
+                                                                    relation:
+                                                                        'history',
+                                                                    title:
+                                                                        '访客')),
+                                                      ),
+                                                    )),
+                                                    Expanded(
+                                                        child:
+                                                            _InlineProfileStat(
+                                                      label: '魅力',
+                                                      value: _formatCount(
+                                                          charmCoins),
+                                                      onTap: () =>
+                                                          Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              const _CharmSourcesPage(),
                                                         ),
                                                       ),
-                                                    ),
+                                                    )),
                                                   ],
                                                 ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: Padding(
+                                        const SizedBox(width: 12),
+                                        Padding(
                                           padding:
-                                              const EdgeInsets.only(top: 4),
-                                          child: _ExpandableProfileSignature(
-                                            value:
-                                                '${p?['signature'] ?? p?['bio'] ?? ''}',
+                                              const EdgeInsets.only(bottom: 18),
+                                          child: Column(
+                                            children: [
+                                              GestureDetector(
+                                                child: SizedBox(
+                                                  width: 104,
+                                                  height: 104,
+                                                  child: Stack(
+                                                    alignment: Alignment.center,
+                                                    clipBehavior: Clip.none,
+                                                    children: [
+                                                      Container(
+                                                        width: 90,
+                                                        height: 90,
+                                                        clipBehavior:
+                                                            Clip.antiAlias,
+                                                        decoration:
+                                                            const BoxDecoration(
+                                                                shape: BoxShape
+                                                                    .circle),
+                                                        child:
+                                                            _avatarReviewRejected
+                                                                ? const ColoredBox(
+                                                                    color: Colors
+                                                                        .black12,
+                                                                    child: Center(
+                                                                        child: Text(
+                                                                            '图片涉嫌违规',
+                                                                            textAlign:
+                                                                                TextAlign.center,
+                                                                            style: TextStyle(fontSize: 11, color: Colors.black54))),
+                                                                  )
+                                                                : _avatarLocalPath !=
+                                                                        null
+                                                                    ? Image.file(
+                                                                        File(
+                                                                            _avatarLocalPath!),
+                                                                        fit: BoxFit
+                                                                            .cover)
+                                                                    : _avatarUrl == null ||
+                                                                            _avatarUrl!
+                                                                                .isEmpty
+                                                                        ? const ColoredBox(
+                                                                            color: Colors
+                                                                                .black12,
+                                                                            child: Icon(Icons.person,
+                                                                                size:
+                                                                                    40))
+                                                                        : _PermanentCachedImage(
+                                                                            url:
+                                                                                _avatarUrl!,
+                                                                            width:
+                                                                                90,
+                                                                            height:
+                                                                                90,
+                                                                            fit:
+                                                                                BoxFit.cover,
+                                                                            placeholder: const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 40))),
+                                                      ),
+                                                      Container(
+                                                        width: 96,
+                                                        height: 96,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          border: Border.all(
+                                                            color: p?['gender'] ==
+                                                                    '女'
+                                                                ? const Color(
+                                                                    0xFFFF82B7)
+                                                                : const Color(
+                                                                    0xFF4E9BFF),
+                                                            width: 3,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 18),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          child: _ProfileActionButton(
-                                              icon: TIcons.sonic,
-                                              label: '声音',
-                                              onTap: _editSonic)),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                          child: _ProfileActionButton(
-                                              icon: Icons.auto_awesome_outlined,
-                                              label: '展馆',
-                                              onTap: () => Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (_) =>
-                                                          GiftExhibitionPage(
-                                                            userId:
-                                                                _profileUserId(),
-                                                            userName:
-                                                                '${profile?['nickname'] ?? '我的'}',
-                                                          ))))),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                          child: _ProfileActionButton(
-                                        icon: TIcons.space,
-                                        label: '空间',
-                                        onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => ProfileSpacePage(
-                                              nickname:
-                                                  '${profile?['nickname'] ?? '我'}',
-                                              avatarUrl: _avatarUrl,
-                                              avatarLocalPath: _avatarLocalPath,
-                                              userId: _currentUserId,
+                                        const SizedBox(width: 12),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 4),
+                                            child: _ExpandableProfileSignature(
+                                              value:
+                                                  '${p?['signature'] ?? p?['bio'] ?? ''}',
                                             ),
                                           ),
                                         ),
-                                      )),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                          child: _ProfileActionButton(
-                                              icon: TIcons.browse_gallery,
-                                              label: '频道',
-                                              onTap: () => Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (_) =>
-                                                          const ProfileChannelPage())))),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 18),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                            child: _ProfileActionButton(
+                                                icon: TIcons.sonic,
+                                                label: '声音',
+                                                onTap: _editSonic)),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                            child: _ProfileActionButton(
+                                                icon:
+                                                    Icons.auto_awesome_outlined,
+                                                label: '展馆',
+                                                onTap: () => Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            GiftExhibitionPage(
+                                                              userId:
+                                                                  _profileUserId(),
+                                                              userName:
+                                                                  '${profile?['nickname'] ?? '我的'}',
+                                                            ))))),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                            child: _ProfileActionButton(
+                                          icon: TIcons.space,
+                                          label: '空间',
+                                          onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ProfileSpacePage(
+                                                nickname:
+                                                    '${profile?['nickname'] ?? '我'}',
+                                                avatarUrl: _avatarUrl,
+                                                avatarLocalPath:
+                                                    _avatarLocalPath,
+                                                userId: _currentUserId,
+                                              ),
+                                            ),
+                                          ),
+                                        )),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                            child: _ProfileActionButton(
+                                                icon: TIcons.browse_gallery,
+                                                label: '频道',
+                                                onTap: () => Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            const ProfileChannelPage())))),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 0),
-                            const SizedBox(height: 0),
-                          ]),
-                        ),
-                      ),
-                      SliverPersistentHeader(
-                        pinned: true,
-                        delegate: _ProfileTabsHeaderDelegate(
-                          child: _MyProfileIconTabs(
-                            selectedTab: selectedTab,
-                            onSelect: _selectProfileTab,
+                              const SizedBox(height: 0),
+                              const SizedBox(height: 0),
+                            ]),
                           ),
                         ),
-                      ),
-                      ..._allProfileFeedSlivers(),
-                    ],
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _ProfileTabsHeaderDelegate(
+                            child: _MyProfileIconTabs(
+                              selectedTab: selectedTab,
+                              onSelect: _selectProfileTab,
+                            ),
+                          ),
+                        ),
+                        ..._allProfileFeedSlivers(),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 }

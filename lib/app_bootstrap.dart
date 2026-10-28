@@ -185,20 +185,37 @@ class DDApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: _appNavigatorKey,
       debugShowCheckedModeBanner: false,
-      builder: (context, child) => Stack(
-        children: [
-          _KeyboardDismissBehavior(child: child ?? const SizedBox.shrink()),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: MediaQuery.paddingOf(context).top,
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: _GlobalScrollToTopRegistry.scrollTop,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: Theme.of(context).brightness == Brightness.dark
+            ? const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.light,
+                statusBarBrightness: Brightness.dark,
+                systemNavigationBarColor: Color(0xff101010),
+                systemNavigationBarIconBrightness: Brightness.light,
+              )
+            : const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
+                systemNavigationBarColor: Color(0xfff7f5fb),
+                systemNavigationBarIconBrightness: Brightness.dark,
+              ),
+        child: Stack(
+          children: [
+            _KeyboardDismissBehavior(child: child ?? const SizedBox.shrink()),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.paddingOf(context).top,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _GlobalScrollToTopRegistry.scrollTop,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       title: 'DD',
       themeMode: ThemeMode.system,
