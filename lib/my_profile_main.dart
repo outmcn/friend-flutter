@@ -363,6 +363,63 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
     }
   }
 
+  Future<void> _showAllGiftsDetail() async {
+    if (!mounted) return;
+    final scheme = Theme.of(context).colorScheme;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (dialogContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('全部礼物',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Icon(Icons.card_giftcard, size: 86, color: scheme.primary),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(
+                    3,
+                    (index) => Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 28,
+                              backgroundColor: scheme.primaryContainer,
+                              child: Text('礼物${index + 1}',
+                                  style: const TextStyle(fontSize: 11)),
+                            ),
+                            const SizedBox(height: 6),
+                            Text('No.${index + 1}：暂无'),
+                          ],
+                        )),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: scheme.primary,
+                    foregroundColor: scheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24)),
+                  ),
+                  child: const Text('全部领取'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -396,32 +453,37 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                     itemCount: gifts.length + 1,
                     itemBuilder: (_, index) {
                       if (index == 0) {
-                        return Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.auto_awesome,
-                                    size: 58,
-                                    color:
-                                        Theme.of(context).colorScheme.primary),
-                                const SizedBox(height: 8),
-                                const Text('全部点亮',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 6),
-                                Text('点亮 ${gifts.where((gift) {
-                                  final quantity = int.tryParse(
-                                          '${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0}') ??
-                                      0;
-                                  return quantity > 0;
-                                }).length} 个'),
-                              ],
+                        return InkWell(
+                          onTap: _showAllGiftsDetail,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.auto_awesome,
+                                      size: 58,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary),
+                                  const SizedBox(height: 8),
+                                  const Text('全部点亮',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700)),
+                                  const SizedBox(height: 6),
+                                  Text('点亮 ${gifts.where((gift) {
+                                    final quantity = int.tryParse(
+                                            '${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0}') ??
+                                        0;
+                                    return quantity > 0;
+                                  }).length} 个'),
+                                ],
+                              ),
                             ),
                           ),
                         );
