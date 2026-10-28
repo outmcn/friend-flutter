@@ -703,7 +703,7 @@ class DDPostService {
   Future<List<DDPost>> fetchPosts(
     String token, {
     int offset = 0,
-    int limit = 30,
+    int limit = 20,
     bool followingFeed = false,
   }) async {
     final uri = _api('/posts').replace(queryParameters: {
@@ -732,7 +732,7 @@ class DDPostService {
   Future<List<DDPost>> fetchNearbyPosts(
     String token, {
     int offset = 0,
-    int limit = 30,
+    int limit = 20,
   }) async {
     final uri = _api('/posts/local').replace(queryParameters: {
       'offset': '$offset',
@@ -757,14 +757,14 @@ class DDPostService {
   Future<List<DDPost>> fetchFollowingPosts(
     String token, {
     int offset = 0,
-    int limit = 30,
+    int limit = 20,
   }) =>
       fetchPosts(token, offset: offset, limit: limit, followingFeed: true);
 
   Future<List<DDPost>> fetchRecommendedPosts(
     String token, {
     int offset = 0,
-    int limit = 30,
+    int limit = 20,
   }) async {
     final uri = _api('/posts/recommended').replace(queryParameters: {
       'offset': '$offset',
@@ -830,7 +830,7 @@ class DDPostService {
   Future<List<DDPost>> _fetchProfilePosts(String token, String path,
       {int offset = 0}) async {
     final response = await _client.get(
-      Uri.parse('${_api(path)}?offset=$offset&limit=30'),
+      Uri.parse('${_api(path)}?offset=$offset&limit=20'),
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(response.body);
