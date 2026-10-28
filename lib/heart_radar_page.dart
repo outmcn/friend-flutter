@@ -242,7 +242,7 @@ class _HeartRadarPageState extends State<HeartRadarPage> {
 
   Widget _distanceSlider() => _filterSection(
         '距离',
-        const ['全部', '0-10km', '10-30km', '30km以上'],
+        const ['全部', '0-10km', '10-30km', '30km+'],
         selectedDistanceBucket,
         (value) => setState(() => selectedDistanceBucket = value),
       );
