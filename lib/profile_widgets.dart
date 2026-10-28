@@ -1,19 +1,20 @@
 part of 'main.dart';
 
-
 class _ExpandableProfileSignature extends StatelessWidget {
   const _ExpandableProfileSignature({required this.value});
   final String value;
   String _format(String raw) {
     return raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
   }
+
   @override
   Widget build(BuildContext context) {
     final formatted = _format(value);
     return Text(
       formatted.isEmpty ? '设置个性签名' : formatted,
       softWrap: true,
-      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      style: TextStyle(
+          fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
     );
   }
 }
@@ -28,45 +29,74 @@ String _formatProfilePostDate(String raw) {
 }
 
 class _SonicProfileButton extends StatelessWidget {
-  const _SonicProfileButton({required this.playing, required this.enabled, required this.onTap});
+  const _SonicProfileButton(
+      {required this.playing, required this.enabled, required this.onTap});
   final bool playing;
   final bool enabled;
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: SizedBox(
-      width: 90,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: enabled ? .14 : .07), borderRadius: BorderRadius.circular(99)),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(playing ? Icons.pause : TIcons.sonic, size: 18, color: enabled ? Theme.of(context).colorScheme.primary : Theme.of(context).disabledColor),
-          const SizedBox(width: 4),
-          Text('声音', style: TextStyle(fontSize: 14, color: enabled ? Theme.of(context).colorScheme.primary : Theme.of(context).disabledColor)),
-        ]),
-      ),
-    ),
-  );
+        onTap: onTap,
+        child: SizedBox(
+          width: 90,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: enabled ? .14 : .07),
+                borderRadius: BorderRadius.circular(99)),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(playing ? Icons.pause : TIcons.sonic,
+                  size: 18,
+                  color: enabled
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).disabledColor),
+              const SizedBox(width: 4),
+              Text('声音',
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: enabled
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).disabledColor)),
+            ]),
+          ),
+        ),
+      );
 }
 
 class _ProfileCapsuleButton extends StatelessWidget {
-  const _ProfileCapsuleButton({required this.icon, required this.label, required this.onTap});
+  const _ProfileCapsuleButton(
+      {required this.icon, required this.label, required this.onTap});
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: SizedBox(
-      width: 90,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: .14), borderRadius: BorderRadius.circular(99)),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 4), Text(label, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))]),
-      ),
-    ),
-  );
+        onTap: onTap,
+        child: SizedBox(
+          width: 90,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(99)),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(icon,
+                  size: 18, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 4),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary))
+            ]),
+          ),
+        ),
+      );
 }
 
 class _MyProfileIconTabs extends StatelessWidget {
@@ -86,6 +116,7 @@ class _MyProfileIconTabs extends StatelessWidget {
             _tab(context, 1, TIcons.bookmark),
             _tab(context, 2, TIcons.heart),
             _tab(context, 3, TIcons.lock_on),
+            _tab(context, 4, Icons.push_pin_outlined),
           ],
         ],
       );
@@ -108,8 +139,8 @@ class _MyProfileIconTabs extends StatelessWidget {
                           : index == 1
                               ? TIcons.bookmark_filled
                               : index == 2
-                              ? TIcons.heart_filled
-                              : TIcons.lock_on)
+                                  ? TIcons.heart_filled
+                                  : TIcons.lock_on)
                       : icon,
                   size: 24,
                   color: selectedTab == index
@@ -203,9 +234,12 @@ class _MyProfileGridState extends State<_MyProfileGrid> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(widget.emptyLabel),
-              if (widget.onEmptyAction != null && widget.emptyActionLabel != null) ...[
+              if (widget.onEmptyAction != null &&
+                  widget.emptyActionLabel != null) ...[
                 const SizedBox(height: 12),
-                OutlinedButton(onPressed: widget.onEmptyAction, child: Text(widget.emptyActionLabel!)),
+                OutlinedButton(
+                    onPressed: widget.onEmptyAction,
+                    child: Text(widget.emptyActionLabel!)),
               ],
             ],
           ),
@@ -317,27 +351,29 @@ class _InlineProfileStat extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-        SizedBox(
-          height: 22,
-          child: Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.left,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: valueFontSize,
+          SizedBox(
+            height: 22,
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.left,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: valueFontSize,
+              ),
             ),
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color:
-                Theme.of(context).colorScheme.onSurface.withValues(alpha: .65),
-            fontSize: labelFontSize,
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: .65),
+              fontSize: labelFontSize,
+            ),
           ),
-        ),
         ],
       ),
     );

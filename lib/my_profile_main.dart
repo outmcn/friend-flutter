@@ -2374,7 +2374,7 @@ class _DDProfilePageState extends State<DDProfilePage>
     });
     _sonicPlayer.onPlayerComplete.listen((_) {});
     profileFeedTabs = List.generate(
-      4,
+      5,
       (tab) => FeedShellTab(
         title: tab == 0
             ? '我的动态'
@@ -2382,21 +2382,27 @@ class _DDProfilePageState extends State<DDProfilePage>
                 ? '收藏'
                 : tab == 2
                     ? '点赞'
-                    : '私密动态',
+                    : tab == 3
+                        ? '私密动态'
+                        : '置顶',
         icon: tab == 0
             ? TIcons.highlight_1
             : tab == 1
                 ? TIcons.bookmark
                 : tab == 2
                     ? TIcons.heart
-                    : TIcons.lock_on,
+                    : tab == 3
+                        ? TIcons.lock_on
+                        : Icons.push_pin_outlined,
         selectedIcon: tab == 0
             ? TIcons.highlight_1_filled
             : tab == 1
                 ? TIcons.bookmark_filled
                 : tab == 2
                     ? TIcons.heart_filled
-                    : TIcons.lock_on,
+                    : tab == 3
+                        ? TIcons.lock_on
+                        : Icons.push_pin,
         cacheKey: 'dd.profile.my.v2.tab.$tab',
         fetch: (offset) async {
           final token = await _token();
@@ -2406,7 +2412,11 @@ class _DDProfilePageState extends State<DDProfilePage>
                   ? await service.fetchFavoritedPosts(token, offset: offset)
                   : tab == 2
                       ? await service.fetchLikedPosts(token, offset: offset)
-                      : await service.fetchPrivatePosts(token, offset: offset);
+                      : tab == 3
+                          ? await service.fetchPrivatePosts(token,
+                              offset: offset)
+                          : await service.fetchPinnedPosts(token,
+                              offset: offset);
           return Future.wait(
               loaded.map((post) => service.resolvePostMedia(token, post)));
         },
