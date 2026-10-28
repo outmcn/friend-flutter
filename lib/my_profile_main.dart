@@ -475,11 +475,44 @@ class _GiftExhibitionPageState extends State<GiftExhibitionPage> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Image.asset(
-                                    'assets/profile_gifts/all_gifts.png',
-                                    width: 58,
-                                    height: 58,
-                                    fit: BoxFit.contain,
+                                  ColorFiltered(
+                                    colorFilter: gifts.isNotEmpty &&
+                                            gifts.every((gift) {
+                                              final quantity = int.tryParse(
+                                                      '${gift['received_quantity'] ?? gift['receivedQuantity'] ?? 0}') ??
+                                                  0;
+                                              return quantity > 0;
+                                            })
+                                        ? const ColorFilter.mode(
+                                            Colors.transparent, BlendMode.dst)
+                                        : const ColorFilter.matrix([
+                                            0.2126,
+                                            0.7152,
+                                            0.0722,
+                                            0,
+                                            0,
+                                            0.2126,
+                                            0.7152,
+                                            0.0722,
+                                            0,
+                                            0,
+                                            0.2126,
+                                            0.7152,
+                                            0.0722,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            1,
+                                            0,
+                                          ]),
+                                    child: Image.asset(
+                                      'assets/profile_gifts/all_gifts.png',
+                                      width: 58,
+                                      height: 58,
+                                      fit: BoxFit.contain,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   const Text('全部点亮',
