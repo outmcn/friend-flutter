@@ -3182,29 +3182,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                         .withValues(alpha: .65),
                                                   ),
                                                 ),
-                                                IconButton(
-                                                  tooltip: '复制ID',
-                                                  icon: const Icon(TIcons.copy,
-                                                      size: 16),
-                                                  padding: EdgeInsets.zero,
-                                                  constraints:
-                                                      const BoxConstraints
-                                                          .tightFor(
-                                                          width: 16,
-                                                          height: 16),
-                                                  onPressed: () async {
-                                                    final id =
-                                                        '${p?['id'] ?? p?['userId'] ?? ''}';
-                                                    if (id.trim().isEmpty)
-                                                      return;
-                                                    await Clipboard.setData(
-                                                        ClipboardData(
-                                                            text: id));
-                                                    if (context.mounted)
-                                                      _showTopNotice(context,
-                                                          const Text('ID已复制'));
-                                                  },
-                                                ),
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   'IP：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未定位' : '${p?['city']}'.trim()}',
