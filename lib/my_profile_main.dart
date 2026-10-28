@@ -2374,23 +2374,29 @@ class _DDProfilePageState extends State<DDProfilePage>
     });
     _sonicPlayer.onPlayerComplete.listen((_) {});
     profileFeedTabs = List.generate(
-      3,
+      4,
       (tab) => FeedShellTab(
         title: tab == 0
             ? '我的动态'
             : tab == 1
                 ? '收藏'
-                : '私密动态',
+                : tab == 2
+                    ? '点赞'
+                    : '私密动态',
         icon: tab == 0
             ? TIcons.highlight_1
             : tab == 1
                 ? TIcons.bookmark
-                : TIcons.lock_on,
+                : tab == 2
+                    ? TIcons.heart
+                    : TIcons.lock_on,
         selectedIcon: tab == 0
             ? TIcons.highlight_1_filled
             : tab == 1
                 ? TIcons.bookmark_filled
-                : TIcons.lock_on,
+                : tab == 2
+                    ? TIcons.heart_filled
+                    : TIcons.lock_on,
         cacheKey: 'dd.profile.my.v2.tab.$tab',
         fetch: (offset) async {
           final token = await _token();
@@ -2398,7 +2404,9 @@ class _DDProfilePageState extends State<DDProfilePage>
               ? await service.fetchMyPosts(token, offset: offset)
               : tab == 1
                   ? await service.fetchFavoritedPosts(token, offset: offset)
-                  : await service.fetchPrivatePosts(token, offset: offset);
+                  : tab == 2
+                      ? await service.fetchLikedPosts(token, offset: offset)
+                      : await service.fetchPrivatePosts(token, offset: offset);
           return Future.wait(
               loaded.map((post) => service.resolvePostMedia(token, post)));
         },
