@@ -599,7 +599,9 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
           : (peerId) => widget.onSendToFriend!(peerId, post),
       onReport: () => widget.onReport(post),
       onDelete: widget.onDelete == null ? null : () => widget.onDelete!(post),
-      onPinned: widget.onPinned == null ? null : () => widget.onPinned!(post),
+      onPinned: widget.onPinned == null
+          ? null
+          : (updated) => widget.onPinned!(updated),
       onDirectChat:
           widget.onDirectChat == null ? null : () => widget.onDirectChat!(post),
       onFollow: widget.onFollow == null ? null : () => widget.onFollow!(post),

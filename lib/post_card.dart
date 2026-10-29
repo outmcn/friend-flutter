@@ -326,7 +326,7 @@ class _DiscoverShareSheet extends StatefulWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onGift;
   final VoidCallback? onDelete;
-  final VoidCallback? onPinned;
+  final ValueChanged<DDPost>? onPinned;
 
   @override
   State<_DiscoverShareSheet> createState() => _DiscoverShareSheetState();
@@ -1014,7 +1014,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onGift;
   final VoidCallback? onDelete;
-  final VoidCallback? onPinned;
+  final ValueChanged<DDPost>? onPinned;
   final VoidCallback onReport;
   final VoidCallback onOpen;
   final bool hideAuthorRow;
