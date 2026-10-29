@@ -2343,7 +2343,6 @@ class _DDProfilePageState extends State<DDProfilePage>
   String? _cachedAllProfileSignature;
   List<Widget>? _cachedAllProfileSlivers;
   final List<VoidCallback> _profileFeedListeners = <VoidCallback>[];
-  final Map<int, double> _profileTabOffsets = <int, double>{};
   final AudioPlayer _sonicPlayer = AudioPlayer();
   final ScrollController _profileHeaderScroll = ScrollController();
   bool _showStickyNickname = false;
@@ -2368,10 +2367,7 @@ class _DDProfilePageState extends State<DDProfilePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _profileHeaderScroll.addListener(() {
-      _handleProfileScroll();
-      _profileTabOffsets[selectedTab] = _profileHeaderScroll.offset;
-    });
+    _profileHeaderScroll.addListener(_handleProfileScroll);
     _presenceTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_appActive) _sendPresenceHeartbeat();
     });
@@ -2488,7 +2484,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     _profileHeaderScroll.removeListener(_handleProfileScroll);
     _profileHeaderScroll.dispose();
     for (final feed in feeds) {
-      feed.scroll.removeListener(_handleProfileScroll);
       final listenerIndex = feeds.indexOf(feed);
       if (listenerIndex >= 0 && listenerIndex < _profileFeedListeners.length) {
         feed.removeListener(_profileFeedListeners[listenerIndex]);
