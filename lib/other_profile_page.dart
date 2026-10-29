@@ -417,8 +417,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                             .withValues(alpha: .65)),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.only(
-                                        top: 7, bottom: 14),
+                                    padding: EdgeInsets.zero,
                                     child: Row(
                                       children: [
                                         Expanded(
@@ -448,7 +447,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                             ),
                             const SizedBox(width: 12),
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 23),
+                              padding: EdgeInsets.zero,
                               child: Container(
                                 width: 108,
                                 height: 108,
