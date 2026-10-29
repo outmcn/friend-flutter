@@ -140,7 +140,9 @@ class _MyProfileIconTabs extends StatelessWidget {
                               ? TIcons.bookmark_filled
                               : index == 2
                                   ? TIcons.heart_filled
-                                  : TIcons.lock_on)
+                                  : index == 3
+                                      ? TIcons.lock_on
+                                      : TIcons.pin_filled)
                       : icon,
                   size: 24,
                   color: selectedTab == index
