@@ -490,13 +490,14 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
   }
 
   Future<void> _togglePinned() async {
+    final nextPinned = !widget.post.pinned;
     try {
-      await service.setPostPinned(
-          await _token(), widget.post.id, !widget.post.pinned);
+      await service.setPostPinned(await _token(), widget.post.id, nextPinned);
+      widget.onPinned?.call(widget.post.copyWith(pinned: nextPinned));
       await DDPostService.clearProfileTabCaches();
       if (!mounted) return;
       Navigator.pop(context);
-      _showTopNotice(context, Text(widget.post.pinned ? '已取消置顶' : '已置顶'));
+      _showTopNotice(context, Text(nextPinned ? '已置顶' : '已取消置顶'));
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
     }
