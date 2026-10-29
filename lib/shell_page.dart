@@ -4560,8 +4560,8 @@ class _DDShellState extends State<DDShell> {
               label: '聊天',
             ),
             NavigationDestination(
-              icon: Icon(TIcons.fingerprint_3),
-              selectedIcon: Icon(TIcons.fingerprint_3),
+              icon: Icon(TIcons.no_expression),
+              selectedIcon: Icon(TIcons.no_expression_filled),
               label: '我的',
             ),
           ],
