@@ -2368,7 +2368,10 @@ class _DDProfilePageState extends State<DDProfilePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _profileHeaderScroll.addListener(_handleProfileScroll);
+    _profileHeaderScroll.addListener(() {
+      _handleProfileScroll();
+      _profileTabOffsets[selectedTab] = _profileHeaderScroll.offset;
+    });
     _presenceTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_appActive) _sendPresenceHeartbeat();
     });
@@ -2425,12 +2428,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       _profileFeedListeners.add(invalidate);
       feed.addListener(invalidate);
       _GlobalScrollToTopRegistry.register(feed.scroll);
-      feed.scroll.addListener(_handleProfileScroll);
-      feed.scroll.addListener(() {
-        if (feed.scroll.hasClients) {
-          _profileTabOffsets[feeds.indexOf(feed)] = feed.scroll.offset;
-        }
-      });
       feed.scroll.addListener(() {
         if (feed.scroll.hasClients &&
             feed.scroll.position.extentAfter < 500 &&
@@ -2679,11 +2676,11 @@ class _DDProfilePageState extends State<DDProfilePage>
     _cachedAllProfileSlivers = null;
     setState(() => selectedTab = tab);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !feed.scroll.hasClients) return;
+      if (!mounted || !_profileHeaderScroll.hasClients) return;
       final target = _profileTabOffsets[tab] ?? 0.0;
-      feed.scroll.jumpTo(target.clamp(
-        feed.scroll.position.minScrollExtent,
-        feed.scroll.position.maxScrollExtent,
+      _profileHeaderScroll.jumpTo(target.clamp(
+        _profileHeaderScroll.position.minScrollExtent,
+        _profileHeaderScroll.position.maxScrollExtent,
       ));
     });
   }
