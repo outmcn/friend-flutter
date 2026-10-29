@@ -3005,46 +3005,37 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
     final shell = FeedShellController(feeds: feeds, cardKeys: _profileCardKeys);
     final result = <Widget>[];
-    for (var index = 0; index < feeds.length; index++) {
-      final slivers = shell.slivers(
-        index: index,
-        currentUserId: _currentUserId,
-        onLike: _profileLike,
-        onFavorite: _profileFavorite,
-        onShare: _profileShare,
-        onSendToFriend: _profileSendToFriend,
-        onDirectChat: _profileDirectChat,
-        onFollow: _profileFollow,
-        onGift: _profileGift,
-        onDelete: index == 0 ? _deleteMyPost : null,
-        onPinned: index == 0 ? (post) => _updateProfilePinned(post) : null,
-        onReport: _profileReport,
-        hideAuthorRow: index == 0,
-        showViews: index == 0,
-        showItemDivider: index == 0,
-        onOpen: (post) async {
-          final changed = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute<bool>(
-              builder: (_) => DynamicDetailPage(
-                postId: post.id,
-                initialPost: post,
-                cardKey: _profileCardKeys['${post.id}'],
-              ),
+    final slivers = shell.slivers(
+      index: selectedTab,
+      currentUserId: _currentUserId,
+      onLike: _profileLike,
+      onFavorite: _profileFavorite,
+      onShare: _profileShare,
+      onSendToFriend: _profileSendToFriend,
+      onDirectChat: _profileDirectChat,
+      onFollow: _profileFollow,
+      onGift: _profileGift,
+      onDelete: selectedTab == 0 ? _deleteMyPost : null,
+      onPinned: selectedTab == 0 ? (post) => _updateProfilePinned(post) : null,
+      onReport: _profileReport,
+      hideAuthorRow: selectedTab == 0,
+      showViews: selectedTab == 0,
+      showItemDivider: selectedTab == 0,
+      onOpen: (post) async {
+        final changed = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute<bool>(
+            builder: (_) => DynamicDetailPage(
+              postId: post.id,
+              initialPost: post,
+              cardKey: _profileCardKeys['${post.id}'],
             ),
-          );
-          if (changed == true) await _invalidateProfileCacheAndReload();
-        },
-      );
-      for (final sliver in slivers) {
-        result.add(SliverVisibility(
-          visible: selectedTab == index,
-          maintainState: true,
-          maintainAnimation: true,
-          sliver: sliver,
-        ));
-      }
-    }
+          ),
+        );
+        if (changed == true) await _invalidateProfileCacheAndReload();
+      },
+    );
+    result.addAll(slivers);
     _cachedAllProfileSignature = signature;
     _cachedAllProfileSlivers = result;
     return result;
