@@ -3283,8 +3283,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                         ),
                                         const SizedBox(width: 12),
                                         Padding(
-                                          padding:
-                                              const EdgeInsets.only(bottom: 18),
+                                          padding: EdgeInsets.zero,
                                           child: Column(
                                             children: [
                                               GestureDetector(
