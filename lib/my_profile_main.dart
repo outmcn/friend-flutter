@@ -3034,6 +3034,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       showViews: selectedTab == 0 || selectedTab == 3,
       showItemDivider: selectedTab == 0 || selectedTab == 3,
       privateMode: selectedTab == 3,
+      showDistance: selectedTab == 0 || selectedTab == 3,
       onOpen: (post) async {
         final changed = await Navigator.push<bool>(
           context,

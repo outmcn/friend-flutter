@@ -1039,6 +1039,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     this.hideAuthorRow = false,
     this.showViews = false,
     this.privateMode = false,
+    this.showDistance = true,
   });
 
   final DDPost post;
@@ -1057,6 +1058,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final bool hideAuthorRow;
   final bool showViews;
   final bool privateMode;
+  final bool showDistance;
 
   Widget _media(
       {required String url, required bool thumbnail, bool showPlay = false}) {
@@ -1228,7 +1230,8 @@ class _DiscoverProfileCard extends StatelessWidget {
                                           fontWeight: FontWeight.w700,
                                         )),
                                   ),
-                                  if (post.distanceKm != null &&
+                                  if (showDistance &&
+                                      post.distanceKm != null &&
                                       post.distanceKm! <= 30)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 6),

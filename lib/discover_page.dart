@@ -535,6 +535,7 @@ class _DiscoverFeedCard extends StatefulWidget {
     this.hideAuthorRow = false,
     this.showViews = false,
     this.privateMode = false,
+    this.showDistance = true,
   });
 
   final DiscoverFeed feed;
@@ -554,6 +555,7 @@ class _DiscoverFeedCard extends StatefulWidget {
   final bool hideAuthorRow;
   final bool showViews;
   final bool privateMode;
+  final bool showDistance;
 
   @override
   State<_DiscoverFeedCard> createState() => _DiscoverFeedCardState();
@@ -614,6 +616,7 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       hideAuthorRow: widget.hideAuthorRow,
       showViews: widget.showViews,
       privateMode: widget.privateMode,
+      showDistance: widget.showDistance,
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),

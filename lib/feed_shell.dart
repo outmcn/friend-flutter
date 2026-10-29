@@ -44,6 +44,7 @@ class FeedShellController {
     bool showViews = false,
     bool showItemDivider = false,
     bool privateMode = false,
+    bool showDistance = true,
   }) {
     final feed = feeds[index];
     final signature =
