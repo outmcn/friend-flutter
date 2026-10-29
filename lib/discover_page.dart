@@ -483,13 +483,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
             if (tab == 2) {
               unawaited(feeds[2].load(refresh: true));
             }
-            final feed = feeds[tab];
-            if (!feed.initialized) {
-              unawaited(feed.restoreCache().then((_) {
-                if (!feed.initialized) return feed.load();
-                return Future<void>.value();
-              }));
-            }
           },
           currentUserId: _currentUserId,
           onLike: _like,
