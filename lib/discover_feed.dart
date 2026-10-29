@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'post_service.dart';
@@ -44,8 +45,13 @@ class DiscoverFeed extends ChangeNotifier {
     if (disposed || index < 0) return;
     final updated = posts[index].copyWith(pinned: post.pinned);
     posts[index] = updated;
+    posts.sort((a, b) {
+      if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+      return b.createdAt.compareTo(a.createdAt);
+    });
     postChanges.value = updated;
     notifyListeners();
+    unawaited(_saveCache());
   }
 
   void markChanged() {
@@ -65,7 +71,7 @@ class DiscoverFeed extends ChangeNotifier {
     restoring = true;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(cacheKey!);
+    final raw = prefs.getString('$cacheKey.v2');
     if (raw == null || raw.isEmpty) {
       restoring = false;
       notifyListeners();
@@ -97,7 +103,7 @@ class DiscoverFeed extends ChangeNotifier {
     if (cacheKey == null || disposed || posts.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-      cacheKey!,
+      '$cacheKey.v2',
       jsonEncode(posts.map((post) => post.toJson()).toList()),
     );
   }

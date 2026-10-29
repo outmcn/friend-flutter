@@ -33,6 +33,7 @@ class DDPostService {
       await prefs.remove('dd.profile.tab.cache.at.$tab');
       await prefs.remove('dd.profile.my.tab.$tab');
       await prefs.remove('dd.profile.my.v2.tab.$tab');
+      await prefs.remove('dd.profile.my.v2.tab.$tab.v2');
     }
   }
 
