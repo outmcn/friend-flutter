@@ -283,7 +283,10 @@ class _FeedShellState extends State<FeedShell> {
                       }
                     }
                     return _DiscoverFeedCard(
-                      key: cardKeys.putIfAbsent('${post.id}', GlobalKey.new),
+                      key: cardKeys.putIfAbsent(
+                        '$index:${post.id}',
+                        GlobalKey.new,
+                      ),
                       feed: feed,
                       post: post,
                       onLike: widget.onLike,
