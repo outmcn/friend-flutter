@@ -38,6 +38,7 @@ class FeedShellController {
     ValueChanged<DDPost>? onGift,
     ValueChanged<DDPost>? onDelete,
     ValueChanged<DDPost>? onPinned,
+    ValueChanged<String>? onVisibilityChanged,
     int? currentUserId,
     bool hideAuthorRow = false,
     bool showViews = false,
@@ -76,6 +77,7 @@ class FeedShellController {
                             ? onDelete
                             : null,
                     onPinned: onPinned,
+                    onVisibilityChanged: onVisibilityChanged,
                     onReport: onReport,
                     onOpen: onOpen,
                     hideAuthorRow: hideAuthorRow,
@@ -149,6 +151,7 @@ class FeedShell extends StatefulWidget {
     this.onGift,
     this.onDelete,
     this.onPinned,
+    this.onVisibilityChanged,
     this.currentUserId,
     this.hideAuthorRow = false,
     this.showViews = false,
@@ -174,6 +177,7 @@ class FeedShell extends StatefulWidget {
   final ValueChanged<DDPost>? onGift;
   final ValueChanged<DDPost>? onDelete;
   final ValueChanged<DDPost>? onPinned;
+  final ValueChanged<String>? onVisibilityChanged;
   final int? currentUserId;
   final bool hideAuthorRow;
   final bool showViews;
@@ -281,6 +285,7 @@ class _FeedShellState extends State<FeedShell> {
                           ? widget.onDelete
                           : null,
                       onPinned: widget.onPinned,
+                      onVisibilityChanged: widget.onVisibilityChanged,
                       onReport: widget.onReport,
                       onOpen: widget.onOpen,
                       hideAuthorRow: widget.hideAuthorRow,

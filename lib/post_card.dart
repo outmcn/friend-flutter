@@ -317,6 +317,7 @@ class _DiscoverShareSheet extends StatefulWidget {
     this.onGift,
     this.onDelete,
     this.onPinned,
+    this.onVisibilityChanged,
     this.privateMode = false,
   });
   final DDPost post;
@@ -328,6 +329,7 @@ class _DiscoverShareSheet extends StatefulWidget {
   final VoidCallback? onGift;
   final VoidCallback? onDelete;
   final ValueChanged<DDPost>? onPinned;
+  final ValueChanged<String>? onVisibilityChanged;
   final bool privateMode;
 
   @override
@@ -462,6 +464,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     try {
       await service.setPostVisibility(
           await _token(), widget.post.id, visibility);
+      widget.onVisibilityChanged?.call(visibility);
       if (!mounted) return;
       Navigator.pop(context);
       _showTopNotice(context, const Text('权限已更新'));
@@ -490,6 +493,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     try {
       await service.setPostVisibility(
           await _token(), widget.post.id, 'private');
+      widget.onVisibilityChanged?.call('private');
       if (!mounted) return;
       Navigator.pop(context);
       _showTopNotice(context, const Text('已设为私密'));
@@ -515,6 +519,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
   Future<void> _clearPrivateDirectly() async {
     try {
       await service.setPostVisibility(await _token(), widget.post.id, 'public');
+      widget.onVisibilityChanged?.call('public');
       if (!mounted) return;
       Navigator.pop(context);
       _showTopNotice(context, const Text('已取消私密'));
@@ -1028,6 +1033,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     this.onGift,
     this.onDelete,
     this.onPinned,
+    this.onVisibilityChanged,
     required this.onReport,
     required this.onOpen,
     this.hideAuthorRow = false,
@@ -1045,6 +1051,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback? onGift;
   final VoidCallback? onDelete;
   final ValueChanged<DDPost>? onPinned;
+  final ValueChanged<String>? onVisibilityChanged;
   final VoidCallback onReport;
   final VoidCallback onOpen;
   final bool hideAuthorRow;
@@ -1098,6 +1105,7 @@ class _DiscoverProfileCard extends StatelessWidget {
         onGift: onGift,
         onDelete: onDelete,
         onPinned: onPinned,
+        onVisibilityChanged: onVisibilityChanged,
         privateMode: privateMode,
       ),
     );

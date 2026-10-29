@@ -531,6 +531,7 @@ class _DiscoverFeedCard extends StatefulWidget {
     this.onGift,
     this.onDelete,
     this.onPinned,
+    this.onVisibilityChanged,
     this.hideAuthorRow = false,
     this.showViews = false,
     this.privateMode = false,
@@ -547,6 +548,7 @@ class _DiscoverFeedCard extends StatefulWidget {
   final ValueChanged<DDPost>? onGift;
   final ValueChanged<DDPost>? onDelete;
   final ValueChanged<DDPost>? onPinned;
+  final ValueChanged<String>? onVisibilityChanged;
   final ValueChanged<DDPost> onReport;
   final ValueChanged<DDPost> onOpen;
   final bool hideAuthorRow;

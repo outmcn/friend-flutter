@@ -2856,6 +2856,16 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
   }
 
+  Future<void> _handleProfileVisibilityChanged(String visibility) async {
+    await DDPostService.clearProfileTabCaches();
+    if (!mounted) return;
+    await feeds[selectedTab].load(refresh: true);
+    if (!mounted) return;
+    _cachedAllProfileSignature = null;
+    _cachedAllProfileSlivers = null;
+    setState(() {});
+  }
+
   void _updateProfilePinned(DDPost post) {
     for (final feed in feeds) {
       feed.updatePinned(post);
@@ -3017,6 +3027,8 @@ class _DDProfilePageState extends State<DDProfilePage>
       onGift: _profileGift,
       onDelete: selectedTab == 0 || selectedTab == 3 ? _deleteMyPost : null,
       onPinned: selectedTab == 0 ? (post) => _updateProfilePinned(post) : null,
+      onVisibilityChanged: (visibility) =>
+          _handleProfileVisibilityChanged(visibility),
       onReport: _profileReport,
       hideAuthorRow: selectedTab == 0 || selectedTab == 3,
       showViews: selectedTab == 0 || selectedTab == 3,
