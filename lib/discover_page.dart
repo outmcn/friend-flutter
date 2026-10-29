@@ -533,6 +533,7 @@ class _DiscoverFeedCard extends StatefulWidget {
     this.onPinned,
     this.hideAuthorRow = false,
     this.showViews = false,
+    this.privateMode = false,
   });
 
   final DiscoverFeed feed;
@@ -550,6 +551,7 @@ class _DiscoverFeedCard extends StatefulWidget {
   final ValueChanged<DDPost> onOpen;
   final bool hideAuthorRow;
   final bool showViews;
+  final bool privateMode;
 
   @override
   State<_DiscoverFeedCard> createState() => _DiscoverFeedCardState();
@@ -609,6 +611,7 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       onOpen: () => widget.onOpen(post),
       hideAuthorRow: widget.hideAuthorRow,
       showViews: widget.showViews,
+      privateMode: widget.privateMode,
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),

@@ -317,6 +317,7 @@ class _DiscoverShareSheet extends StatefulWidget {
     this.onGift,
     this.onDelete,
     this.onPinned,
+    this.privateMode = false,
   });
   final DDPost post;
   final Future<void> Function(String peerId)? onSendToFriend;
@@ -327,6 +328,7 @@ class _DiscoverShareSheet extends StatefulWidget {
   final VoidCallback? onGift;
   final VoidCallback? onDelete;
   final ValueChanged<DDPost>? onPinned;
+  final bool privateMode;
 
   @override
   State<_DiscoverShareSheet> createState() => _DiscoverShareSheetState();
@@ -528,30 +530,31 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                         TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 20),
-              SizedBox(
-                height: 88,
-                child: loading
-                    ? const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : error != null
-                        ? Center(child: Text(error!))
-                        : ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              for (final conversation in conversations)
-                                _ConversationShareTile(
-                                  conversation: conversation,
-                                  sending: sending,
-                                  onSend: () => _sendTo(conversation),
+              if (!widget.privateMode)
+                SizedBox(
+                  height: 88,
+                  child: loading
+                      ? const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : error != null
+                          ? Center(child: Text(error!))
+                          : ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: [
+                                for (final conversation in conversations)
+                                  _ConversationShareTile(
+                                    conversation: conversation,
+                                    sending: sending,
+                                    onSend: () => _sendTo(conversation),
+                                  ),
+                                _ShareFriendTile(
+                                  label: '更多',
+                                  icon: TIcons.ellipsis,
+                                  onTap: () => _showAllMutualFriends(context),
                                 ),
-                              _ShareFriendTile(
-                                label: '更多',
-                                icon: TIcons.ellipsis,
-                                onTap: () => _showAllMutualFriends(context),
-                              ),
-                            ],
-                          ),
-              ),
+                              ],
+                            ),
+                ),
               const Divider(height: 24),
               if (widget.post.reviewStatus == 'rejected' &&
                   widget.onDelete != null)
@@ -1022,6 +1025,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     required this.onOpen,
     this.hideAuthorRow = false,
     this.showViews = false,
+    this.privateMode = false,
   });
 
   final DDPost post;
@@ -1038,6 +1042,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback onOpen;
   final bool hideAuthorRow;
   final bool showViews;
+  final bool privateMode;
 
   Widget _media(
       {required String url, required bool thumbnail, bool showPlay = false}) {
@@ -1086,6 +1091,7 @@ class _DiscoverProfileCard extends StatelessWidget {
         onGift: onGift,
         onDelete: onDelete,
         onPinned: onPinned,
+        privateMode: privateMode,
       ),
     );
   }

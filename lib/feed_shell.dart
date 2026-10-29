@@ -42,6 +42,7 @@ class FeedShellController {
     bool hideAuthorRow = false,
     bool showViews = false,
     bool showItemDivider = false,
+    bool privateMode = false,
   }) {
     final feed = feeds[index];
     final signature =
@@ -79,6 +80,7 @@ class FeedShellController {
                     onOpen: onOpen,
                     hideAuthorRow: hideAuthorRow,
                     showViews: showViews,
+                    privateMode: privateMode,
                   ),
                   if (showItemDivider)
                     Container(
