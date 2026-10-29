@@ -1141,12 +1141,15 @@ class _DiscoverProfileCard extends StatelessWidget {
                               ],
                               Text(
                                 _formatMyPostDateTime(post.createdAt),
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.55),
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.55),
+                                    ),
                               ),
                             ],
                           ),
