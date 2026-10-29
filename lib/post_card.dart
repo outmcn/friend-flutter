@@ -491,6 +491,7 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     try {
       await service.setPostPinned(
           await _token(), widget.post.id, !widget.post.pinned);
+      await DDPostService.clearProfileTabCaches();
       if (!mounted) return;
       Navigator.pop(context);
       _showTopNotice(context, Text(widget.post.pinned ? '已取消置顶' : '已置顶'));
