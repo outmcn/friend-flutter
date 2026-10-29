@@ -355,7 +355,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
             children: [
               Text(entry.value,
                   style: TextStyle(
-                      fontSize: 20,
+                      fontSize: selectedTab == entry.key ? 22 : 20,
                       fontWeight: FontWeight.w800,
                       color: selectedTab == entry.key
                           ? null
