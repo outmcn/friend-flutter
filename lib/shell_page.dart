@@ -1492,6 +1492,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   BuildContext? incomingDialogContext;
   String? activeCallId;
   String? playingAudioKey;
+  Timer? _voiceMaxTimer;
   Timer? typingTimer;
   bool voiceMode = false;
   AudioRecorder? holdRecorder;
@@ -2309,6 +2310,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     );
     holdRecordingPath = path;
     if (mounted) setState(() => recordingVoice = true);
+    _voiceMaxTimer?.cancel();
+    _voiceMaxTimer = Timer(const Duration(seconds: 60), () {
+      if (mounted && recordingVoice) {
+        unawaited(_finishHoldRecording(
+            const LongPressEndDetails(globalPosition: Offset.zero)));
+      }
+    });
   }
 
   void _updateHoldRecording(LongPressMoveUpdateDetails details) {
@@ -2329,6 +2337,8 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     holdRecordingPath = null;
     if (!recordingVoice || recorder == null || path == null) return;
     if (mounted) setState(() => recordingVoice = false);
+    _voiceMaxTimer?.cancel();
+    _voiceMaxTimer = null;
     final output = await recorder.stop();
     await recorder.dispose();
     if (cancelled || output == null) {
@@ -3487,15 +3497,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                                                                           : message['kind'] == 'audio'
                                                                               ? InkWell(
                                                                                   onTap: () => _playAudioMessage('${message['text'] ?? ''}'),
-                                                                                  child: SizedBox(
-                                                                                    height: 24,
-                                                                                    child: Align(
-                                                                                      alignment: Alignment.centerLeft,
-                                                                                      child: Text(
-                                                                                        playingAudioKey == '${message['text'] ?? ''}' ? '⏸ 播放中' : '🔊 播放语音',
-                                                                                        style: Theme.of(context).textTheme.bodyLarge,
-                                                                                      ),
-                                                                                    ),
+                                                                                  child: _ChatVoiceMessageIcon(
+                                                                                    active: playingAudioKey == '${message['text'] ?? ''}',
+                                                                                    durationMs: (message['durationMs'] as num?)?.toInt() ?? 1000,
                                                                                   ),
                                                                                 )
                                                                               : Text(
@@ -4065,6 +4069,72 @@ class _ChatSearchDelegate extends SearchDelegate<String?> {
       ),
     );
   }
+}
+
+class _ChatVoiceMessageIcon extends StatelessWidget {
+  const _ChatVoiceMessageIcon({required this.active, required this.durationMs});
+  final bool active;
+  final int durationMs;
+  @override
+  Widget build(BuildContext context) {
+    final seconds = (durationMs / 1000).clamp(1, 60).round();
+    final width = 70.0 + seconds * 2.5;
+    return SizedBox(
+        width: width,
+        height: 36,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (active)
+            const _VoicePulse()
+          else
+            const Icon(TIcons.voice_wave, size: 30),
+          const SizedBox(width: 8),
+          Text('${seconds}s'),
+        ]));
+  }
+}
+
+class _VoicePulse extends StatefulWidget {
+  const _VoicePulse();
+  @override
+  State<_VoicePulse> createState() => _VoicePulseState();
+}
+
+class _VoicePulseState extends State<_VoicePulse>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 900))
+    ..repeat();
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: controller,
+        builder: (_, __) => SizedBox(
+          width: 30,
+          height: 30,
+          child: Stack(
+            alignment: Alignment.center,
+            children: List.generate(
+              3,
+              (i) => Transform.scale(
+                scale: .65 + ((controller.value + i / 3) % 1) * .45,
+                child: Icon(
+                  TIcons.voice_wave,
+                  size: 30,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: .85 - i * .2),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class _VoiceWave extends StatefulWidget {
