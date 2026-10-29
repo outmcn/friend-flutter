@@ -113,7 +113,6 @@ class _MyProfileIconTabs extends StatelessWidget {
         children: [
           _tab(context, 0, TIcons.highlight_1),
           if (!postsOnly) ...[
-            _tab(context, 4, TIcons.pin),
             _tab(context, 1, TIcons.bookmark),
             _tab(context, 2, TIcons.heart),
             _tab(context, 3, TIcons.lock_on),
