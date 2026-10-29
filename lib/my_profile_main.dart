@@ -2379,23 +2379,23 @@ class _DDProfilePageState extends State<DDProfilePage>
         title: tab == 0
             ? '我的动态'
             : tab == 1
-                ? '收藏'
+                ? '点赞'
                 : tab == 2
-                    ? '点赞'
+                    ? '收藏'
                     : '私密动态',
         icon: tab == 0
             ? TIcons.highlight_1
             : tab == 1
-                ? TIcons.bookmark
+                ? TIcons.heart
                 : tab == 2
-                    ? TIcons.heart
+                    ? TIcons.bookmark
                     : TIcons.lock_on,
         selectedIcon: tab == 0
             ? TIcons.highlight_1_filled
             : tab == 1
-                ? TIcons.bookmark_filled
+                ? TIcons.heart_filled
                 : tab == 2
-                    ? TIcons.heart_filled
+                    ? TIcons.bookmark_filled
                     : TIcons.lock_on,
         cacheKey: 'dd.profile.my.v2.tab.$tab',
         fetch: (offset) async {
@@ -2403,9 +2403,9 @@ class _DDProfilePageState extends State<DDProfilePage>
           final loaded = tab == 0
               ? await service.fetchMyPosts(token, offset: offset)
               : tab == 1
-                  ? await service.fetchFavoritedPosts(token, offset: offset)
+                  ? await service.fetchLikedPosts(token, offset: offset)
                   : tab == 2
-                      ? await service.fetchLikedPosts(token, offset: offset)
+                      ? await service.fetchFavoritedPosts(token, offset: offset)
                       : await service.fetchPrivatePosts(token, offset: offset);
           return Future.wait(
               loaded.map((post) => service.resolvePostMedia(token, post)));
