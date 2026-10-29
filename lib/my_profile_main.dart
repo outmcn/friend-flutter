@@ -2680,7 +2680,9 @@ class _DDProfilePageState extends State<DDProfilePage>
   Future<void> _selectProfileTab(int tab) async {
     if (tab == selectedTab) return;
     final feed = feeds[tab];
-    if (!feed.initialized) {
+    if (tab == 4) {
+      await feed.load(refresh: true);
+    } else if (!feed.initialized) {
       await feed.restoreCache();
       if (!feed.initialized) await feed.load();
     }
