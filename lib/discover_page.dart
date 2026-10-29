@@ -530,6 +530,7 @@ class _DiscoverFeedCard extends StatefulWidget {
     this.onFollow,
     this.onGift,
     this.onDelete,
+    this.onPinned,
     this.hideAuthorRow = false,
     this.showViews = false,
   });
@@ -544,6 +545,7 @@ class _DiscoverFeedCard extends StatefulWidget {
   final ValueChanged<DDPost>? onFollow;
   final ValueChanged<DDPost>? onGift;
   final ValueChanged<DDPost>? onDelete;
+  final ValueChanged<DDPost>? onPinned;
   final ValueChanged<DDPost> onReport;
   final ValueChanged<DDPost> onOpen;
   final bool hideAuthorRow;
@@ -597,6 +599,7 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
           : (peerId) => widget.onSendToFriend!(peerId, post),
       onReport: () => widget.onReport(post),
       onDelete: widget.onDelete == null ? null : () => widget.onDelete!(post),
+      onPinned: widget.onPinned == null ? null : () => widget.onPinned!(post),
       onDirectChat:
           widget.onDirectChat == null ? null : () => widget.onDirectChat!(post),
       onFollow: widget.onFollow == null ? null : () => widget.onFollow!(post),

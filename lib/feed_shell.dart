@@ -18,7 +18,6 @@ class FeedShellTab {
   final IconData? selectedIcon;
 }
 
-
 class FeedShellController {
   FeedShellController({required this.feeds, required this.cardKeys});
   final List<DiscoverFeed> feeds;
@@ -38,7 +37,8 @@ class FeedShellController {
     ValueChanged<DDPost>? onFollow,
     ValueChanged<DDPost>? onGift,
     ValueChanged<DDPost>? onDelete,
-    required int? currentUserId,
+    ValueChanged<DDPost>? onPinned,
+    int? currentUserId,
     bool hideAuthorRow = false,
     bool showViews = false,
     bool showItemDivider = false,
@@ -69,14 +69,22 @@ class FeedShellController {
                     onDirectChat: onDirectChat,
                     onFollow: onFollow,
                     onGift: onGift,
-                    onDelete: currentUserId != null && post.userId == currentUserId ? onDelete : null,
+                    onDelete:
+                        currentUserId != null && post.userId == currentUserId
+                            ? onDelete
+                            : null,
+                    onPinned: onPinned,
                     onReport: onReport,
                     onOpen: onOpen,
                     hideAuthorRow: hideAuthorRow,
                     showViews: showViews,
                   ),
                   if (showItemDivider)
-                    Container(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.28)),
+                    Container(
+                        height: 1,
+                        color: Theme.of(context)
+                            .dividerColor
+                            .withValues(alpha: 0.28)),
                 ],
               );
             },
@@ -88,14 +96,25 @@ class FeedShellController {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: feed.error != null
-              ? _PageErrorState(title: '动态加载失败', subtitle: feed.error!, onRetry: () => feed.load(refresh: true))
+              ? _PageErrorState(
+                  title: '动态加载失败',
+                  subtitle: feed.error!,
+                  onRetry: () => feed.load(refresh: true))
               : (feed.restoring || (feed.busy && feed.posts.isEmpty))
-                  ? const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()))
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: CircularProgressIndicator()))
                   : feed.posts.isEmpty
-                      ? const Padding(padding: EdgeInsets.symmetric(vertical: 48), child: Center(child: Text('暂无动态')))
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 48),
+                          child: Center(child: Text('暂无动态')))
                       : feed.hasMore
-                          ? TextButton(onPressed: feed.busy ? null : () => feed.load(), child: Text(feed.busy ? '加载中…' : '加载更多'))
-                          : const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: Text('没有更多动态了'))),
+                          ? TextButton(
+                              onPressed: feed.busy ? null : () => feed.load(),
+                              child: Text(feed.busy ? '加载中…' : '加载更多'))
+                          : const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(child: Text('没有更多动态了'))),
         ),
       ),
     ];
@@ -126,6 +145,7 @@ class FeedShell extends StatefulWidget {
     this.onFollow,
     this.onGift,
     this.onDelete,
+    this.onPinned,
     this.currentUserId,
     this.hideAuthorRow = false,
     this.showViews = false,
@@ -150,6 +170,7 @@ class FeedShell extends StatefulWidget {
   final ValueChanged<DDPost>? onFollow;
   final ValueChanged<DDPost>? onGift;
   final ValueChanged<DDPost>? onDelete;
+  final ValueChanged<DDPost>? onPinned;
   final int? currentUserId;
   final bool hideAuthorRow;
   final bool showViews;
@@ -169,28 +190,30 @@ class _FeedShellState extends State<FeedShell> {
   @override
   void initState() {
     super.initState();
-    selectedTab = (widget.selectedTab ?? widget.initialTab).clamp(0, widget.tabs.length - 1);
-    feeds = (widget.externalFeeds ?? widget.tabs.asMap().entries.map((entry) {
-      final index = entry.key;
-      final tab = entry.value;
-      final feed = DiscoverFeed(tab.fetch, cacheKey: tab.cacheKey);
-      _GlobalScrollToTopRegistry.register(feed.scroll);
-      feed.scroll.addListener(() {
-        if (feed.scroll.hasClients &&
-            feed.scroll.position.extentAfter < 500 &&
-            feed.initialized &&
-            feed.error == null) {
-          feed.load();
-        }
-      });
-      if (index == selectedTab) {
-        unawaited(feed.restoreCache().then((_) {
-          if (!feed.initialized) return feed.load();
-          return Future<void>.value();
-        }));
-      }
-      return feed;
-    }).toList());
+    selectedTab = (widget.selectedTab ?? widget.initialTab)
+        .clamp(0, widget.tabs.length - 1);
+    feeds = (widget.externalFeeds ??
+        widget.tabs.asMap().entries.map((entry) {
+          final index = entry.key;
+          final tab = entry.value;
+          final feed = DiscoverFeed(tab.fetch, cacheKey: tab.cacheKey);
+          _GlobalScrollToTopRegistry.register(feed.scroll);
+          feed.scroll.addListener(() {
+            if (feed.scroll.hasClients &&
+                feed.scroll.position.extentAfter < 500 &&
+                feed.initialized &&
+                feed.error == null) {
+              feed.load();
+            }
+          });
+          if (index == selectedTab) {
+            unawaited(feed.restoreCache().then((_) {
+              if (!feed.initialized) return feed.load();
+              return Future<void>.value();
+            }));
+          }
+          return feed;
+        }).toList());
   }
 
   @override
@@ -203,7 +226,6 @@ class _FeedShellState extends State<FeedShell> {
     }
     super.dispose();
   }
-
 
   Widget _tab(int index) {
     final feed = feeds[index];
@@ -232,10 +254,12 @@ class _FeedShellState extends State<FeedShell> {
                     if (index + 1 < feed.posts.length) {
                       final next = feed.posts[index + 1];
                       if (next.imageUrl?.isNotEmpty == true) {
-                        unawaited(_PermanentImageCache.prefetch(next.imageUrl!));
+                        unawaited(
+                            _PermanentImageCache.prefetch(next.imageUrl!));
                       }
                       if (next.thumbnailUrl?.isNotEmpty == true) {
-                        unawaited(_PermanentImageCache.prefetch(next.thumbnailUrl!));
+                        unawaited(
+                            _PermanentImageCache.prefetch(next.thumbnailUrl!));
                       }
                     }
                     return _DiscoverFeedCard(
@@ -249,7 +273,11 @@ class _FeedShellState extends State<FeedShell> {
                       onDirectChat: widget.onDirectChat,
                       onFollow: widget.onFollow,
                       onGift: widget.onGift,
-                      onDelete: widget.currentUserId != null && post.userId == widget.currentUserId ? widget.onDelete : null,
+                      onDelete: widget.currentUserId != null &&
+                              post.userId == widget.currentUserId
+                          ? widget.onDelete
+                          : null,
+                      onPinned: widget.onPinned,
                       onReport: widget.onReport,
                       onOpen: widget.onOpen,
                       hideAuthorRow: widget.hideAuthorRow,
@@ -281,7 +309,8 @@ class _FeedShellState extends State<FeedShell> {
                               )
                             : feed.hasMore
                                 ? TextButton(
-                                    onPressed: feed.busy ? null : () => feed.load(),
+                                    onPressed:
+                                        feed.busy ? null : () => feed.load(),
                                     child: Text(feed.busy ? '加载中…' : '加载更多'),
                                   )
                                 : const Padding(
@@ -298,8 +327,9 @@ class _FeedShellState extends State<FeedShell> {
   }
 
   Widget _content(BuildContext context) => Column(
-          children: [
-            if (widget.showTabs) SizedBox(
+        children: [
+          if (widget.showTabs)
+            SizedBox(
               height: 48,
               child: Row(
                 children: [
@@ -329,11 +359,14 @@ class _FeedShellState extends State<FeedShell> {
                                   children: [
                                     Icon(
                                       selectedTab == entry.key
-                                          ? (entry.value.selectedIcon ?? entry.value.icon!)
+                                          ? (entry.value.selectedIcon ??
+                                              entry.value.icon!)
                                           : entry.value.icon!,
                                       size: 24,
                                       color: selectedTab == entry.key
-                                          ? Theme.of(context).colorScheme.primary
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
                                           : Theme.of(context).hintColor,
                                     ),
                                   ],
@@ -344,17 +377,16 @@ class _FeedShellState extends State<FeedShell> {
                 ],
               ),
             ),
-            Expanded(
-              child: IndexedStack(
-                index: widget.selectedTab ?? selectedTab,
-                children: List.generate(widget.tabs.length, _tab),
-              ),
+          Expanded(
+            child: IndexedStack(
+              index: widget.selectedTab ?? selectedTab,
+              children: List.generate(widget.tabs.length, _tab),
             ),
-          ],
-        );
+          ),
+        ],
+      );
 
   @override
-  Widget build(BuildContext context) => widget.embedded
-      ? _content(context)
-      : Scaffold(body: _content(context));
+  Widget build(BuildContext context) =>
+      widget.embedded ? _content(context) : Scaffold(body: _content(context));
 }

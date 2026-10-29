@@ -39,6 +39,15 @@ class DiscoverFeed extends ChangeNotifier {
     postChanges.value = updated;
   }
 
+  void updatePinned(DDPost post) {
+    final index = posts.indexWhere((item) => item.id == post.id);
+    if (disposed || index < 0) return;
+    final updated = posts[index].copyWith(pinned: post.pinned);
+    posts[index] = updated;
+    postChanges.value = updated;
+    notifyListeners();
+  }
+
   void markChanged() {
     if (!disposed) notifyListeners();
   }

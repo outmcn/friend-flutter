@@ -316,6 +316,7 @@ class _DiscoverShareSheet extends StatefulWidget {
     this.onFollow,
     this.onGift,
     this.onDelete,
+    this.onPinned,
   });
   final DDPost post;
   final Future<void> Function(String peerId)? onSendToFriend;
@@ -325,6 +326,7 @@ class _DiscoverShareSheet extends StatefulWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onGift;
   final VoidCallback? onDelete;
+  final VoidCallback? onPinned;
 
   @override
   State<_DiscoverShareSheet> createState() => _DiscoverShareSheetState();
@@ -996,6 +998,7 @@ class _DiscoverProfileCard extends StatelessWidget {
     this.onFollow,
     this.onGift,
     this.onDelete,
+    this.onPinned,
     required this.onReport,
     required this.onOpen,
     this.hideAuthorRow = false,
@@ -1011,6 +1014,7 @@ class _DiscoverProfileCard extends StatelessWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onGift;
   final VoidCallback? onDelete;
+  final VoidCallback? onPinned;
   final VoidCallback onReport;
   final VoidCallback onOpen;
   final bool hideAuthorRow;
@@ -1062,6 +1066,7 @@ class _DiscoverProfileCard extends StatelessWidget {
         onFollow: onFollow,
         onGift: onGift,
         onDelete: onDelete,
+        onPinned: onPinned,
       ),
     );
   }

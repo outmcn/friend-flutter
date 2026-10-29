@@ -2869,6 +2869,15 @@ class _DDProfilePageState extends State<DDProfilePage>
     }
   }
 
+  void _updateProfilePinned(DDPost post) {
+    for (final feed in feeds) {
+      feed.updatePinned(post);
+    }
+    _cachedAllProfileSignature = null;
+    _cachedAllProfileSlivers = null;
+    if (mounted) setState(() {});
+  }
+
   Future<void> _profileLike(DDPost post) async {
     if (!pendingLikes.add(post.id)) return;
     try {
@@ -3019,6 +3028,7 @@ class _DDProfilePageState extends State<DDProfilePage>
         onFollow: _profileFollow,
         onGift: _profileGift,
         onDelete: index == 0 ? _deleteMyPost : null,
+        onPinned: index == 0 ? (post) => _updateProfilePinned(post) : null,
         onReport: _profileReport,
         hideAuthorRow: index == 0,
         showViews: index == 0,
