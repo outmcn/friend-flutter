@@ -196,6 +196,18 @@ class _FeedShellState extends State<FeedShell> {
   final cardKeys = <String, GlobalKey>{};
 
   @override
+  void didUpdateWidget(covariant FeedShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final next = widget.selectedTab;
+    if (next != null &&
+        next != selectedTab &&
+        next >= 0 &&
+        next < feeds.length) {
+      selectedTab = next;
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     selectedTab = (widget.selectedTab ?? widget.initialTab)

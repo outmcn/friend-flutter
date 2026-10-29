@@ -333,17 +333,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           _scrollCurrentTabToTop();
           return;
         }
-        setState(() => selectedTab = entry.key);
-        final feed = feeds[entry.key];
-        if (entry.key == 1 && _discoverLocalTabLabel == '本地') {
-          unawaited(_loadDiscoverCity());
-        }
-        if (!feed.initialized) {
-          unawaited(feed.restoreCache().then((_) {
-            if (!feed.initialized) return feed.load();
-            return Future<void>.value();
-          }));
-        }
+        _selectDiscoverTab(entry.key);
       },
       child: SizedBox(
         height: 48,
@@ -374,6 +364,21 @@ class _DiscoverPageState extends State<DiscoverPage> {
         ),
       ),
     );
+  }
+
+  void _selectDiscoverTab(int tab) {
+    if (!mounted || tab == selectedTab) return;
+    setState(() => selectedTab = tab);
+    if (tab == 1 && _discoverLocalTabLabel == '本地') {
+      unawaited(_loadDiscoverCity());
+    }
+    final feed = feeds[tab];
+    if (!feed.initialized) {
+      unawaited(feed.restoreCache().then((_) {
+        if (!feed.initialized) return feed.load();
+        return Future<void>.value();
+      }));
+    }
   }
 
   Future<void> _createPost() async {
@@ -474,11 +479,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           disposeFeeds: false,
           selectedTab: selectedTab,
           onTabChanged: (tab) {
-            if (!mounted) return;
-            setState(() => selectedTab = tab);
-            if (tab == 1 && _discoverLocalTabLabel == '本地') {
-              unawaited(_loadDiscoverCity());
-            }
+            _selectDiscoverTab(tab);
             if (tab == 2) {
               unawaited(feeds[2].load(refresh: true));
             }
