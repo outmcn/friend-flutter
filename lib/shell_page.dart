@@ -1513,6 +1513,9 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   @override
   void initState() {
     super.initState();
+    audioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => playingAudioKey = null);
+    });
     unawaited(_loadChatLocation());
     messageScrollController.addListener(_handleMessageScroll);
     unawaited(_loadChatLocalMessages());
@@ -2235,7 +2238,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) return;
     if (playingAudioKey == key) {
-      await audioPlayer.pause();
+      await audioPlayer.stop();
       if (mounted) setState(() => playingAudioKey = null);
       return;
     }
