@@ -3210,8 +3210,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                 ],
                                               ),
                                               Container(
-                                                padding: const EdgeInsets.only(
-                                                    top: 0, bottom: 14),
+                                                padding: EdgeInsets.zero,
                                                 decoration:
                                                     const BoxDecoration(),
                                                 child: Row(

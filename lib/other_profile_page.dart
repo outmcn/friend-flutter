@@ -372,19 +372,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   if (error != null)
                     _PageErrorState(
                         title: '主页加载失败', subtitle: error!, onRetry: load),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        '地区：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未知' : '${p?['city']}'.trim()}',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -407,14 +394,31 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                                         height: 1.2,
                                         fontWeight: FontWeight.w700),
                                   ),
-                                  Text(
-                                    'ID：${p?['id'] ?? p?['userId'] ?? widget.userId ?? ''}',
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: .65)),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'ID：${p?['id'] ?? p?['userId'] ?? widget.userId ?? ''}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: .65),
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        'IP：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未定位' : '${p?['city']}'.trim()}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: .65),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   Container(
                                     padding: EdgeInsets.zero,
