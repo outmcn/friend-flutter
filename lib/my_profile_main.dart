@@ -3018,9 +3018,9 @@ class _DDProfilePageState extends State<DDProfilePage>
       onDelete: selectedTab == 0 ? _deleteMyPost : null,
       onPinned: selectedTab == 0 ? (post) => _updateProfilePinned(post) : null,
       onReport: _profileReport,
-      hideAuthorRow: selectedTab == 0,
-      showViews: selectedTab == 0,
-      showItemDivider: selectedTab == 0,
+      hideAuthorRow: selectedTab == 0 || selectedTab == 3,
+      showViews: selectedTab == 0 || selectedTab == 3,
+      showItemDivider: selectedTab == 0 || selectedTab == 3,
       onOpen: (post) async {
         final changed = await Navigator.push<bool>(
           context,
