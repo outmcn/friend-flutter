@@ -203,7 +203,7 @@ class _FeedShellState extends State<FeedShell> {
         next != selectedTab &&
         next >= 0 &&
         next < feeds.length) {
-      setState(() => selectedTab = next);
+      selectedTab = next;
     }
   }
 
