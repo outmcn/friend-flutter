@@ -2667,22 +2667,17 @@ class _DDProfilePageState extends State<DDProfilePage>
   Future<void> _selectProfileTab(int tab) async {
     if (tab == selectedTab) return;
     final feed = feeds[tab];
-    if (!feed.initialized) {
-      await feed.restoreCache();
-      if (!feed.initialized) await feed.load();
-    }
-    if (!mounted) return;
     _cachedAllProfileSignature = null;
     _cachedAllProfileSlivers = null;
     setState(() => selectedTab = tab);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_profileHeaderScroll.hasClients) return;
-      final target = _profileTabOffsets[tab] ?? 0.0;
-      _profileHeaderScroll.jumpTo(target.clamp(
-        _profileHeaderScroll.position.minScrollExtent,
-        _profileHeaderScroll.position.maxScrollExtent,
-      ));
+      _profileHeaderScroll.jumpTo(0);
     });
+    if (!feed.initialized) {
+      await feed.restoreCache();
+      if (!feed.initialized) await feed.load();
+    }
   }
 
   Future<void> _restoreProfileCache() async {
