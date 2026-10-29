@@ -503,6 +503,17 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
     }
   }
 
+  Future<void> _clearPrivateDirectly() async {
+    try {
+      await service.setPostVisibility(await _token(), widget.post.id, 'public');
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showTopNotice(context, const Text('已取消私密'));
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('$e'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => SafeArea(
         child: Padding(
@@ -567,18 +578,25 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
                   runSpacing: 12,
                   children: [
                     if (widget.onDelete != null) ...[
-                      _ShareAction(
-                          label: widget.post.pinned ? '取消置顶' : '置顶',
-                          icon: Icons.push_pin_outlined,
-                          onTap: _togglePinned),
+                      if (widget.onPinned != null)
+                        _ShareAction(
+                            label: widget.post.pinned ? '取消置顶' : '置顶',
+                            icon: Icons.push_pin_outlined,
+                            onTap: _togglePinned),
                       _ShareAction(
                           label: '权限',
                           icon: TIcons.browse,
                           onTap: _setVisibility),
-                      _ShareAction(
-                          label: '私密',
-                          icon: Icons.lock_outline,
-                          onTap: _setPrivateDirectly),
+                      if (widget.onPinned == null)
+                        _ShareAction(
+                            label: '取消私密',
+                            icon: Icons.lock_open_outlined,
+                            onTap: _clearPrivateDirectly)
+                      else
+                        _ShareAction(
+                            label: '私密',
+                            icon: Icons.lock_outline,
+                            onTap: _setPrivateDirectly),
                       _ShareAction(
                           label: '删除',
                           icon: Icons.delete_outline,
