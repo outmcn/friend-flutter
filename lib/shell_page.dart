@@ -1507,10 +1507,13 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   ImageProvider? peerAvatarProvider;
   String? myAvatarPath;
   String? peerAvatarPath;
+  double? myLatitude;
+  double? myLongitude;
 
   @override
   void initState() {
     super.initState();
+    unawaited(_loadChatLocation());
     messageScrollController.addListener(_handleMessageScroll);
     unawaited(_loadChatLocalMessages());
     unawaited(_loadChatAvatars());
@@ -1521,6 +1524,15 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
 
   int _localMessageLoadVersion = 0;
   bool _localMessagesCleared = false;
+
+  Future<void> _loadChatLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      myLatitude = prefs.getDouble('dd.location.latitude');
+      myLongitude = prefs.getDouble('dd.location.longitude');
+    });
+  }
 
   Future<void> _loadChatLocalMessages() async {
     final loadVersion = _localMessageLoadVersion;
@@ -3009,6 +3021,23 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     ));
   }
 
+  double? get _chatDistanceKmValue => null;
+
+  double? _chatDistanceKm(_ChatPreview chat) {
+    if (myLatitude == null ||
+        myLongitude == null ||
+        chat.peerLatitude == null ||
+        chat.peerLongitude == null) return null;
+    const r = 6371.0;
+    final a1 = myLatitude! * math.pi / 180;
+    final a2 = chat.peerLatitude! * math.pi / 180;
+    final da = (chat.peerLatitude! - myLatitude!) * math.pi / 180;
+    final dl = (chat.peerLongitude! - myLongitude!) * math.pi / 180;
+    final h = math.sin(da / 2) * math.sin(da / 2) +
+        math.cos(a1) * math.cos(a2) * math.sin(dl / 2) * math.sin(dl / 2);
+    return 2 * r * math.asin(math.sqrt(h));
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         resizeToAvoidBottomInset: true,
@@ -3040,8 +3069,24 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 ],
               ),
               const SizedBox(width: 8),
-              Text(widget.chat.name,
-                  style: Theme.of(context).textTheme.bodyLarge),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.chat.name,
+                      style: Theme.of(context).textTheme.bodyLarge),
+                  if (myLatitude != null &&
+                      myLongitude != null &&
+                      widget.chat.peerLatitude != null &&
+                      widget.chat.peerLongitude != null)
+                    Text(
+                      '相距 ${_chatDistanceKm(widget.chat)!.toStringAsFixed(1)}km',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                ],
+              ),
             ]),
           ),
           actions: [
@@ -3703,14 +3748,6 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                 ),
               ),
             ]),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _ChatRadarPanel(
-                  avatar: _chatAvatarFor(widget.chat),
-                  peerLatitude: widget.chat.peerLatitude,
-                  peerLongitude: widget.chat.peerLongitude),
-            ),
             if (moreExpanded)
               Positioned(
                 right: 8,
