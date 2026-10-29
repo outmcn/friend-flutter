@@ -1123,13 +1123,26 @@ class _DiscoverProfileCard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            _formatMyPostDateTime(post.createdAt),
-                            style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.55)),
+                          child: Row(
+                            children: [
+                              if (post.pinned) ...[
+                                Icon(
+                                  TIcons.pin_filled,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+                              Text(
+                                _formatMyPostDateTime(post.createdAt),
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.55),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         IconButton(
