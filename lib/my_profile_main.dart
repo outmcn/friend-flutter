@@ -3015,8 +3015,10 @@ class _DDProfilePageState extends State<DDProfilePage>
       onDirectChat: _profileDirectChat,
       onFollow: _profileFollow,
       onGift: _profileGift,
-      onDelete: selectedTab == 0 ? _deleteMyPost : null,
-      onPinned: selectedTab == 0 ? (post) => _updateProfilePinned(post) : null,
+      onDelete: selectedTab == 0 || selectedTab == 3 ? _deleteMyPost : null,
+      onPinned: selectedTab == 0 || selectedTab == 3
+          ? (post) => _updateProfilePinned(post)
+          : null,
       onReport: _profileReport,
       hideAuthorRow: selectedTab == 0 || selectedTab == 3,
       showViews: selectedTab == 0 || selectedTab == 3,
