@@ -1495,6 +1495,7 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   Timer? typingTimer;
   bool voiceMode = false;
   AudioRecorder? holdRecorder;
+  Future<void>? _recorderReady;
   String? holdRecordingPath;
   bool recordingVoice = false;
   bool cancelVoice = false;
@@ -2270,8 +2271,20 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
     if (!voiceMode || recordingVoice) return;
     holdStartPosition = details.localPosition;
     cancelVoice = false;
-    final recorder = AudioRecorder();
+    final recorder = holdRecorder ?? AudioRecorder();
     holdRecorder = recorder;
+    _recorderReady ??= recorder.hasPermission().then((allowed) {
+      if (!allowed) throw Exception('没有麦克风权限');
+    });
+    try {
+      await _recorderReady;
+    } catch (_) {
+      await recorder.dispose();
+      holdRecorder = null;
+      _recorderReady = null;
+      if (mounted) _showTopErrorBanner(context, '没有麦克风权限');
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) {
@@ -3614,10 +3627,27 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
                       child: Row(
                         children: [
                           IconButton(
-                            onPressed: () => setState(() {
-                              voiceMode = !voiceMode;
-                              emojiExpanded = false;
-                            }),
+                            onPressed: () async {
+                              final next = !voiceMode;
+                              setState(() {
+                                voiceMode = next;
+                                emojiExpanded = false;
+                              });
+                              if (next) {
+                                final recorder = AudioRecorder();
+                                holdRecorder = recorder;
+                                _recorderReady =
+                                    recorder.hasPermission().then((allowed) {
+                                  if (!allowed) throw Exception('没有麦克风权限');
+                                });
+                                try {
+                                  await _recorderReady;
+                                } catch (_) {
+                                  if (mounted)
+                                    _showTopErrorBanner(context, '没有麦克风权限');
+                                }
+                              }
+                            },
                             icon: Icon(voiceMode
                                 ? Icons.keyboard
                                 : TIcons.microphone_1),
