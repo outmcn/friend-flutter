@@ -516,11 +516,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
               title: const Text('点赞'),
               onTap: () => Navigator.pop(context, 'like'),
             ),
-            ListTile(
-              leading: const Icon(Icons.report_outlined),
-              title: const Text('举报'),
-              onTap: () => Navigator.pop(context, 'report'),
-            ),
+            if (!isMine)
+              ListTile(
+                leading: const Icon(Icons.report_outlined),
+                title: const Text('举报'),
+                onTap: () => Navigator.pop(context, 'report'),
+              ),
             ListTile(
               leading: const Icon(Icons.copy_outlined),
               title: const Text('复制'),
