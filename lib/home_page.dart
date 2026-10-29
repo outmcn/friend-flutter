@@ -20,7 +20,7 @@ class _HomeCategoryButton extends StatelessWidget {
               children: [
                 Text(label,
                     style: TextStyle(
-                        fontSize: 20,
+                        fontSize: active ? 22 : 20,
                         fontWeight: FontWeight.w800,
                         color: active ? null : Theme.of(context).hintColor)),
                 const SizedBox(height: 5),
