@@ -28,7 +28,7 @@ class DDPostService {
 
   static Future<void> clearProfileTabCaches() async {
     final prefs = await SharedPreferences.getInstance();
-    for (var tab = 0; tab < 3; tab++) {
+    for (var tab = 0; tab < 5; tab++) {
       await prefs.remove('$profileTabCachePrefix$tab');
       await prefs.remove('dd.profile.tab.cache.at.$tab');
       await prefs.remove('dd.profile.my.tab.$tab');
