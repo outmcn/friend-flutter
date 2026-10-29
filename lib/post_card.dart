@@ -420,6 +420,13 @@ class _DiscoverShareSheetState extends State<_DiscoverShareSheet> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+          contentTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
           title: const Text('权限'),
           content: Column(
             mainAxisSize: MainAxisSize.min,

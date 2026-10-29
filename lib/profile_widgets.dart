@@ -136,9 +136,9 @@ class _MyProfileIconTabs extends StatelessWidget {
                       ? (index == 0
                           ? TIcons.highlight_1_filled
                           : index == 1
-                              ? TIcons.bookmark_filled
+                              ? TIcons.heart_filled
                               : index == 2
-                                  ? TIcons.heart_filled
+                                  ? TIcons.bookmark_filled
                                   : index == 3
                                       ? TIcons.lock_on
                                       : TIcons.pin_filled)
