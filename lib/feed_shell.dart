@@ -44,7 +44,8 @@ class FeedShellController {
     bool showItemDivider = false,
   }) {
     final feed = feeds[index];
-    final signature = feed.posts.map((post) => post.id).join(',');
+    final signature =
+        feed.posts.map((post) => '${post.id}:${post.pinned ? 1 : 0}').join(',');
     if (_sliverSignatures[index] == signature && _sliverCache[index] != null) {
       return _sliverCache[index]!;
     }

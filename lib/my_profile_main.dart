@@ -3008,7 +3008,9 @@ class _DDProfilePageState extends State<DDProfilePage>
 
   List<Widget> _allProfileFeedSlivers() {
     final signature = feeds
-        .map((feed) => feed.posts.map((post) => post.id).join(','))
+        .map((feed) => feed.posts
+            .map((post) => '${post.id}:${post.pinned ? 1 : 0}')
+            .join(','))
         .join('|');
     if (_cachedAllProfileSignature == signature &&
         _cachedAllProfileSlivers != null) {
