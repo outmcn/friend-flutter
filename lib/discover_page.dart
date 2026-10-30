@@ -101,7 +101,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
       return feed;
     });
     final firstFeed = feeds.first;
-    unawaited(firstFeed.restoreCache().then((_) => firstFeed.load()));
+    unawaited(
+        firstFeed.restoreCache().then((_) => firstFeed.load(refresh: true)));
     // 城市标签首次切换时再获取，避免首屏额外请求。
   }
 
@@ -335,10 +336,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
         if (entry.key == 1 && _discoverLocalTabLabel == '本地') {
           unawaited(_loadDiscoverCity());
         }
-        if (!feed.initialized) {
+        if (!feed.initialized || feed.posts.isEmpty) {
           unawaited(feed.restoreCache().then((_) {
-            if (!feed.initialized) return feed.load();
-            return Future<void>.value();
+            return feed.load(refresh: true);
           }));
         }
       },
@@ -480,10 +480,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
               unawaited(feeds[2].load(refresh: true));
             }
             final feed = feeds[tab];
-            if (!feed.initialized) {
+            if (!feed.initialized || feed.posts.isEmpty) {
               unawaited(feed.restoreCache().then((_) {
-                if (!feed.initialized) return feed.load();
-                return Future<void>.value();
+                return feed.load(refresh: true);
               }));
             }
           },

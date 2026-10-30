@@ -66,6 +66,7 @@ class DiscoverFeed extends ChangeNotifier {
   bool disposed = false;
   String? error;
   bool restoring = false;
+  int _loadGeneration = 0;
 
   Future<void> restoreCache() async {
     if (cacheKey == null || disposed) return;
@@ -117,13 +118,14 @@ class DiscoverFeed extends ChangeNotifier {
 
   Future<void> load({bool refresh = false}) async {
     if (disposed || busy || (!refresh && initialized && !hasMore)) return;
+    final generation = ++_loadGeneration;
     busy = true;
     error = null;
     // 分页加载期间保留已有卡片，避免滚动时把整张瀑布流替换成加载状态。
     if (!refresh) notifyListeners();
     try {
       final batch = await fetch(refresh ? 0 : offset);
-      if (disposed) return;
+      if (disposed || generation != _loadGeneration) return;
       final nextPosts = refresh ? <DDPost>[] : List<DDPost>.from(posts);
       final nextOffset = refresh ? 0 : offset;
       // 分页游标按服务端返回数量推进，去重不能影响游标。
