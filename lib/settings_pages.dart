@@ -27,6 +27,7 @@ class SettingsPage extends StatelessWidget {
           children: [
             _SettingsGroup(
               title: '账号与安全',
+              showTitle: false,
               items: const ['账号与安全'],
               onItemTap: (item) {
                 Navigator.push(
