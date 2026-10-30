@@ -2020,11 +2020,25 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
   List<Map<String, dynamic>> rooms = const [];
   bool loading = true;
   String? loadError;
+  StreamSubscription<Map<String, dynamic>>? _roomEvents;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _roomEvents = ImSession.instance.events.listen(_handleRoomEvent);
+  }
+
+  void _handleRoomEvent(Map<String, dynamic> event) {
+    final roomId = '${event['roomId'] ?? event['room_id'] ?? ''}';
+    final online = event['onlineCount'] ?? event['online_count'];
+    if (!mounted || roomId.isEmpty || online == null) return;
+    final index = rooms.indexWhere(
+        (room) => '${room['id'] ?? room['roomId'] ?? ''}' == roomId);
+    if (index < 0) return;
+    final updated = List<Map<String, dynamic>>.from(rooms);
+    updated[index] = {...updated[index], 'online_count': online};
+    setState(() => rooms = updated);
   }
 
   Future<void> _load() async {
@@ -2047,12 +2061,34 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                   '${room['ownerUserId'] ?? room['owner_user_id']}' ==
                   '$targetId')
               .toList();
-      if (mounted) setState(() => rooms = owned);
+      final resolved = await Future.wait(owned.map((room) async {
+        final key =
+            '${room['ownerAvatarKey'] ?? room['owner_avatar_key'] ?? room['avatarKey'] ?? ''}'
+                .trim();
+        if (key.isEmpty || key.startsWith('https://')) return room;
+        try {
+          final url = await service.resolveAvatarUrl(token, key);
+          return {
+            ...room,
+            if (url != null && url.isNotEmpty) 'ownerAvatar': url
+          };
+        } catch (_) {
+          return room;
+        }
+      }));
+      if (mounted) setState(() => rooms = resolved);
     } catch (e) {
       if (mounted) setState(() => loadError = '$e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _roomEvents?.cancel();
+    service.dispose();
+    super.dispose();
   }
 
   Future<void> _create() async {
