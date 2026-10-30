@@ -31,17 +31,6 @@ class SettingsPage extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            ListTile(
-              leading: const Icon(TIcons.pantone),
-              title: const Text('钱包'),
-              subtitle: const Text('金币、钻石和余额'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const WalletPage()),
-              ),
-            ),
-            const SizedBox(height: 12),
             _SettingsGroup(
               title: '账号与安全',
               items: const ['账号与安全', '修改密码', '绑定手机号'],
