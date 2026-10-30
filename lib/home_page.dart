@@ -284,6 +284,7 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         backgroundColor: surface,
         appBar: AppBar(
+          systemOverlayStyle: style,
           leadingWidth: 230,
           leading: Row(
             mainAxisSize: MainAxisSize.min,

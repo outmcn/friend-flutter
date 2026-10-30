@@ -3171,6 +3171,7 @@ class _DDProfilePageState extends State<DDProfilePage>
       value: systemStyle,
       child: Scaffold(
         appBar: AppBar(
+          systemOverlayStyle: systemStyle,
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
