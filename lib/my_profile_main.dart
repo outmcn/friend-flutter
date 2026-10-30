@@ -3199,7 +3199,13 @@ class _DDProfilePageState extends State<DDProfilePage>
               tooltip: '设置',
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
+                MaterialPageRoute(
+                  builder: (_) => SettingsPage(
+                    onPresenceTap: _openPresenceControls,
+                    onCheckinTap: () =>
+                        _showTopNotice(context, const Text('普通签到功能暂未接入')),
+                  ),
+                ),
               ),
               icon: const Icon(TIcons.format_vertical_align_right),
             ),
