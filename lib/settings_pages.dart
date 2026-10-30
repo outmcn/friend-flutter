@@ -143,7 +143,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
   String _maskPhone(String phone) {
     final digits = phone.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 7) return phone;
-    return '${digits.substring(0, 3)}****${digits.substring(digits.length - 4)}';
+    return '${digits.substring(0, 3)}******${digits.substring(digits.length - 2)}';
   }
 
   @override
