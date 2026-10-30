@@ -116,7 +116,22 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
               .getString('friend.auth.token') ??
           '';
       final data = await service.fetchVoiceRooms(token);
-      if (mounted) setState(() => rooms = data);
+      final resolved = await Future.wait(data.map((room) async {
+        final key =
+            '${room['ownerAvatarKey'] ?? room['owner_avatar_key'] ?? room['avatarKey'] ?? ''}'
+                .trim();
+        if (key.isEmpty || key.startsWith('https://')) return room;
+        try {
+          final url = await service.resolveAvatarUrl(token, key);
+          return {
+            ...room,
+            if (url != null && url.isNotEmpty) 'ownerAvatar': url
+          };
+        } catch (_) {
+          return room;
+        }
+      }));
+      if (mounted) setState(() => rooms = resolved);
     } catch (e) {
       if (mounted) setState(() => error = '$e');
     } finally {
