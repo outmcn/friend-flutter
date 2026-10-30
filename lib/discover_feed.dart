@@ -128,7 +128,7 @@ class DiscoverFeed extends ChangeNotifier {
       // 分页游标按服务端返回数量推进，去重不能影响游标。
       final ids = nextPosts.map((post) => post.id).toSet();
       nextPosts.addAll(batch.where((post) => ids.add(post.id)));
-      final resolvedHasMore = batch.length == 30;
+      final resolvedHasMore = batch.length == 20;
       posts
         ..clear()
         ..addAll(nextPosts);
