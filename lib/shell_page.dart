@@ -760,6 +760,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _hideConversationOnly(_ChatPreview chat) async {
+    await _hideConversationPreview(chat);
+  }
+
   Future<void> _deleteConversationPreview(_ChatPreview chat) async {
     await _hideConversationPreview(chat);
     final accountId = ImSession.instance.userId ??
@@ -779,7 +783,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       key: ValueKey('conversation-${chat.conversationId}'),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
-        extentRatio: 0.4,
+        extentRatio: 0.6,
         children: [
           SlidableAction(
             onPressed: (_) => _togglePinnedConversation(chat),
@@ -791,6 +795,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             label: _pinnedConversationIds.contains(chat.conversationId)
                 ? '取消置顶'
                 : '置顶',
+          ),
+          SlidableAction(
+            onPressed: (_) => _hideConversationOnly(chat),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            foregroundColor: Colors.white,
+            icon: Icons.visibility_off_outlined,
+            label: '不显示',
           ),
           SlidableAction(
             onPressed: (_) => _deleteConversationPreview(chat),
