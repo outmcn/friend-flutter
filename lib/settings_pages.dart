@@ -15,12 +15,6 @@ class SettingsPage extends StatelessWidget {
           title: const Text('账户设置'),
           actions: [
             IconButton(
-              tooltip: '在线',
-              onPressed: onPresenceTap ??
-                  () => _showTopNotice(context, const Text('在线状态设置暂不可用')),
-              icon: const Icon(TIcons.sensors_1),
-            ),
-            IconButton(
               tooltip: '签到',
               onPressed: onCheckinTap ??
                   () => _showTopNotice(context, const Text('普通签到功能暂未接入')),
