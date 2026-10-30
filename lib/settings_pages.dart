@@ -27,6 +27,7 @@ class SettingsPage extends StatelessWidget {
           children: [
             _SettingsGroup(
               title: '账号与安全',
+              showTitle: false,
               items: const ['账号与安全', '修改密码', '绑定手机号'],
               onItemTap: (item) {
                 if (item == '修改密码') {
@@ -186,24 +187,27 @@ class _SettingsGroup extends StatelessWidget {
     required this.title,
     required this.items,
     this.onItemTap,
+    this.showTitle = true,
   });
   final String title;
   final List<String> items;
   final ValueChanged<String>? onItemTap;
+  final bool showTitle;
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 14, bottom: 8),
-            child: Text(
-              title,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w700,
+          if (showTitle)
+            Padding(
+              padding: const EdgeInsets.only(top: 14, bottom: 8),
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
           Card(
             child: Column(
               children: items
