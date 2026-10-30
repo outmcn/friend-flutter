@@ -28,9 +28,11 @@ class SettingsPage extends StatelessWidget {
             _SettingsGroup(
               title: '账号与安全',
               showTitle: false,
-              items: const ['账号与安全', '修改密码'],
+              items: const ['手机号', '修改密码', '手势安全', '注销账号'],
               onItemTap: (item) {
-                if (item == '修改密码') {
+                if (item == '手机号' || item == '手势安全' || item == '注销账号') {
+                  _showTopNotice(context, Text('$item功能暂未接入'));
+                } else if (item == '修改密码') {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
