@@ -3152,21 +3152,21 @@ class _DDProfilePageState extends State<DDProfilePage>
   @override
   Widget build(BuildContext context) {
     final p = profile;
-    final systemStyle = Theme.of(context).brightness == Brightness.dark
-        ? const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-            statusBarBrightness: Brightness.dark,
-            systemNavigationBarColor: Color(0xff101010),
-            systemNavigationBarIconBrightness: Brightness.light,
-          )
-        : const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
-            statusBarBrightness: Brightness.light,
-            systemNavigationBarColor: Color(0xfff7f5fb),
-            systemNavigationBarIconBrightness: Brightness.dark,
-          );
+    final systemStyle = SystemUiOverlayStyle(
+      statusBarColor: Theme.of(context).colorScheme.surface,
+      statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark
+          ? Brightness.light
+          : Brightness.dark,
+      statusBarBrightness: Theme.of(context).brightness == Brightness.dark
+          ? Brightness.dark
+          : Brightness.light,
+      systemNavigationBarColor: Theme.of(context).colorScheme.surface,
+      systemNavigationBarIconBrightness:
+          Theme.of(context).brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark,
+      systemNavigationBarDividerColor: Theme.of(context).colorScheme.surface,
+    );
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: systemStyle,
       child: Scaffold(

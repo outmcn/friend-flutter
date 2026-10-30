@@ -267,8 +267,22 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final surface = Theme.of(context).colorScheme.surface;
+    final style = SystemUiOverlayStyle(
+      statusBarColor: surface,
+      statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: surface,
+      systemNavigationBarIconBrightness:
+          dark ? Brightness.light : Brightness.dark,
+      systemNavigationBarDividerColor: surface,
+    );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: style,
+      child: Scaffold(
+        backgroundColor: surface,
         appBar: AppBar(
           leadingWidth: 230,
           leading: Row(
@@ -478,5 +492,7 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-      );
+      ),
+    );
+  }
 }
