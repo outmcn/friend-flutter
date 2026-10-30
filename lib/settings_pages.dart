@@ -115,6 +115,7 @@ class AccountSecurityPage extends StatefulWidget {
 
 class _AccountSecurityPageState extends State<AccountSecurityPage> {
   String? maskedPhone;
+  String? rawPhone;
 
   @override
   void initState() {
@@ -132,7 +133,10 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
       final profile = await service.fetchUserProfile(token, id);
       final phone = '${profile['phone'] ?? profile['mobile'] ?? ''}'.trim();
       if (!mounted || phone.isEmpty) return;
-      setState(() => maskedPhone = _maskPhone(phone));
+      setState(() {
+        rawPhone = phone;
+        maskedPhone = _maskPhone(phone);
+      });
     } catch (_) {
       // 资料接口失败时不显示未经确认的手机号。
     } finally {
@@ -174,7 +178,11 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const PasswordSetupPage(),
+                      builder: (_) => SmsPasswordFlowPage(
+                        phone: rawPhone ?? '',
+                        purpose: 'recover',
+                        titleOverride: '修改密码',
+                      ),
                     ),
                   );
                 } else {

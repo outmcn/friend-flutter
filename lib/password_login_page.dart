@@ -176,10 +176,11 @@ class SmsPasswordFlowPage extends StatefulWidget {
     super.key,
     required this.phone,
     required this.purpose,
+    this.titleOverride,
   });
   final String phone;
   final String purpose;
-
+  final String? titleOverride;
   @override
   State<SmsPasswordFlowPage> createState() => _SmsPasswordFlowPageState();
 }
@@ -284,7 +285,8 @@ class _SmsPasswordFlowPageState extends State<SmsPasswordFlowPage> {
 
   @override
   Widget build(BuildContext context) => AuthScaffold(
-        title: widget.purpose == 'register' ? '注册账号' : '找回密码',
+        title: widget.titleOverride ??
+            (widget.purpose == 'register' ? '注册账号' : '找回密码'),
         subtitle: '验证码验证后设置密码',
         child: Column(
           children: [
