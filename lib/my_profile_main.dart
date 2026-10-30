@@ -2093,7 +2093,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
 
   Future<void> _create() async {
     final controller = TextEditingController(text: '语音频道');
-    String? category;
+    String category = '闲聊';
     final result = await showDialog<Map<String, String>>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -2109,14 +2109,18 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                 decoration: const InputDecoration(
                     labelText: '房间名字', hintText: '请输入房间名字'),
               ),
-              DropdownButtonFormField<String>(
-                value: category,
-                decoration: const InputDecoration(labelText: '频道分类（必选）'),
-                items: const ['闲聊', '点歌', '开黑', '睡眠', '树洞']
-                    .map((item) =>
-                        DropdownMenuItem(value: item, child: Text(item)))
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: const ['闲聊', '点歌', '开黑', '睡眠', '树洞']
+                    .map((item) => ChoiceChip(
+                          label: Text(item),
+                          selected: category == item,
+                          showCheckmark: false,
+                          onSelected: (_) =>
+                              setDialogState(() => category = item),
+                        ))
                     .toList(),
-                onChanged: (value) => setDialogState(() => category = value),
               ),
             ],
           ),
@@ -2125,12 +2129,10 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                 onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('取消')),
             FilledButton(
-              onPressed: category == null
-                  ? null
-                  : () => Navigator.pop(dialogContext, {
-                        'title': controller.text.trim(),
-                        'category': category!,
-                      }),
+              onPressed: () => Navigator.pop(dialogContext, {
+                'title': controller.text.trim(),
+                'category': category,
+              }),
               child: const Text('创建'),
             ),
           ],
@@ -2158,28 +2160,30 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
   }
 
   Future<String?> _chooseCategory() async {
-    String? selected;
+    String selected = '闲聊';
     return showDialog<String>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('选择本次频道分类'),
-          content: DropdownButtonFormField<String>(
-            value: selected,
-            decoration: const InputDecoration(labelText: '频道分类（必选）'),
-            items: const ['闲聊', '点歌', '开黑', '睡眠', '树洞']
-                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          content: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: const ['闲聊', '点歌', '开黑', '睡眠', '树洞']
+                .map((item) => ChoiceChip(
+                      label: Text(item),
+                      selected: selected == item,
+                      showCheckmark: false,
+                      onSelected: (_) => setDialogState(() => selected = item),
+                    ))
                 .toList(),
-            onChanged: (value) => setDialogState(() => selected = value),
           ),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('取消')),
             FilledButton(
-                onPressed: selected == null
-                    ? null
-                    : () => Navigator.pop(dialogContext, selected),
+                onPressed: () => Navigator.pop(dialogContext, selected),
                 child: const Text('进入频道')),
           ],
         ),
