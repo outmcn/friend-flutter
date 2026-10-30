@@ -2484,7 +2484,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                 ? TIcons.heart_filled
                 : tab == 2
                     ? TIcons.bookmark_filled
-                    : TIcons.lock_on,
+                    : TIcons.lock_on_filled,
         cacheKey: 'dd.profile.my.v2.tab.$tab',
         fetch: (offset) async {
           final token = await _token();
