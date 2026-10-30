@@ -673,16 +673,53 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _openContacts() async {
+    final visible = List<_ChatPreview>.from(conversations);
+    final hidden = await _loadAllContactConversations();
+    final byId = <String, _ChatPreview>{
+      for (final chat in [...hidden, ...visible]) chat.conversationId: chat,
+    };
     await Navigator.push<void>(
       context,
       MaterialPageRoute(
         builder: (_) => _ContactsPage(
-          conversations: conversations,
+          conversations: byId.values.toList(),
           avatarFor: _avatarFor,
           onOpen: _openConversation,
         ),
       ),
     );
+  }
+
+  Future<List<_ChatPreview>> _loadAllContactConversations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) return const [];
+    final service = DDPostService();
+    try {
+      final rows = await service.fetchImConversations(token);
+      return rows
+          .map((row) => _ChatPreview(
+                row.peer?.nickname ?? '用户',
+                '开始一段新的聊天',
+                row.peer?.avatarUrl,
+                row.peer?.avatarKey,
+                row.peer?.id,
+                row.id,
+                row.unreadCount,
+                row.peerReadMessageId,
+                row.updatedAt,
+                row.kind,
+                _pinnedConversationIds.contains(row.id),
+                _mutedConversationIds.contains(row.id),
+                row.peer?.online ?? false,
+                row.peer?.latitude,
+                row.peer?.longitude,
+                row.peer?.gender,
+              ))
+          .toList();
+    } finally {
+      service.dispose();
+    }
   }
 
   Future<void> _pushChatDetail(_ChatPreview chat, String currentUserId) async {
