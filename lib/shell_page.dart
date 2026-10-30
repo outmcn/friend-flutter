@@ -85,6 +85,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   bool _conversationRequestRunning = false;
   Timer? _conversationRefreshDebounce;
   final Set<String> _hiddenConversationIds = <String>{};
+  final Map<String, int> _greetingCounts = <String, int>{};
 
   @override
   void initState() {
@@ -117,6 +118,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             '${message['conversationId'] ?? message['conversation_id'] ?? event['conversationId'] ?? ''}';
         if (conversationId.isNotEmpty) {
           _hiddenConversationIds.remove(conversationId);
+          if (type == 'message:new') {
+            _greetingCounts[conversationId] =
+                (_greetingCounts[conversationId] ?? 0) + 1;
+          }
         }
       }
       _conversationRefreshDebounce?.cancel();
@@ -425,7 +430,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 'localDurationSeconds': local['local_duration_seconds'] ??
                     local['localDurationSeconds'],
               });
-        final preview = localPreview ?? '开始一段新的聊天';
+        final preview = _greetingCounts.containsKey(row.id)
+            ? '有 ${_greetingCounts[row.id]} 个新消息'
+            : (localPreview ?? '开始一段新的聊天');
         mapped.add(_ChatPreview(
           row.peer?.nickname ?? '会话 ${row.id}',
           preview,
@@ -747,14 +754,74 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
+  List<_ChatPreview> get _greetingChats =>
+      conversations.where((chat) => chat.unreadCount > 0).toList();
+
+  Future<void> _openGreetingInbox() async {
+    final chats = List<_ChatPreview>.from(_greetingChats);
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _GreetingInboxPage(
+          chats: chats,
+          onOpen: (chat) async {
+            await _openConversation(chat);
+            if (mounted) await _loadConversations(showLoading: false);
+          },
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Widget _greetingPreviewTile(BuildContext context) {
+    final count =
+        _greetingChats.fold<int>(0, (total, chat) => total + chat.unreadCount);
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: InkWell(
+        onTap: _openGreetingInbox,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                child: Icon(TIcons.chat_bubble_smile,
+                    color: Theme.of(context).colorScheme.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('收到的新消息',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 3),
+                    Text('有 $count 个新消息',
+                        style: TextStyle(color: Theme.of(context).hintColor)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _conversationList(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: ListView.separated(
-          itemCount: conversations.length,
+          itemCount: conversations.length + (_greetingChats.isEmpty ? 0 : 1),
           separatorBuilder: (_, __) => const SizedBox(height: 2),
           itemBuilder: (_, index) {
-            final chat = conversations[index];
-            return _chatPreviewTile(context, chat, index);
+            if (!_greetingChats.isEmpty && index == 0) {
+              return _greetingPreviewTile(context);
+            }
+            final chatIndex = index - (_greetingChats.isEmpty ? 0 : 1);
+            final chat = conversations[chatIndex];
+            return _chatPreviewTile(context, chat, chatIndex);
           },
         ),
       );
@@ -887,6 +954,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               if (!context.mounted) return;
               await _pushChatDetail(chat, currentUserId);
               if (mounted) {
+                _greetingCounts.remove(chat.conversationId);
                 unawaited(_loadConversations(showLoading: false));
                 unawaited(_restartListSocket());
               }
@@ -901,7 +969,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       _FriendAvatar(
                         avatarUrl: chat.avatarUrl ?? '',
                         size: 48,
-                        placeholder: const Icon(Icons.person_outline),
+                        placeholder:
+                            _greetingCounts.containsKey(chat.conversationId)
+                                ? const Icon(TIcons.chat_bubble_smile)
+                                : const Icon(Icons.person_outline),
                       ),
                       if (chat.online)
                         Positioned(
@@ -1111,6 +1182,40 @@ String? _conversationLastMessagePreview(DDImLastMessage? message) {
       if (text.startsWith('分享：')) return text;
       return text.isEmpty ? null : text;
   }
+}
+
+class _GreetingInboxPage extends StatelessWidget {
+  const _GreetingInboxPage({required this.chats, required this.onOpen});
+  final List<_ChatPreview> chats;
+  final Future<void> Function(_ChatPreview) onOpen;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('收到的新消息')),
+        body: chats.isEmpty
+            ? const Center(child: Text('暂无新消息'))
+            : ListView.separated(
+                itemCount: chats.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (_, index) {
+                  final chat = chats[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: chat.avatarUrl == null
+                          ? null
+                          : NetworkImage(chat.avatarUrl!),
+                      child: chat.avatarUrl == null
+                          ? const Icon(TIcons.chat_bubble_smile)
+                          : null,
+                    ),
+                    title: Text(chat.name),
+                    subtitle: Text('有 ${chat.unreadCount} 个新消息'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => onOpen(chat),
+                  );
+                },
+              ),
+      );
 }
 
 class _ChatPreview {
