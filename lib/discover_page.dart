@@ -101,10 +101,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       return feed;
     });
     final firstFeed = feeds.first;
-    unawaited(firstFeed.restoreCache().then((_) {
-      if (!firstFeed.initialized) return firstFeed.load();
-      return Future<void>.value();
-    }));
+    unawaited(firstFeed.restoreCache().then((_) => firstFeed.load()));
     // 城市标签首次切换时再获取，避免首屏额外请求。
   }
 

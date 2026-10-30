@@ -226,7 +226,7 @@ class _FeedShellState extends State<FeedShell> {
               feed.load();
             }
           });
-          if (index == selectedTab) {
+          if (index == selectedTab && widget.externalFeeds == null) {
             unawaited(feed.restoreCache().then((_) {
               if (!feed.initialized) return feed.load();
               return Future<void>.value();
