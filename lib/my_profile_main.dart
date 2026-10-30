@@ -2028,6 +2028,9 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
   }
 
   Future<void> _load() async {
+    final firstLoad = rooms.isEmpty;
+    if (firstLoad && mounted) setState(() => loading = true);
+    if (mounted) setState(() => loadError = null);
     try {
       final token = (await SharedPreferences.getInstance())
               .getString('friend.auth.token') ??
@@ -2158,8 +2161,9 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
       await service.updateVoiceRoomCategory(token, '${room['id']}', category);
       final joined = await service.joinVoiceRoom(token, '${room['id']}');
       if (!mounted) return;
-      Navigator.push(context,
+      await Navigator.push(context,
           MaterialPageRoute(builder: (_) => VoiceRoomPage(room: joined)));
+      if (mounted) await _load();
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
     }
@@ -2255,7 +2259,8 @@ class _ChannelSummaryCard extends StatelessWidget {
                   Text('频道ID：${room['id'] ?? '暂无资料'}',
                       style:
                           const TextStyle(color: Colors.white60, fontSize: 12)),
-                  Text('在线：${room['online_count'] ?? room['onlineCount'] ?? 0}',
+                  Text(
+                      '在线：${room['online_count'] ?? room['onlineCount'] ?? '暂未获取'}',
                       style:
                           const TextStyle(color: Colors.white60, fontSize: 12)),
                 ],
