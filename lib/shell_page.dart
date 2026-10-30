@@ -4720,8 +4720,8 @@ class _DDShellState extends State<DDShell> {
               label: '主页',
             ),
             NavigationDestination(
-              icon: Icon(TIcons.gps),
-              selectedIcon: Icon(TIcons.gps_filled),
+              icon: Icon(TIcons.chart_ring_1),
+              selectedIcon: Icon(TIcons.chart_ring_1_filled),
               label: '发现',
             ),
             NavigationDestination(
