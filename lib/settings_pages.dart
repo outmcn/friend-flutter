@@ -58,7 +58,15 @@ class SettingsPage extends StatelessWidget {
               onItemTap: (item) async {
                 if (item == '清理缓存') {
                   final prefs = await SharedPreferences.getInstance();
+                  final token = prefs.getString('friend.auth.token');
+                  final userId = prefs.getString('friend.auth.userId');
                   await prefs.clear();
+                  if (token != null) {
+                    await prefs.setString('friend.auth.token', token);
+                  }
+                  if (userId != null) {
+                    await prefs.setString('friend.auth.userId', userId);
+                  }
                   if (context.mounted) {
                     _showTopNotice(context, const Text('缓存已清理'));
                   }
