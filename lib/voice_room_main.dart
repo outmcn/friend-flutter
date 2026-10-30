@@ -293,50 +293,41 @@ class _VoiceRoomSeats extends StatelessWidget {
     final name = _text(member, 'nickname').isEmpty
         ? (_text(member, 'name').isEmpty ? '用户' : _text(member, 'name'))
         : _text(member, 'nickname');
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         CircleAvatar(
           radius: owner ? 30 : 23,
           backgroundImage: avatar.isEmpty ? null : NetworkImage(avatar),
           child: avatar.isEmpty ? const Icon(Icons.person) : null,
         ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 4),
+        Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70, fontSize: 11),
+        ),
+        if (manager)
+          const Text('管理',
+              style: TextStyle(color: Color(0xffd3b5ff), fontSize: 10)),
+        if (canManage)
+          Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              TextButton(
+                onPressed: () =>
+                    onAction?.call('kick', _text(member, 'user_id')),
+                child: const Text('下麦', style: TextStyle(fontSize: 10)),
               ),
-              if (manager)
-                const Text('管理',
-                    style: TextStyle(color: Color(0xffd3b5ff), fontSize: 10)),
-              if (canManage) ...[
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 4,
-                  children: [
-                    TextButton(
-                      onPressed: () =>
-                          onAction?.call('kick', _text(member, 'user_id')),
-                      child: const Text('下麦', style: TextStyle(fontSize: 10)),
-                    ),
-                    TextButton(
-                      onPressed: () =>
-                          onAction?.call('mute', _text(member, 'user_id')),
-                      child: const Text('禁麦', style: TextStyle(fontSize: 10)),
-                    ),
-                  ],
-                ),
-              ],
+              TextButton(
+                onPressed: () =>
+                    onAction?.call('mute', _text(member, 'user_id')),
+                child: const Text('禁麦', style: TextStyle(fontSize: 10)),
+              ),
             ],
           ),
-        ),
       ],
     );
   }
