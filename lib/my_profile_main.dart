@@ -2322,10 +2322,10 @@ class _ChannelSummaryCard extends StatelessWidget {
                 Text('频道ID：${room['id'] ?? '暂无资料'}',
                     style: TextStyle(
                         color: scheme.onSurfaceVariant, fontSize: 12)),
-                Text(
-                    '在线：${room['online_count'] ?? room['onlineCount'] ?? '暂未获取'}',
-                    style: TextStyle(
-                        color: scheme.onSurfaceVariant, fontSize: 12)),
+                if (room['online_count'] != null || room['onlineCount'] != null)
+                  Text('在线：${room['online_count'] ?? room['onlineCount']}',
+                      style: TextStyle(
+                          color: scheme.onSurfaceVariant, fontSize: 12)),
               ],
             ),
           ),
