@@ -27,19 +27,14 @@ class SettingsPage extends StatelessWidget {
           children: [
             _SettingsGroup(
               title: '账号与安全',
-              showTitle: true,
-              items: const ['手机号', '手势安全', '注销账号'],
+              items: const ['账号与安全'],
               onItemTap: (item) {
-                if (item == '手机号' || item == '手势安全' || item == '注销账号') {
-                  _showTopNotice(context, Text('$item功能暂未接入'));
-                } else if (item == '修改密码') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PasswordSetupPage(),
-                    ),
-                  );
-                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AccountSecurityPage(),
+                  ),
+                );
               },
             ),
             _SettingsGroup(
@@ -102,6 +97,37 @@ class SettingsPage extends StatelessWidget {
                       (_) => false,
                     );
                   }
+                }
+              },
+            ),
+          ],
+        ),
+      );
+}
+
+class AccountSecurityPage extends StatelessWidget {
+  const AccountSecurityPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('账号与安全')),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            _SettingsGroup(
+              title: '账号与安全',
+              showTitle: false,
+              items: const ['手机号', '修改密码', '手势安全', '注销账号'],
+              onItemTap: (item) {
+                if (item == '修改密码') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PasswordSetupPage(),
+                    ),
+                  );
+                } else {
+                  _showTopNotice(context, Text('$item功能暂未接入'));
                 }
               },
             ),
