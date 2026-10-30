@@ -51,7 +51,6 @@ part 'other_profile_page.dart';
 part 'my_profile_page.dart';
 part 'my_profile_main.dart';
 part 'profile_relations.dart';
-part 'voice_record_page.dart';
 part 'profile_widgets.dart';
 part 'voice_pages.dart';
 part 'companion_pages.dart';

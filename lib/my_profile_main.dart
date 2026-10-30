@@ -2432,10 +2432,8 @@ class _DDProfilePageState extends State<DDProfilePage>
   String? _cachedAllProfileSignature;
   List<Widget>? _cachedAllProfileSlivers;
   final List<VoidCallback> _profileFeedListeners = <VoidCallback>[];
-  final AudioPlayer _sonicPlayer = AudioPlayer();
   final ScrollController _profileHeaderScroll = ScrollController();
   bool _showStickyNickname = false;
-  String? _sonicUrl;
   String? _avatarUrl;
   String? _avatarLocalPath;
   bool _avatarReviewRejected = false;
@@ -2460,7 +2458,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     _presenceTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_appActive) _sendPresenceHeartbeat();
     });
-    _sonicPlayer.onPlayerComplete.listen((_) {});
     profileFeedTabs = List.generate(
       4,
       (tab) => FeedShellTab(
@@ -2580,7 +2577,6 @@ class _DDProfilePageState extends State<DDProfilePage>
       _GlobalScrollToTopRegistry.unregister(feed.scroll);
       feed.dispose();
     }
-    _sonicPlayer.dispose();
     service.dispose();
     super.dispose();
   }
@@ -2600,16 +2596,6 @@ class _DDProfilePageState extends State<DDProfilePage>
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const EditProfilePage()),
-    );
-    if (mounted) await _refreshProfileOnly();
-  }
-
-  Future<void> _editSonic() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => _VoiceRecordPage(currentUrl: _sonicUrl),
-      ),
     );
     if (mounted) await _refreshProfileOnly();
   }
@@ -2819,12 +2805,6 @@ class _DDProfilePageState extends State<DDProfilePage>
           int.tryParse('${loaded['id'] ?? loaded['userId'] ?? ''}');
       coinBalance = int.tryParse('${loaded['coinBalance'] ?? 0}') ?? 0;
       charmCoins = int.tryParse('${loaded['charmCoins'] ?? 0}') ?? 0;
-      final nextSonicUrl =
-          DDPostService.mediaUrl(loaded['voiceUrl']?.toString());
-      if (_sonicUrl != null && _sonicUrl != nextSonicUrl) {
-        unawaited(_sonicPlayer.stop());
-      }
-      _sonicUrl = nextSonicUrl;
       _avatarLocalPath = localAvatar;
       _avatarUrl = signedAvatar;
       _avatarReviewRejected = loaded['avatarReviewStatus'] == 'rejected' ||
@@ -3175,10 +3155,23 @@ class _DDProfilePageState extends State<DDProfilePage>
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
-          leading: IconButton(
-            tooltip: '在线状态',
-            onPressed: _openPresenceControls,
-            icon: const Icon(TIcons.chat_message),
+          leading: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                tooltip: '在线状态',
+                onPressed: _openPresenceControls,
+                icon: const Icon(TIcons.chat_message),
+              ),
+              if ('${p?['city'] ?? ''}'.trim().isNotEmpty)
+                Text('IP：${'${p?['city']}'.trim()}',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: .65))),
+            ],
           ),
           title: _showStickyNickname
               ? Text(
@@ -3274,34 +3267,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                             .tightFor(
                                                             width: 32,
                                                             height: 32),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    'ID：${p?['id'] ?? p?['userId'] ?? ''}',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      height: 1.0,
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurface
-                                                          .withValues(
-                                                              alpha: .65),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    'IP：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未定位' : '${p?['city']}'.trim()}',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurface
-                                                          .withValues(
-                                                              alpha: .65),
-                                                    ),
                                                   ),
                                                 ],
                                               ),
@@ -3489,11 +3454,6 @@ class _DDProfilePageState extends State<DDProfilePage>
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
-                                        Expanded(
-                                            child: _ProfileActionButton(
-                                                icon: TIcons.sonic,
-                                                label: '声音',
-                                                onTap: _editSonic)),
                                         const SizedBox(width: 6),
                                         Expanded(
                                             child: _ProfileActionButton(
