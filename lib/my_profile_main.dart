@@ -2285,8 +2285,9 @@ class _ChannelSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatar = _avatarUrl();
+    final scheme = Theme.of(context).colorScheme;
     return Card(
-      color: const Color(0xff241936),
+      color: scheme.surfaceContainerHighest,
       child: Padding(
         padding: EdgeInsets.all(compact ? 12 : 20),
         child: Row(children: [
@@ -2317,14 +2318,14 @@ class _ChannelSummaryCard extends StatelessWidget {
                         fontSize: compact ? 16 : 19,
                         fontWeight: FontWeight.w800)),
                 Text('创建者：${room['nickname'] ?? '暂无资料'}',
-                    style: const TextStyle(color: Colors.white60)),
+                    style: TextStyle(color: scheme.onSurfaceVariant)),
                 Text('频道ID：${room['id'] ?? '暂无资料'}',
-                    style:
-                        const TextStyle(color: Colors.white60, fontSize: 12)),
+                    style: TextStyle(
+                        color: scheme.onSurfaceVariant, fontSize: 12)),
                 Text(
                     '在线：${room['online_count'] ?? room['onlineCount'] ?? '暂未获取'}',
-                    style:
-                        const TextStyle(color: Colors.white60, fontSize: 12)),
+                    style: TextStyle(
+                        color: scheme.onSurfaceVariant, fontSize: 12)),
               ],
             ),
           ),
@@ -2357,34 +2358,37 @@ class _ChannelProfileCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Card(
-        color: const Color(0xff241936),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('频道资料',
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 18),
-              _ChannelInfoRow(
-                  icon: Icons.workspace_premium,
-                  title: '频道等级',
-                  value: _value('level')),
-              const Divider(height: 24),
-              _ChannelInfoRow(
-                  icon: Icons.auto_awesome,
-                  title: '频道特权',
-                  value: _value('privileges')),
-              const Divider(height: 24),
-              _ChannelInfoRow(
-                  icon: Icons.groups_rounded,
-                  title: '在线人数',
-                  value: _value('online_count')),
-            ],
-          ),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      color: scheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('频道资料',
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 18),
+            _ChannelInfoRow(
+                icon: Icons.workspace_premium,
+                title: '频道等级',
+                value: _value('level')),
+            const Divider(height: 24),
+            _ChannelInfoRow(
+                icon: Icons.auto_awesome,
+                title: '频道特权',
+                value: _value('privileges')),
+            const Divider(height: 24),
+            _ChannelInfoRow(
+                icon: Icons.groups_rounded,
+                title: '在线人数',
+                value: _value('online_count')),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _ChannelInfoRow extends StatelessWidget {
@@ -2396,7 +2400,7 @@ class _ChannelInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
         children: [
-          Icon(icon, color: const Color(0xffc9a7ff)),
+          Icon(icon, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
               child: Text(title,
@@ -2404,7 +2408,8 @@ class _ChannelInfoRow extends StatelessWidget {
           Flexible(
               child: Text(value,
                   textAlign: TextAlign.right,
-                  style: const TextStyle(color: Colors.white70))),
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant))),
         ],
       );
 }
