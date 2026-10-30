@@ -72,6 +72,7 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
         context,
         MaterialPageRoute(builder: (_) => VoiceRoomPage(room: joined)),
       );
+      if (mounted) await _load();
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('进入频道失败：$e'));
     } finally {
@@ -86,6 +87,9 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   }
 
   Future<void> _load() async {
+    final firstLoad = rooms.isEmpty;
+    if (firstLoad && mounted) setState(() => loading = true);
+    if (mounted) setState(() => error = null);
     try {
       final token = (await SharedPreferences.getInstance())
               .getString('friend.auth.token') ??

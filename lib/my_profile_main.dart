@@ -2044,7 +2044,7 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                   '${room['ownerUserId'] ?? room['owner_user_id']}' ==
                   '$targetId')
               .toList();
-      if (mounted) setState(() => rooms = owned.take(1).toList());
+      if (mounted) setState(() => rooms = owned);
     } catch (e) {
       if (mounted) setState(() => loadError = '$e');
     } finally {
@@ -2211,16 +2211,19 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
                         )
                       : RefreshIndicator(
                           onRefresh: _load,
-                          child: ListView(
+                          child: ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 116, 16, 28),
-                            children: [
-                              _ChannelSummaryCard(
-                                room: rooms.first,
-                                onEnter: () => _enterOwnedRoom(rooms.first),
-                              ),
-                              const SizedBox(height: 16),
-                              _ChannelProfileCard(room: rooms.first),
-                            ],
+                            itemCount: rooms.length,
+                            itemBuilder: (context, index) {
+                              final room = rooms[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: _ChannelSummaryCard(
+                                  room: room,
+                                  onEnter: () => _enterOwnedRoom(room),
+                                ),
+                              );
+                            },
                           ),
                         ),
         ),
