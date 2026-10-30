@@ -28,7 +28,7 @@ class SettingsPage extends StatelessWidget {
             _SettingsGroup(
               title: '账号与安全',
               showTitle: false,
-              items: const ['账号与安全', '修改密码', '绑定手机号'],
+              items: const ['账号与安全', '修改密码'],
               onItemTap: (item) {
                 if (item == '修改密码') {
                   Navigator.push(
