@@ -6,9 +6,10 @@ import 'post_service.dart';
 
 // 每个标签独立持有请求状态和滚动位置，切换不销毁列表。
 class DiscoverFeed extends ChangeNotifier {
-  DiscoverFeed(this.fetch, {this.cacheKey});
+  DiscoverFeed(this.fetch, {this.cacheKey, this.pageSize = 20});
   final Future<List<DDPost>> Function(int offset) fetch;
   final String? cacheKey;
+  final int pageSize;
   final scroll = ScrollController();
   final posts = <DDPost>[];
   final postChanges = ValueNotifier<DDPost?>(null);
@@ -128,7 +129,7 @@ class DiscoverFeed extends ChangeNotifier {
       // 分页游标按服务端返回数量推进，去重不能影响游标。
       final ids = nextPosts.map((post) => post.id).toSet();
       nextPosts.addAll(batch.where((post) => ids.add(post.id)));
-      final resolvedHasMore = batch.length == 20;
+      final resolvedHasMore = batch.length == pageSize;
       posts
         ..clear()
         ..addAll(nextPosts);

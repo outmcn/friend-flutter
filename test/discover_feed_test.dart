@@ -34,7 +34,7 @@ void main() {
       offsets.add(offset);
       if (fail) throw Exception('网络错误');
       return offset == 0 ? List.generate(30, post) : [post(29), post(30)];
-    });
+    }, pageSize: 30);
     await feed.load();
     await feed.load();
     expect(offsets, [0, 30]);
