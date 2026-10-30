@@ -162,7 +162,6 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
               items: [
                 maskedPhone == null ? '手机号' : '手机号  $maskedPhone',
                 '修改密码',
-                '手势安全',
                 '注销账号',
               ],
               onItemTap: (item) {
@@ -336,8 +335,6 @@ class _SettingsGroup extends StatelessWidget {
     switch (item) {
       case '手机号':
         return Icons.phone_outlined;
-      case '手势安全':
-        return Icons.gesture;
       case '注销账号':
         return Icons.person_remove_outlined;
       case '修改密码':
