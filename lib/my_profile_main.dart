@@ -3177,7 +3177,10 @@ class _DDProfilePageState extends State<DDProfilePage>
           leading: IconButton(
             tooltip: '在线状态',
             onPressed: _openPresenceControls,
-            icon: const Icon(TIcons.sensors_1),
+            icon: Icon(
+              Icons.bubble_chart,
+              color: _stealth ? Colors.amber : Colors.green,
+            ),
           ),
           title: _showStickyNickname
               ? Text(
