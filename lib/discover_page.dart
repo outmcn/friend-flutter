@@ -89,7 +89,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 : await service.fetchFollowingPosts(token, offset: offset);
         return Future.wait(
             posts.map((post) => service.resolvePostMedia(token, post)));
-      }, cacheKey: tab == 2 ? null : 'dd.discover.feed.$tab');
+      }, cacheKey: null);
       feed.scroll.addListener(() {
         if (feed.scroll.hasClients &&
             feed.scroll.position.extentAfter < 500 &&
@@ -101,8 +101,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       return feed;
     });
     final firstFeed = feeds.first;
-    unawaited(
-        firstFeed.restoreCache().then((_) => firstFeed.load(refresh: true)));
+    unawaited(firstFeed.load(refresh: true));
     // 城市标签首次切换时再获取，避免首屏额外请求。
   }
 
@@ -336,11 +335,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         if (entry.key == 1 && _discoverLocalTabLabel == '本地') {
           unawaited(_loadDiscoverCity());
         }
-        if (!feed.initialized || feed.posts.isEmpty) {
-          unawaited(feed.restoreCache().then((_) {
-            return feed.load(refresh: true);
-          }));
-        }
+        unawaited(feed.load(refresh: true));
       },
       child: SizedBox(
         height: 48,
