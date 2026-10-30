@@ -84,6 +84,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String? activeCallId;
   bool _conversationRequestRunning = false;
   Timer? _conversationRefreshDebounce;
+  final Set<String> _hiddenConversationIds = <String>{};
 
   @override
   void initState() {
@@ -105,7 +106,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   void _handleListEvent(Map<String, dynamic> event) {
-    if (event['type'] == 'message:new' || event['type'] == 'message:recalled') {
+    final type = event['type'];
+    if (type == 'message:new' || type == 'message:recalled') {
+      final message = event['message'];
+      if (type == 'message:new' && message is Map) {
+        final conversationId =
+            '${message['conversationId'] ?? message['conversation_id'] ?? ''}';
+        if (conversationId.isNotEmpty) {
+          _hiddenConversationIds.remove(conversationId);
+        }
+      }
       _conversationRefreshDebounce?.cancel();
       _conversationRefreshDebounce =
           Timer(const Duration(milliseconds: 350), () {
@@ -357,8 +367,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             .where((row) => row['muted'] == true)
             .map((row) => '${row['conversationId'] ?? ''}'));
       if (cachedRows.isNotEmpty && mounted) {
-        final cachedPreviews =
-            cachedRows.map((row) => _ChatPreview.fromCache(row)).toList();
+        final cachedPreviews = cachedRows
+            .where((row) => !_hiddenConversationIds
+                .contains('${row['conversationId'] ?? ''}'))
+            .map((row) => _ChatPreview.fromCache(row))
+            .toList();
         final cachedAvatarPaths = <String, String>{};
         await Future.wait(cachedPreviews.map((chat) async {
           final key = chat.avatarKey ?? '';
@@ -442,7 +455,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       });
       if (mounted) {
         setState(() {
-          conversations = mapped;
+          conversations = mapped
+              .where((chat) =>
+                  !_hiddenConversationIds.contains(chat.conversationId))
+              .toList();
           conversationCacheLoaded = true;
           loading = false;
         });
@@ -761,6 +777,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _hideConversationOnly(_ChatPreview chat) async {
+    _hiddenConversationIds.add(chat.conversationId);
     await _hideConversationPreview(chat);
   }
 
