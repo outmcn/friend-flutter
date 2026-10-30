@@ -383,7 +383,7 @@ class _HomePageState extends State<HomePage> {
                                     Expanded(
                                       child: _HomeNormalCard(
                                         icon: Icons.sports_esports_outlined,
-                                        title: '心动雷达',
+                                        title: '同频探测',
                                         colors: const [
                                           Color(0xffff9a5a),
                                           Color(0xffff5f8f),
