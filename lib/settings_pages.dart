@@ -227,7 +227,7 @@ class _SettingsGroup extends StatelessWidget {
         children: [
           if (showTitle)
             Padding(
-              padding: const EdgeInsets.only(top: 14, bottom: 8),
+              padding: const EdgeInsets.only(left: 16, top: 14, bottom: 8),
               child: Text(
                 title,
                 style: TextStyle(
