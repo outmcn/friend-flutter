@@ -53,8 +53,7 @@ import CoreLocation
   ) {
     completionHandler()
   }
-
-
+}
 
 private final class NativeMapViewFactory: NSObject, FlutterPlatformViewFactory {
   private let messenger: FlutterBinaryMessenger
