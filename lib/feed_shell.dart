@@ -1,7 +1,5 @@
 part of 'main.dart';
 
-Future<List<DDPost>> _feedShellUnusedFetch(int _) async => const <DDPost>[];
-
 class FeedShellTab {
   const FeedShellTab({
     required this.title,

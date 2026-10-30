@@ -317,7 +317,68 @@ class _DiscoverPageState extends State<DiscoverPage> {
       onReport: _report,
       onSendToFriend: (peerId, post) => _sendPostToFriend(peerId, post),
       onDirectChat: _openPostDirectChat,
+      onFollow: _followPostAuthor,
+      onGift: _openPostGift,
       onOpen: _open,
+    );
+  }
+
+  Widget _discoverFeedView(int tab) {
+    final feed = feeds[tab];
+    return AnimatedBuilder(
+      animation: feed,
+      builder: (context, _) => CustomScrollView(
+        key: PageStorageKey('discover.feed.$tab'),
+        controller: feed.scroll,
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        slivers: [
+          CupertinoSliverRefreshControl(
+            onRefresh: () => feed.load(refresh: true),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _card(feed, index),
+                childCount: feed.posts.length,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: feed.error != null
+                  ? _PageErrorState(
+                      title: '动态加载失败',
+                      subtitle: feed.error!,
+                      onRetry: () => feed.load(refresh: true),
+                    )
+                  : (feed.restoring || (feed.busy && feed.posts.isEmpty))
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : feed.posts.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 48),
+                              child: Center(child: Text('暂无动态')),
+                            )
+                          : feed.hasMore
+                              ? TextButton(
+                                  onPressed:
+                                      feed.busy ? null : () => feed.load(),
+                                  child: Text(feed.busy ? '加载中…' : '加载更多'),
+                                )
+                              : const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  child: Center(child: Text('没有更多动态了')),
+                                ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -444,53 +505,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
             ),
           ],
         ),
-        body: FeedShell(
-          tabs: const [
-            FeedShellTab(
-                title: '推荐',
-                cacheKey: 'dd.discover.feed.0',
-                fetch: _feedShellUnusedFetch),
-            FeedShellTab(
-                title: '本地',
-                cacheKey: 'dd.discover.feed.1',
-                fetch: _feedShellUnusedFetch),
-            FeedShellTab(
-                title: '关注',
-                cacheKey: 'dd.discover.feed.2',
-                fetch: _feedShellUnusedFetch),
-          ],
-          externalFeeds: feeds,
-          showTabs: false,
-          refreshAtTop: true,
-          embedded: true,
-          disposeFeeds: false,
-          selectedTab: selectedTab,
-          onTabChanged: (tab) {
-            if (!mounted) return;
-            setState(() => selectedTab = tab);
-            if (tab == 1 && _discoverLocalTabLabel == '本地') {
-              unawaited(_loadDiscoverCity());
-            }
-            if (tab == 2) {
-              unawaited(feeds[2].load(refresh: true));
-            }
-            final feed = feeds[tab];
-            if (!feed.initialized || feed.posts.isEmpty) {
-              unawaited(feed.restoreCache().then((_) {
-                return feed.load(refresh: true);
-              }));
-            }
-          },
-          currentUserId: _currentUserId,
-          onLike: _like,
-          onFavorite: _favorite,
-          onShare: _share,
-          onSendToFriend: _sendPostToFriend,
-          onDirectChat: _openPostDirectChat,
-          onFollow: _followPostAuthor,
-          onGift: _openPostGift,
-          onReport: _report,
-          onOpen: _open,
+        body: IndexedStack(
+          index: selectedTab,
+          children: List.generate(3, _discoverFeedView),
         ),
       );
 
