@@ -2236,24 +2236,32 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
 }
 
 class _ChannelSummaryCard extends StatelessWidget {
-  const _ChannelSummaryCard({required this.room, required this.onEnter});
+  const _ChannelSummaryCard({
+    required this.room,
+    required this.onEnter,
+    this.compact = false,
+  });
   final Map<String, dynamic> room;
   final VoidCallback onEnter;
+  final bool compact;
   @override
   Widget build(BuildContext context) => Card(
         color: const Color(0xff241936),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(compact ? 12 : 20),
           child: Row(children: [
-            const CircleAvatar(radius: 30, child: Icon(Icons.mic)),
-            const SizedBox(width: 14),
+            CircleAvatar(
+                radius: compact ? 22 : 30,
+                child: Icon(Icons.mic, size: compact ? 18 : 24)),
+            SizedBox(width: compact ? 8 : 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('${room['title'] ?? '语音频道'}',
-                      style: const TextStyle(
-                          fontSize: 19, fontWeight: FontWeight.w800)),
+                      style: TextStyle(
+                          fontSize: compact ? 16 : 19,
+                          fontWeight: FontWeight.w800)),
                   Text('创建者：${room['nickname'] ?? '暂无资料'}',
                       style: const TextStyle(color: Colors.white60)),
                   Text('频道ID：${room['id'] ?? '暂无资料'}',
@@ -2266,7 +2274,16 @@ class _ChannelSummaryCard extends StatelessWidget {
                 ],
               ),
             ),
-            FilledButton(onPressed: onEnter, child: const Text('进入频道')),
+            compact
+                ? SizedBox(
+                    width: 72,
+                    child: FilledButton(
+                      onPressed: onEnter,
+                      style: FilledButton.styleFrom(padding: EdgeInsets.zero),
+                      child: const Text('进入', style: TextStyle(fontSize: 12)),
+                    ),
+                  )
+                : FilledButton(onPressed: onEnter, child: const Text('进入频道')),
           ]),
         ),
       );

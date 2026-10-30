@@ -224,6 +224,9 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                                       return _ChannelSummaryCard(
                                         room: room,
                                         onEnter: () => _enterChannel(room),
+                                        compact:
+                                            MediaQuery.sizeOf(context).width <
+                                                390,
                                       );
                                     },
                                   );
