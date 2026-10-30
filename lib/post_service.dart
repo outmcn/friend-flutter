@@ -255,6 +255,28 @@ class DDPostService {
     _decodeResponse(response, '下麦失败');
   }
 
+  Future<void> kickVoiceRoomSeat(
+      String token, String roomId, String userId) async {
+    final response = await _client.delete(
+      _api('/im/voice-rooms/$roomId/seats/$userId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    _decodeResponse(response, '下麦失败');
+  }
+
+  Future<void> muteVoiceRoomSeat(
+      String token, String roomId, String userId, bool muted) async {
+    final response = await _client.patch(
+      _api('/im/voice-rooms/$roomId/seats/$userId/mute'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'muted': muted}),
+    );
+    _decodeResponse(response, '禁麦操作失败');
+  }
+
   Future<List<DDConversation>> fetchImConversations(String token) async {
     final response = await _client.get(
       _api('/im/conversations'),

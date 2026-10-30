@@ -283,7 +283,12 @@ class _VoiceRoomSeats extends StatelessWidget {
 
   String _text(Map member, String key) => member[key]?.toString() ?? '';
 
-  Widget _memberTile(Map member, {required bool owner, required bool manager}) {
+  Widget _memberTile(
+    Map member, {
+    required bool owner,
+    required bool manager,
+    bool canManage = false,
+  }) {
     final avatar = _text(member, 'avatar');
     final name = _text(member, 'nickname').isEmpty
         ? (_text(member, 'name').isEmpty ? '用户' : _text(member, 'name'))
@@ -311,6 +316,24 @@ class _VoiceRoomSeats extends StatelessWidget {
               if (manager)
                 const Text('管理',
                     style: TextStyle(color: Color(0xffd3b5ff), fontSize: 10)),
+              if (canManage) ...[
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 4,
+                  children: [
+                    TextButton(
+                      onPressed: () =>
+                          onAction?.call('kick', _text(member, 'user_id')),
+                      child: const Text('下麦', style: TextStyle(fontSize: 10)),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          onAction?.call('mute', _text(member, 'user_id')),
+                      child: const Text('禁麦', style: TextStyle(fontSize: 10)),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -379,6 +402,10 @@ class _VoiceRoomSeats extends StatelessWidget {
         state?['onlineCount'] ?? room?['online_count'] ?? room?['onlineCount'];
     final onlineText = online == null ? '在线人数暂无' : '$online人在线';
 
+    final isOwner = state?['isOwner'] == true;
+    final requests = state?['requests'] is List
+        ? (state?['requests'] as List).whereType<Map>().toList()
+        : <Map>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -387,70 +414,52 @@ class _VoiceRoomSeats extends StatelessWidget {
         const SizedBox(height: 4),
         Text(onlineText,
             style: const TextStyle(
-                color: Colors.white70, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
+                color: Colors.greenAccent, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        if (hasOwner) _memberTile(owner, owner: true, manager: false),
+        if (isOwner && requests.isNotEmpty)
+          ...requests.map((request) {
+            final id = '${request['userId'] ?? request['user_id'] ?? ''}';
+            return Row(children: [
+              Expanded(
+                child: Text(
+                  '${request['nickname'] ?? '用户'}',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+              TextButton(
+                  onPressed: () => onAction?.call('reject', id),
+                  child: const Text('拒绝')),
+              FilledButton(
+                  onPressed: () => onAction?.call('approve', id),
+                  child: const Text('同意')),
+            ]);
+          }),
+        const SizedBox(height: 8),
         Expanded(
-          child: !hasOwner && seats.isEmpty
+          child: seats.isEmpty
               ? const Center(
                   child:
                       Text('暂无麦上成员资料', style: TextStyle(color: Colors.white54)))
-              : ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    if (hasOwner)
-                      _memberTile(owner, owner: true, manager: false),
-                    if (seats.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      const Text('麦上成员',
-                          style:
-                              TextStyle(color: Colors.white54, fontSize: 11)),
-                      const SizedBox(height: 8),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: seats.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisExtent: 72,
-                          crossAxisSpacing: 6,
-                          mainAxisSpacing: 8,
-                        ),
-                        itemBuilder: (_, index) => _memberTile(seats[index],
-                            owner: false, manager: false),
-                      ),
-                    ],
-                    if (state?['isOwner'] == true &&
-                        state?['requests'] is List &&
-                        (state?['requests'] as List).isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      const Text('上麦申请',
-                          style:
-                              TextStyle(color: Colors.white54, fontSize: 11)),
-                      const SizedBox(height: 6),
-                      ...(state?['requests'] as List)
-                          .whereType<Map>()
-                          .map((request) {
-                        final id = '${request['userId'] ?? ''}';
-                        return Row(children: [
-                          Expanded(
-                              child: Text('${request['nickname'] ?? '用户'}',
-                                  style:
-                                      const TextStyle(color: Colors.white70))),
-                          TextButton(
-                              onPressed: () => onAction?.call('reject', id),
-                              child: const Text('拒绝')),
-                          FilledButton(
-                              onPressed: () => onAction?.call('approve', id),
-                              child: const Text('同意')),
-                        ]);
-                      }),
-                    ],
-                    const SizedBox(height: 14),
-                    Center(child: _applySeatButton(context)),
-                  ],
+              : GridView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: seats.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisExtent: 112,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemBuilder: (_, index) => _memberTile(
+                    seats[index],
+                    owner: false,
+                    manager: false,
+                    canManage: isOwner,
+                  ),
                 ),
         ),
+        const SizedBox(height: 8),
+        Center(child: _applySeatButton(context)),
       ],
     );
   }
@@ -539,7 +548,8 @@ class _VoiceGiftSheetState extends State<_VoiceGiftSheet> {
     };
     final raw = widget.room['members'] ??
         widget.room['participants'] ??
-        widget.room['speakers'];
+        widget.room['speakers'] ??
+        widget.room['seats'];
     final all = <Map<String, dynamic>>[owner];
     if (raw is List) {
       for (final item in raw.whereType<Map>()) {
@@ -759,6 +769,7 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
     super.initState();
     _joinRtc();
     _loadSeats();
+    _startSeatPolling();
     _imEvents = ImSession.instance.events.listen(_handleImEvent);
   }
 
@@ -766,6 +777,15 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
 
   void _handleImEvent(Map<String, dynamic> event) {
     if ('${event['roomId'] ?? ''}' == (_roomId ?? '')) {
+      if (event['type'] == 'voice_room:seats' ||
+          event['type'] == 'voice_room:seat_request' ||
+          event['type'] == 'voice_room:seat_approved' ||
+          event['type'] == 'voice_room:seat_rejected' ||
+          event['type'] == 'voice_room:seat_left' ||
+          event['type'] == 'voice_room:seat_kicked' ||
+          event['type'] == 'voice_room:seat_muted') {
+        unawaited(_loadSeats());
+      }
       if (event['type'] == 'voice_room:system' && event['kind'] == 'join') {
         _appendRoomMessage('${event['nickname'] ?? '用户'} 进入了频道');
       } else if (event['type'] == 'voice_room:chat') {
@@ -840,7 +860,15 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
     Navigator.of(context).pop();
   }
 
-  bool get _seatOn => seatState['onSeat'] == true;
+  bool get _seatOn =>
+      seatState['onSeat'] == true || seatState['isOwner'] == true;
+
+  void _startSeatPolling() {
+    _seatRefreshTimer?.cancel();
+    _seatRefreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) unawaited(_loadSeats());
+    });
+  }
 
   Future<void> _loadSeats() async {
     final id = _roomId;
@@ -874,6 +902,12 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
       if (action == 'leave') {
         await messageService.leaveVoiceRoomSeat(token, id);
         await _setRtcMuted(true);
+      }
+      if (action == 'kick' && userId != null) {
+        await messageService.kickVoiceRoomSeat(token, id, userId);
+      }
+      if (action == 'mute' && userId != null) {
+        await messageService.muteVoiceRoomSeat(token, id, userId, true);
       }
       await _loadSeats();
       if (action == 'approve' || action == 'reject') await _loadSeats();
@@ -916,7 +950,10 @@ class _VoiceRoomPageState extends State<VoiceRoomPage> {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => _VoiceGiftSheet(
-        room: widget.roomData,
+        room: {
+          ...widget.roomData,
+          'seats': seatState['seats'] ?? const [],
+        },
         roomId: roomId,
         service: messageService,
         token: _pendingGiftToken!,
