@@ -195,6 +195,32 @@ class _SettingsGroup extends StatelessWidget {
   final List<String> items;
   final ValueChanged<String>? onItemTap;
   final bool showTitle;
+
+  IconData _iconFor(String item) {
+    switch (item) {
+      case '手机号':
+        return Icons.phone_outlined;
+      case '手势安全':
+        return Icons.gesture;
+      case '注销账号':
+        return Icons.person_remove_outlined;
+      case '修改密码':
+        return Icons.lock_outline;
+      case '隐私设置':
+        return Icons.privacy_tip_outlined;
+      case '通知设置':
+        return Icons.notifications_none;
+      case '清理缓存':
+        return Icons.cleaning_services_outlined;
+      case '关于软件':
+        return Icons.info_outline;
+      case '退出登录':
+        return Icons.logout;
+      default:
+        return Icons.settings_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,6 +242,7 @@ class _SettingsGroup extends StatelessWidget {
                   .map(
                     (item) => ListTile(
                       onTap: onItemTap == null ? null : () => onItemTap!(item),
+                      leading: Icon(_iconFor(item)),
                       title: Text(item),
                       trailing: const Icon(Icons.chevron_right),
                     ),
