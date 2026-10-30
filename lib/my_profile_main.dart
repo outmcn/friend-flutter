@@ -2240,15 +2240,23 @@ class _ChannelSummaryCard extends StatelessWidget {
             const CircleAvatar(radius: 30, child: Icon(Icons.mic)),
             const SizedBox(width: 14),
             Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text('${room['title'] ?? '语音频道'}',
                       style: const TextStyle(
                           fontSize: 19, fontWeight: FontWeight.w800)),
                   Text('创建者：${room['nickname'] ?? '暂无资料'}',
                       style: const TextStyle(color: Colors.white60)),
-                ])),
+                  Text('频道ID：${room['id'] ?? '暂无资料'}',
+                      style:
+                          const TextStyle(color: Colors.white60, fontSize: 12)),
+                  Text('在线：${room['online_count'] ?? room['onlineCount'] ?? 0}',
+                      style:
+                          const TextStyle(color: Colors.white60, fontSize: 12)),
+                ],
+              ),
+            ),
             FilledButton(onPressed: onEnter, child: const Text('进入频道')),
           ]),
         ),

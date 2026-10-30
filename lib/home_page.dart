@@ -56,6 +56,29 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
 
   String _roomCategory(Map<String, dynamic> room) =>
       '${room['category'] ?? room['category_name'] ?? room['categoryName'] ?? ''}';
+
+  bool _entering = false;
+
+  Future<void> _enterChannel(Map<String, dynamic> room) async {
+    if (_entering) return;
+    setState(() => _entering = true);
+    try {
+      final token = (await SharedPreferences.getInstance())
+              .getString('friend.auth.token') ??
+          '';
+      final joined = await service.joinVoiceRoom(token, '${room['id']}');
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => VoiceRoomPage(room: joined)),
+      );
+    } catch (e) {
+      if (mounted) _showTopNotice(context, Text('进入频道失败：$e'));
+    } finally {
+      if (mounted) setState(() => _entering = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -162,23 +185,7 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
                                       final room = filtered[index];
                                       return _ChannelSummaryCard(
                                         room: room,
-                                        onEnter: () async {
-                                          final token = (await SharedPreferences
-                                                      .getInstance())
-                                                  .getString(
-                                                      'friend.auth.token') ??
-                                              '';
-                                          final joined =
-                                              await service.joinVoiceRoom(
-                                                  token, '${room['id']}');
-                                          if (context.mounted)
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        VoiceRoomPage(
-                                                            room: joined)));
-                                        },
+                                        onEnter: () => _enterChannel(room),
                                       );
                                     },
                                   );
