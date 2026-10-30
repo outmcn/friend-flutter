@@ -2110,8 +2110,9 @@ class _ProfileChannelPageState extends State<ProfileChannelPage> {
       final data = await service.createVoiceRoom(token,
           title: title, category: selectedCategory);
       if (!mounted) return;
-      Navigator.push(context,
+      await Navigator.push(context,
           MaterialPageRoute(builder: (_) => VoiceRoomPage(room: data)));
+      if (mounted) await _load();
     } catch (e) {
       if (mounted) _showTopNotice(context, Text('$e'));
     }

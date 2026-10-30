@@ -55,7 +55,14 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   static const channelCategories = ['闲聊', '点歌', '开黑', '睡眠', '树洞'];
 
   String _roomCategory(Map<String, dynamic> room) =>
-      '${room['category'] ?? room['category_name'] ?? room['categoryName'] ?? ''}';
+      '${room['category'] ?? room['category_name'] ?? room['categoryName'] ?? ''}'
+          .trim()
+          .toLowerCase()
+          .replaceAll('chat', '闲聊')
+          .replaceAll('music', '点歌')
+          .replaceAll('gaming', '开黑')
+          .replaceAll('sleep', '睡眠')
+          .replaceAll('treehole', '树洞');
 
   bool _entering = false;
 
@@ -68,7 +75,7 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
           '';
       final joined = await service.joinVoiceRoom(token, '${room['id']}');
       if (!mounted) return;
-      Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => VoiceRoomPage(room: joined)),
       );
@@ -129,8 +136,20 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
       child: Scaffold(
         body: loading
             ? const Center(child: CircularProgressIndicator())
-            : error != null
-                ? Center(child: Text('频道加载失败：$error'))
+            : error != null && rooms.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('频道加载失败：$error'),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _load,
+                          child: const Text('重试'),
+                        ),
+                      ],
+                    ),
+                  )
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: Column(
