@@ -2354,7 +2354,39 @@ class _ChatDetailPageState extends State<_ChatDetailPage> {
   }
 
   Future<void> _startAudioCall() async {
-    if (mounted) _showTopErrorBanner(context, '实时语音通话暂未开放');
+    if (outgoingCallStarting || activeCallId != null) return;
+    outgoingCallStarting = true;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    if (token.isEmpty) {
+      outgoingCallStarting = false;
+      return;
+    }
+    final service = DDPostService();
+    try {
+      final result =
+          await ImSession.instance.startCall(token, widget.chat.conversationId);
+      if (!mounted) return;
+      final call = (result['call'] as Map?)?.cast<String, dynamic>() ?? {};
+      activeCallId = '${call['id'] ?? ''}';
+      final rtc = (result['rtc'] as Map?)?.cast<String, dynamic>() ?? {};
+      if (call.isNotEmpty) {
+        await _saveCallEvent(call);
+      }
+      if (!mounted) return;
+      final page = MaterialPageRoute(
+        builder: (_) => _AudioCallPage(call: call, rtc: rtc, token: token),
+      );
+      await Navigator.of(context).push(page);
+      activeCallId = null;
+    } catch (error) {
+      if (mounted) {
+        _showTopErrorBanner(context, '$error');
+      }
+    } finally {
+      outgoingCallStarting = false;
+      service.dispose();
+    }
   }
 
   Future<void> _sendRecordedAudio(String pathValue) async {
