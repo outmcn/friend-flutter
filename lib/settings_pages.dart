@@ -106,8 +106,45 @@ class SettingsPage extends StatelessWidget {
       );
 }
 
-class AccountSecurityPage extends StatelessWidget {
+class AccountSecurityPage extends StatefulWidget {
   const AccountSecurityPage({super.key});
+
+  @override
+  State<AccountSecurityPage> createState() => _AccountSecurityPageState();
+}
+
+class _AccountSecurityPageState extends State<AccountSecurityPage> {
+  String? maskedPhone;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPhone();
+  }
+
+  Future<void> _loadPhone() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('friend.auth.token') ?? '';
+    final id = int.tryParse(prefs.getString('friend.auth.userId') ?? '');
+    if (token.isEmpty || id == null) return;
+    final service = DDPostService();
+    try {
+      final profile = await service.fetchUserProfile(token, id);
+      final phone = '${profile['phone'] ?? profile['mobile'] ?? ''}'.trim();
+      if (!mounted || phone.isEmpty) return;
+      setState(() => maskedPhone = _maskPhone(phone));
+    } catch (_) {
+      // 资料接口失败时不显示未经确认的手机号。
+    } finally {
+      service.dispose();
+    }
+  }
+
+  String _maskPhone(String phone) {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 7) return phone;
+    return '${digits.substring(0, 3)}****${digits.substring(digits.length - 4)}';
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -118,9 +155,16 @@ class AccountSecurityPage extends StatelessWidget {
             _SettingsGroup(
               title: '账号与安全',
               showTitle: false,
-              items: const ['手机号', '修改密码', '手势安全', '注销账号'],
+              items: [
+                maskedPhone == null ? '手机号' : '手机号  $maskedPhone',
+                '修改密码',
+                '手势安全',
+                '注销账号',
+              ],
               onItemTap: (item) {
-                if (item == '修改密码') {
+                if (item.startsWith('手机号')) {
+                  _showTopNotice(context, const Text('手机号功能暂未接入'));
+                } else if (item == '修改密码') {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -224,6 +268,7 @@ class _SettingsGroup extends StatelessWidget {
   final bool showTitle;
 
   IconData _iconFor(String item) {
+    if (item.startsWith('手机号')) return Icons.phone_outlined;
     switch (item) {
       case '手机号':
         return Icons.phone_outlined;
