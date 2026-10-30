@@ -14,7 +14,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final _cardKeys = <String, GlobalKey>{};
   int selectedTab = 0;
   String _discoverLocalTabLabel = '本地';
-  int? _currentUserId;
+
   int get _unreadNotifications => _unreadNotificationIds.length;
   final _unreadNotificationIds = <int>{};
   StreamSubscription<Map<String, dynamic>>? _notificationEvents;
@@ -24,15 +24,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
     final token = prefs.getString('friend.auth.token') ?? '';
     if (token.isEmpty) throw Exception('请先登录');
     return token;
-  }
-
-  Future<void> _loadCurrentUserId() async {
-    try {
-      final user = await DDPostService().fetchMe(await _token());
-      if (mounted)
-        setState(() => _currentUserId =
-            int.tryParse('${user['id'] ?? user['userId'] ?? ''}'));
-    } catch (_) {}
   }
 
   Future<void> _loadNotificationUnread() async {
@@ -77,7 +68,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
             DateTime.now().microsecondsSinceEpoch));
       }
     });
-    unawaited(_loadCurrentUserId());
+
     feeds = List.generate(3, (tab) {
       final feed = DiscoverFeed((offset) async {
         final token = await _token();
@@ -543,7 +534,6 @@ class _DiscoverFeedCard extends StatefulWidget {
     this.hideAuthorRow = false,
     this.showViews = false,
     this.privateMode = false,
-    this.showDistance = true,
   });
 
   final DiscoverFeed feed;
@@ -563,7 +553,6 @@ class _DiscoverFeedCard extends StatefulWidget {
   final bool hideAuthorRow;
   final bool showViews;
   final bool privateMode;
-  final bool showDistance;
 
   @override
   State<_DiscoverFeedCard> createState() => _DiscoverFeedCardState();
@@ -624,7 +613,6 @@ class _DiscoverFeedCardState extends State<_DiscoverFeedCard>
       hideAuthorRow: widget.hideAuthorRow,
       showViews: widget.showViews,
       privateMode: widget.privateMode,
-      showDistance: widget.showDistance,
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
