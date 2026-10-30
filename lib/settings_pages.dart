@@ -163,7 +163,13 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
               ],
               onItemTap: (item) {
                 if (item.startsWith('手机号')) {
-                  _showTopNotice(context, const Text('手机号功能暂未接入'));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          PhoneSecurityPage(maskedPhone: maskedPhone),
+                    ),
+                  );
                 } else if (item == '修改密码') {
                   Navigator.push(
                     context,
@@ -175,6 +181,56 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                   _showTopNotice(context, Text('$item功能暂未接入'));
                 }
               },
+            ),
+          ],
+        ),
+      );
+}
+
+class PhoneSecurityPage extends StatefulWidget {
+  const PhoneSecurityPage({super.key, this.maskedPhone});
+
+  final String? maskedPhone;
+
+  @override
+  State<PhoneSecurityPage> createState() => _PhoneSecurityPageState();
+}
+
+class _PhoneSecurityPageState extends State<PhoneSecurityPage> {
+  bool findByPhone = true;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('手机号')),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.phone_outlined),
+                title: Text(widget.maskedPhone ?? '手机号'),
+                subtitle: const Text('当前绑定手机号'),
+                trailing: FilledButton(
+                  onPressed: () =>
+                      _showTopNotice(context, const Text('更换手机号功能暂未接入')),
+                  child: const Text('更换手机号'),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: SwitchListTile(
+                secondary: const Icon(Icons.person_search_outlined),
+                title: const Text('通过手机号找到我'),
+                value: findByPhone,
+                onChanged: (value) {
+                  setState(() => findByPhone = value);
+                  _showTopNotice(
+                    context,
+                    Text(value ? '已允许通过手机号找到我' : '已关闭通过手机号找到我'),
+                  );
+                },
+              ),
             ),
           ],
         ),
