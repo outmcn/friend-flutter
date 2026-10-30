@@ -107,11 +107,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   void _handleListEvent(Map<String, dynamic> event) {
     final type = event['type'];
-    if (type == 'message:new' || type == 'message:recalled') {
+    if (type == 'message:new' ||
+        type == 'message:accepted' ||
+        type == 'message:recalled') {
       final message = event['message'];
-      if (type == 'message:new' && message is Map) {
+      if ((type == 'message:new' || type == 'message:accepted') &&
+          message is Map) {
         final conversationId =
-            '${message['conversationId'] ?? message['conversation_id'] ?? ''}';
+            '${message['conversationId'] ?? message['conversation_id'] ?? event['conversationId'] ?? ''}';
         if (conversationId.isNotEmpty) {
           _hiddenConversationIds.remove(conversationId);
         }
