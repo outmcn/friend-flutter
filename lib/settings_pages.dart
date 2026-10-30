@@ -27,7 +27,7 @@ class SettingsPage extends StatelessWidget {
           children: [
             _SettingsGroup(
               title: '账号与安全',
-              showTitle: false,
+              showTitle: true,
               items: const ['手机号', '手势安全', '注销账号'],
               onItemTap: (item) {
                 if (item == '手机号' || item == '手势安全' || item == '注销账号') {
