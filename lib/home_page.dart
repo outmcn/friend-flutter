@@ -49,6 +49,7 @@ class _HomeChannelPlazaPage extends StatefulWidget {
 class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   final service = DDPostService();
   List<Map<String, dynamic>> rooms = const [];
+  StreamSubscription<Map<String, dynamic>>? _roomEvents;
   bool loading = true;
   String? error;
   String selectedCategory = '闲聊';
@@ -91,6 +92,19 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
   void initState() {
     super.initState();
     _load();
+    _roomEvents = ImSession.instance.events.listen(_handleRoomEvent);
+  }
+
+  void _handleRoomEvent(Map<String, dynamic> event) {
+    final roomId = '${event['roomId'] ?? event['room_id'] ?? ''}';
+    final online = event['onlineCount'] ?? event['online_count'];
+    if (!mounted || roomId.isEmpty || online == null) return;
+    final index = rooms.indexWhere(
+        (room) => '${room['id'] ?? room['roomId'] ?? ''}' == roomId);
+    if (index < 0) return;
+    final updated = List<Map<String, dynamic>>.from(rooms);
+    updated[index] = {...updated[index], 'online_count': online};
+    setState(() => rooms = updated);
   }
 
   Future<void> _load() async {
@@ -112,6 +126,7 @@ class _HomeChannelPlazaPageState extends State<_HomeChannelPlazaPage> {
 
   @override
   void dispose() {
+    _roomEvents?.cancel();
     service.dispose();
     super.dispose();
   }
