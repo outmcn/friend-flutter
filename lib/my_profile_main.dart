@@ -2692,7 +2692,7 @@ class _DDProfilePageState extends State<DDProfilePage>
                                   setSheetState(() => _matching = before)));
                         }),
                     _PresenceCircleSwitch(
-                        label: '雷达',
+                        label: '同频',
                         value: _smartBlock,
                         onChanged: (value) {
                           final before = _smartBlock;
