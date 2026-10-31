@@ -3164,23 +3164,10 @@ class _DDProfilePageState extends State<DDProfilePage>
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
-          leading: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: '在线状态',
-                onPressed: _openPresenceControls,
-                icon: const Icon(TIcons.chat_message),
-              ),
-              if ('${p?['city'] ?? ''}'.trim().isNotEmpty)
-                Text('IP：${'${p?['city']}'.trim()}',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: .65))),
-            ],
+          leading: IconButton(
+            tooltip: '在线状态',
+            onPressed: _openPresenceControls,
+            icon: const Icon(TIcons.chat_message),
           ),
           title: _showStickyNickname
               ? Text(
@@ -3276,6 +3263,34 @@ class _DDProfilePageState extends State<DDProfilePage>
                                                             .tightFor(
                                                             width: 32,
                                                             height: 32),
+                                                  ),
+                                                ],
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    'ID：${p?['id'] ?? p?['userId'] ?? ''}',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      height: 1.0,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                              alpha: .65),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    'IP：${'${p?['city'] ?? ''}'.trim().isEmpty ? '未定位' : '${p?['city']}'.trim()}',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                              alpha: .65),
+                                                    ),
                                                   ),
                                                 ],
                                               ),
